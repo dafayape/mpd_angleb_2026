@@ -118,7 +118,7 @@
                         </li>
                     </ul>
                     
-<form action="/logout" method="POST">
+<form action="/logout" method="GET">
     @csrf  <button type="submit">Logout</button>
 </form>
                 </div>
