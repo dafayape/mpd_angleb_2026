@@ -31,6 +31,20 @@ return [
 
     'connections' => [
 
+        // Koneksi ke MySQL Laravel 11 (untuk SSO logout — hapus session)
+        'laravel11_mysql' => [
+            'driver' => 'mysql',
+            'host' => env('L11_DB_HOST', '127.0.0.1'),
+            'port' => env('L11_DB_PORT', '3306'),
+            'database' => env('L11_DB_DATABASE', 'db_mpd'),
+            'username' => env('L11_DB_USERNAME', 'root'),
+            'password' => env('L11_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+        ],
+
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
