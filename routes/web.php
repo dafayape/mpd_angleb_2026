@@ -27,13 +27,13 @@ Route::get('/sso-login', function (Request $request) {
     }
 
     $expectedSignature = hash_hmac('sha256', $userId . '|' . $timestamp, config('app.key'));
-    
+
     if (!hash_equals($expectedSignature, $signature)) {
         abort(403, 'Invalid SSO signature.');
     }
 
     Auth::loginUsingId($userId);
-    
+
     $request->session()->regenerate();
 
     return redirect('/');

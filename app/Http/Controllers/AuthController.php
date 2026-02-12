@@ -32,7 +32,7 @@ class AuthController extends Controller
         $sessionCookie = config('session.cookie');
 
         return redirect('https://mpdbkt.web.id/login')
-             ->withCookie(cookie()->forget($sessionCookie))
-             ->withCookie(cookie()->forget('laravel_session'));
+            ->withCookie(cookie()->forget($sessionCookie))
+            ->withCookie(cookie()->forget('laravel_session'));
     }
 }
