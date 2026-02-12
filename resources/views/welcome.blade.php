@@ -117,6 +117,10 @@
                             </a>
                         </li>
                     </ul>
+                    
+<form action="/logout" method="POST">
+    @csrf  <button type="submit">Logout</button>
+</form>
                 </div>
                 <div class="bg-[#fff2f2] dark:bg-[#1D0002] relative lg:-ml-px -mb-px lg:mb-0 rounded-t-lg lg:rounded-t-none lg:rounded-r-lg aspect-[335/376] lg:aspect-auto w-full lg:w-[438px] shrink-0 overflow-hidden">
                     {{-- Laravel Logo --}}
