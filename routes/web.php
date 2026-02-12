@@ -60,5 +60,12 @@ Route::get('/check-session', function () {
         'user' => \Illuminate\Support\Facades\Auth::user(),
         'session_driver' => config('session.driver'),
         'session_cookie' => config('session.cookie'),
+        'db_config_l11' => [
+            'host' => config('database.connections.laravel11_mysql.host'),
+            'port' => config('database.connections.laravel11_mysql.port'),
+            'database' => config('database.connections.laravel11_mysql.database'),
+            'username' => config('database.connections.laravel11_mysql.username'),
+            'has_password' => filled(config('database.connections.laravel11_mysql.password')),
+        ],
     ]);
 });
