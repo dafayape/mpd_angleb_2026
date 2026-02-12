@@ -14,5 +14,4 @@ return Application::configure(basePath: dirname(__DIR__))
     $middleware->redirectGuestsTo('https://mpdbkt.web.id/login');
 })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
     })->create();

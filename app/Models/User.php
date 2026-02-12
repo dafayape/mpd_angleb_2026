@@ -9,9 +9,6 @@ class User extends Authenticatable
 {
     use Notifiable;
 
-    /**
-     * Koneksi ke MySQL Laravel 11 (shared users table).
-     */
     protected $connection = 'laravel11_mysql';
 
     protected $fillable = [
