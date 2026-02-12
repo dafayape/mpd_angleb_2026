@@ -35,7 +35,7 @@ return [
         // Koneksi ke MySQL Laravel 11 (untuk SSO logout — hapus session)
         'laravel11_mysql' => [
             'driver' => 'mysql',
-            'host' => '127.0.0.1', // Hardcoded
+            'host' => 'localhost', // Hardcoded try localhost
             'port' => '3307',      // Hardcoded
             'database' => 'db_mpd',
             'username' => 'root',
