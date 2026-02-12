@@ -11,7 +11,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
 ->withMiddleware(function (Middleware $middleware) {
-    $middleware->authenticateSessions();
     $middleware->redirectGuestsTo('https://mpdbkt.web.id/login');
 })
     ->withExceptions(function (Exceptions $exceptions): void {
