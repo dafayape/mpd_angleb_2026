@@ -118,9 +118,12 @@
                         </li>
                     </ul>
                     
-<form action="/logout" method="GET">
-    @csrf  <button type="submit">Logout</button>
-</form>
+<form action="{{ route('logout') }}" method="POST" style="display:inline; margin-top: 1rem;">
+                        @csrf
+                        <button type="submit" class="inline-block px-5 py-1.5 dark:bg-[#eeeeec] dark:border-[#eeeeec] dark:text-[#1C1C1A] dark:hover:bg-white dark:hover:border-white hover:bg-black hover:border-black bg-[#1b1b18] rounded-sm border border-black text-white text-sm leading-normal">
+                            Logout
+                        </button>
+                    </form>
                 </div>
                 <div class="bg-[#fff2f2] dark:bg-[#1D0002] relative lg:-ml-px -mb-px lg:mb-0 rounded-t-lg lg:rounded-t-none lg:rounded-r-lg aspect-[335/376] lg:aspect-auto w-full lg:w-[438px] shrink-0 overflow-hidden">
                     {{-- Laravel Logo --}}
