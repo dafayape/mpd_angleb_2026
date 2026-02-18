@@ -181,6 +181,7 @@
             <div data-simplebar class="h-100">
                 <div id="sidebar-menu">
                     <ul class="metismenu list-unstyled" id="side-menu">
+                        <li class="menu-title">MPD</li>
                         <li>
                             <a href="{{ route('dashboard') }}" class="waves-effect">
                                 <i class="bx bx-home-circle"></i>
