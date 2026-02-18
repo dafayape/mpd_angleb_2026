@@ -181,10 +181,14 @@
                     offset: offset
                 },
                 success: function(response) {
+                    if (response.errors && response.errors.length > 0) {
+                        console.warn('Processing errors:', response.errors);
+                    }
+
                     if (response.status === 'progress') {
                         progressBar.style.width = response.percent + '%';
                         progressBar.innerHTML = response.percent + '%';
-                        statusText.innerText = 'Memproses... ' + response.rows_processed + ' baris diproses.';
+                        statusText.innerText = 'Memproses... ' + new Intl.NumberFormat('id-ID').format(response.rows_processed) + ' baris per chunk.';
                         processChunk(historyId, response.offset);
                     } else if (response.status === 'completed') {
                         progressBar.style.width = '100%';
@@ -192,16 +196,25 @@
                         progressBar.classList.remove('bg-info');
                         progressBar.classList.add('bg-success');
                         statusTitle.innerText = 'Selesai!';
-                        statusText.innerText = 'Data berhasil diproses. Mengalihkan...';
+                        statusText.innerText = 'Total ' + new Intl.NumberFormat('id-ID').format(response.rows_processed) + ' baris berhasil diimport.';
                         setTimeout(function() {
                             window.location.href = "{{ route('datasource.history') }}";
-                        }, 1000);
+                        }, 1500);
+                    } else if (response.status === 'error') {
+                        progressBar.classList.remove('bg-info');
+                        progressBar.classList.add('bg-danger');
+                        statusTitle.innerText = 'Error!';
+                        statusText.innerText = response.message || 'Terjadi kesalahan saat pemrosesan.';
+                        btn.disabled = false;
                     }
                 },
                 error: function(xhr) {
-                    alert('Error Processing: ' + (xhr.responseJSON ? xhr.responseJSON.message : xhr.statusText));
+                    var msg = xhr.responseJSON ? xhr.responseJSON.message : xhr.statusText;
+                    progressBar.classList.remove('bg-info');
+                    progressBar.classList.add('bg-danger');
+                    statusTitle.innerText = 'Error!';
+                    statusText.innerText = msg;
                     btn.disabled = false;
-                    modal.hide();
                 }
             });
         }

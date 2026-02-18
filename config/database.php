@@ -73,7 +73,7 @@ return [
     'driver' => 'pgsql',
     // Hapus baris 'url' => env('DB_URL'), jika ada agar port tidak tertimpa
     'host' => env('DB_HOST', '127.0.0.1'),
-    'port' => env('DB_PORT', '35432'), // Pastikan ambil dari ENV
+    'port' => env('DB_PORT', '55432'), // SSH tunnel port
     'database' => env('DB_DATABASE', 'forge'),
     'username' => env('DB_USERNAME', 'forge'),
     'password' => env('DB_PASSWORD', ''),

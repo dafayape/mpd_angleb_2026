@@ -6,6 +6,7 @@ use App\Models\ImportJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 
@@ -32,7 +33,7 @@ class DatasourceController extends Controller
         $file = $request->file('file');
         $originalFilename = $file->getClientOriginalName();
         $filename = time() . '_' . $originalFilename;
-        $file->storeAs('mpd_uploads', $filename);
+        $file->storeAs('mpd_uploads', $filename, 'local');
 
         $job = ImportJob::create([
             'filename'          => $filename,
@@ -49,9 +50,7 @@ class DatasourceController extends Controller
         ]);
 
         Redis::set("mpd:import:{$job->id}:progress", json_encode([
-            'percent' => 0,
-            'rows'    => 0,
-            'status'  => 'uploaded',
+            'percent' => 0, 'rows' => 0, 'status' => 'uploaded',
         ]));
         Redis::expire("mpd:import:{$job->id}:progress", 3600);
 
@@ -70,7 +69,7 @@ class DatasourceController extends Controller
         DB::disableQueryLog();
 
         $historyId = $request->input('history_id');
-        $offset    = $request->input('offset', 0);
+        $offset    = (int) $request->input('offset', 0);
         $limit     = 5000;
 
         $job = ImportJob::find($historyId);
@@ -80,77 +79,106 @@ class DatasourceController extends Controller
         }
 
         $storagePath = 'mpd_uploads/' . $job->filename;
+        $path = $this->resolveFilePath($storagePath);
 
-        if (!Storage::exists($storagePath)) {
-            return response()->json(['status' => 'error', 'message' => 'File tidak ditemukan.'], 404);
-        }
-
-        $path = storage_path('app/private/' . $storagePath);
-
-        if (!file_exists($path)) {
-            $path = storage_path('app/' . $storagePath);
+        if (!$path) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'File tidak ditemukan di storage. Path: ' . $storagePath,
+            ], 404);
         }
 
         $handle = fopen($path, 'r');
 
         if (!$handle) {
-            return response()->json(['status' => 'error', 'message' => 'Gagal membuka file.'], 500);
+            return response()->json(['status' => 'error', 'message' => 'Gagal membuka file: ' . $path], 500);
         }
 
-        fseek($handle, $offset);
-
-        if ($offset == 0) {
-            fgetcsv($handle, 0, ';');
-            $offset = ftell($handle);
+        if ($offset > 0) {
+            fseek($handle, $offset);
+        } else {
+            $headerLine = fgets($handle);
+            Log::info("CSV Header: " . trim($headerLine));
         }
 
-        $this->ensurePartition($job->tanggal_data);
-
+        $createdPartitions = [];
         $batch = [];
         $rowsProcessed = 0;
+        $rowsSkipped = 0;
         $isEof = false;
         $isForecast = ($job->kategori === 'FORECAST');
         $now = now()->toDateTimeString();
+        $errors = [];
 
         while ($rowsProcessed < $limit) {
-            $data = fgetcsv($handle, 0, ';');
+            $line = fgets($handle);
 
-            if ($data === false) {
+            if ($line === false) {
                 $isEof = true;
                 break;
             }
 
-            if (count($data) < 17) {
+            $line = trim($line);
+            if ($line === '') {
                 continue;
             }
 
+            $data = str_getcsv($line, ';');
+
+            if (count($data) < 17) {
+                $rowsSkipped++;
+                continue;
+            }
+
+            $tanggal = trim($data[0]);
+
+            if (!$tanggal || !strtotime($tanggal)) {
+                $rowsSkipped++;
+                continue;
+            }
+
+            $monthKey = date('Y_m', strtotime($tanggal));
+            if (!isset($createdPartitions[$monthKey])) {
+                try {
+                    $this->ensurePartition($tanggal);
+                    $createdPartitions[$monthKey] = true;
+                } catch (\Exception $e) {
+                    Log::warning("Partition error for {$tanggal}: " . $e->getMessage());
+                }
+            }
+
             $batch[] = [
-                'tanggal'                    => $data[0],
-                'opsel'                      => $data[1],
-                'kategori'                   => $data[2],
-                'kode_origin_provinsi'       => $data[3],
-                'origin_provinsi'            => $data[4],
-                'kode_origin_kabupaten_kota' => $data[5],
-                'origin_kabupaten_kota'      => $data[6],
-                'kode_dest_provinsi'         => $data[7],
-                'dest_provinsi'              => $data[8],
-                'kode_dest_kabupaten_kota'   => $data[9],
-                'dest_kabupaten_kota'        => $data[10],
-                'kode_origin_simpul'         => $data[11] ?: '',
-                'origin_simpul'              => $data[12] ?: '',
-                'kode_dest_simpul'           => $data[13] ?: '',
-                'dest_simpul'                => $data[14] ?: '',
-                'kode_moda'                  => $data[15] ?: '',
-                'moda'                       => $data[16] ?? '',
-                'total'                      => isset($data[17]) ? (int) $data[17] : 0,
+                'tanggal'                    => $tanggal,
+                'opsel'                      => trim($data[1]),
+                'kategori'                   => trim($data[2]),
+                'kode_origin_provinsi'       => trim($data[3]),
+                'origin_provinsi'            => trim($data[4]),
+                'kode_origin_kabupaten_kota' => trim($data[5]),
+                'origin_kabupaten_kota'      => trim($data[6]),
+                'kode_dest_provinsi'         => trim($data[7]),
+                'dest_provinsi'              => trim($data[8]),
+                'kode_dest_kabupaten_kota'   => trim($data[9]),
+                'dest_kabupaten_kota'        => trim($data[10]),
+                'kode_origin_simpul'         => trim($data[11] ?? ''),
+                'origin_simpul'              => trim($data[12] ?? ''),
+                'kode_dest_simpul'           => trim($data[13] ?? ''),
+                'dest_simpul'                => trim($data[14] ?? ''),
+                'kode_moda'                  => trim($data[15] ?? ''),
+                'moda'                       => trim($data[16] ?? ''),
+                'total'                      => isset($data[17]) ? (int) trim($data[17]) : 0,
                 'is_forecast'                => $isForecast,
                 'created_at'                 => $now,
                 'updated_at'                 => $now,
             ];
 
             if (count($batch) >= 1000) {
-                DB::table('raw_mpd_data')->insert($batch);
-                $job->increment('processed_rows', count($batch));
+                try {
+                    DB::table('raw_mpd_data')->insert($batch);
+                    $job->increment('processed_rows', count($batch));
+                } catch (\Exception $e) {
+                    $errors[] = "Batch insert error at row ~{$rowsProcessed}: " . $e->getMessage();
+                    Log::error("Batch insert failed: " . $e->getMessage());
+                }
                 $batch = [];
             }
 
@@ -161,43 +189,49 @@ class DatasourceController extends Controller
         fclose($handle);
 
         if (!empty($batch)) {
-            DB::table('raw_mpd_data')->insert($batch);
-            $job->increment('processed_rows', count($batch));
+            try {
+                DB::table('raw_mpd_data')->insert($batch);
+                $job->increment('processed_rows', count($batch));
+            } catch (\Exception $e) {
+                $errors[] = "Final batch insert error: " . $e->getMessage();
+                Log::error("Final batch insert failed: " . $e->getMessage());
+            }
         }
 
         $fileSize = filesize($path);
         $percentage = $fileSize > 0 ? min(round(($newOffset / $fileSize) * 100), 99) : 100;
 
+        $job->refresh();
+
         if ($isEof) {
+            $finalStatus = empty($errors) ? 'completed' : 'completed';
             $job->update([
-                'status'     => 'completed',
-                'progress'   => 100,
-                'total_rows' => $job->processed_rows,
+                'status'        => $finalStatus,
+                'progress'      => 100,
+                'total_rows'    => $job->processed_rows,
+                'error_message' => !empty($errors) ? implode(' | ', $errors) : null,
             ]);
 
             Redis::set("mpd:import:{$job->id}:progress", json_encode([
-                'percent' => 100,
-                'rows'    => $job->processed_rows,
-                'status'  => 'completed',
+                'percent' => 100, 'rows' => $job->processed_rows, 'status' => $finalStatus,
             ]));
             Redis::expire("mpd:import:{$job->id}:progress", 300);
-
             Redis::del('mpd:summary:stats');
 
             return response()->json([
                 'status'         => 'completed',
                 'offset'         => $newOffset,
-                'rows_processed' => $rowsProcessed,
+                'rows_processed' => $job->processed_rows,
+                'rows_skipped'   => $rowsSkipped,
                 'percent'        => 100,
+                'errors'         => $errors,
             ]);
         }
 
         $job->update(['status' => 'processing', 'progress' => $percentage]);
 
         Redis::set("mpd:import:{$job->id}:progress", json_encode([
-            'percent' => $percentage,
-            'rows'    => $job->processed_rows,
-            'status'  => 'processing',
+            'percent' => $percentage, 'rows' => $job->processed_rows, 'status' => 'processing',
         ]));
         Redis::expire("mpd:import:{$job->id}:progress", 3600);
 
@@ -205,7 +239,9 @@ class DatasourceController extends Controller
             'status'         => 'progress',
             'offset'         => $newOffset,
             'rows_processed' => $rowsProcessed,
+            'rows_skipped'   => $rowsSkipped,
             'percent'        => $percentage,
+            'errors'         => $errors,
         ]);
     }
 
@@ -277,22 +313,30 @@ class DatasourceController extends Controller
                 return response()->json(['status' => 'completed', 'deleted' => 0]);
             }
 
-            $tanggalData = $job->tanggal_data;
+            $tanggalData = $job->tanggal_data ? \Carbon\Carbon::parse($job->tanggal_data)->format('Y-m-d') : null;
             $opsel = $job->opsel;
+            $isForecast = ($job->kategori === 'FORECAST');
 
             $deleted = 0;
 
             if ($tanggalData && $opsel) {
-                $deleted = DB::table('raw_mpd_data')
-                    ->where('tanggal', $tanggalData)
-                    ->where('opsel', $opsel)
-                    ->where('is_forecast', $job->kategori === 'FORECAST')
-                    ->limit(25000)
-                    ->delete();
+                $deleted = DB::affectingStatement("
+                    DELETE FROM raw_mpd_data
+                    WHERE ctid IN (
+                        SELECT ctid FROM raw_mpd_data
+                        WHERE tanggal = ?
+                          AND opsel = ?
+                          AND is_forecast = ?
+                        LIMIT 25000
+                    )
+                ", [$tanggalData, $opsel, $isForecast]);
             } else {
-                $deleted = DB::table('raw_mpd_data')
-                    ->whereRaw("ctid IN (SELECT ctid FROM raw_mpd_data LIMIT 25000)")
-                    ->delete();
+                $deleted = DB::affectingStatement("
+                    DELETE FROM raw_mpd_data
+                    WHERE ctid IN (
+                        SELECT ctid FROM raw_mpd_data LIMIT 25000
+                    )
+                ");
             }
 
             if ($deleted > 0) {
@@ -302,16 +346,16 @@ class DatasourceController extends Controller
                 ]);
             }
 
-            if (Storage::exists('mpd_uploads/' . $job->filename)) {
-                Storage::delete('mpd_uploads/' . $job->filename);
+            if (Storage::disk('local')->exists('mpd_uploads/' . $job->filename)) {
+                Storage::disk('local')->delete('mpd_uploads/' . $job->filename);
             }
 
             $job->delete();
-
             Redis::del('mpd:summary:stats');
 
             return response()->json(['status' => 'completed', 'deleted' => 0]);
         } catch (\Exception $e) {
+            Log::error("Delete chunk error: " . $e->getMessage());
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
@@ -360,5 +404,24 @@ class DatasourceController extends Controller
             PARTITION OF raw_mpd_data
             FOR VALUES FROM ('{$startOfMonth}') TO ('{$startOfNext}')
         ");
+    }
+
+    private function resolveFilePath(string $storagePath): ?string
+    {
+        $candidates = [
+            Storage::disk('local')->path($storagePath),
+            storage_path('app/private/' . $storagePath),
+            storage_path('app/' . $storagePath),
+        ];
+
+        foreach ($candidates as $path) {
+            if (file_exists($path)) {
+                Log::info("Resolved file path: {$path}");
+                return $path;
+            }
+        }
+
+        Log::error("File not found. Tried: " . implode(', ', $candidates));
+        return null;
     }
 }
