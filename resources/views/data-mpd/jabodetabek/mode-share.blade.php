@@ -32,10 +32,12 @@
                     </div>
                 </div>
 
-                {{-- Section 1: Pergerakan --}}
                 <h5 class="mt-4 mb-3 text-primary"><i class="bx bx-run"></i> PERGERAKAN</h5>
+                @if(request()->has('debug'))
+                    @dump($movementMatrix)
+                @endif
                 <div class="table-responsive mb-5">
-                    <table class="table table-bordered table-striped table-hover table-sm dt-responsive nowrap w-100" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
+                    <table class="table table-bordered table-striped table-hover table-sm w-100" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
                         <thead class="table-info text-dark text-center align-middle sticky-top" style="top: 0; z-index: 1;">
                             <tr>
                                 <th rowspan="2" class="" style="min-width: 150px;">Moda Transportasi</th>

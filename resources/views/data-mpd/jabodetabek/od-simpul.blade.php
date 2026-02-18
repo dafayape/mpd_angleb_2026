@@ -33,7 +33,11 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover table-sm dt-responsive nowrap w-100" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
+                    {{-- Debugging Data --}}
+                    @if(request()->has('debug'))
+                        @dump($matrix)
+                    @endif
+                    <table class="table table-bordered table-striped table-hover table-sm w-100" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
                         <thead class="table-light text-center align-middle sticky-top" style="top: 0; z-index: 1;">
                             <tr>
                                 <th rowspan="2" class="bg-light" style="min-width: 150px;">Kategori Simpul</th>
