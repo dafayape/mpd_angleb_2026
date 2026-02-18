@@ -109,22 +109,105 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 29);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
-        $cacheKey = 'mpd:nasional:od-simpul:matrix:v1';
+        $cacheKey = 'mpd:nasional:od-simpul:split:v1';
         
         try {
-            $matrix = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getOdSimpulData($startDate, $endDate, []); // Empty array = No Filter
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getNasionalOdSimpulData($startDate, $endDate);
             });
         } catch (\Throwable $e) {
-            $matrix = $this->getOdSimpulData($startDate, $endDate, []);
+            $data = $this->getNasionalOdSimpulData($startDate, $endDate);
         }
 
         return view('data-mpd.nasional.od-simpul', [
             'title' => 'O-D Simpul Nasional',
             'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'O-D Simpul'],
             'dates' => $dates,
-            'matrix' => $matrix
+            'simpul_darat' => $data['darat'],
+            'simpul_laut' => $data['laut'],
+            'simpul_udara' => $data['udara'],
+            'simpul_kereta' => $data['kereta'],
         ]);
+    }
+
+    private function getNasionalOdSimpulData($startDate, $endDate)
+    {
+        // categories mapping
+        $catMap = [
+            'Terminal' => 'darat',
+            'Pelabuhan' => 'laut',
+            'Bandara' => 'udara',
+            'Stasiun' => 'kereta'
+        ];
+
+        // Opsel list
+        $opsels = ['XL', 'IOH', 'TSEL'];
+
+        // Initialize Structure
+        $result = [
+            'darat' => [], 'laut' => [], 'udara' => [], 'kereta' => []
+        ];
+
+        // Helper to init row
+        $initRow = function($opsel) use ($startDate, $endDate) {
+            $row = [
+                'tipe_data' => 'Real',
+                'opsel' => $opsel,
+                'total' => 0
+            ];
+            $curr = $startDate->copy();
+            while ($curr->lte($endDate)) {
+                $row[$curr->format('Y-m-d')] = 0;
+                $curr->addDay();
+            }
+            return $row;
+        };
+
+        // Pre-fill rows for each category and opsel
+        foreach ($catMap as $dbCat => $key) {
+            foreach ($opsels as $opsel) {
+                $result[$key][$opsel] = $initRow($opsel);
+            }
+        }
+
+        try {
+            $query = DB::table('spatial_movements as sm')
+                ->join('ref_transport_nodes as simpul', 'sm.kode_origin_simpul', '=', 'simpul.code')
+                ->select(
+                    'simpul.category as kategori_simpul',
+                    'sm.tanggal',
+                    'sm.opsel',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->groupBy('simpul.category', 'sm.tanggal', 'sm.opsel')
+                ->get();
+
+            foreach ($query as $row) {
+                $dbCat = $row->kategori_simpul;
+                if (!isset($catMap[$dbCat])) continue; // Skip unknown categories
+
+                $key = $catMap[$dbCat];
+                $date = $row->tanggal;
+                
+                // Colors/Opsel Normalization
+                $rawOpsel = strtoupper($row->opsel);
+                $opsel = 'OTHER';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
+                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
+                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+
+                if ($opsel !== 'OTHER' && isset($result[$key][$opsel])) {
+                    $vol = $row->total_volume;
+                    $result[$key][$opsel][$date] += $vol;
+                    $result[$key][$opsel]['total'] += $vol;
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Nasional OD Simpul Error: ' . $e->getMessage());
+        }
+
+        return $result;
     }
 
     public function nasionalModeShare(Request $request)
