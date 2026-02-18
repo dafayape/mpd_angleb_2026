@@ -87,8 +87,11 @@ class MapMonitorController extends Controller
                 'features' => $features
             ]);
 
-        } catch (\Exception $e) {
-            // Fallback Mock Data for Demo/Dev when DB is unreachable
+        } catch (\Throwable $e) {
+            // Log the actual error for debugging
+            \Illuminate\Support\Facades\Log::error('MapMonitor Error: ' . $e->getMessage());
+
+            // Fallback Mock Data for Demo/Dev when DB is unreachable or Error occurs
             return response()->json([
                 'type' => 'FeatureCollection',
                 'latest_date' => date('Y-m-d'),

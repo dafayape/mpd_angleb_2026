@@ -50,7 +50,7 @@
 
 @push('scripts')
 {{-- Load Google Maps API (Use Env Variable if available or Placeholder) --}}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY', '') }}&callback=initMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY', '') }}&loading=async&callback=initMap" async defer></script>
 
 <script>
     let map;
