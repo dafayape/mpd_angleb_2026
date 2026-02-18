@@ -7,7 +7,6 @@
         <div class="col-12">
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                 <h4 class="mb-sm-0 font-size-18">{{ $title ?? 'Halaman' }}</h4>
-
                 <div class="page-title-right">
                     <ol class="breadcrumb m-0">
                         @if(isset($breadcrumb))
@@ -34,7 +33,7 @@
                 <div class="card-body text-center py-5">
                     <i class="bx bx-layer font-size-48 text-muted"></i>
                     <h5 class="mt-3 text-muted">{{ $title ?? 'Halaman' }}</h5>
-                    <p class="text-muted">Halaman ini sedang dalam pengembangan.</p>
+                    <p class="text-muted mb-0">Halaman ini sedang dalam pengembangan.</p>
                 </div>
             </div>
         </div>

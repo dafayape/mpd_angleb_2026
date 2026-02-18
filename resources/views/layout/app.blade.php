@@ -1,16 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
 
 <head>
     <meta charset="utf-8" />
     <title>@yield('title', 'BKT-KEMENHUB') @yield('subtitle', '')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta content="Premium Multipurpose Admin & Dashboard Template" name="description" />
-    <meta content="Themesbrand" name="author" />
+    <meta name="description" content="Sistem Informasi Mobile Positioning Data - Kementerian Perhubungan RI" />
+    <meta name="author" content="BKT Kemenhub" />
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" id="bootstrap-style" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/app.min.css') }}" id="app-style" rel="stylesheet" type="text/css" />
@@ -19,8 +21,29 @@
     @stack('styles')
 
     <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 400;
+            color: #495057;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+        }
+
+        .navbar-header {
+            font-family: 'Poppins', sans-serif;
+        }
+
         .vertical-menu {
             z-index: 1002 !important;
+            font-family: 'Poppins', sans-serif;
         }
 
         .navbar-brand-box {
@@ -37,8 +60,56 @@
             padding-bottom: 80px;
         }
 
+        #sidebar-menu .menu-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        #sidebar-menu ul li a {
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 400;
+        }
+
+        #sidebar-menu .sub-menu li a {
+            font-size: 12.5px;
+        }
+
         body.sidebar-enable .vertical-menu {
             box-shadow: 0 0 24px 0 rgba(0, 0, 0, 0.06), 0 1px 0 0 rgba(0, 0, 0, 0.02);
+        }
+
+        .footer {
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        .page-title-box h4 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .breadcrumb-item,
+        .breadcrumb-item a {
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+        }
+
+        .dropdown-menu {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .card {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn {
+            font-family: 'Poppins', sans-serif;
         }
 
         @media (max-width: 991.98px) {
@@ -95,37 +166,24 @@
                     <div class="navbar-brand-box">
                         <a href="/" class="logo logo-dark">
                             <span class="logo-sm">
-                                <img src="{{ asset('assets/images/logo-only.png') }}" alt="" height="27">
+                                <img src="{{ asset('assets/images/logo-only.png') }}" alt="Logo" height="27">
                             </span>
                             <span class="logo-lg">
-                                <img src="{{ asset('assets/images/logo.png') }}" alt="" height="27">
+                                <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" height="27">
                             </span>
                         </a>
-
                         <a href="/" class="logo logo-light">
                             <span class="logo-sm">
-                                <img src="{{ asset('assets/images/logo-only.png') }}" alt="" height="27">
+                                <img src="{{ asset('assets/images/logo-only.png') }}" alt="Logo" height="27">
                             </span>
                             <span class="logo-lg">
-                                <img src="{{ asset('assets/images/logo.png') }}" alt="" height="27">
+                                <img src="{{ asset('assets/images/logo.png') }}" alt="Logo" height="27">
                             </span>
                         </a>
                     </div>
 
                     <button type="button" class="btn btn-sm px-3 font-size-16 header-item waves-effect" id="vertical-menu-btn">
                         <i class="fa fa-fw fa-bars"></i>
-                    </button>
-
-                    <button type="button" class="btn btn-sm px-3 font-size-16 header-item waves-effect">
-                        @php
-                            $tahun = session('tahun_periode');
-                            $judul = match (session('kategori_data')) {
-                                'lebaran' => 'LEBARAN TAHUN ' . $tahun,
-                                'nataru' => 'NATAL DAN TAHUN BARU ' . $tahun . '/' . $tahun + 1,
-                                default => '<i class="fa fa-home></i>',
-                            };
-                        @endphp
-                        {!! $judul ?? '' !!}
                     </button>
                 </div>
 
@@ -143,25 +201,26 @@
 
                     <div class="dropdown d-inline-block">
                         <button type="button" class="btn header-item waves-effect" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <img class="rounded-circle header-profile-user" src="{{ ($photo && file_exists($photoPath)) ? asset('storage/photos/' . $photo) : asset('assets/images/users/avatar-1.jpg') }}" alt="User Avatar">
-                            <span class="d-none d-xl-inline-block ms-1" key="t-henry">{{ Auth::user()->name ?? 'Pengguna' }}</span>
+                            <img class="rounded-circle header-profile-user" src="{{ ($photo && file_exists($photoPath)) ? asset('storage/photos/' . $photo) : asset('assets/images/users/avatar-1.jpg') }}" alt="Avatar">
+                            <span class="d-none d-xl-inline-block ms-1">{{ Auth::user()->name ?? 'Pengguna' }}</span>
                             <i class="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
                         </button>
                         <div class="dropdown-menu dropdown-menu-end">
                             <a class="dropdown-item" href="{{ route('profile.edit') }}">
                                 <i class="bx bx-user font-size-16 align-middle me-1"></i>
-                                <span key="t-profile">Profile</span>
+                                <span>Profil</span>
                             </a>
                             <div class="dropdown-divider"></div>
-                            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                                @csrf
-                            </form>
                             <a class="dropdown-item text-danger" href="#" id="btnLogout">
                                 <i class="bx bx-power-off font-size-16 align-middle me-1 text-danger"></i>
-                                <span key="t-logout">Logout</span>
+                                <span>Logout</span>
                             </a>
                         </div>
                     </div>
+
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                        @csrf
+                    </form>
                 </div>
             </div>
         </header>
@@ -170,7 +229,6 @@
             <div data-simplebar class="h-100">
                 <div id="sidebar-menu">
                     <ul class="metismenu list-unstyled" id="side-menu">
-                        {{-- Dashboard --}}
                         <li>
                             <a href="{{ route('dashboard') }}" class="waves-effect">
                                 <i class="bx bx-home-circle"></i>
@@ -178,7 +236,6 @@
                             </a>
                         </li>
 
-                        {{-- Grafik MPD (dropdown) --}}
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
@@ -187,20 +244,19 @@
                             <ul class="sub-menu" aria-expanded="false">
                                 <li class="menu-title" style="padding-left:0;">Nasional</li>
                                 <li><a href="{{ route('grafik-mpd.nasional.pergerakan') }}">Pergerakan</a></li>
-                                <li><a href="{{ route('grafik-mpd.nasional.od-provinsi') }}">O - D Provinsi</a></li>
+                                <li><a href="{{ route('grafik-mpd.nasional.od-provinsi') }}">O-D Provinsi</a></li>
                                 <li><a href="{{ route('grafik-mpd.nasional.top-kabkota') }}">Top Kabupaten/Kota</a></li>
                                 <li><a href="{{ route('grafik-mpd.nasional.mode-share') }}">Mode Share</a></li>
                                 <li><a href="{{ route('grafik-mpd.nasional.simpul') }}">Simpul</a></li>
                                 <li class="menu-title" style="padding-left:0;">Jabodetabek</li>
                                 <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang') }}">Pergerakan & Orang</a></li>
                                 <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang-opsel') }}">Pergerakan & Orang (Opsel)</a></li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.od-kabkota') }}">O - D Kabupaten Kota</a></li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.od-kabkota') }}">O-D Kabupaten Kota</a></li>
                                 <li><a href="{{ route('grafik-mpd.jabodetabek.mode-share') }}">Mode Share</a></li>
                                 <li><a href="{{ route('grafik-mpd.jabodetabek.simpul') }}">Simpul</a></li>
                             </ul>
                         </li>
 
-                        {{-- Data MPD Opsel (dropdown) --}}
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-detail"></i>
@@ -210,15 +266,14 @@
                                 <li class="menu-title" style="padding-left:0;">Nasional</li>
                                 <li><a href="{{ route('data-mpd.nasional.pergerakan') }}">Pergerakan</a></li>
                                 <li><a href="{{ route('data-mpd.nasional.mode-share') }}">Mode Share</a></li>
-                                <li><a href="{{ route('data-mpd.nasional.od-simpul') }}">O - D Simpul</a></li>
+                                <li><a href="{{ route('data-mpd.nasional.od-simpul') }}">O-D Simpul</a></li>
                                 <li class="menu-title" style="padding-left:0;">Jabodetabek</li>
                                 <li><a href="{{ route('data-mpd.jabodetabek.pergerakan') }}">Pergerakan</a></li>
                                 <li><a href="{{ route('data-mpd.jabodetabek.mode-share') }}">Mode Share</a></li>
-                                <li><a href="{{ route('data-mpd.jabodetabek.od-simpul') }}">O - D Simpul</a></li>
+                                <li><a href="{{ route('data-mpd.jabodetabek.od-simpul') }}">O-D Simpul</a></li>
                             </ul>
                         </li>
 
-                        {{-- Map Monitor --}}
                         <li>
                             <a href="{{ route('map-monitor') }}" class="waves-effect">
                                 <i class="bx bx-map"></i>
@@ -226,10 +281,8 @@
                             </a>
                         </li>
 
-                        {{-- ===== MASTER ===== --}}
-                        <li class="menu-title">MASTER</li>
+                        <li class="menu-title">Master</li>
 
-                        {{-- Referensi (dropdown) --}}
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-file"></i>
@@ -243,7 +296,6 @@
                             </ul>
                         </li>
 
-                        {{-- Pengguna --}}
                         <li>
                             <a href="{{ route('pengguna') }}" class="waves-effect">
                                 <i class="bx bx-user"></i>
@@ -251,8 +303,7 @@
                             </a>
                         </li>
 
-                        {{-- ===== DATASOURCE ===== --}}
-                        <li class="menu-title">DATASOURCE</li>
+                        <li class="menu-title">Datasource</li>
 
                         <li>
                             <a href="{{ route('datasource.upload') }}" class="waves-effect">
@@ -273,8 +324,7 @@
                             </a>
                         </li>
 
-                        {{-- ===== SYSTEM & MONITORING ===== --}}
-                        <li class="menu-title">SYSTEM & MONITORING</li>
+                        <li class="menu-title">System & Monitoring</li>
 
                         <li>
                             <a href="{{ route('log-aktivitas') }}" class="waves-effect">
@@ -288,7 +338,7 @@
         </div>
 
         <div class="main-content">
-            <div class="page-content" style="background-color : #fbfdff !important;">
+            <div class="page-content" style="background-color: #fbfdff !important;">
                 <div class="container-fluid">
                     @yield('content')
                 </div>
@@ -298,13 +348,11 @@
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-sm-6">
-                            <script>
-                                document.write(new Date().getFullYear())
-                            </script> © BKT-KEMENHUB (V-1.5)
+                            <script>document.write(new Date().getFullYear())</script> &copy; BKT-KEMENHUB (V-1.5)
                         </div>
                         <div class="col-sm-6">
                             <div class="text-sm-end d-none d-sm-block">
-                                Kementrian Perhubungan Republik Indonesia
+                                Kementerian Perhubungan Republik Indonesia
                             </div>
                         </div>
                     </div>
@@ -319,7 +367,6 @@
     <script src="{{ asset('assets/libs/metismenu/metisMenu.min.js') }}"></script>
     <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
     <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
-
     <script src="{{ asset('assets/js/app.js') }}"></script>
 
     @stack('js')
@@ -328,17 +375,16 @@
     <script>
         document.getElementById('btnLogout').addEventListener('click', function(e) {
             e.preventDefault();
-
             Swal.fire({
                 title: 'Yakin ingin logout?',
-                text: "Sesi kamu akan berakhir.",
+                text: 'Sesi kamu akan berakhir.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
                 cancelButtonColor: '#d33',
                 confirmButtonText: 'Ya, Logout',
                 cancelButtonText: 'Batal'
-            }).then((result) => {
+            }).then(function(result) {
                 if (result.isConfirmed) {
                     document.getElementById('logout-form').submit();
                 }
@@ -350,13 +396,14 @@
                 toast: true,
                 position: 'top',
                 icon: 'success',
-                title: "{{ session('success') }}",
+                title: '{{ session("success") }}',
                 showConfirmButton: false,
                 timer: 3000,
                 timerProgressBar: true
             });
         @endif
     </script>
+
     @stack('scripts')
 </body>
 
