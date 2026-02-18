@@ -227,4 +227,95 @@ class DataMpdController extends Controller
 
         return ['movement' => $pivotMovement, 'people' => $pivotPeople];
     }
+
+    public function jabodetabekPergerakan(Request $request)
+    {
+        // 1. Date Range: 13 March 2026 - 29 March 2026
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+        
+        $dates = collect();
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates->push($curr->format('Y-m-d'));
+            $curr->addDay();
+        }
+
+        // 2. Caching Key
+        $cacheKey = 'mpd:jabodetabek:pergerakan:v1';
+        
+        $jabodetabekCodes = $this->getJabodetabekCodes();
+        
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+                return $this->getPergerakanData($startDate, $endDate, $jabodetabekCodes);
+            });
+        } catch (\Throwable $e) {
+            // Redis/DB Fallback
+            $data = $this->getPergerakanData($startDate, $endDate, $jabodetabekCodes);
+        }
+
+        return view('data-mpd.jabodetabek.pergerakan', [
+            'title' => 'Pergerakan Jabodetabek',
+            'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Pergerakan'],
+            'dates' => $dates,
+            'data' => $data // Structure: [Date] => ['XL' => [...], 'IOH' => [...]]
+        ]);
+    }
+
+    private function getPergerakanData($startDate, $endDate, $jabodetabekCodes)
+    {
+        // Initialize Structure
+        $dates = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $d = $curr->format('Y-m-d');
+            $dates[$d] = [
+                'XL'   => ['movement' => 0, 'people' => 0],
+                'IOH'  => ['movement' => 0, 'people' => 0],
+                'TSEL' => ['movement' => 0, 'people' => 0],
+                'Total' => ['movement' => 0, 'people' => 0]
+            ];
+            $curr->addDay();
+        }
+
+        try {
+            $results = DB::table('spatial_movements')
+                ->select(
+                    'tanggal',
+                    'opsel',
+                    DB::raw('SUM(total) as total_volume')
+                )
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('tanggal', 'opsel')
+                ->get();
+
+            foreach ($results as $row) {
+                $date = $row->tanggal;
+                $rawOpsel = strtoupper($row->opsel);
+                $vol = $row->total_volume;
+
+                // Normalize Opsel Name
+                $opsel = 'OTHER';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
+                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
+                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+
+                if (isset($dates[$date]) && isset($dates[$date][$opsel])) {
+                    $dates[$date][$opsel]['movement'] += $vol;
+                    $dates[$date][$opsel]['people'] += $vol; // Assumed 1:1
+                    
+                    // Add to Day Total
+                    $dates[$date]['Total']['movement'] += $vol;
+                    $dates[$date]['Total']['people'] += $vol;
+                }
+            }
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Pergerakan DB Error: ' . $e->getMessage());
+        }
+
+        return $dates;
+    }
 }

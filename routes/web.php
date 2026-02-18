@@ -37,7 +37,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/data-mpd/nasional/mode-share', fn () => view('placeholder', ['title' => 'Mode Share', 'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'Mode Share']]))->name('data-mpd.nasional.mode-share');
     Route::get('/data-mpd/nasional/od-simpul', fn () => view('placeholder', ['title' => 'O-D Simpul', 'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'O-D Simpul']]))->name('data-mpd.nasional.od-simpul');
 
-    Route::get('/data-mpd/jabodetabek/pergerakan', fn () => view('placeholder', ['title' => 'Pergerakan', 'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Pergerakan']]))->name('data-mpd.jabodetabek.pergerakan');
+    Route::get('/data-mpd/jabodetabek/pergerakan', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekPergerakan'])->name('data-mpd.jabodetabek.pergerakan');
     Route::get('/data-mpd/jabodetabek/mode-share', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekModeShare'])->name('data-mpd.jabodetabek.mode-share');
     Route::get('/data-mpd/jabodetabek/od-simpul', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekOdSimpul'])->name('data-mpd.jabodetabek.od-simpul');
 
