@@ -111,14 +111,11 @@ class DatasourceController extends Controller
             fseek($handle, $offset);
         }
 
-        // Check if is_forecast column exists in raw_mpd_data
-        $hasIsForecast = $this->tableHasColumn('raw_mpd_data', 'is_forecast');
-
-        $createdPartitions = [];
         $batch = [];
         $rowsProcessed = 0;
         $rowsSkipped = 0;
         $isEof = false;
+        // is_forecast diambil dari pilihan REAL/FORECAST di form upload
         $isForecast = ($job->kategori === 'FORECAST');
         $now = now()->toDateTimeString();
         $errors = [];
@@ -131,9 +128,8 @@ class DatasourceController extends Controller
                 break;
             }
 
-            // Strip \r\n and trim whitespace
-            $line = trim(str_replace(["\r\n", "\r"], "\n", $line));
-            $line = trim($line);
+            // Strip \r\n and trim
+            $line = trim(str_replace("\r", '', $line));
 
             if ($line === '') {
                 continue;
@@ -153,25 +149,10 @@ class DatasourceController extends Controller
 
             if (!$tanggal || !strtotime($tanggal)) {
                 $rowsSkipped++;
-                Log::warning("Skipped row (invalid date): " . substr($line, 0, 100));
                 continue;
             }
 
-            // Ensure partition exists for this month
-            $monthKey = date('Y_m', strtotime($tanggal));
-            if (!isset($createdPartitions[$monthKey])) {
-                try {
-                    $this->ensurePartition($tanggal);
-                    $createdPartitions[$monthKey] = true;
-                    Log::info("Partition created/verified: raw_mpd_data_{$monthKey}");
-                } catch (\Exception $e) {
-                    $errors[] = "Partition error for {$monthKey}: " . $e->getMessage();
-                    Log::error("Partition creation failed for {$tanggal}: " . $e->getMessage());
-                    $createdPartitions[$monthKey] = true; // Don't retry
-                }
-            }
-
-            $row = [
+            $batch[] = [
                 'tanggal'                    => $tanggal,
                 'opsel'                      => trim($data[1]),
                 'kategori'                   => trim($data[2]),
@@ -190,16 +171,10 @@ class DatasourceController extends Controller
                 'kode_moda'                  => trim($data[15] ?? ''),
                 'moda'                       => trim($data[16] ?? ''),
                 'total'                      => isset($data[17]) ? (int) trim($data[17]) : 0,
+                'is_forecast'                => $isForecast,
                 'created_at'                 => $now,
                 'updated_at'                 => $now,
             ];
-
-            // Only include is_forecast if column exists
-            if ($hasIsForecast) {
-                $row['is_forecast'] = $isForecast;
-            }
-
-            $batch[] = $row;
 
             if (count($batch) >= 1000) {
                 try {
@@ -210,14 +185,14 @@ class DatasourceController extends Controller
                     $errors[] = $errorMsg;
                     Log::error($errorMsg);
 
-                    // Try inserting one by one to find problematic rows
+                    // Fallback: insert satu-satu
                     $savedCount = 0;
                     foreach ($batch as $singleRow) {
                         try {
                             DB::table('raw_mpd_data')->insert($singleRow);
                             $savedCount++;
                         } catch (\Exception $rowErr) {
-                            Log::warning("Single row insert failed: " . $rowErr->getMessage() . " | Row: " . json_encode(array_slice($singleRow, 0, 5)));
+                            Log::warning("Row insert failed: " . $rowErr->getMessage());
                         }
                     }
                     if ($savedCount > 0) {
@@ -233,7 +208,7 @@ class DatasourceController extends Controller
         $newOffset = ftell($handle);
         fclose($handle);
 
-        // Insert remaining rows
+        // Insert sisa batch
         if (!empty($batch)) {
             try {
                 DB::table('raw_mpd_data')->insert($batch);
@@ -243,14 +218,13 @@ class DatasourceController extends Controller
                 $errors[] = $errorMsg;
                 Log::error($errorMsg);
 
-                // Fallback: one by one
                 $savedCount = 0;
                 foreach ($batch as $singleRow) {
                     try {
                         DB::table('raw_mpd_data')->insert($singleRow);
                         $savedCount++;
                     } catch (\Exception $rowErr) {
-                        Log::warning("Single row insert failed: " . $rowErr->getMessage());
+                        Log::warning("Row insert failed: " . $rowErr->getMessage());
                     }
                 }
                 if ($savedCount > 0) {
@@ -280,7 +254,7 @@ class DatasourceController extends Controller
                 Redis::expire("mpd:import:{$job->id}:progress", 300);
                 Redis::del('mpd:summary:stats');
             } catch (\Exception $e) {
-                // Redis not available, continue
+                // Redis not available
             }
 
             return response()->json([
@@ -301,7 +275,7 @@ class DatasourceController extends Controller
             ]));
             Redis::expire("mpd:import:{$job->id}:progress", 3600);
         } catch (\Exception $e) {
-            // Redis not available, continue
+            // Redis not available
         }
 
         return response()->json([
@@ -361,8 +335,7 @@ class DatasourceController extends Controller
             $query->where('kategori', $request->kategori);
         }
 
-        $hasIsForecast = $this->tableHasColumn('raw_mpd_data', 'is_forecast');
-        if ($hasIsForecast && $request->filled('is_forecast')) {
+        if ($request->filled('is_forecast')) {
             $query->where('is_forecast', $request->is_forecast === '1');
         }
 
@@ -385,34 +358,21 @@ class DatasourceController extends Controller
 
             $tanggalData = $job->tanggal_data ? \Carbon\Carbon::parse($job->tanggal_data)->format('Y-m-d') : null;
             $opsel = $job->opsel;
+            $isForecast = ($job->kategori === 'FORECAST');
 
             $deleted = 0;
-            $hasIsForecast = $this->tableHasColumn('raw_mpd_data', 'is_forecast');
 
             if ($tanggalData && $opsel) {
-                if ($hasIsForecast) {
-                    $isForecast = ($job->kategori === 'FORECAST');
-                    $deleted = DB::affectingStatement("
-                        DELETE FROM raw_mpd_data
-                        WHERE ctid IN (
-                            SELECT ctid FROM raw_mpd_data
-                            WHERE tanggal = ?
-                              AND opsel = ?
-                              AND is_forecast = ?
-                            LIMIT 25000
-                        )
-                    ", [$tanggalData, $opsel, $isForecast]);
-                } else {
-                    $deleted = DB::affectingStatement("
-                        DELETE FROM raw_mpd_data
-                        WHERE ctid IN (
-                            SELECT ctid FROM raw_mpd_data
-                            WHERE tanggal = ?
-                              AND opsel = ?
-                            LIMIT 25000
-                        )
-                    ", [$tanggalData, $opsel]);
-                }
+                $deleted = DB::affectingStatement("
+                    DELETE FROM raw_mpd_data
+                    WHERE ctid IN (
+                        SELECT ctid FROM raw_mpd_data
+                        WHERE tanggal = ?
+                          AND opsel = ?
+                          AND is_forecast = ?
+                        LIMIT 25000
+                    )
+                ", [$tanggalData, $opsel, $isForecast]);
             } else {
                 $deleted = DB::affectingStatement("
                     DELETE FROM raw_mpd_data
@@ -463,12 +423,14 @@ class DatasourceController extends Controller
                 return json_decode($cached, true);
             }
         } catch (\Exception $e) {
-            // Redis not available, calculate directly
+            // Redis not available
         }
 
         $stats = [
             'total_rows'    => (int) DB::table('raw_mpd_data')->count(),
-            'total_uploads' => ImportJob::where('status', 'completed')->orWhere('status', 'completed_with_errors')->count(),
+            'total_uploads' => ImportJob::where('status', 'completed')
+                ->orWhere('status', 'completed_with_errors')
+                ->count(),
             'by_opsel'      => DB::table('raw_mpd_data')
                 ->select('opsel', DB::raw('COUNT(*) as total'))
                 ->groupBy('opsel')
@@ -485,44 +447,6 @@ class DatasourceController extends Controller
         }
 
         return $stats;
-    }
-
-    private function ensurePartition(string $date): void
-    {
-        $month = date('Y_m', strtotime($date));
-        $startOfMonth = date('Y-m-01', strtotime($date));
-        $startOfNext = date('Y-m-01', strtotime($startOfMonth . ' +1 month'));
-        $partitionName = "raw_mpd_data_{$month}";
-
-        DB::statement("
-            CREATE TABLE IF NOT EXISTS {$partitionName}
-            PARTITION OF raw_mpd_data
-            FOR VALUES FROM ('{$startOfMonth}') TO ('{$startOfNext}')
-        ");
-    }
-
-    /**
-     * Check if a table has a specific column
-     */
-    private function tableHasColumn(string $table, string $column): bool
-    {
-        static $cache = [];
-        $key = "{$table}.{$column}";
-
-        if (!isset($cache[$key])) {
-            try {
-                $cache[$key] = DB::selectOne("
-                    SELECT EXISTS (
-                        SELECT 1 FROM information_schema.columns
-                        WHERE table_name = ? AND column_name = ?
-                    ) as exists
-                ", [$table, $column])->exists;
-            } catch (\Exception $e) {
-                $cache[$key] = false;
-            }
-        }
-
-        return $cache[$key];
     }
 
     private function resolveFilePath(string $storagePath): ?string
