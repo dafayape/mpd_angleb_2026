@@ -22,44 +22,43 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title">Data Referensi Provinsi</h4>
-                    <p class="card-title-desc">Daftar provinsi se-Indonesia ({{ $data->total() }} data)</p>
-
-                    <form action="{{ route('master.referensi.provinsi') }}" method="GET" class="mb-3">
-                        <div class="row align-items-end">
-                            <div class="col-md-4">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" name="search" placeholder="Cari kode atau nama provinsi..." value="{{ request('search') }}">
-                                    <button class="btn btn-primary" type="submit"><i class="bx bx-search"></i></button>
-                                    @if(request('search'))
-                                        <a href="{{ route('master.referensi.provinsi') }}" class="btn btn-secondary"><i class="bx bx-reset"></i></a>
-                                    @endif
-                                </div>
-                            </div>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+                        <div>
+                            <h4 class="card-title mb-1">Data Referensi Provinsi</h4>
+                            <p class="card-title-desc mb-0">Total: {{ $data->total() }} provinsi</p>
                         </div>
-                    </form>
+                        <form action="{{ route('master.referensi.provinsi') }}" method="GET">
+                            <div class="input-group" style="width: 300px;">
+                                <input type="text" class="form-control form-control-sm" name="search" placeholder="Cari kode / nama..." value="{{ request('search') }}">
+                                <button class="btn btn-sm btn-primary" type="submit"><i class="bx bx-search"></i></button>
+                                @if(request('search'))
+                                    <a href="{{ route('master.referensi.provinsi') }}" class="btn btn-sm btn-outline-secondary"><i class="bx bx-x"></i></a>
+                                @endif
+                            </div>
+                        </form>
+                    </div>
 
                     <div class="table-responsive">
-                        <table class="table table-bordered table-hover table-striped dt-responsive nowrap w-100">
+                        <table class="table table-bordered table-hover table-sm align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th style="width: 60px;">No</th>
-                                    <th style="width: 100px;">Kode</th>
+                                    <th style="width:50px" class="text-center">No</th>
+                                    <th style="width:80px" class="text-center">Kode</th>
                                     <th>Nama Provinsi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($data as $item)
                                     <tr>
-                                        <td>{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
-                                        <td><span class="badge bg-primary bg-soft text-primary">{{ $item->code }}</span></td>
+                                        <td class="text-center">{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
+                                        <td class="text-center"><span class="badge bg-primary">{{ $item->code }}</span></td>
                                         <td>{{ $item->name }}</td>
                                     </tr>
                                 @empty
                                     <tr>
                                         <td colspan="3" class="text-center text-muted py-4">
-                                            <i class="bx bx-info-circle font-size-20"></i><br>
-                                            Data kosong. Jalankan seeder: <code>php artisan db:seed --class=ProvinceSeeder</code>
+                                            <i class="bx bx-info-circle font-size-20 d-block mb-1"></i>
+                                            Data kosong. Jalankan: <code>php artisan db:seed --class=ProvinceSeeder</code>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -67,9 +66,12 @@
                         </table>
                     </div>
 
-                    <div class="d-flex justify-content-end mt-3">
-                        {{ $data->links() }}
-                    </div>
+                    @if($data->hasPages())
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari {{ $data->total() }}</small>
+                            {{ $data->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
