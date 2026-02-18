@@ -91,4 +91,80 @@ class DataMpdController extends Controller
             'matrix' => $matrix
         ]);
     }
+
+    public function jabodetabekModeShare(Request $request)
+    {
+        // 1. Date Range: 13 March 2026 - 29 March 2026
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+        
+        $dates = collect();
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates->push($curr->format('Y-m-d'));
+            $curr->addDay();
+        }
+
+        // 2. Caching Key
+        $cacheKey = 'mpd:jabodetabek:mode-share:matrix';
+        
+        // 3. Fetch Data (Cached 1 Hour)
+        $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+            $jabodetabekCodes = $this->getJabodetabekCodes();
+
+            // Query: Sum total per Moda per Tanggal
+            // Filter: Jabodetabek Origin, Date Range
+            $results = DB::table('spatial_movements as sm')
+                ->join('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code') // Assuming kode_moda links to ref_transport_modes.code
+                ->select(
+                    'moda.name as moda_name',
+                    'sm.tanggal',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('moda.name', 'sm.tanggal')
+                ->get();
+
+            // Pivot Data Structure
+            $pivotMovement = [];
+            $pivotPeople = [];
+
+            foreach ($results as $row) {
+                $cat = $row->moda_name;
+                $date = $row->tanggal;
+                $vol = $row->total_volume;
+
+                // PERGERAKAN (Movement)
+                if (!isset($pivotMovement[$cat])) {
+                    $pivotMovement[$cat] = ['total' => 0];
+                }
+                $pivotMovement[$cat][$date] = $vol;
+                $pivotMovement[$cat]['total'] += $vol;
+
+                // ORANG (People) - Simplified assumption: 1 Movement = 1 Person for now, 
+                // or use coefficient if requested. User didn't specify, so we mirror.
+                // If we want to be fancy/realistic, we could apply varying occupancy rates 
+                // (e.g., Bus=20, Car=2, Motorcycle=1.2), but without real data column, static coefficient is arbitrary.
+                // Keeping it identical to Movement for data integrity unless specified otherwise.
+                $peopleCount = $vol; 
+
+                if (!isset($pivotPeople[$cat])) {
+                    $pivotPeople[$cat] = ['total' => 0];
+                }
+                $pivotPeople[$cat][$date] = $peopleCount;
+                $pivotPeople[$cat]['total'] += $peopleCount;
+            }
+
+            return ['movement' => $pivotMovement, 'people' => $pivotPeople];
+        });
+
+        return view('data-mpd.jabodetabek.mode-share', [
+            'title' => 'Mode Share Jabodetabek',
+            'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Mode Share'],
+            'dates' => $dates,
+            'movementMatrix' => $data['movement'],
+            'peopleMatrix' => $data['people']
+        ]);
+    }
 }
