@@ -56,7 +56,15 @@ class ProfileController extends Controller
                     \Illuminate\Support\Facades\Storage::makeDirectory('public/photos');
                 }
 
-                $file->storeAs('photos', $filename, 'public');
+                \Illuminate\Support\Facades\Log::info('Photo upload started: ' . $filename);
+
+                $path = $file->storeAs('photos', $filename, 'public');
+                
+                if ($path) {
+                    \Illuminate\Support\Facades\Log::info('Photo stored at: ' . $path);
+                } else {
+                    \Illuminate\Support\Facades\Log::error('Photo storage failed');
+                }
                 
                 // Hapus foto lama jika ada
                 if ($user->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists('photos/' . $user->photo)) {
@@ -64,6 +72,8 @@ class ProfileController extends Controller
                 }
 
                 $user->photo = $filename;
+            } else {
+                \Illuminate\Support\Facades\Log::info('No photo file in request');
             }
 
             $user->name  = $validated['name'];
