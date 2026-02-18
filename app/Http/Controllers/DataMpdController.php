@@ -46,43 +46,16 @@ class DataMpdController extends Controller
         // 2. Caching Key
         $cacheKey = 'mpd:jabodetabek:od-simpul:matrix';
         
-        // 3. Fetch Data (Cached 1 Hour)
-        $matrix = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-            $jabodetabekCodes = $this->getJabodetabekCodes();
+        $jabodetabekCodes = $this->getJabodetabekCodes();
 
-            // Query: Sum total per Kategori per Tanggal
-            // Filter: Jabodetabek Origin, Date Range
-            $data = DB::table('spatial_movements as sm')
-                ->join('ref_transport_nodes as simpul', 'sm.kode_origin_simpul', '=', 'simpul.code')
-                ->select(
-                    'simpul.category as kategori_simpul',
-                    'sm.tanggal',
-                    DB::raw('SUM(sm.total) as total_volume')
-                )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('simpul.category', 'sm.tanggal')
-                ->get();
-
-            // Pivot Data Structure
-            // [Category => [Date => Volume, 'total' => Sum]]
-            $pivot = [];
-            foreach ($data as $row) {
-                $cat = $row->kategori_simpul;
-                $date = $row->tanggal;
-                $vol = $row->total_volume;
-
-                if (!isset($pivot[$cat])) {
-                    $pivot[$cat] = ['total' => 0];
-                }
-                $pivot[$cat][$date] = $vol;
-                $pivot[$cat]['total'] += $vol;
-            }
-
-            // Fill missing dates with 0
-            // Not strictly necessary for View if we handle isset, but cleaner
-            return $pivot;
-        });
+        try {
+            $matrix = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+                return $this->getOdSimpulData($startDate, $endDate, $jabodetabekCodes);
+            });
+        } catch (\Exception $e) {
+            // Redis Fallback
+            $matrix = $this->getOdSimpulData($startDate, $endDate, $jabodetabekCodes);
+        }
 
         return view('data-mpd.jabodetabek.od-simpul', [
             'title' => 'O-D Simpul Jabodetabek',
@@ -108,56 +81,16 @@ class DataMpdController extends Controller
         // 2. Caching Key
         $cacheKey = 'mpd:jabodetabek:mode-share:matrix';
         
-        // 3. Fetch Data (Cached 1 Hour)
-        $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-            $jabodetabekCodes = $this->getJabodetabekCodes();
-
-            // Query: Sum total per Moda per Tanggal
-            // Filter: Jabodetabek Origin, Date Range
-            $results = DB::table('spatial_movements as sm')
-                ->join('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code') // Assuming kode_moda links to ref_transport_modes.code
-                ->select(
-                    'moda.name as moda_name',
-                    'sm.tanggal',
-                    DB::raw('SUM(sm.total) as total_volume')
-                )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('moda.name', 'sm.tanggal')
-                ->get();
-
-            // Pivot Data Structure
-            $pivotMovement = [];
-            $pivotPeople = [];
-
-            foreach ($results as $row) {
-                $cat = $row->moda_name;
-                $date = $row->tanggal;
-                $vol = $row->total_volume;
-
-                // PERGERAKAN (Movement)
-                if (!isset($pivotMovement[$cat])) {
-                    $pivotMovement[$cat] = ['total' => 0];
-                }
-                $pivotMovement[$cat][$date] = $vol;
-                $pivotMovement[$cat]['total'] += $vol;
-
-                // ORANG (People) - Simplified assumption: 1 Movement = 1 Person for now, 
-                // or use coefficient if requested. User didn't specify, so we mirror.
-                // If we want to be fancy/realistic, we could apply varying occupancy rates 
-                // (e.g., Bus=20, Car=2, Motorcycle=1.2), but without real data column, static coefficient is arbitrary.
-                // Keeping it identical to Movement for data integrity unless specified otherwise.
-                $peopleCount = $vol; 
-
-                if (!isset($pivotPeople[$cat])) {
-                    $pivotPeople[$cat] = ['total' => 0];
-                }
-                $pivotPeople[$cat][$date] = $peopleCount;
-                $pivotPeople[$cat]['total'] += $peopleCount;
-            }
-
-            return ['movement' => $pivotMovement, 'people' => $pivotPeople];
-        });
+        $jabodetabekCodes = $this->getJabodetabekCodes();
+        
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+                return $this->getModeShareData($startDate, $endDate, $jabodetabekCodes);
+            });
+        } catch (\Exception $e) {
+            // Redis Fallback
+            $data = $this->getModeShareData($startDate, $endDate, $jabodetabekCodes);
+        }
 
         return view('data-mpd.jabodetabek.mode-share', [
             'title' => 'Mode Share Jabodetabek',
@@ -166,5 +99,101 @@ class DataMpdController extends Controller
             'movementMatrix' => $data['movement'],
             'peopleMatrix' => $data['people']
         ]);
+    }
+
+    private function getOdSimpulData($startDate, $endDate, $jabodetabekCodes)
+    {
+        // A. Get All Categories (Simpul) for Rows
+        $categories = DB::table('ref_transport_nodes')
+            ->whereNotNull('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category')
+            ->toArray();
+
+        // Initialize Pivot with All Categories (Empty Data)
+        $pivot = [];
+        foreach ($categories as $cat) {
+            $pivot[$cat] = ['total' => 0];
+        }
+
+        // B. Query Movement Data
+        $data = DB::table('spatial_movements as sm')
+            ->join('ref_transport_nodes as simpul', 'sm.kode_origin_simpul', '=', 'simpul.code')
+            ->select(
+                'simpul.category as kategori_simpul',
+                'sm.tanggal',
+                DB::raw('SUM(sm.total) as total_volume')
+            )
+            ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('simpul.category', 'sm.tanggal')
+            ->get();
+
+        // C. Merge Data
+        foreach ($data as $row) {
+            $cat = $row->kategori_simpul;
+            $date = $row->tanggal;
+            $vol = $row->total_volume;
+
+            if (isset($pivot[$cat])) {
+                $pivot[$cat][$date] = $vol;
+                $pivot[$cat]['total'] += $vol;
+            }
+        }
+
+        return $pivot;
+    }
+
+    private function getModeShareData($startDate, $endDate, $jabodetabekCodes)
+    {
+        // A. Get All Modes for Rows
+        $modes = DB::table('ref_transport_modes')
+            ->orderBy('code')
+            ->pluck('name')
+            ->toArray();
+
+        // Initialize Pivot with All Modes
+        $pivotMovement = [];
+        $pivotPeople = [];
+
+        foreach ($modes as $mode) {
+            $pivotMovement[$mode] = ['total' => 0];
+            $pivotPeople[$mode] = ['total' => 0];
+        }
+
+        // B. Query Movement Data
+        $results = DB::table('spatial_movements as sm')
+            ->join('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
+            ->select(
+                'moda.name as moda_name',
+                'sm.tanggal',
+                DB::raw('SUM(sm.total) as total_volume')
+            )
+            ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('moda.name', 'sm.tanggal')
+            ->get();
+
+        // C. Merge Data
+        foreach ($results as $row) {
+            $cat = $row->moda_name;
+            $date = $row->tanggal;
+            $vol = $row->total_volume;
+
+            // PERGERAKAN (Movement)
+            if (isset($pivotMovement[$cat])) {
+                $pivotMovement[$cat][$date] = $vol;
+                $pivotMovement[$cat]['total'] += $vol;
+            }
+
+            // ORANG (People)
+            if (isset($pivotPeople[$cat])) {
+                $pivotPeople[$cat][$date] = $vol; // Simplified 1:1 for now
+                $pivotPeople[$cat]['total'] += $vol;
+            }
+        }
+
+        return ['movement' => $pivotMovement, 'people' => $pivotPeople];
     }
 }
