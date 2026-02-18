@@ -61,6 +61,7 @@
                                     <th>Nama Simpul</th>
                                     <th style="width:150px">Kategori</th>
                                     <th style="width:150px">Sub Kategori</th>
+                                    <th style="width:150px">Radius</th>
                                 </tr>
                             </thead>
                             <tbody>
