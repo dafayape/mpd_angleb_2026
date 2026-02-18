@@ -11,11 +11,18 @@ class MapMonitorController extends Controller
 {
     public function index()
     {
-        // Fetch available dates for dropdown (Historicable)
-        $dates = SpatialMovement::select('tanggal')
-            ->distinct()
-            ->orderBy('tanggal', 'desc')
-            ->pluck('tanggal');
+        // Fixed Date Range: 13 March 2026 - 29 March 2026 (Angkutan Lebaran)
+        $startDate = \Carbon\Carbon::create(2026, 3, 13);
+        $endDate = \Carbon\Carbon::create(2026, 3, 29);
+        
+        $dates = collect();
+        while ($startDate->lte($endDate)) {
+            $dates->push($startDate->format('Y-m-d'));
+            $startDate->addDay();
+        }
+
+        // Sort descending (latest first)
+        $dates = $dates->sortDesc();
 
         return view('map-monitor.index', [
             'title' => 'Map Monitor',

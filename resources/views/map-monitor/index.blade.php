@@ -162,7 +162,8 @@
                         <h6 class="mb-1">${props.name}</h6>
                         <span class="badge bg-secondary mb-2">${props.category}</span>
                         <div class="mt-2">
-                            <strong>Volume:</strong> ${props.volume.toLocaleString('id-ID')}
+                            <strong>Volume:</strong> ${props.volume.toLocaleString('id-ID')}<br>
+                            <strong>Radius:</strong> ${Math.round(props.radius).toLocaleString('id-ID')} m
                         </div>
                     </div>
                 `;

@@ -39,7 +39,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/data-mpd/jabodetabek/pergerakan', fn () => view('placeholder', ['title' => 'Pergerakan', 'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Pergerakan']]))->name('data-mpd.jabodetabek.pergerakan');
     Route::get('/data-mpd/jabodetabek/mode-share', fn () => view('placeholder', ['title' => 'Mode Share', 'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Mode Share']]))->name('data-mpd.jabodetabek.mode-share');
-    Route::get('/data-mpd/jabodetabek/od-simpul', fn () => view('placeholder', ['title' => 'O-D Simpul', 'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'O-D Simpul']]))->name('data-mpd.jabodetabek.od-simpul');
+    Route::get('/data-mpd/jabodetabek/od-simpul', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekOdSimpul'])->name('data-mpd.jabodetabek.od-simpul');
 
     Route::get('/map-monitor', [\App\Http\Controllers\MapMonitorController::class, 'index'])->name('map-monitor');
     Route::get('/map-monitor/data', [\App\Http\Controllers\MapMonitorController::class, 'getData'])->name('map-monitor.data');
