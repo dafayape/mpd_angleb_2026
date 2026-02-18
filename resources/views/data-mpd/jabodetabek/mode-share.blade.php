@@ -32,34 +32,36 @@
                     </div>
                 </div>
 
+                {{-- Section 1: Pergerakan --}}
                 <h5 class="mt-4 mb-3 text-primary"><i class="bx bx-run"></i> PERGERAKAN</h5>
-                @if(request()->has('debug'))
-                    @dump($movementMatrix)
-                @endif
                 <div class="table-responsive mb-5">
-                    <table class="table table-bordered table-striped table-hover table-sm w-100" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
+                    <table class="table table-bordered table-striped table-hover table-sm w-100 mb-0" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
                         <thead class="table-info text-dark text-center align-middle sticky-top" style="top: 0; z-index: 1;">
                             <tr>
-                                <th rowspan="2" class="" style="min-width: 150px;">Moda Transportasi</th>
-                                <th colspan="{{ $dates->count() }}">Tanggal</th>
-                                <th rowspan="2" class="">Total</th>
+                                <th rowspan="2" class="shadow-sm" style="min-width: 180px; width: 200px;">Moda Transportasi</th>
+                                <th colspan="{{ $dates->count() }}" class="shadow-sm">Tanggal</th>
+                                <th rowspan="2" class="shadow-sm" style="min-width: 80px;">Total</th>
                             </tr>
                             <tr>
                                 @foreach($dates as $date)
-                                    <th style="min-width: 80px;">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</th>
+                                    <th style="min-width: 65px; width: 65px; border-bottom: 2px solid #ccc;">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</th>
                                 @endforeach
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($movementMatrix as $category => $data)
                                 <tr>
-                                    <td class="fw-bold">{{ $category }}</td>
+                                    <td class="fw-bold align-middle">{{ $category }}</td>
                                     @foreach($dates as $date)
-                                        <td class="text-end">
-                                            {{ number_format($data[$date] ?? 0, 0, ',', '.') }}
+                                        <td class="text-end align-middle">
+                                            @if(($data[$date] ?? 0) > 0)
+                                                {{ number_format($data[$date], 0, ',', '.') }}
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                     @endforeach
-                                    <td class="text-end fw-bold bg-light">
+                                    <td class="text-end fw-bold bg-light align-middle">
                                         {{ number_format($data['total'] ?? 0, 0, ',', '.') }}
                                     </td>
                                 </tr>
@@ -71,9 +73,9 @@
                                 </tr>
                             @endforelse
                         </tbody>
-                        <tfoot class="table-light fw-bold">
+                        <tfoot class="table-light fw-bold text-end">
                             <tr>
-                                <td>Grand Total</td>
+                                <td class="text-start">Grand Total</td>
                                 @foreach($dates as $date)
                                     <td class="text-end">
                                         @php
@@ -94,33 +96,37 @@
                 </div>
 
                 {{-- Section 2: Orang --}}
-                <hr class="my-5" style="border-top: 2px dashed #ccc;">
+                <hr class="my-5" style="border-top: 2px dashed #999;">
 
                 <h5 class="mt-4 mb-3 text-success"><i class="bx bx-user"></i> ORANG</h5>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover table-sm dt-responsive nowrap w-100" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
+                    <table class="table table-bordered table-striped table-hover table-sm w-100 mb-0" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
                         <thead class="table-success text-dark text-center align-middle sticky-top" style="top: 0; z-index: 1;">
                             <tr>
-                                <th rowspan="2" class="" style="min-width: 150px;">Moda Transportasi</th>
-                                <th colspan="{{ $dates->count() }}">Tanggal</th>
-                                <th rowspan="2" class="">Total</th>
+                                <th rowspan="2" class="shadow-sm" style="min-width: 180px; width: 200px;">Moda Transportasi</th>
+                                <th colspan="{{ $dates->count() }}" class="shadow-sm">Tanggal</th>
+                                <th rowspan="2" class="shadow-sm" style="min-width: 80px;">Total</th>
                             </tr>
                             <tr>
                                 @foreach($dates as $date)
-                                    <th style="min-width: 80px;">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</th>
+                                    <th style="min-width: 65px; width: 65px; border-bottom: 2px solid #ccc;">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</th>
                                 @endforeach
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($peopleMatrix as $category => $data)
                                 <tr>
-                                    <td class="fw-bold">{{ $category }}</td>
+                                    <td class="fw-bold align-middle">{{ $category }}</td>
                                     @foreach($dates as $date)
-                                        <td class="text-end">
-                                            {{ number_format($data[$date] ?? 0, 0, ',', '.') }}
+                                        <td class="text-end align-middle">
+                                            @if(($data[$date] ?? 0) > 0)
+                                                {{ number_format($data[$date], 0, ',', '.') }}
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                     @endforeach
-                                    <td class="text-end fw-bold bg-light">
+                                    <td class="text-end fw-bold bg-light align-middle">
                                         {{ number_format($data['total'] ?? 0, 0, ',', '.') }}
                                     </td>
                                 </tr>
@@ -132,9 +138,9 @@
                                 </tr>
                             @endforelse
                         </tbody>
-                        <tfoot class="table-light fw-bold">
+                        <tfoot class="table-light fw-bold text-end">
                             <tr>
-                                <td>Grand Total</td>
+                                <td class="text-start">Grand Total</td>
                                 @foreach($dates as $date)
                                     <td class="text-end">
                                         @php
@@ -164,12 +170,35 @@
 <style>
     .table th, .table td {
         vertical-align: middle;
+        white-space: nowrap;
     }
     .sticky-top {
         position: sticky; 
         top: 0;
         z-index: 100;
-        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+    }
+    .shadow-sm {
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075)!important;
+    }
+    
+    /* Ensure borders are visible on sticky headers */
+    .table-bordered th, .table-bordered td {
+        border: 1px solid #dee2e6;
+    }
+    
+    /* Custom Scrollbar for horizontal scrolling */
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888; 
+        border-radius: 4px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #555; 
     }
 </style>
 @endpush

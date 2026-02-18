@@ -33,33 +33,33 @@
                 </div>
 
                 <div class="table-responsive">
-                    {{-- Debugging Data --}}
-                    @if(request()->has('debug'))
-                        @dump($matrix)
-                    @endif
-                    <table class="table table-bordered table-striped table-hover table-sm w-100" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
+                    <table class="table table-bordered table-striped table-hover table-sm w-100 mb-0" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
                         <thead class="table-light text-center align-middle sticky-top" style="top: 0; z-index: 1;">
                             <tr>
-                                <th rowspan="2" class="bg-light" style="min-width: 150px;">Kategori Simpul</th>
-                                <th colspan="{{ $dates->count() }}">Tanggal</th>
-                                <th rowspan="2" class="bg-light">Total</th>
+                                <th rowspan="2" class="bg-light shadow-sm" style="min-width: 180px; width: 200px;">Kategori Simpul</th>
+                                <th colspan="{{ $dates->count() }}" class="shadow-sm">Tanggal</th>
+                                <th rowspan="2" class="bg-light shadow-sm" style="min-width: 80px;">Total</th>
                             </tr>
                             <tr>
                                 @foreach($dates as $date)
-                                    <th style="min-width: 80px;">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</th>
+                                    <th style="min-width: 65px; width: 65px;">{{ \Carbon\Carbon::parse($date)->format('d/m') }}</th>
                                 @endforeach
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($matrix as $category => $data)
                                 <tr>
-                                    <td class="fw-bold">{{ $category }}</td>
+                                    <td class="fw-bold align-middle">{{ $category }}</td>
                                     @foreach($dates as $date)
-                                        <td class="text-end">
-                                            {{ number_format($data[$date] ?? 0, 0, ',', '.') }}
+                                        <td class="text-end align-middle">
+                                            @if(($data[$date] ?? 0) > 0)
+                                                {{ number_format($data[$date], 0, ',', '.') }}
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                     @endforeach
-                                    <td class="text-end fw-bold bg-light">
+                                    <td class="text-end fw-bold bg-light align-middle">
                                         {{ number_format($data['total'] ?? 0, 0, ',', '.') }}
                                     </td>
                                 </tr>
@@ -72,9 +72,9 @@
                                 </tr>
                             @endforelse
                         </tbody>
-                        <tfoot class="table-light fw-bold">
+                        <tfoot class="table-light fw-bold text-end">
                             <tr>
-                                <td>Grand Total</td>
+                                <td class="text-start">Grand Total</td>
                                 @foreach($dates as $date)
                                     <td class="text-end">
                                         @php
@@ -103,12 +103,33 @@
 <style>
     .table th, .table td {
         vertical-align: middle;
+        white-space: nowrap;
     }
     .sticky-top {
         position: sticky; 
         top: 0;
         z-index: 100;
-        box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+       
+    }
+    
+    /* Ensure borders are visible on sticky headers */
+    .table-bordered th, .table-bordered td {
+        border: 1px solid #dee2e6;
+    }
+    
+    /* Custom Scrollbar for horizontal scrolling */
+    .table-responsive::-webkit-scrollbar {
+        height: 8px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1; 
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888; 
+        border-radius: 4px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #555; 
     }
 </style>
 @endpush
