@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -37,7 +38,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/master/referensi/kabkota', fn () => view('placeholder', ['title' => 'Kabupaten Kota', 'breadcrumb' => ['Master', 'Referensi', 'Kabupaten Kota']]))->name('master.referensi.kabkota');
     Route::get('/master/referensi/simpul', fn () => view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Master', 'Referensi', 'Simpul']]))->name('master.referensi.simpul');
     Route::get('/master/referensi/moda', fn () => view('placeholder', ['title' => 'Moda', 'breadcrumb' => ['Master', 'Referensi', 'Moda']]))->name('master.referensi.moda');
-    Route::get('/pengguna', fn () => view('placeholder', ['title' => 'Pengguna', 'breadcrumb' => ['Master', 'Pengguna']]))->name('pengguna');
+    Route::resource('users', UserController::class);
+    Route::get('/pengguna', fn () => redirect()->route('users.index'))->name('pengguna');
 
     Route::get('/datasource/upload', fn () => view('placeholder', ['title' => 'Upload File (xlsx)', 'breadcrumb' => ['Datasource', 'Upload File']]))->name('datasource.upload');
     Route::get('/datasource/history', fn () => view('placeholder', ['title' => 'History File Upload', 'breadcrumb' => ['Datasource', 'History File Upload']]))->name('datasource.history');
