@@ -146,14 +146,11 @@
                         </button>
                     </div>
 
-                    @php
-                        $photo = Auth::user()->photo ?? null;
-                        $photoPath = $photo ? public_path('storage/photos/' . $photo) : null;
-                    @endphp
-
                     <div class="dropdown d-inline-block">
                         <button type="button" class="btn header-item waves-effect" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <img class="rounded-circle header-profile-user" src="{{ ($photo && file_exists($photoPath)) ? asset('storage/photos/' . $photo) : asset('assets/images/users/avatar-1.jpg') }}" alt="Avatar">
+                            <div class="rounded-circle header-profile-user bg-soft-primary d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                <span class="text-primary fw-bold font-size-14">{{ strtoupper(substr(Auth::user()->name ?? 'User', 0, 2)) }}</span>
+                            </div>
                             <span class="d-none d-xl-inline-block ms-1">{{ Auth::user()->name ?? 'Pengguna' }}</span>
                             <i class="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
                         </button>
