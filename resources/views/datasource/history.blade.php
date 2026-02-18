@@ -244,9 +244,12 @@
 
         let deletedSoFar = 0;
 
+        // Generate URL dari Laravel route helper (support subdirectory/prefix)
+        const deleteUrl = "{{ route('datasource.destroy-chunk', ['id' => '__ID__']) }}".replace('__ID__', id);
+
         function deleteChunk() {
             $.ajax({
-                url: "/datasource/history/" + id + "/delete-chunk",
+                url: deleteUrl,
                 type: "POST",
                 data: { _token: "{{ csrf_token() }}" },
                 success: function(response) {
@@ -272,7 +275,8 @@
                         statusText.innerText = 'Data sudah terhapus.';
                         setTimeout(() => location.reload(), 1000);
                     } else {
-                        alert('Terjadi kesalahan: ' + xhr.responseText);
+                        var msg = xhr.responseJSON ? xhr.responseJSON.message : xhr.responseText;
+                        alert('Terjadi kesalahan: ' + msg);
                         modal.hide();
                     }
                 }
