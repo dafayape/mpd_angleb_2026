@@ -233,23 +233,146 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 29);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
-        $cacheKey = 'mpd:nasional:mode-share:matrix:v1';
+        $cacheKey = 'mpd:nasional:mode-share:tables:v1';
         
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getModeShareData($startDate, $endDate, []);
+                return $this->getNasionalModeShareData($startDate, $endDate);
             });
         } catch (\Throwable $e) {
-            $data = $this->getModeShareData($startDate, $endDate, []);
+            $data = $this->getNasionalModeShareData($startDate, $endDate);
         }
 
         return view('data-mpd.nasional.mode-share', [
             'title' => 'Mode Share Nasional',
             'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'Mode Share'],
             'dates' => $dates,
-            'movementMatrix' => $data['movement'],
-            'peopleMatrix' => $data['people']
+            'data_umum' => $data['umum'],
+            'data_pribadi' => $data['pribadi'],
+            'data_detail' => $data['detail']
         ]);
+    }
+
+    private function getNasionalModeShareData($startDate, $endDate)
+    {
+        // 1. Definition & Initialization
+        $opsels = ['XL', 'IOH', 'TSEL'];
+        $types = ['REAL', 'FORECAST'];
+        $pribadiModes = ['Mobil Pribadi', 'Motor Pribadi', 'Sepeda'];
+        
+        // Helper to check category
+        $getCat = fn($modeName) => in_array($modeName, $pribadiModes) ? 'PRIBADI' : 'UMUM';
+
+        // Prepare Date Keys
+        $dateKeys = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dateKeys[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        // --- Structure 1: Aggregated (Umum & Pribadi) ---
+        // result['umum'][date][type][opsel] = ['mov' => 0, 'ppl' => 0]
+        $aggregated = [
+            'UMUM' => [],
+            'PRIBADI' => []
+        ];
+
+        // Initialize Aggregated Structure
+        foreach (['UMUM', 'PRIBADI'] as $cat) {
+            foreach ($dateKeys as $d) {
+                $aggregated[$cat][$d] = [];
+                foreach ($types as $t) {
+                    $aggregated[$cat][$d][$t] = [];
+                    foreach ($opsels as $o) {
+                        $aggregated[$cat][$d][$t][$o] = ['mov' => 0, 'ppl' => 0];
+                    }
+                }
+            }
+        }
+
+        // --- Structure 2: Detailed Rows ---
+        // We need robust list of all modes first
+        $allModes = DB::table('ref_transport_modes')->orderBy('code')->pluck('name')->toArray();
+        if (empty($allModes)) {
+             $allModes = [
+                'Angkutan Jalan (Bus AKAP)', 'Angkutan Jalan (Bus AKDP)', 'Angkutan Kereta Api Antarkota',
+                'Angkutan Kereta Api KCJB', 'Angkutan Kereta Api Perkotaan', 'Angkutan Laut',
+                'Angkutan Penyeberangan', 'Angkutan Udara', 'Mobil Pribadi', 'Motor Pribadi', 'Sepeda'
+            ];
+        }
+
+        $detailRows = [];
+        // Generate skeletal rows for Detail Table
+        // Order: Opsel -> Moda -> Type
+        foreach ($opsels as $o) {
+            foreach ($allModes as $m) {
+                foreach ($types as $t) {
+                    $rowKey = "{$o}_{$m}_{$t}";
+                    $detailRows[$rowKey] = [
+                        'opsel' => $o,
+                        'moda' => $m,
+                        'tipe' => $t,
+                        'kategori' => $getCat($m),
+                        'daily' => array_fill_keys($dateKeys, 0)
+                    ];
+                }
+            }
+        }
+
+        // 2. Fetch Data
+        try {
+            $query = DB::table('spatial_movements as sm')
+                ->join('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
+                ->select(
+                    'moda.name as moda_name',
+                    'sm.tanggal',
+                    'sm.opsel',
+                    'sm.is_forecast',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->groupBy('moda.name', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
+                ->get();
+
+            foreach ($query as $row) {
+                $date = $row->tanggal;
+                $modeName = $row->moda_name;
+                $vol = $row->total_volume;
+                $type = $row->is_forecast ? 'FORECAST' : 'REAL';
+                
+                 // Normalize Opsel
+                $rawOpsel = strtoupper($row->opsel);
+                $opsel = 'OTHER';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
+                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
+                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+
+                if ($opsel === 'OTHER') continue;
+
+                // A. Populate Detailed Row
+                $rowKey = "{$opsel}_{$modeName}_{$type}";
+                if (isset($detailRows[$rowKey])) {
+                    $detailRows[$rowKey]['daily'][$date] += $vol;
+                }
+
+                // B. Populate Aggregated
+                $cat = $getCat($modeName);
+                if (isset($aggregated[$cat][$date][$type][$opsel])) {
+                    $aggregated[$cat][$date][$type][$opsel]['mov'] += $vol;
+                    $aggregated[$cat][$date][$type][$opsel]['ppl'] += $vol; // 1:1 ratio
+                }
+            }
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Nasional Mode Share Error: ' . $e->getMessage());
+        }
+
+        return [
+            'umum' => $aggregated['UMUM'],
+            'pribadi' => $aggregated['PRIBADI'],
+            'detail' => array_values($detailRows) // Re-index for simpler loop
+        ];
     }
 
     public function nasionalPergerakan(Request $request)
