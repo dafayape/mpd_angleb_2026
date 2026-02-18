@@ -50,6 +50,12 @@ class ProfileController extends Controller
             if ($request->hasFile('photo')) {
                 $file = $request->file('photo');
                 $filename = time() . '_' . $file->getClientOriginalName();
+                
+                // Ensure directory exists
+                if (!\Illuminate\Support\Facades\Storage::exists('public/photos')) {
+                    \Illuminate\Support\Facades\Storage::makeDirectory('public/photos');
+                }
+
                 $file->storeAs('public/photos', $filename);
                 
                 // Hapus foto lama jika ada (opsional, tapi good practice)
