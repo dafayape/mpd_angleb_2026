@@ -7,11 +7,13 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        // Drop all partitions and the partitioned table, then recreate as regular table
+        // Drop tabel lama (partitioned) dan buat ulang sebagai tabel biasa
         DB::statement("DROP TABLE IF EXISTS raw_mpd_data CASCADE;");
 
         DB::statement("
             CREATE TABLE raw_mpd_data (
+                id bigserial PRIMARY KEY,
+                import_job_id bigint NULL,
                 tanggal date NOT NULL,
                 opsel varchar(4) NOT NULL,
                 kategori varchar(10) NOT NULL,
@@ -36,9 +38,11 @@ return new class extends Migration {
             );
         ");
 
-        DB::statement("CREATE INDEX idx_raw_mpd_data_tanggal ON raw_mpd_data (tanggal);");
-        DB::statement("CREATE INDEX idx_raw_mpd_data_opsel ON raw_mpd_data (opsel);");
-        DB::statement("CREATE INDEX idx_raw_mpd_data_origin_dest ON raw_mpd_data (kode_origin_kabupaten_kota, kode_dest_kabupaten_kota);");
+        // Indexes
+        DB::statement("CREATE INDEX idx_raw_mpd_tanggal ON raw_mpd_data (tanggal);");
+        DB::statement("CREATE INDEX idx_raw_mpd_opsel ON raw_mpd_data (opsel);");
+        DB::statement("CREATE INDEX idx_raw_mpd_import_job ON raw_mpd_data (import_job_id);");
+        DB::statement("CREATE INDEX idx_raw_mpd_origin_dest ON raw_mpd_data (kode_origin_kabupaten_kota, kode_dest_kabupaten_kota);");
     }
 
     public function down(): void

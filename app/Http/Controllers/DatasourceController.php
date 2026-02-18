@@ -61,10 +61,9 @@ class DatasourceController extends Controller
 
     /**
      * Step 2: Proses CSV per chunk via AJAX
-     * - Baca file dari offset
      * - Parse baris CSV (delimiter ;)
-     * - Insert langsung ke raw_mpd_data
-     * - is_forecast diambil dari pilihan REAL / FORECAST di form upload
+     * - Insert langsung ke raw_mpd_data dengan import_job_id
+     * - is_forecast dari pilihan REAL / FORECAST di form
      */
     public function processChunk(Request $request)
     {
@@ -138,6 +137,7 @@ class DatasourceController extends Controller
             }
 
             $batch[] = [
+                'import_job_id'              => $job->id,
                 'tanggal'                    => $tanggal,
                 'opsel'                      => trim($cols[1]),
                 'kategori'                   => trim($cols[2]),
@@ -156,7 +156,7 @@ class DatasourceController extends Controller
                 'kode_moda'                  => trim($cols[15] ?? ''),
                 'moda'                       => trim($cols[16] ?? ''),
                 'total'                      => (int) trim($cols[17] ?? '0'),
-                'is_forecast'                => $isForecast ? true : false,
+                'is_forecast'                => $isForecast,
                 'created_at'                 => $now,
                 'updated_at'                 => $now,
             ];
@@ -217,7 +217,7 @@ class DatasourceController extends Controller
     }
 
     /**
-     * Insert batch ke raw_mpd_data dengan fallback row-by-row jika batch gagal
+     * Insert batch ke raw_mpd_data, fallback row-by-row jika batch gagal
      */
     private function insertBatch(array $batch, ImportJob $job, array &$errors): void
     {
@@ -235,7 +235,7 @@ class DatasourceController extends Controller
                     DB::table('raw_mpd_data')->insert($row);
                     $saved++;
                 } catch (\Exception $rowErr) {
-                    Log::warning("Row failed: " . $rowErr->getMessage() . " | data: " . json_encode(array_slice($row, 0, 4)));
+                    Log::warning("Row failed: " . $rowErr->getMessage());
                 }
             }
             if ($saved > 0) {
@@ -271,7 +271,7 @@ class DatasourceController extends Controller
     }
 
     /**
-     * Halaman raw data (read-only view)
+     * Halaman raw data
      */
     public function rawData(Request $request)
     {
@@ -299,9 +299,8 @@ class DatasourceController extends Controller
     }
 
     /**
-     * Hapus data import (chunked delete via AJAX)
-     * Menghapus data di raw_mpd_data berdasarkan import_job,
-     * lalu hapus record import_job dan file CSV.
+     * Hapus data import — DELETE dari raw_mpd_data berdasarkan import_job_id
+     * Chunked delete 25000 baris per request supaya tidak timeout
      */
     public function destroyChunk($id)
     {
@@ -313,35 +312,13 @@ class DatasourceController extends Controller
                 return response()->json(['status' => 'completed', 'deleted' => 0]);
             }
 
-            // Hapus data dari raw_mpd_data berdasarkan tanggal, opsel, is_forecast
-            $tanggalData = $job->tanggal_data
-                ? Carbon::parse($job->tanggal_data)->format('Y-m-d')
-                : null;
-            $opsel      = $job->opsel;
-            $isForecast = ($job->kategori === 'FORECAST');
+            // Hapus data dari raw_mpd_data berdasarkan import_job_id
+            $deleted = DB::table('raw_mpd_data')
+                ->where('import_job_id', $job->id)
+                ->take(25000)
+                ->delete();
 
-            $deleted = 0;
-
-            if ($tanggalData && $opsel) {
-                $deleted = DB::delete("
-                    DELETE FROM raw_mpd_data
-                    WHERE ctid = ANY (
-                        ARRAY(
-                            SELECT ctid FROM raw_mpd_data
-                            WHERE tanggal = ? AND opsel = ? AND is_forecast = ?
-                            LIMIT 25000
-                        )
-                    )
-                ", [$tanggalData, $opsel, $isForecast ? 'true' : 'false']);
-            } else {
-                $deleted = DB::delete("
-                    DELETE FROM raw_mpd_data
-                    WHERE ctid = ANY (
-                        ARRAY(SELECT ctid FROM raw_mpd_data LIMIT 25000)
-                    )
-                ");
-            }
-
+            // Masih ada baris yang perlu dihapus
             if ($deleted > 0) {
                 return response()->json([
                     'status'  => 'progress',
@@ -349,7 +326,7 @@ class DatasourceController extends Controller
                 ]);
             }
 
-            // Semua data terhapus, hapus file dan record ImportJob
+            // Semua data terhapus → hapus file CSV dan record ImportJob
             $filePath = 'mpd_uploads/' . $job->filename;
             if (Storage::disk('local')->exists($filePath)) {
                 Storage::disk('local')->delete($filePath);
@@ -373,7 +350,7 @@ class DatasourceController extends Controller
     }
 
     /**
-     * Ambil summary statistik raw_mpd_data
+     * Summary statistik raw_mpd_data
      */
     private function getSummary(): array
     {
@@ -394,7 +371,7 @@ class DatasourceController extends Controller
     }
 
     /**
-     * Resolusi path file upload (cek beberapa kemungkinan lokasi)
+     * Resolve path file upload (cek beberapa kemungkinan lokasi storage)
      */
     private function resolveFilePath(string $storagePath): ?string
     {
