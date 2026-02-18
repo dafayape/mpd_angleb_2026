@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DatasourceController;
 use App\Http\Controllers\MasterReferensiController;
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -56,7 +57,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/summary', [DatasourceController::class, 'summary'])->name('summary');
     });
 
-    Route::get('/log-aktivitas', fn () => view('placeholder', ['title' => 'Log Aktivitas', 'breadcrumb' => ['System & Monitoring', 'Log Aktivitas']]))->name('log-aktivitas');
+    // Log Aktivitas
+    Route::get('/log-aktivitas', [ActivityLogController::class, 'index'])->name('log-aktivitas');
+    Route::get('/log-aktivitas/export', [ActivityLogController::class, 'export'])->name('log-aktivitas.export');
 });
 
 Route::get('/sso-login', function (Request $request) {

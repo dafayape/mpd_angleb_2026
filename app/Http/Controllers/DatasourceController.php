@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\ImportJob;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -51,6 +52,9 @@ class DatasourceController extends Controller
             'processed_rows'    => 0,
             'metadata'          => ['file_size' => $file->getSize()],
         ]);
+
+        // Catat log aktivitas
+        ActivityLog::log('Upload CSV', $originalFilename, 'Success', "Opsel: {$request->opsel}, Kategori: {$request->kategori}");
 
         return response()->json([
             'status'     => 'success',
@@ -327,12 +331,16 @@ class DatasourceController extends Controller
             }
 
             // Semua data terhapus → hapus file CSV dan record ImportJob
+            $originalName = $job->original_filename ?? $job->filename;
             $filePath = 'mpd_uploads/' . $job->filename;
             if (Storage::disk('local')->exists($filePath)) {
                 Storage::disk('local')->delete($filePath);
             }
 
             $job->delete();
+
+            // Catat log aktivitas
+            ActivityLog::log('Delete Import', $originalName, 'Success', "Import job #{$id} berhasil dihapus");
 
             return response()->json(['status' => 'completed', 'deleted' => 0]);
         } catch (\Exception $e) {

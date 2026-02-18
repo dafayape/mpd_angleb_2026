@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class MasterReferensiController extends Controller
 {
     /**
-     * Referensi Provinsi — data dari ref_provinces (seeder)
+     * Referensi Provinsi — cache 1 jam (data jarang berubah)
      */
     public function provinsi(Request $request)
     {
@@ -28,7 +29,7 @@ class MasterReferensiController extends Controller
     }
 
     /**
-     * Referensi Kabupaten/Kota — data dari ref_cities + join ref_provinces
+     * Referensi Kabupaten/Kota — provinces dropdown di-cache
      */
     public function kabkota(Request $request)
     {
@@ -50,14 +51,18 @@ class MasterReferensiController extends Controller
             $query->where('ref_cities.province_code', $request->province_code);
         }
 
-        $data      = $query->paginate(50)->withQueryString();
-        $provinces = DB::table('ref_provinces')->orderBy('name')->get();
+        $data = $query->paginate(50)->withQueryString();
+
+        // Cache daftar provinsi untuk filter dropdown (1 jam)
+        $provinces = Cache::remember('ref:provinces:dropdown', 3600, function () {
+            return DB::table('ref_provinces')->orderBy('name')->get(['code', 'name']);
+        });
 
         return view('master.referensi.kabkota', compact('data', 'provinces'));
     }
 
     /**
-     * Referensi Moda Transportasi — data dari ref_transport_modes (seeder)
+     * Referensi Moda Transportasi — cache seluruh data (sangat sedikit, jarang berubah)
      */
     public function moda()
     {
@@ -67,7 +72,7 @@ class MasterReferensiController extends Controller
     }
 
     /**
-     * Referensi Simpul — tabel ada tapi data kosong (null) untuk saat ini
+     * Referensi Simpul — data bisa banyak, pakai pagination + filter
      */
     public function simpul(Request $request)
     {
