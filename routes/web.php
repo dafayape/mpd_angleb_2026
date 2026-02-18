@@ -84,5 +84,8 @@ Route::get('/sso-login', function (Request $request) {
     Auth::loginUsingId($userId);
     $request->session()->regenerate();
 
+    // Catat login ke activity_logs
+    \App\Models\ActivityLog::log('Login SSO', Auth::user()?->name, 'Success');
+
     return redirect('/');
 })->name('sso.login');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,9 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $userId = Auth::id();
+
+        // Catat log SEBELUM session dihapus (karena auth()->id() masih tersedia)
+        ActivityLog::log('Logout', Auth::user()?->name, 'Success');
 
         if ($userId) {
             try {
