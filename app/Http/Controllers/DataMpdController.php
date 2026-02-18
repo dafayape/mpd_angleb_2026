@@ -44,7 +44,7 @@ class DataMpdController extends Controller
         }
 
         // 2. Caching Key
-        $cacheKey = 'mpd:jabodetabek:od-simpul:matrix';
+        $cacheKey = 'mpd:jabodetabek:od-simpul:matrix:v2';
         
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -79,7 +79,7 @@ class DataMpdController extends Controller
         }
 
         // 2. Caching Key
-        $cacheKey = 'mpd:jabodetabek:mode-share:matrix';
+        $cacheKey = 'mpd:jabodetabek:mode-share:matrix:v2';
         
         $jabodetabekCodes = $this->getJabodetabekCodes();
         
