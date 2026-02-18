@@ -60,7 +60,8 @@ class MapMonitorController extends Controller
                 if ($ratio > 0.66) $color = '#ff0000'; // Red
 
                 // Radius scales with volume
-                $radius = 100 + ($ratio * 3000); 
+                // Increased multiplier for better visibility
+                $radius = 500 + ($ratio * 5000); 
 
                 return [
                     'type' => 'Feature',

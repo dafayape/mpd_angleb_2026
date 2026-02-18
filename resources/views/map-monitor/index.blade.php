@@ -87,6 +87,7 @@
         fetch("{{ route('map-monitor.data') }}")
             .then(response => response.json())
             .then(data => {
+                console.log('Map Data Received:', data); // Debug Log
                 if (data.features) {
                     renderSimpul(data.features);
                     
