@@ -21,29 +21,25 @@
     @stack('styles')
 
     <style>
-        * {
-            font-family: 'Poppins', sans-serif;
-        }
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            font-size: 13px;
-            font-weight: 400;
-            color: #495057;
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-        }
-
-        .navbar-header {
+        *,
+        body,
+        h1, h2, h3, h4, h5, h6,
+        .navbar-header,
+        .vertical-menu,
+        .footer,
+        .dropdown-menu,
+        .card,
+        .btn,
+        .breadcrumb-item,
+        .breadcrumb-item a,
+        #sidebar-menu .menu-title,
+        #sidebar-menu ul li a,
+        .page-title-box h4 {
             font-family: 'Poppins', sans-serif;
         }
 
         .vertical-menu {
             z-index: 1002 !important;
-            font-family: 'Poppins', sans-serif;
         }
 
         .navbar-brand-box {
@@ -60,56 +56,8 @@
             padding-bottom: 80px;
         }
 
-        #sidebar-menu .menu-title {
-            font-family: 'Poppins', sans-serif;
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-
-        #sidebar-menu ul li a {
-            font-family: 'Poppins', sans-serif;
-            font-size: 13px;
-            font-weight: 400;
-        }
-
-        #sidebar-menu .sub-menu li a {
-            font-size: 12.5px;
-        }
-
         body.sidebar-enable .vertical-menu {
             box-shadow: 0 0 24px 0 rgba(0, 0, 0, 0.06), 0 1px 0 0 rgba(0, 0, 0, 0.02);
-        }
-
-        .footer {
-            font-family: 'Poppins', sans-serif;
-            font-size: 12px;
-            font-weight: 400;
-        }
-
-        .page-title-box h4 {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            font-size: 16px;
-        }
-
-        .breadcrumb-item,
-        .breadcrumb-item a {
-            font-family: 'Poppins', sans-serif;
-            font-size: 12px;
-        }
-
-        .dropdown-menu {
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .card {
-            font-family: 'Poppins', sans-serif;
-        }
-
-        .btn {
-            font-family: 'Poppins', sans-serif;
         }
 
         @media (max-width: 991.98px) {
@@ -184,6 +132,10 @@
 
                     <button type="button" class="btn btn-sm px-3 font-size-16 header-item waves-effect" id="vertical-menu-btn">
                         <i class="fa fa-fw fa-bars"></i>
+                    </button>
+
+                    <button type="button" class="btn btn-sm px-3 font-size-16 header-item waves-effect">
+                        MPD ANGKUTAN LEBARAN 2026
                     </button>
                 </div>
 
