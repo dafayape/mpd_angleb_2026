@@ -46,7 +46,8 @@ class ProvinceSeeder extends Seeder
             ['92', 'PAPUA BARAT'],
             ['93', 'PAPUA SELATAN'],
             ['94', 'PAPUA TENGAH'],
-            ['95', 'PAPUA PEGUNUNGAN']
+            ['95', 'PAPUA PEGUNUNGAN'],
+            ['96', 'PAPUA BARAT DAYA']
         ];
 
         $timestamp = now();
