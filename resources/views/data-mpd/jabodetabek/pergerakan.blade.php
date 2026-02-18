@@ -129,6 +129,64 @@
         </div>
     </div>
 </div>
+
+{{-- Section: Akumulasi --}}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title mb-4 text-primary">AKUMULASI PERGERAKAN & ORANG</h5>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover table-sm w-100 mb-0" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
+                        <thead class="table-light text-center align-middle">
+                            <tr>
+                                <th rowspan="2" class="bg-light shadow-sm" style="min-width: 150px;">Tanggal</th>
+                                <th colspan="2" class="bg-success text-white shadow-sm">REAL</th>
+                            </tr>
+                            <tr>
+                                <th class="bg-soft-success text-success" style="min-width: 150px;">Pergerakan</th>
+                                <th class="bg-soft-success text-success" style="min-width: 150px;">Orang</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($dates as $index => $date)
+                                <tr>
+                                    <td class="text-center fw-bold">{{ \Carbon\Carbon::parse($date)->format('Y-m-d') }}</td>
+                                    
+                                    @php
+                                        // $data[$date]['Total'] is already populated in getPergerakanData
+                                        $mov = $data[$date]['Total']['movement'] ?? 0;
+                                        $ppl = $data[$date]['Total']['people'] ?? 0;
+                                    @endphp
+
+                                    <td class="text-end border-start fw-bold">{{ number_format($mov, 0, ',', '.') }}</td>
+                                    <td class="text-end fw-bold">{{ number_format($ppl, 0, ',', '.') }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted">Belum ada data.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        <tfoot class="table-light fw-bold text-end">
+                            <tr>
+                                <td class="text-center">Grand Total</td>
+                                @php
+                                    $grandTotalMov = collect($data)->sum(fn($d) => $d['Total']['movement'] ?? 0);
+                                    $grandTotalPpl = collect($data)->sum(fn($d) => $d['Total']['people'] ?? 0);
+                                @endphp
+                                <td class="text-end border-start">{{ number_format($grandTotalMov, 0, ',', '.') }}</td>
+                                <td class="text-end">{{ number_format($grandTotalPpl, 0, ',', '.') }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('css')
@@ -147,6 +205,7 @@
     .bg-soft-primary { background-color: rgba(85, 110, 230, 0.1) !important; }
     .bg-soft-warning { background-color: rgba(241, 180, 76, 0.1) !important; }
     .bg-soft-danger { background-color: rgba(244, 106, 106, 0.1) !important; }
+    .bg-soft-success { background-color: rgba(52, 195, 143, 0.1) !important; }
     
     .border-start { border-left: 1px solid #dee2e6 !important; }
 </style>
