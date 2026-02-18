@@ -8,10 +8,14 @@
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0 font-size-18">Map Monitor - Kepadatan Simpul</h4>
             <div class="page-title-right">
-                <ol class="breadcrumb m-0">
-                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Map Monitor</li>
-                </ol>
+                <form class="d-flex align-items-center">
+                    <label for="dateFilter" class="me-2 mb-0 fw-bold">Tanggal:</label>
+                    <select id="dateFilter" class="form-select form-select-sm" style="width: 200px;">
+                        @foreach($available_dates as $date)
+                            <option value="{{ $date }}">{{ \Carbon\Carbon::parse($date)->format('d F Y') }}</option>
+                        @endforeach
+                    </select>
+                </form>
             </div>
         </div>
     </div>
@@ -38,8 +42,11 @@
                         <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
                         <small>Tinggi (> 66%)</small>
                     </div>
-                    <div class="text-muted" style="font-size: 11px; margin-top: 5px;">
-                        * Radius dan warna menunjukkan volume pergerakan (Orang/Hari).
+                    <div class="mt-2 pt-2 border-top">
+                        <small class="d-block mb-1"><strong>Data:</strong> <span id="displayDate">-</span></small>
+                        <small class="text-muted" style="font-size: 11px;">
+                            * Radius logaritmik berdasarkan volume.
+                        </small>
                     </div>
                 </div>
             </div>
@@ -55,6 +62,8 @@
 <script>
     let map;
     let circles = [];
+    const dateFilter = document.getElementById('dateFilter');
+    const displayDate = document.getElementById('displayDate');
 
     function initMap() {
         // Default Center (Indonesia)
@@ -79,15 +88,29 @@
         map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
         legend.style.display = 'block';
 
-        // Fetch Data
+        // Fetch Data on Load
         fetchData();
+
+        // Fetch Data on Date Change
+        dateFilter.addEventListener('change', fetchData);
     }
 
     function fetchData() {
-        fetch("{{ route('map-monitor.data') }}")
+        const selectedDate = dateFilter.value;
+        const url = `{{ route('map-monitor.data') }}?date=${selectedDate}`;
+
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 console.log('Map Data Received:', data); // Debug Log
+                
+                // Update Legend Date
+                if (data.selected_date) {
+                    displayDate.textContent = data.selected_date;
+                    // Sync dropdown if coming from default
+                    if (!dateFilter.value) dateFilter.value = data.selected_date;
+                }
+
                 if (data.features) {
                     renderSimpul(data.features);
                     
@@ -99,7 +122,7 @@
                                 bounds.extend({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] });
                             }
                         });
-                        map.fitBounds(bounds);
+                        if (circles.length > 0) map.fitBounds(bounds);
                     }
                 }
             })
@@ -123,12 +146,13 @@
             const circle = new google.maps.Circle({
                 strokeColor: props.color,
                 strokeOpacity: 0.8,
-                strokeWeight: 2,
+                strokeWeight: 1,
                 fillColor: props.color,
-                fillOpacity: 0.35,
+                fillOpacity: 0.5,
                 map: map,
                 center: { lat: lat, lng: lng },
-                radius: props.radius // meters
+                radius: props.radius, // meters (Logarithmic)
+                clickable: true
             });
 
             // Add Click Listener
