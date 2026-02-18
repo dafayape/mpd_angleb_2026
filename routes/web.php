@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\DatasourceController;
+use App\Http\Controllers\MasterReferensiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -35,10 +36,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/map-monitor', fn () => view('placeholder', ['title' => 'Map Monitor', 'breadcrumb' => ['Dashboard', 'Map Monitor']]))->name('map-monitor');
 
-    Route::get('/master/referensi/provinsi', fn () => view('placeholder', ['title' => 'Provinsi', 'breadcrumb' => ['Master', 'Referensi', 'Provinsi']]))->name('master.referensi.provinsi');
-    Route::get('/master/referensi/kabkota', fn () => view('placeholder', ['title' => 'Kabupaten Kota', 'breadcrumb' => ['Master', 'Referensi', 'Kabupaten Kota']]))->name('master.referensi.kabkota');
-    Route::get('/master/referensi/simpul', fn () => view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Master', 'Referensi', 'Simpul']]))->name('master.referensi.simpul');
-    Route::get('/master/referensi/moda', fn () => view('placeholder', ['title' => 'Moda', 'breadcrumb' => ['Master', 'Referensi', 'Moda']]))->name('master.referensi.moda');
+    // Master Referensi — data dari database (seeder)
+    Route::prefix('master/referensi')->name('master.referensi.')->group(function () {
+        Route::get('/provinsi', [MasterReferensiController::class, 'provinsi'])->name('provinsi');
+        Route::get('/kabkota', [MasterReferensiController::class, 'kabkota'])->name('kabkota');
+        Route::get('/simpul', [MasterReferensiController::class, 'simpul'])->name('simpul');
+        Route::get('/moda', [MasterReferensiController::class, 'moda'])->name('moda');
+    });
     Route::resource('users', UserController::class);
     Route::get('/pengguna', fn () => redirect()->route('users.index'))->name('pengguna');
 
