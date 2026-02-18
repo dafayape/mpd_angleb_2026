@@ -142,6 +142,8 @@ class DataMpdController extends Controller
 
         // Opsel list
         $opsels = ['XL', 'IOH', 'TSEL'];
+        // Types
+        $types = ['FORECAST', 'REAL'];
 
         // Initialize Structure
         $result = [
@@ -149,9 +151,9 @@ class DataMpdController extends Controller
         ];
 
         // Helper to init row
-        $initRow = function($opsel) use ($startDate, $endDate) {
+        $initRow = function($opsel, $tipe) use ($startDate, $endDate) {
             $row = [
-                'tipe_data' => 'Real',
+                'tipe_data' => $tipe,
                 'opsel' => $opsel,
                 'total' => 0
             ];
@@ -163,11 +165,20 @@ class DataMpdController extends Controller
             return $row;
         };
 
-        // Pre-fill rows for each category and opsel
+        // Pre-fill rows: For each category, for each opsel, for each type (Forecast/Real)
+        // We want order: Forecast IOH, Forecast XL, Forecast TSEL, Real IOH, Real XL, Real TSEL
+        // Or grouped by type? Reference showed "FORECAST IOH", "FORECAST XL", then "REAL IOH" etc.
+        // Actually typical table is sorted by Type then Opsel or Opsel then Type.
+        // User example: FORECAST IOH, FORECAST XL... then REAL IOH, REAL TSEL...
+        
         foreach ($catMap as $dbCat => $key) {
-            foreach ($opsels as $opsel) {
-                $result[$key][$opsel] = $initRow($opsel);
-            }
+           foreach ($types as $tipe) {
+               foreach ($opsels as $opsel) {
+                   // Create a key for easy access, e.g. "FORECAST_IOH"
+                   $rowKey = $tipe . '_' . $opsel;
+                   $result[$key][$rowKey] = $initRow($opsel, $tipe);
+               }
+           }
         }
 
         try {
@@ -177,10 +188,11 @@ class DataMpdController extends Controller
                     'simpul.category as kategori_simpul',
                     'sm.tanggal',
                     'sm.opsel',
+                    'sm.is_forecast',
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->groupBy('simpul.category', 'sm.tanggal', 'sm.opsel')
+                ->groupBy('simpul.category', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
                 ->get();
 
             foreach ($query as $row) {
@@ -197,10 +209,15 @@ class DataMpdController extends Controller
                 elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
                 elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
 
-                if ($opsel !== 'OTHER' && isset($result[$key][$opsel])) {
+                if ($opsel === 'OTHER') continue;
+
+                $tipe = $row->is_forecast ? 'FORECAST' : 'REAL';
+                $rowKey = $tipe . '_' . $opsel;
+
+                if (isset($result[$key][$rowKey])) {
                     $vol = $row->total_volume;
-                    $result[$key][$opsel][$date] += $vol;
-                    $result[$key][$opsel]['total'] += $vol;
+                    $result[$key][$rowKey][$date] += $vol;
+                    $result[$key][$rowKey]['total'] += $vol;
                 }
             }
         } catch (\Throwable $e) {

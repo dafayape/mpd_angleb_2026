@@ -66,7 +66,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($tbl['data'] as $opsel => $row)
+                            @forelse($tbl['data'] as $rowKey => $row)
                                 <tr>
                                     <td class="text-center">{{ $row['tipe_data'] }}</td>
                                     <td class="text-center fw-bold">{{ $row['opsel'] }}</td>
