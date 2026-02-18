@@ -170,317 +170,118 @@
             <div data-simplebar class="h-100">
                 <div id="sidebar-menu">
                     <ul class="metismenu list-unstyled" id="side-menu">
-                        @php
-                            $kategori = session('kategori_data');
-                            $sumber = session('sumber_data');
-                            $isAnglebMpd = $kategori == 'lebaran' && $sumber == 'mpd';
-                        @endphp
+                        {{-- Dashboard --}}
+                        <li>
+                            <a href="{{ route('dashboard') }}" class="waves-effect">
+                                <i class="bx bx-home-circle"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
 
-                        @if ($isAnglebMpd)
-                            <li class="menu-title" key="t-menu">DATASOURCE</li>
-                            <li class="d-none">
-                                <a href="{{ route('angleb.mpd.upload') }}" class="waves-effect">
-                                    <i class="bx bx-upload"></i>
-                                    <span key="t-upload-file">Upload File (.csv)</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('angleb.mpd.history') }}" class="waves-effect">
-                                    <i class="bx bx-history"></i>
-                                    <span key="t-history-file">History File Upload</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="{{ route('angleb.mpd.raw-data') }}" class="waves-effect">
-                                    <i class="bx bx-table"></i>
-                                    <span key="t-view-raw-data">View Raw Data</span>
-                                </a>
-                            </li>
+                        {{-- Grafik MPD (dropdown) --}}
+                        <li>
+                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                <i class="bx bx-bar-chart-alt-2"></i>
+                                <span>Grafik MPD</span>
+                            </a>
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li class="menu-title" style="padding-left:0;">Nasional</li>
+                                <li><a href="{{ route('grafik-mpd.nasional.pergerakan') }}">Pergerakan</a></li>
+                                <li><a href="{{ route('grafik-mpd.nasional.od-provinsi') }}">O - D Provinsi</a></li>
+                                <li><a href="{{ route('grafik-mpd.nasional.top-kabkota') }}">Top Kabupaten/Kota</a></li>
+                                <li><a href="{{ route('grafik-mpd.nasional.mode-share') }}">Mode Share</a></li>
+                                <li><a href="{{ route('grafik-mpd.nasional.simpul') }}">Simpul</a></li>
+                                <li class="menu-title" style="padding-left:0;">Jabodetabek</li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang') }}">Pergerakan & Orang</a></li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang-opsel') }}">Pergerakan & Orang (Opsel)</a></li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.od-kabkota') }}">O - D Kabupaten Kota</a></li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.mode-share') }}">Mode Share</a></li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.simpul') }}">Simpul</a></li>
+                            </ul>
+                        </li>
 
-                            <li class="menu-title" key="t-menu">MASTER</li>
-                            <li>
-                                <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                    <i class="bx bx-file"></i>
-                                    <span key="t-referensi">Referensi</span>
-                                </a>
-                                <ul class="sub-menu" aria-expanded="false">
-                                    <li><a href="{{ route('angleb.mpd.master.provinsi') }}" key="t-provinsi">Provinsi</a></li>
-                                    <li><a href="{{ route('angleb.mpd.master.kabkota') }}" key="t-kabkota">Kabupaten atau Kota</a></li>
-                                    <li><a href="{{ route('angleb.mpd.master.simpul') }}" key="t-simpul">Simpul</a></li>
-                                    <li><a href="{{ route('angleb.mpd.master.moda') }}" key="t-moda">Moda Transportasi</a></li>
-                                </ul>
-                            </li>
-                        @else
-                            @if (in_array($kategori, ['lebaran']))
-                                <li class="menu-title" key="t-menu">Survey</li>
-                                <li>
-                                    <a href="{{ url('angleb/survey') }}" class="waves-effect">
-                                        <i class="bx bx-home"></i>
-                                        <span key="t-dashboards-survey">Dashboard Survey</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-detail"></i>
-                                        <span key="t-dashboards">Analisis Nasional</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ url('angleb/survey/profil-responden') }}" key="t-default">A1 Profil Pelaku Perjalanan</a></li>
-                                        <li><a href="{{ url('angleb/survey/rencana-mudik-tidak') }}" key="t-default">A2 Rencana Mudik/Tidak</a></li>
-                                        <li><a href="{{ url('angleb/survey/alasan-tidak-bepergian') }}" key="t-default">A3 Alasan Tidak Bepergian</a></li>
-                                        <li><a href="{{ url('angleb/survey/alasan-bepergian') }}" key="t-default">A4 Alasan Bepergian</a></li>
-                                        <li><a href="{{ url('angleb/survey/daerah-asal') }}" key="t-default">A5 Asal Total</a></li>
-                                        <li><a href="{{ url('angleb/survey/daerah-tujuan') }}" key="t-default">A6 Tujuan Total</a></li>
-                                        <li><a href="{{ url('angleb/survey/jumlah-orang-ikut') }}" key="t-default">A7 Jumlah Orang Ikut Bepergian</a></li>
-                                        <li><a href="{{ url('angleb/survey/hari-pergi-dan-pulang') }}" key="t-default">A8 Pilihan Hari Pergi Dan Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/jam-pergi-dan-pulang') }}" key="t-default">A9 Pilihan Jam Pergi Dan Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/lama-tinggal-dilokasi-tujuan') }}" key="t-default">A10 Lama Tinggal Dilokasi Tujuan</a></li>
-                                        <li><a href="{{ url('angleb/survey/dana-yang-dihabiskan') }}" key="t-default">A11 Dana Yang Dihabiskan</a></li>
-                                        <li><a href="{{ url('angleb/survey/pertimbangan-pilihan-moda') }}" key="t-default">A12 Alasan/Pertimbangan Pemilihan Moda</a></li>
-                                        <li><a href="{{ url('angleb/survey/pilihan-moda-berangkat') }}" key="t-default">A13 Pilihan Moda Berangkat</a></li>
-                                        <li><a href="{{ url('angleb/survey/pilihan-moda-pulang') }}" key="t-default">A14 Pilihan Moda Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/jumlah-orang-ikut-balik') }}" key="t-default">A15 Tambahan Orang Balik</a></li>
-                                        <li><a href="{{ url('angleb/survey/alasan-batal-perjalanan') }}" key="t-default">A16 Faktor Eksogen Batal Pergi</a></li>
-                                        <li><a href="{{ url('angleb/survey/setuju-tidak-wfa-cb') }}" key="t-default">A17 Setuju/Tidak WFA/CB</a></li>
-                                        <li><a href="{{ url('angleb/survey/pilihan-kebijakan') }}" key="t-default">A18 Pilihan Kebijakan</a></li>
-                                        <li><a href="{{ url('angleb/survey/pilihan-hari-wfa-pergi') }}" key="t-default">A19 Pilihan Hari WFA Pergi</a></li>
-                                        <li><a href="{{ url('angleb/survey/dampak-wfa-pergi') }}" key="t-default">A20 Dampak WFA Pergi</a></li>
-                                        <li><a href="{{ url('angleb/survey/pilihan-hari-wfa-pulang') }}" key="t-default">A21 Pilihan Hari WFA Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/dampak-wfa-terhadap-kepulangan') }}" key="t-default">A22 Dampak WFA Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/lebaran-tahun-lalu') }}" key="t-default">A23 Perjalanan Lebaran Tahun Lalu</a></li>
-                                        <li><a href="{{ url('angleb/survey/evaluasi-lebaran-tahun-lalu') }}" key="t-default">A24 Evaluasi Lebaran Tahun Lalu</a></li>
-                                    </ul>
-                                </li>
+                        {{-- Data MPD Opsel (dropdown) --}}
+                        <li>
+                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                <i class="bx bx-detail"></i>
+                                <span>Data MPD Opsel</span>
+                            </a>
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li class="menu-title" style="padding-left:0;">Nasional</li>
+                                <li><a href="{{ route('data-mpd.nasional.pergerakan') }}">Pergerakan</a></li>
+                                <li><a href="{{ route('data-mpd.nasional.mode-share') }}">Mode Share</a></li>
+                                <li><a href="{{ route('data-mpd.nasional.od-simpul') }}">O - D Simpul</a></li>
+                                <li class="menu-title" style="padding-left:0;">Jabodetabek</li>
+                                <li><a href="{{ route('data-mpd.jabodetabek.pergerakan') }}">Pergerakan</a></li>
+                                <li><a href="{{ route('data-mpd.jabodetabek.mode-share') }}">Mode Share</a></li>
+                                <li><a href="{{ route('data-mpd.jabodetabek.od-simpul') }}">O - D Simpul</a></li>
+                            </ul>
+                        </li>
 
-                                <li>
-                                    <a href="javascript:void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-detail"></i>
-                                        <span key="t-dashboards">Analisis Jabodetabek</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/profil-responden') }}" key="t-default">A1 Profil Responden</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/rencana-mudik-tidak') }}" key="t-default">A2 Rencana Mudik/Tidak</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/alasan-tidak-bepergian') }}" key="t-default">A3 Alasan Tidak Bepergian</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/alasan-bepergian') }}" key="t-default">A4 Alasan Bepergian</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/top-10-asal') }}" key="t-default">A5 Daerah Asal</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/top-10-tujuan') }}" key="t-default">A6 Daerah Tujuan</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/jumlah-orang-ikut-bepergian') }}" key="t-default">A7 Jumlah Orang Ikut</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/pilihan-hari-pergi-dan-pulang') }}" key="t-default">A8 Pilihan Hari Pergi Dan Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/pilihan-jam-pergi-dan-pulang') }}" key="t-default">A9 Pilihan Jam Pergi Dan Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/lama-tinggal-di-lokasi-tujuan') }}" key="t-default">A10 Lama Tinggal Dilokasi</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/dana-yang-dihabiskan') }}" key="t-default">A11 Dana Yang Dihabiskan</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/alasan-pertimbangan-pilihan-moda') }}" key="t-default">A12 Alasan/Pertimbangan Pilihan Moda</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/pilihan-moda-berangkat') }}" key="t-default">A13 Pilihan Moda Berangkat</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/pilihan-moda-pulang') }}" key="t-default">A14 Pilihan Moda Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/jumlah-orang-ikut-balik') }}" key="t-default">A15 Jumlah Orang Ikut Balik</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/alasan-batal-bepergian') }}" key="t-default">A16 Faktor Eksogen Batal Bepergian</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/setuju-tidak-wfa-cb') }}" key="t-default">A17 Setuju/Tidak WFA/CB</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/pilihan-kebijakan') }}" key="t-default">A18 Pilihan Kebijakan</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/pilihan-hari-wfa-pergi') }}" key="t-default">A19 Pilihan Hari WFA Pergi</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/dampak-wfa-pergi') }}" key="t-default">A20 Dampak WFA Pergi</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/pilihan-hari-wfa-pulang') }}" key="t-default">A21 Pilihan Hari WFA Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/dampak-wfa-pulang') }}" key="t-default">A22 Dampak WFA Pulang</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/perjalanan-lebaran-tahun-lalu') }}" key="t-default">A23 Perjalanan Lebaran Tahun Lalu</a></li>
-                                        <li><a href="{{ url('angleb/survey/jabodetabek/evaluasi-lebaran-tahun-lalu') }}" key="t-default">A24 Evaluasi Lebaran Tahun Lalu</a></li>
-                                    </ul>
-                                </li>
+                        {{-- Map Monitor --}}
+                        <li>
+                            <a href="{{ route('map-monitor') }}" class="waves-effect">
+                                <i class="bx bx-map"></i>
+                                <span>Map Monitor</span>
+                            </a>
+                        </li>
 
-                                <li>
-                                    <a href="javascript:void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-bulb"></i>
-                                        <span key="t-dashboards">Rekomendasi</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ url('angleb/survey/rekomendasi/nasional') }}">Nasional</a></li>
-                                        <li><a href="{{ url('angleb/survey/rekomendasi/jabodetabek') }}">Jabodetabek</a></li>
-                                        <li><a href="{{ url('angleb/survey/rekomendasi/pulaujawa') }}">Per Provinsi Pulau Jawa</a></li>
-                                    </ul>
-                                </li>
+                        {{-- ===== MASTER ===== --}}
+                        <li class="menu-title">MASTER</li>
 
-                                <li>
-                                    <a href="{{ url('angleb/survey/upload') }}" class="waves-effect">
-                                        <i class="bx bx-file"></i>
-                                        <span key="t-file-manager">Upload Survey</span>
-                                    </a>
-                                </li>
+                        {{-- Referensi (dropdown) --}}
+                        <li>
+                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                <i class="bx bx-file"></i>
+                                <span>Referensi</span>
+                            </a>
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li><a href="{{ route('master.referensi.provinsi') }}">Provinsi</a></li>
+                                <li><a href="{{ route('master.referensi.kabkota') }}">Kabupaten Kota</a></li>
+                                <li><a href="{{ route('master.referensi.simpul') }}">Simpul</a></li>
+                                <li><a href="{{ route('master.referensi.moda') }}">Moda</a></li>
+                            </ul>
+                        </li>
 
-                                <li class="menu-title d-none" key="t-menu">MPD</li>
-                                <li class="d-none">
-                                    <a href="javascript:void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-home"></i>
-                                        <span key="t-dashboards-mpd">Dashboard MPD</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ url('angleb/mpd') }}" key="t-dashboard-mpd-nasional">Nasional</a></li>
-                                        <li><a href="{{ url('angleb/mpd/jabodetabek') }}" key="t-dashboard-mpd-jabodetabek">Jabodetabek</a></li>
-                                    </ul>
-                                </li>
-                            @endif
+                        {{-- Pengguna --}}
+                        <li>
+                            <a href="{{ route('pengguna') }}" class="waves-effect">
+                                <i class="bx bx-user"></i>
+                                <span>Pengguna</span>
+                            </a>
+                        </li>
 
-                            @if (in_array($kategori, ['nataru']))
-                                <li class="menu-title" key="t-menu">Survey</li>
+                        {{-- ===== DATASOURCE ===== --}}
+                        <li class="menu-title">DATASOURCE</li>
 
-                                <li>
-                                    <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-home"></i>
-                                        <span key="t-dashboards">Dashboard Survey</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ route('nataru.survey.dashboard.nasional') }}" key="t-default">Nasional</a></li>
-                                        <li><a href="{{ route('nataru.survey.dashboard.jabodetabek') }}" key="t-saas">Jabodetabek</a></li>
-                                    </ul>
-                                </li>
+                        <li>
+                            <a href="{{ route('datasource.upload') }}" class="waves-effect">
+                                <i class="bx bx-upload"></i>
+                                <span>Upload File (xlsx)</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('datasource.history') }}" class="waves-effect">
+                                <i class="bx bx-history"></i>
+                                <span>History File Upload</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('datasource.raw-data') }}" class="waves-effect">
+                                <i class="bx bx-table"></i>
+                                <span>View Raw Data</span>
+                            </a>
+                        </li>
 
-                                <li>
-                                    <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-pie-chart-alt-2"></i>
-                                        <span key="t-layouts">Hasil Survey</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li>
-                                            <a href="javascript: void(0);" class="has-arrow" key="t-vertical">Nasional</a>
-                                            <ul class="sub-menu" aria-expanded="true">
-                                                <li><a href="{{ route('nataru.survey.profil.pelaku.perjalanan.nasional') }}" key="t-light-sidebar">Profil Responden</a></li>
-                                                <li><a href="{{ route('nataru.survey.seluruh.moda.perjalanan.nasional') }}" key="t-compact-sidebar">Intensi Pejalanan Seluruh Moda</a></li>
-                                                <li><a href="{{ route('nataru.survey.sepuluh.besar.daerah.asal.dan.tujuan.nasional') }}" key="t-icon-sidebar">10 Besar Daerah Asal dan Tujuan</a></li>
-                                                <li><a href="{{ route('nataru.survey.sepuluh.besar.kabkot.asal.dan.tujuan.nasional') }}" key="t-boxed-width">10 Besar Kabupaten/Kota Asal dan Tujuan</a></li>
-                                                <li><a href="{{ route('nataru.survey.od.provinsi.nasional') }}" key="t-mode-share">O-D Provinsi</a></li>
-                                                <li><a href="{{ route('nataru.survey.mode.share.nasional') }}" key="t-mode-share">Mode Share Nasional</a></li>
-                                                <li><a href="{{ route('nataru.survey.prediksi.pilihan.moda.nasional') }}" key="t-prediksi-pilihan-moda">Prediksi Pilihan Moda Nasional</a></li>
-                                                <li><a href="{{ route('nataru.survey.perkiraan.biaya.dihabiskan.nasional') }}" key="t-perkiraan-biaya-dihabiskan">Perkiraan Biaya yang Dihabiskan</a></li>
-                                                <li><a href="{{ route('nataru.survey.hari.dan.jam.keberangkatan.nasional') }}" key="t-hari-dan-jam-keberangkatan-nasional">Hari dan Jam Keberangkatan</a></li>
-                                                <li><a href="{{ route('nataru.survey.hari.dan.jam.kepulangan.nasional') }}" key="t-hari-dan-jam-kepulangan-nasional">Hari dan Jam Kepulangan</a></li>
-                                                <li><a href="{{ route('nataru.survey.pilihan.rute.nasional') }}" key="t-pilihan-rute-nasional">Pilihan Rute Nasional</a></li>
-                                                <li><a href="{{ route('nataru.survey.kepemilikan.tiket.nasional') }}" key="t-kepemilikan-tiket-nasional">Kepemilikan Tiket</a></li>
-                                                <li><a href="{{ route('nataru.survey.simpul.transportasi.terpadat.nasional') }}" key="t-smpul-terpadat-nasional">Simpul Transportasi Terpadat</a></li>
-                                                <li><a href="{{ route('nataru.survey.sumber.akses.link.nasional') }}" key="t-smpul-terpadat-nasional">Sumber Akses Link</a></li>
-                                            </ul>
-                                        </li>
+                        {{-- ===== SYSTEM & MONITORING ===== --}}
+                        <li class="menu-title">SYSTEM & MONITORING</li>
 
-                                        <li>
-                                            <a href="javascript: void(0);" class="has-arrow" key="t-horizontal">Jabodetabek</a>
-                                            <ul class="sub-menu" aria-expanded="false">
-                                                <li><a href="{{ route('nataru.survey.intensi.perjalanan.jabodetabek') }}" key="t-intensi-jabodetabek">Intensi Perjalanan Jabodetabek</a></li>
-                                                <li><a href="{{ route('nataru.survey.od.perjalanan.jabodetabek') }}" key="t-od-jabodetabek">O-D Jabodetabek</a></li>
-                                                <li><a href="{{ route('nataru.survey.pilihan.moda.jabodetabek') }}" key="t-mode-share">Mode Share Jabodetabek</a></li>
-                                                <li><a href="{{ route('nataru.survey.perkiraan.biaya.dihabiskan.jabodetabek') }}" key="t-perkiraan-biaya">Perkiraan Biaya Dihabiskan</a></li>
-                                                <li><a href="{{ route('nataru.survey.kepemilikan.tiket.jabodetabek') }}" key="t-jabodetabek-tiket">Kepemilikan Tiket</a></li>
-                                                <li><a href="{{ route('nataru.survey.sumber.akses.link.jabodetabek') }}" key="t-jabodetabek-akses-link">Sumber Akses Link</a></li>
-                                            </ul>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li class="menu-title" key="t-apps">MPD</li>
-                                <li>
-                                    <a href="javascript:void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-home"></i>
-                                        <span key="t-dashboards-mpd">Dashboard MPD</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ url('mpd/dashboard') }}" key="t-dashboard-nasional">Nasional</a></li>
-                                        <li><a href="{{ url('mpd/dashboard/jabodetabek') }}" key="t-dashboard-jabodetabek">Jabodetabek</a></li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="javascript:void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-detail"></i>
-                                        <span key="t-dashboards">Data MPD Opsel</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ url('mpd/data/pergerakan') }}" key="t-default">Pergerakan</a></li>
-                                        <li><a href="{{ url('mpd/data/mode-share') }}" key="t-default">Mode Share</a></li>
-                                        <li><a href="{{ url('mpd/data/od-simpul') }}" key="t-default">OD Simpul</a></li>
-                                        <li>
-                                            <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                                <span key="t-vertical-jabodetabek">Jabodetabek</span>
-                                            </a>
-                                            <ul class="sub-menu" aria-expanded="false">
-                                                <li><a href="{{ url('mpd/data/jabodetabek/pergerakan') }}" key="t-tui-jabodetabek-pergerakan">Pergerakan</a></li>
-                                                <li><a href="{{ url('mpd/data/jabodetabek/modeshare') }}" key="t-tui-jabodetabek-pergerakan">Mode Share</a></li>
-                                                <li><a href="{{ url('mpd/data/jabodetabek/odsimpul') }}" key="t-tui-jabodetabek-pergerakan">OD Simpul</a></li>
-                                            </ul>
-                                        </li>
-                                    </ul>
-                                </li>
-
-                                <li class="menu-title" key="t-apps">Datasource</li>
-
-                                <li>
-                                    <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-data"></i>
-                                        <span key="t-vertical">Survey</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ route('nataru.survey.upload.index') }}" key="t-tui-calendar">Upload File (xlsx)</a></li>
-                                        <li><a href="{{ route('nataru.survey.history.index') }}" key="t-full-calendar">History File Upload</a></li>
-                                        <li><a href="{{ route('nataru.survey.dataraw.index') }}" key="t-full-calendar">View Raw Data</a></li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                        <i class="bx bx-data"></i>
-                                        <span key="t-vertical">MPD Opsel</span>
-                                    </a>
-                                    <ul class="sub-menu" aria-expanded="false">
-                                        <li><a href="{{ url('mpd/upload') }}" key="t-tui-calendar">Upload File (xlsx)</a></li>
-                                        <li><a href="{{ url('mpd/upload/history-file') }}" key="t-full-calendar">History File Upload</a></li>
-                                        <li><a href="{{ url('mpd/upload/data') }}" key="t-full-calendar">View Raw Data</a></li>
-                                    </ul>
-                                </li>
-                            @endif
-
-                            <li class="menu-title" key="t-apps">Master</li>
-
-                            <li>
-                                <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                    <i class="bx bx-file"></i>
-                                    <span key="t-vertical-ref">Referensi</span>
-                                </a>
-                                <ul class="sub-menu" aria-expanded="false">
-                                    <li><a href="{{ route('mpd.populasi.index') }}" key="t-tui-populasi">Populasi Wilayah</a></li>
-                                    <li><a href="{{ route('mpd.posko-angleb.index') }}" key="t-tui-posko-angleb">Posko Angleb 2026</a></li>
-                                </ul>
-                            </li>
-                            <li>
-                                <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                    <i class="bx bx-user"></i>
-                                    <span key="t-vertical-akun">Akun</span>
-                                </a>
-                                <ul class="sub-menu" aria-expanded="false">
-                                    <li><a href="{{ route('users.index') }}" key="t-tui-calendar">Pengguna</a></li>
-                                </ul>
-                            </li>
-
-                            <li class="menu-title" key="t-apps">System & Monitoring</li>
-                            <li>
-                                <a href="{{ route('angleb.survey.activity.log.index') }}" class="waves-effect">
-                                    <i class="bx bx-history"></i>
-                                    <span key="t-file-manager">Log Aktivitas</span>
-                                </a>
-                            </li>
-
-                            @if(auth()->check() && auth()->user()->role == 'admin')
-                                <li class="menu-title" key="t-menu">DATA SOURCES</li>
-                                <li>
-                                    <a href="{{ route('angleb.survey.simulasi') }}" class="waves-effect">
-                                        <i class="bx bx-upload"></i>
-                                        <span key="t-upload-simulasi">Upload Simulasi</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('angleb.mpd.history') }}" class="waves-effect">
-                                        <i class="bx bx-history"></i>
-                                        <span key="t-history-simulasi">History Simulasi</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{{ route('angleb.mpd.raw-data') }}" class="waves-effect">
-                                        <i class="bx bx-table"></i>
-                                        <span key="t-raw-data-simulasi">Raw Data View</span>
-                                    </a>
-                                </li>
-                            @endif
-                        @endif
+                        <li>
+                            <a href="{{ route('log-aktivitas') }}" class="waves-effect">
+                                <i class="bx bx-history"></i>
+                                <span>Log Aktivitas</span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
