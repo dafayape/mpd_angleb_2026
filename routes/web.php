@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DatasourceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -41,9 +42,15 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('users', UserController::class);
     Route::get('/pengguna', fn () => redirect()->route('users.index'))->name('pengguna');
 
-    Route::get('/datasource/upload', fn () => view('placeholder', ['title' => 'Upload File (xlsx)', 'breadcrumb' => ['Datasource', 'Upload File']]))->name('datasource.upload');
-    Route::get('/datasource/history', fn () => view('placeholder', ['title' => 'History File Upload', 'breadcrumb' => ['Datasource', 'History File Upload']]))->name('datasource.history');
-    Route::get('/datasource/raw-data', fn () => view('placeholder', ['title' => 'View Raw Data', 'breadcrumb' => ['Datasource', 'Raw Data']]))->name('datasource.raw-data');
+    Route::prefix('datasource')->name('datasource.')->group(function () {
+        Route::get('/upload', [DatasourceController::class, 'upload'])->name('upload');
+        Route::post('/upload', [DatasourceController::class, 'storeUpload'])->name('store');
+        Route::post('/upload/process-chunk', [DatasourceController::class, 'processChunk'])->name('process-chunk');
+        Route::get('/history', [DatasourceController::class, 'history'])->name('history');
+        Route::post('/history/{id}/delete-chunk', [DatasourceController::class, 'destroyChunk'])->name('destroy-chunk');
+        Route::get('/raw-data', [DatasourceController::class, 'rawData'])->name('raw-data');
+        Route::get('/summary', [DatasourceController::class, 'summary'])->name('summary');
+    });
 
     Route::get('/log-aktivitas', fn () => view('placeholder', ['title' => 'Log Aktivitas', 'breadcrumb' => ['System & Monitoring', 'Log Aktivitas']]))->name('log-aktivitas');
 });

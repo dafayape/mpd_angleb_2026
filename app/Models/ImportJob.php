@@ -9,12 +9,17 @@ class ImportJob extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'filename', 'original_filename', 'opsel', 'kategori',
+        'tanggal_data', 'user_id', 'status', 'progress',
+        'total_rows', 'processed_rows', 'error_message', 'metadata',
+    ];
 
     protected $casts = [
-        'metadata' => 'array',
-        'progress' => 'integer',
-        'total_rows' => 'integer',
+        'metadata'       => 'array',
+        'progress'       => 'integer',
+        'total_rows'     => 'integer',
         'processed_rows' => 'integer',
+        'tanggal_data'   => 'date',
     ];
 }
