@@ -318,4 +318,64 @@ class DataMpdController extends Controller
 
         return $dates;
     }
+
+    public function jabodetabekPergerakanOrang(Request $request)
+    {
+        // 1. Date Range: 13 March 2026 - 29 March 2026
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+        
+        $dates = collect();
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates->push($curr->format('Y-m-d'));
+            $curr->addDay();
+        }
+
+        // 2. Caching Key
+        $cacheKey = 'mpd:jabodetabek:pergerakan-orang:v1';
+        
+        $jabodetabekCodes = $this->getJabodetabekCodes();
+        
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+                return $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes);
+            });
+        } catch (\Throwable $e) {
+            // Fallback
+            $data = $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes);
+        }
+
+        return view('data-mpd.jabodetabek.pergerakan-orang', [
+            'title' => 'Akumulasi Pergerakan & Orang Jabodetabek',
+            'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Pergerakan & Orang'],
+            'dates' => $dates,
+            'data' => $data
+        ]);
+    }
+
+    private function getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes)
+    {
+        $dailyData = [];
+        
+        try {
+            $results = DB::table('spatial_movements')
+                ->select('tanggal', DB::raw('SUM(total) as total_volume'))
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('tanggal')
+                ->get();
+
+            foreach ($results as $row) {
+                $dailyData[$row->tanggal] = [
+                    'movement' => $row->total_volume,
+                    'people' => $row->total_volume // 1:1 for now
+                ];
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Pergerakan Orang DB Error: ' . $e->getMessage());
+        }
+
+        return $dailyData;
+    }
 }
