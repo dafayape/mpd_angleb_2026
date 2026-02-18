@@ -30,6 +30,7 @@ class ProfileController extends Controller
             'name'     => 'required|string|max:100',
             'email'    => ['required', 'email', Rule::unique('users')->ignore($user->id)],
             'password' => 'nullable|min:6|confirmed',
+            'photo'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
 
         $validated = $request->validate($rules, [
@@ -39,9 +40,26 @@ class ProfileController extends Controller
             'email.unique'       => 'Email sudah digunakan pengguna lain.',
             'password.min'       => 'Password minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
+            'photo.image'        => 'File harus berupa gambar.',
+            'photo.mimes'        => 'Format gambar harus jpg, jpeg, atau png.',
+            'photo.max'          => 'Ukuran gambar maksimal 2MB.',
         ]);
 
         try {
+            // Handle Photo Upload
+            if ($request->hasFile('photo')) {
+                $file = $request->file('photo');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->storeAs('public/photos', $filename);
+                
+                // Hapus foto lama jika ada (opsional, tapi good practice)
+                if ($user->photo && \Illuminate\Support\Facades\Storage::exists('public/photos/' . $user->photo)) {
+                    \Illuminate\Support\Facades\Storage::delete('public/photos/' . $user->photo);
+                }
+
+                $user->photo = $filename;
+            }
+
             $user->name  = $validated['name'];
             $user->email = $validated['email'];
 
