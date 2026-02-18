@@ -56,11 +56,11 @@ class ProfileController extends Controller
                     \Illuminate\Support\Facades\Storage::makeDirectory('public/photos');
                 }
 
-                $file->storeAs('public/photos', $filename);
+                $file->storeAs('photos', $filename, 'public');
                 
-                // Hapus foto lama jika ada (opsional, tapi good practice)
-                if ($user->photo && \Illuminate\Support\Facades\Storage::exists('public/photos/' . $user->photo)) {
-                    \Illuminate\Support\Facades\Storage::delete('public/photos/' . $user->photo);
+                // Hapus foto lama jika ada
+                if ($user->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists('photos/' . $user->photo)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete('photos/' . $user->photo);
                 }
 
                 $user->photo = $filename;
