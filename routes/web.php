@@ -14,8 +14,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/', fn () => view('welcome'))->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
-    // Redirect profile ke aplikasi utama
-    Route::get('/profile', fn () => redirect('https://mpdbkt.web.id/profile'))->name('profile.edit');
+    Route::get('/', fn () => view('welcome'))->name('dashboard');
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    
+    // Profile
+    Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 
     Route::get('/grafik-mpd/nasional/pergerakan', fn () => view('placeholder', ['title' => 'Pergerakan', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Pergerakan']]))->name('grafik-mpd.nasional.pergerakan');
     Route::get('/grafik-mpd/nasional/od-provinsi', fn () => view('placeholder', ['title' => 'O-D Provinsi', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'O-D Provinsi']]))->name('grafik-mpd.nasional.od-provinsi');
