@@ -40,42 +40,9 @@ class ProfileController extends Controller
             'email.unique'       => 'Email sudah digunakan pengguna lain.',
             'password.min'       => 'Password minimal 6 karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
-            'photo.image'        => 'File harus berupa gambar.',
-            'photo.mimes'        => 'Format gambar harus jpg, jpeg, atau png.',
-            'photo.max'          => 'Ukuran gambar maksimal 2MB.',
         ]);
 
         try {
-            // Handle Photo Upload
-            if ($request->hasFile('photo')) {
-                $file = $request->file('photo');
-                $filename = time() . '_' . $file->getClientOriginalName();
-                
-                // Ensure directory exists
-                if (!\Illuminate\Support\Facades\Storage::exists('public/photos')) {
-                    \Illuminate\Support\Facades\Storage::makeDirectory('public/photos');
-                }
-
-                \Illuminate\Support\Facades\Log::info('Photo upload started: ' . $filename);
-
-                $path = $file->storeAs('photos', $filename, 'public');
-                
-                if ($path) {
-                    \Illuminate\Support\Facades\Log::info('Photo stored at: ' . $path);
-                } else {
-                    \Illuminate\Support\Facades\Log::error('Photo storage failed');
-                }
-                
-                // Hapus foto lama jika ada
-                if ($user->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists('photos/' . $user->photo)) {
-                    \Illuminate\Support\Facades\Storage::disk('public')->delete('photos/' . $user->photo);
-                }
-
-                $user->photo = $filename;
-            } else {
-                \Illuminate\Support\Facades\Log::info('No photo file in request');
-            }
-
             $user->name  = $validated['name'];
             $user->email = $validated['email'];
 

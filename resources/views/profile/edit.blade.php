@@ -37,33 +37,13 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('profile.update') }}" method="POST">
                         @csrf
                         @method('PUT')
 
                         <div class="text-center mb-4">
-                            <div class="position-relative d-inline-block">
-                                @if($user->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists('photos/' . $user->photo))
-                                    <img src="{{ asset('storage/photos/' . $user->photo) }}" alt="Profile Photo" 
-                                        class="rounded-circle avatar-xl img-thumbnail object-fit-cover" style="width: 120px; height: 120px;">
-                                @else
-                                    <div class="avatar-xl bg-soft-primary rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px;">
-                                        <span class="text-primary fw-bold font-size-24">{{ strtoupper(substr($user->name, 0, 2)) }}</span>
-                                    </div>
-                                @endif
-                                <div class="position-absolute bottom-0 end-0">
-                                    <label for="photo" class="btn btn-primary btn-sm rounded-circle shadow-sm" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" data-bs-toggle="tooltip" title="Ubah Foto">
-                                        <i class="bx bx-camera font-size-16"></i>
-                                    </label>
-                                    <input type="file" id="photo" name="photo" class="d-none" accept="image/jpeg,image/png,image/jpg" onchange="previewImage(this)">
-                                </div>
-                            </div>
-                            <div class="mt-2">
-                                <small class="text-muted d-block">Klik ikon kamera untuk mengubah foto</small>
-                                <small class="text-muted font-size-11">Format: JPG, JPEG, PNG. Maks: 2MB</small>
-                                @error('photo')
-                                    <div class="text-danger font-size-12 mt-1">{{ $message }}</div>
-                                @enderror
+                            <div class="avatar-xl bg-soft-primary rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px;">
+                                <span class="text-primary fw-bold font-size-24">{{ strtoupper(substr($user->name, 0, 2)) }}</span>
                             </div>
                         </div>
 
@@ -126,38 +106,4 @@
     </div>
 @endsection
 
-@push('scripts')
-<script>
-    function previewImage(input) {
-        if (input.files && input.files[0]) {
-            var reader = new FileReader();
-            
-            reader.onload = function(e) {
-                var img = input.closest('.position-relative').querySelector('img');
-                var placeholder = input.closest('.position-relative').querySelector('.avatar-xl');
-                
-                if (img) {
-                    img.src = e.target.result;
-                } else if (placeholder) {
-                    // Replace placeholder with new image
-                    var newImg = document.createElement('img');
-                    newImg.src = e.target.result;
-                    newImg.alt = 'Profile Photo';
-                    newImg.className = 'rounded-circle avatar-xl img-thumbnail object-fit-cover';
-                    newImg.style.width = '120px';
-                    newImg.style.height = '120px';
-                    placeholder.parentNode.replaceChild(newImg, placeholder);
-                }
-            }
-            
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
 
-    // Initialize tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    })
-</script>
-@endpush
