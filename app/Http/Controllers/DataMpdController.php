@@ -101,14 +101,100 @@ class DataMpdController extends Controller
         ]);
     }
 
-    private function getOdSimpulData($startDate, $endDate, $jabodetabekCodes)
+    // --- NASIONAL METHODS ---
+
+    public function nasionalOdSimpul(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+        $dates = $this->getDatesCollection($startDate, $endDate);
+        
+        $cacheKey = 'mpd:nasional:od-simpul:matrix:v1';
+        
+        try {
+            $matrix = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getOdSimpulData($startDate, $endDate, []); // Empty array = No Filter
+            });
+        } catch (\Throwable $e) {
+            $matrix = $this->getOdSimpulData($startDate, $endDate, []);
+        }
+
+        return view('data-mpd.nasional.od-simpul', [
+            'title' => 'O-D Simpul Nasional',
+            'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'O-D Simpul'],
+            'dates' => $dates,
+            'matrix' => $matrix
+        ]);
+    }
+
+    public function nasionalModeShare(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+        $dates = $this->getDatesCollection($startDate, $endDate);
+        
+        $cacheKey = 'mpd:nasional:mode-share:matrix:v1';
+        
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getModeShareData($startDate, $endDate, []);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getModeShareData($startDate, $endDate, []);
+        }
+
+        return view('data-mpd.nasional.mode-share', [
+            'title' => 'Mode Share Nasional',
+            'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'Mode Share'],
+            'dates' => $dates,
+            'movementMatrix' => $data['movement'],
+            'peopleMatrix' => $data['people']
+        ]);
+    }
+
+    public function nasionalPergerakan(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+        $dates = $this->getDatesCollection($startDate, $endDate);
+        
+        $cacheKey = 'mpd:nasional:pergerakan:v1';
+        
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getPergerakanData($startDate, $endDate, []);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getPergerakanData($startDate, $endDate, []);
+        }
+
+        return view('data-mpd.nasional.pergerakan', [
+            'title' => 'Pergerakan Nasional',
+            'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'Pergerakan'],
+            'dates' => $dates,
+            'data' => $data
+        ]);
+    }
+
+    private function getDatesCollection($startDate, $endDate)
+    {
+        $dates = collect();
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates->push($curr->format('Y-m-d'));
+            $curr->addDay();
+        }
+        return $dates;
+    }
+
+    // --- REFACTORED HELPERS ---
+
+    private function getOdSimpulData($startDate, $endDate, $filterCodes = [])
     {
         // A. Get All Categories (Simpul) for Rows
         try {
             $categories = DB::table('ref_transport_nodes')
-                ->whereNotNull('category')
                 ->distinct()
-                ->orderBy('category')
                 ->pluck('category')
                 ->toArray();
         } catch (\Throwable $e) {
@@ -128,17 +214,20 @@ class DataMpdController extends Controller
 
         // B. Query Movement Data
         try {
-            $data = DB::table('spatial_movements as sm')
+            $query = DB::table('spatial_movements as sm')
                 ->join('ref_transport_nodes as simpul', 'sm.kode_origin_simpul', '=', 'simpul.code')
                 ->select(
                     'simpul.category as kategori_simpul',
                     'sm.tanggal',
                     DB::raw('SUM(sm.total) as total_volume')
                 )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('simpul.category', 'sm.tanggal')
-                ->get();
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+
+            if (!empty($filterCodes)) {
+                $query->whereIn('sm.kode_origin_kabupaten_kota', $filterCodes);
+            }
+
+            $data = $query->groupBy('simpul.category', 'sm.tanggal')->get();
 
             // C. Merge Data
             foreach ($data as $row) {
@@ -159,7 +248,7 @@ class DataMpdController extends Controller
         return $pivot;
     }
 
-    private function getModeShareData($startDate, $endDate, $jabodetabekCodes)
+    private function getModeShareData($startDate, $endDate, $filterCodes = [])
     {
         // A. Get All Modes for Rows
         try {
@@ -191,17 +280,20 @@ class DataMpdController extends Controller
 
         // B. Query Movement Data
         try {
-            $results = DB::table('spatial_movements as sm')
+            $query = DB::table('spatial_movements as sm')
                 ->join('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
                 ->select(
                     'moda.name as moda_name',
                     'sm.tanggal',
                     DB::raw('SUM(sm.total) as total_volume')
                 )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('moda.name', 'sm.tanggal')
-                ->get();
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+
+            if (!empty($filterCodes)) {
+                $query->whereIn('sm.kode_origin_kabupaten_kota', $filterCodes);
+            }
+
+            $results = $query->groupBy('moda.name', 'sm.tanggal')->get();
 
             // C. Merge Data
             foreach ($results as $row) {
@@ -234,12 +326,7 @@ class DataMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 29);
         
-        $dates = collect();
-        $curr = $startDate->copy();
-        while ($curr->lte($endDate)) {
-            $dates->push($curr->format('Y-m-d'));
-            $curr->addDay();
-        }
+        $dates = $this->getDatesCollection($startDate, $endDate);
 
         // 2. Caching Key
         $cacheKey = 'mpd:jabodetabek:pergerakan:v1';
@@ -263,7 +350,7 @@ class DataMpdController extends Controller
         ]);
     }
 
-    private function getPergerakanData($startDate, $endDate, $jabodetabekCodes)
+    private function getPergerakanData($startDate, $endDate, $filterCodes = [])
     {
         // Initialize Structure
         $dates = [];
@@ -280,16 +367,19 @@ class DataMpdController extends Controller
         }
 
         try {
-            $results = DB::table('spatial_movements')
+            $query = DB::table('spatial_movements')
                 ->select(
                     'tanggal',
                     'opsel',
                     DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('tanggal', 'opsel')
-                ->get();
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+
+            if (!empty($filterCodes)) {
+                $query->whereIn('kode_origin_kabupaten_kota', $filterCodes);
+            }
+
+            $results = $query->groupBy('tanggal', 'opsel')->get();
 
             foreach ($results as $row) {
                 $date = $row->tanggal;

@@ -26,7 +26,7 @@
         <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="card-title mb-4 text-primary">REKAPTULASI PERGERAKAN ORANG PER OPSEL (JABODETABEK)</h5>
+                    <h5 class="card-title">Rekapitulasi Pergerakan & Orang per Operator (Nasional)</h5>
                     <div>
                         <span class="badge bg-primary font-size-12">Periode: 13 Mar 2026 - 29 Mar 2026</span>
                     </div>
@@ -135,7 +135,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title mb-4 text-primary">AKUMULASI PERGERAKAN ORANG</h5>
+                <h5 class="card-title mb-4 text-primary">AKUMULASI PERGERAKAN & ORANG (NASIONAL)</h5>
                 
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-hover table-sm w-100 mb-0" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
