@@ -43,7 +43,7 @@
 
                         <div class="text-center mb-4">
                             <div class="position-relative d-inline-block">
-                                @if($user->photo && \Illuminate\Support\Facades\Storage::exists('public/photos/' . $user->photo))
+                                @if($user->photo && \Illuminate\Support\Facades\Storage::disk('public')->exists('photos/' . $user->photo))
                                     <img src="{{ asset('storage/photos/' . $user->photo) }}" alt="Profile Photo" 
                                         class="rounded-circle avatar-xl img-thumbnail object-fit-cover" style="width: 120px; height: 120px;">
                                 @else
