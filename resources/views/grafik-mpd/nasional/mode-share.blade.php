@@ -84,91 +84,84 @@
         const dailyCharts = @json($data['daily_charts']);
 
         // 1. PIE CHARTS
-        const pieConfig = (title, data) => ({
+        // 1. PIE CHARTS
+        const pieConfig = (title, subtitle, data) => ({
             chart: { 
                 type: 'pie',
-                height: 400
+                // height: 600 // Reference uses 600px
             },
-            title: { text: '' },
-            plotOptions: {
-                pie: {
-                    innerSize: '50%', // Donut
-                    allowPointSelect: true,
-                    cursor: 'pointer',
-                    dataLabels: {
-                        enabled: true,
-                        connectorShape: 'crookedLine',
-                        crookDistance: '70%',
-                        format: '<b>{point.name}</b><br>{point.y:,.0f}<br>({point.percentage:.2f}%)'
-                    },
-                    showInLegend: true
-                }
+            title: { text: title },
+            subtitle: { text: subtitle },
+            tooltip: {
+                pointFormat: '<b>{point.y:,.0f}</b> ({point.percentage:.2f}%)'
             },
             legend: {
                 enabled: true,
-                useHTML: true,
                 align: 'center',
                 verticalAlign: 'bottom',
                 layout: 'horizontal',
-                width: '100%',
-                itemWidth: 300, // Fixed width to create grid (approx 3 columns on desktop)
-                itemStyle: {
-                    fontSize: '13px',
-                    fontWeight: 'normal',
-                    color: '#333',
-                    textOverflow: 'ellipsis'
-                },
-                itemMarginBottom: 15,
-                navigation: {
-                    enabled: false // Disable scroll buttons
-                },
-                labelFormatter: function() {
-                    const val = Highcharts.numberFormat(this.y, 0, ',', '.');
-                    const pct = Highcharts.numberFormat(this.percentage, 2, ',', '.');
+                useHTML: true,
+                labelFormatter: function () {
                     return `
-                        <div style="width: 250px; line-height: 1.4;">
-                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 2px;">${this.name}</div>
-                            <div style="color: #666; font-size: 12px;">${val} | ${pct}%</div>
-                        </div>
+                        <b>${this.name}</b><br/>
+                        <span style="font-size:11px;color:#555">
+                            ${Highcharts.numberFormat(this.y, 0)} |
+                            ${Highcharts.numberFormat(this.percentage, 2)}%
+                        </span>
                     `;
                 }
             },
+            plotOptions: {
+                pie: {
+                    innerSize: '60%', // DONUT
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    showInLegend: true,
+                    dataLabels: {
+                        enabled: true,
+                        useHTML: true,
+                        format: '<b>{point.name}</b><br>{point.y:,.0f}<br><span style="color:#666">({point.percentage:.2f}%)</span>'
+                    }
+                }
+            },
             series: [{
-                name: 'Volume',
+                name: 'Total',
                 colorByPoint: true,
                 data: data
             }],
             credits: { enabled: false }
         });
 
-        Highcharts.chart('pie-movement', pieConfig('Pergerakan', pieMovement));
-        Highcharts.chart('pie-people', pieConfig('Orang', piePeople));
+        Highcharts.chart('pie-movement', pieConfig('Distribusi Angkutan (Pergerakan - Real)', '[Kode : 1.3.d.1] Berdasarkan jenis angkutan', pieMovement));
+        Highcharts.chart('pie-people', pieConfig('Distribusi Angkutan (Orang - Real)', '[Kode : 1.3.d.2] Berdasarkan jenis angkutan', piePeople));
 
         // 2. DAILY BAR CHARTS
         dailyCharts.forEach((chartData, index) => {
             Highcharts.chart(`chart-mode-${index}`, {
                 chart: { type: 'column' },
-                title: { text: '' },
+                title: { text: '' }, // Handled by Card Title
+                subtitle: { text: `[Kode : 1.3.c.${index % 2 === 0 ? '1' : '2'}]` }, // 1=Pergerakan, 2=Orang
+                colors: ['#1E88E5', '#FBC02D'], // Real Blue, Forecast Yellow
                 xAxis: {
                     categories: dates,
                     crosshair: true
                 },
                 yAxis: {
-                    min: 0,
                     title: { text: 'Total' }
                 },
                 tooltip: {
-                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-                        '<td style="padding:0"><b>{point.y:,.0f}</b></td></tr>',
-                    footerFormat: '</table>',
                     shared: true,
-                    useHTML: true
+                    pointFormat: '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>{point.y:,.0f}</b><br/>'
                 },
                 plotOptions: {
                     column: {
-                        pointPadding: 0.2,
-                        borderWidth: 0
+                        grouping: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                return Highcharts.numberFormat(this.y, 0);
+                            }
+                        }
                     }
                 },
                 series: chartData.series,
