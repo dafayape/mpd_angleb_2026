@@ -233,7 +233,7 @@
                     <h6 style="margin:0 0 5px; font-weight:600;">${props.name}</h6>
                     <span class="badge bg-secondary mb-2">${props.category}</span>
                     <div style="font-size: 12px;">
-                        <strong>Volume:</strong> ${props.volume.toLocaleString('id-ID')}<br>
+                        <strong>Volume:</strong> ${props.volume.toLocaleString('id-ID')} orang<br>
                         <strong>Radius:</strong> ${Math.round(props.radius).toLocaleString('id-ID')} m<br>
                         <strong>Koordinat:</strong> ${lat.toFixed(5)}, ${lng.toFixed(5)}
                     </div>

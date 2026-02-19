@@ -11,10 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/', fn () => view('welcome'))->name('dashboard');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    
-    Route::get('/', fn () => view('welcome'))->name('dashboard');
+    Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
     // Profile
