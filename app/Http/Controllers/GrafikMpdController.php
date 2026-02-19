@@ -428,117 +428,176 @@ class GrafikMpdController extends Controller
 
     private function getSimpulDashboardData($startDate, $endDate)
     {
-        // Define Tabs and their Primary Modes for Charts
-        // Mode Codes: A=AKAP, B=AKDP, F=Laut, H=Udara, C=KA Antar, D=KCJB, E=KA Urban
+        // Define Tabs with Sections
+        // Tab -> Sections -> Charts/Logic
         $tabs = [
             'DARAT' => [
-                'modes' => ['A', 'B', 'I', 'J', 'K', 'G'],
-                'charts' => ['A' => 'Bus AKAP', 'B' => 'Bus AKDP'] // Specific Daily Charts
+                'sections' => [
+                    [
+                        'title' => 'Simpul Darat',
+                        'subtitle' => 'Kode 1.3.a.1',
+                        'modes' => ['A', 'B', 'I', 'J', 'K'], 
+                        'daily_charts' => ['A' => 'Bus AKAP', 'B' => 'Bus AKDP'],
+                        'show_top_10' => true,
+                        'show_top_od' => true
+                    ]
+                ]
             ],
             'LAUT' => [
-                'modes' => ['F'],
-                'charts' => ['F' => 'Angkutan Laut']
+                'sections' => [
+                    [
+                        'title' => 'Pelabuhan Penyeberangan',
+                        'subtitle' => 'Kode 1.3.d.1',
+                        'modes' => ['G'], 
+                        'daily_charts' => ['G' => 'Angkutan Penyeberangan'],
+                        'show_top_10' => true,
+                        'show_top_od' => true
+                    ],
+                    [
+                        'title' => 'Pelabuhan Laut',
+                        'subtitle' => 'Kode 1.3.f.1',
+                        'modes' => ['F'],
+                        'daily_charts' => ['F' => 'Angkutan Laut'],
+                        'show_top_10' => true,
+                        'show_top_od' => true
+                    ]
+                ]
             ],
             'UDARA' => [
-                'modes' => ['H'],
-                'charts' => ['H' => 'Angkutan Udara']
+                'sections' => [
+                    [
+                        'title' => 'Simpul Udara',
+                        'subtitle' => 'Kode 1.3.e.1',
+                        'modes' => ['H'],
+                        'daily_charts' => ['H' => 'Angkutan Udara'],
+                        'show_top_10' => true,
+                        'show_top_od' => true
+                    ]
+                ]
             ],
             'KERETA' => [
-                'modes' => ['C', 'D', 'E'],
-                'charts' => ['C' => 'KA Antarkota', 'E' => 'KA Perkotaan']
+                'sections' => [
+                     [
+                        'title' => 'Simpul Kereta Api',
+                        'subtitle' => 'Kode 1.3.b.1',
+                        'modes' => ['C', 'D', 'E'],
+                        'daily_charts' => ['C' => 'KA Antarkota', 'E' => 'KA Perkotaan'],
+                        'show_top_10' => true,
+                        'show_top_od' => true
+                    ]
+                ]
             ]
         ];
 
         // Prepare Date Labels
         $dates = [];
-        $curr = $startDate->copy();
-        while ($curr->lte($endDate)) {
-            $dates[] = $curr->format('d M'); // Format: 18 Des
-            $curr->addDay();
-        }
-        // DB Date Strings for querying
         $dbDates = [];
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
+            $dates[] = $curr->format('d M');
             $dbDates[] = $curr->format('Y-m-d');
             $curr->addDay();
         }
 
         $result = ['dates' => $dates, 'tabs' => []];
 
-        foreach ($tabs as $key => $config) {
-            $modeCodes = $config['modes'];
+        foreach ($tabs as $key => $tabConfig) {
+            $tabData = ['sections' => []];
             
-            // 1. TOP 10 ORIGIN SIMPUL (Aggregate all modes in this tab)
-            // Use ref_transport_nodes name via Join or simple GroupBy code if names not needed in query (Post processing)
-            // Better to Join for Names.
-            // Note: origin_simpul might be a Code. User wants "Top 10 Origin Simpul Darat".
-            $topOrigin = DB::table('spatial_movements as sm')
-                ->join('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
-                ->select('n.name', DB::raw('SUM(sm.total) as total'))
-                ->whereIn('sm.kode_moda', $modeCodes)
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->groupBy('n.name')
-                ->orderByDesc('total')
-                ->limit(10)
-                ->get();
-            
-            // 2. TOP 10 DEST SIMPUL
-            $topDest = DB::table('spatial_movements as sm')
-                // Note: dest_simpul mapping logic? Assuming ref_transport_nodes matches.
-                // Sometimes dest_simpul is "ANY" or null in dummy data, but logic supports it.
-                ->join('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
-                ->select('n.name', DB::raw('SUM(sm.total) as total'))
-                ->whereIn('sm.kode_moda', $modeCodes)
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->groupBy('n.name')
-                ->orderByDesc('total')
-                ->limit(10)
-                ->get();
-
-            // 3. DAILY CHARTS (Per Specific Mode defined in config)
-            $charts = [];
-            foreach ($config['charts'] as $code => $label) {
-                $daily = DB::table('spatial_movements')
-                    ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
-                    ->where('kode_moda', $code)
-                    ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                    ->groupBy('tanggal', 'is_forecast')
-                    ->get();
+            foreach ($tabConfig['sections'] as $section) {
+                $secData = [
+                    'title' => $section['title'],
+                    'daily_charts' => [],
+                    'top_origin' => [],
+                    'top_dest' => [],
+                    'top_od' => []
+                ];
                 
-                $realSeries = array_fill(0, count($dates), 0);
-                $fcSeries = array_fill(0, count($dates), 0);
-                
-                $totalReal = 0;
-                $totalFc = 0;
+                $modeCodes = $section['modes'];
 
-                foreach ($daily as $row) {
-                    $idx = array_search($row->tanggal, $dbDates);
-                    if ($idx !== false) {
-                        if ($row->is_forecast) {
-                            $fcSeries[$idx] += (int) $row->total;
-                            $totalFc += (int) $row->total;
-                        } else {
-                            $realSeries[$idx] += (int) $row->total;
-                            $totalReal += (int) $row->total;
+                // 1. DAILY CHARTS
+                foreach ($section['daily_charts'] as $code => $label) {
+                    $daily = DB::table('spatial_movements')
+                        ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+                        ->where('kode_moda', $code)
+                        ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                        ->groupBy('tanggal', 'is_forecast')
+                        ->get();
+                    
+                    $realSeries = array_fill(0, count($dates), 0);
+                    $fcSeries = array_fill(0, count($dates), 0);
+                    $totalReal = 0;
+                    $totalFc = 0;
+
+                    foreach ($daily as $row) {
+                        $idx = array_search($row->tanggal, $dbDates);
+                        if ($idx !== false) {
+                            if ($row->is_forecast) {
+                                $fcSeries[$idx] += (int) $row->total;
+                                $totalFc += (int) $row->total;
+                            } else {
+                                $realSeries[$idx] += (int) $row->total;
+                                $totalReal += (int) $row->total;
+                            }
                         }
                     }
+
+                    $secData['daily_charts'][] = [
+                        'label' => $label,
+                        'series_real' => $realSeries,
+                        'series_forecast' => $fcSeries,
+                        'total_real' => $totalReal,
+                        'total_forecast' => $totalFc
+                    ];
                 }
 
-                $charts[] = [
-                    'label' => $label,
-                    'series_real' => $realSeries,
-                    'series_forecast' => $fcSeries,
-                    'total_real' => $totalReal,
-                    'total_forecast' => $totalFc
-                ];
-            }
+                // 2. TOP 10 ORIGIN
+                if ($section['show_top_10']) {
+                    $secData['top_origin'] = DB::table('spatial_movements as sm')
+                        ->join('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
+                        ->select('n.name', DB::raw('SUM(sm.total) as total'))
+                        ->whereIn('sm.kode_moda', $modeCodes)
+                        ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                        ->groupBy('n.name')
+                        ->orderByDesc('total')
+                        ->limit(10)
+                        ->get();
 
-            $result['tabs'][$key] = [
-                'top_origin' => $topOrigin,
-                'top_dest' => $topDest,
-                'daily_charts' => $charts
-            ];
+                    $secData['top_dest'] = DB::table('spatial_movements as sm')
+                        ->join('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
+                        ->select('n.name', DB::raw('SUM(sm.total) as total'))
+                        ->whereIn('sm.kode_moda', $modeCodes)
+                        ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                        ->groupBy('n.name')
+                        ->orderByDesc('total')
+                        ->limit(10)
+                        ->get();
+                }
+
+                // 3. TOP OD ROUTE (New Requirement)
+                if ($section['show_top_od']) {
+                     // Join Origin Node AND Dest Node
+                     $secData['top_od'] = DB::table('spatial_movements as sm')
+                        ->join('ref_transport_nodes as no', 'sm.kode_origin_simpul', '=', 'no.code')
+                        ->join('ref_transport_nodes as nd', 'sm.kode_dest_simpul', '=', 'nd.code')
+                        ->select('no.name as origin', 'nd.name as dest', DB::raw('SUM(sm.total) as total'))
+                        ->whereIn('sm.kode_moda', $modeCodes)
+                        ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                        ->groupBy('no.name', 'nd.name')
+                        ->orderByDesc('total')
+                        ->limit(10)
+                        ->get()
+                        ->map(function($item) {
+                            return [
+                                'name' => '[' . $item->origin . '] -> [' . $item->dest . ']',
+                                'total' => $item->total
+                            ];
+                        });
+                }
+
+                $tabData['sections'][] = $secData;
+            }
+            $result['tabs'][$key] = $tabData;
         }
 
         return $result;
