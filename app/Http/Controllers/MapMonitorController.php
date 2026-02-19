@@ -37,6 +37,7 @@ class MapMonitorController extends Controller
             // Periode (date range) support
             $startDate = $request->input('start_date', '2026-03-13');
             $endDate = $request->input('end_date', '2026-03-29');
+            $opselFilter = $request->input('opsel', ''); // '', 'TSEL', 'IOH', 'XL'
 
             // Validate dates
             try {
@@ -52,11 +53,17 @@ class MapMonitorController extends Controller
                 [$startDate, $endDate] = [$endDate, $startDate];
             }
 
-            // Cache key based on period
-            $cacheKey = "map_monitor:data:v3:{$startDate}:{$endDate}";
+            // Validate opsel
+            $validOpsels = ['TSEL', 'IOH', 'XL'];
+            if ($opselFilter && !in_array($opselFilter, $validOpsels)) {
+                $opselFilter = '';
+            }
+
+            // Cache key based on period + opsel
+            $cacheKey = "map_monitor:data:v4:{$startDate}:{$endDate}:{$opselFilter}";
 
             // Cache for 1 hour (3600s)
-            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $opselFilter) {
                 
                 \Illuminate\Support\Facades\Log::info("MapMonitor: Generating data for {$startDate} to {$endDate}");
 
@@ -129,12 +136,58 @@ class MapMonitorController extends Controller
                     DB::raw('ST_X(location::geometry) as lng')
                 )->whereNotNull('location')->get();
 
-                // 2. Calculate Density (Volume) — aggregated across the period
-                $volumes = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                // 2. Calculate Density (Volume) — aggregated across the period, filtered by opsel
+                $volumeQuery = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate]);
+                if ($opselFilter) {
+                    $volumeQuery->where('opsel', $opselFilter);
+                }
+                $volumes = $volumeQuery
                     ->select('kode_origin_simpul', DB::raw('SUM(total) as total_volume'))
                     ->groupBy('kode_origin_simpul')
                     ->pluck('total_volume', 'kode_origin_simpul')
                     ->toArray();
+
+                // 3. Paparan (Forecast) vs Aktual table data per simpul
+                $tableQuery = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate]);
+                if ($opselFilter) {
+                    $tableQuery->where('opsel', $opselFilter);
+                }
+                $tableRaw = $tableQuery
+                    ->select(
+                        'kode_origin_simpul',
+                        'is_forecast',
+                        DB::raw('SUM(total) as total_volume')
+                    )
+                    ->groupBy('kode_origin_simpul', 'is_forecast')
+                    ->get();
+
+                // Build table data: per simpul, forecast + actual
+                $tableData = [];
+                foreach ($tableRaw as $row) {
+                    $code = $row->kode_origin_simpul;
+                    if (!isset($tableData[$code])) {
+                        $tableData[$code] = ['code' => $code, 'name' => $code, 'paparan' => 0, 'aktual' => 0];
+                    }
+                    if ($row->is_forecast) {
+                        $tableData[$code]['paparan'] = (int) $row->total_volume;
+                    } else {
+                        $tableData[$code]['aktual'] = (int) $row->total_volume;
+                    }
+                }
+
+                // Enrich names from simpuls
+                foreach ($simpuls as $s) {
+                    if (isset($tableData[$s->code])) {
+                        $tableData[$s->code]['name'] = $s->name;
+                    }
+                }
+
+                // Sort by aktual desc
+                $tableData = collect($tableData)->sortByDesc('aktual')->values()->toArray();
+
+                // Summary totals
+                $totalPaparan = array_sum(array_column($tableData, 'paparan'));
+                $totalAktual = array_sum(array_column($tableData, 'aktual'));
 
                 // --- ULTIMATE FALLBACK: If DB is empty or PostGIS fails, use Hardcoded Data ---
                 if ($simpuls->isEmpty()) {
@@ -214,8 +267,16 @@ class MapMonitorController extends Controller
                     'start_date' => $startDate,
                     'end_date' => $endDate,
                     'period_label' => $periodLabel,
+                    'opsel_filter' => $opselFilter ?: 'Semua Opsel',
                     'max_volume' => $maxVolume,
-                    'features' => $features
+                    'features' => $features,
+                    'table_data' => $tableData,
+                    'summary' => [
+                        'total_paparan' => $totalPaparan,
+                        'total_aktual' => $totalAktual,
+                        'selisih' => $totalAktual - $totalPaparan,
+                        'persen' => $totalPaparan > 0 ? round(($totalAktual / $totalPaparan) * 100, 1) : 0
+                    ]
                 ]);
 
             });

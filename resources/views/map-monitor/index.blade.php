@@ -54,10 +54,19 @@
             <div class="page-title-right">
                 <form class="d-flex align-items-center gap-2" id="periodForm">
                     <label class="mb-0 fw-bold text-nowrap">Periode:</label>
-                    <input type="date" id="startDate" class="form-control form-control-sm" value="2026-03-13" min="2026-03-13" max="2026-03-29" style="width: 155px;">
+                    <input type="date" id="startDate" class="form-control form-control-sm" value="2026-03-13" min="2026-03-13" max="2026-03-29" style="width: 140px;">
                     <span class="text-muted fw-bold">&mdash;</span>
-                    <input type="date" id="endDate" class="form-control form-control-sm" value="2026-03-29" min="2026-03-13" max="2026-03-29" style="width: 155px;">
-                    <button type="submit" class="btn btn-sm btn-primary text-nowrap">
+                    <input type="date" id="endDate" class="form-control form-control-sm" value="2026-03-29" min="2026-03-13" max="2026-03-29" style="width: 140px;">
+                    
+                    <label class="mb-0 fw-bold text-nowrap ms-2">Opsel:</label>
+                    <select id="opselFilter" class="form-select form-select-sm" style="width: 100px;">
+                        <option value="">Semua</option>
+                        <option value="TSEL">Telkomsel</option>
+                        <option value="IOH">Indosat</option>
+                        <option value="XL">XL Axiata</option>
+                    </select>
+
+                    <button type="submit" class="btn btn-sm btn-primary text-nowrap ms-1">
                         <i class="mdi mdi-magnify me-1"></i>Terapkan
                     </button>
                 </form>
@@ -84,6 +93,65 @@
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabel Luaran Paparan dan Aktual -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-transparent border-bottom">
+                <h5 class="card-title mb-0"><i class="mdi mdi-table-large me-1"></i> Data Aktual vs Paparan (Forecast)</h5>
+            </div>
+            <div class="card-body">
+                <!-- Summary Cards -->
+                <div class="row mb-3 text-center">
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="text-muted mb-1">Total Paparan</h6>
+                            <h4 class="mb-0 text-primary" id="sum-paparan">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="text-muted mb-1">Total Aktual</h6>
+                            <h4 class="mb-0 text-success" id="sum-aktual">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="text-muted mb-1">Selisih</h6>
+                            <h4 class="mb-0" id="sum-selisih">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-light">
+                            <h6 class="text-muted mb-1">Capaian</h6>
+                            <h4 class="mb-0" id="sum-persen">0%</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped dt-responsive nowrap w-100" id="table-comparison">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 20px;">#</th>
+                                <th>Kode Simpul</th>
+                                <th>Nama Simpul</th>
+                                <th class="text-end">Paparan (Forecast)</th>
+                                <th class="text-end">Aktual</th>
+                                <th class="text-end">Selisih</th>
+                                <th class="text-end">% Capaian</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <tr><td colspan="7" class="text-center">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -167,7 +235,8 @@
     async function fetchData() {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
-        const url = `{{ route('map-monitor.data') }}?start_date=${startDate}&end_date=${endDate}`;
+        const opsel = document.getElementById('opselFilter').value;
+        const url = `{{ route('map-monitor.data') }}?start_date=${startDate}&end_date=${endDate}&opsel=${opsel}`;
 
         loadingOverlay.style.display = 'flex';
 
@@ -183,6 +252,9 @@
 
             // Render Features
             renderSimpul(data.features, data.max_volume);
+
+            // Render Table & Summary
+            renderTable(data.table_data, data.summary);
 
         } catch (error) {
             console.error('Error fetching map data:', error);
@@ -241,8 +313,48 @@
             map.fitBounds(bounds, { padding: [50, 50] });
         }
     }
+
+    // 7. Render Table
+    function renderTable(data, summary) {
+        // Update Summary
+        document.getElementById('sum-paparan').textContent = (summary.total_paparan || 0).toLocaleString('id-ID');
+        document.getElementById('sum-aktual').textContent = (summary.total_aktual || 0).toLocaleString('id-ID');
+        document.getElementById('sum-selisih').textContent = (summary.selisih || 0).toLocaleString('id-ID');
+        
+        const persen = summary.persen || 0;
+        const persenElem = document.getElementById('sum-persen');
+        persenElem.textContent = persen + '%';
+        persenElem.className = 'mb-0 ' + (persen >= 100 ? 'text-success' : (persen >= 80 ? 'text-warning' : 'text-danger'));
+
+        // Update Table
+        const tbody = document.getElementById('table-body');
+        if (!data || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Tidak ada data.</td></tr>';
+            return;
+        }
+
+        let html = '';
+        data.forEach((row, index) => {
+            const selisih = row.aktual - row.paparan;
+            const capain = row.paparan > 0 ? (row.aktual / row.paparan) * 100 : 0;
+            const colorClass = selisih >= 0 ? 'text-success' : 'text-danger';
+
+            html += `
+                <tr>
+                    <td class="text-center">${index + 1}</td>
+                    <td>${row.code}</td>
+                    <td class="fw-bold">${row.name}</td>
+                    <td class="text-end">${row.paparan.toLocaleString('id-ID')}</td>
+                    <td class="text-end fw-bold">${row.aktual.toLocaleString('id-ID')}</td>
+                    <td class="text-end ${colorClass}">${selisih.toLocaleString('id-ID')}</td>
+                    <td class="text-end">${capain.toFixed(1)}%</td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
     
-    // 7. Handle Search Selection (From Server-Side Integration)
+    // 8. Handle Search Selection (From Server-Side Integration)
     $('#simpulSearch').on('select2:select', function (e) {
         const data = e.params.data;
         // data.id = code
@@ -288,6 +400,9 @@
         const sd = document.getElementById('startDate');
         if (this.value < sd.value) sd.value = this.value;
     });
+
+    // Fetch on Opsel Change
+    document.getElementById('opselFilter').addEventListener('change', fetchData);
 
     // Initial Load
     fetchData();
