@@ -402,7 +402,147 @@ class GrafikMpdController extends Controller
             'daily_charts' => $dailyCharts
         ];
     }
-    public function nasionalSimpul() { return view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Simpul']]); }
+    public function nasionalSimpul(Request $request)
+    {
+        $startDate = \Carbon\Carbon::create(2026, 3, 13);
+        $endDate = \Carbon\Carbon::create(2026, 3, 29);
+
+        // Cache Key v3 for Dashboard Layout
+        $cacheKey = 'grafik:nasional:simpul:v3';
+
+        try {
+            $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getSimpulDashboardData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Nasional Simpul Dashboard Error: ' . $e->getMessage());
+            $data = $this->getSimpulDashboardData($startDate, $endDate);
+        }
+
+        return view('grafik-mpd.nasional.simpul', [
+            'title' => 'Dashboard Simpul & Pergerakan',
+            'breadcrumb' => ['Grafik MPD', 'Nasional', 'Simpul'],
+            'data' => $data
+        ]);
+    }
+
+    private function getSimpulDashboardData($startDate, $endDate)
+    {
+        // Define Tabs and their Primary Modes for Charts
+        // Mode Codes: A=AKAP, B=AKDP, F=Laut, H=Udara, C=KA Antar, D=KCJB, E=KA Urban
+        $tabs = [
+            'DARAT' => [
+                'modes' => ['A', 'B', 'I', 'J', 'K', 'G'],
+                'charts' => ['A' => 'Bus AKAP', 'B' => 'Bus AKDP'] // Specific Daily Charts
+            ],
+            'LAUT' => [
+                'modes' => ['F'],
+                'charts' => ['F' => 'Angkutan Laut']
+            ],
+            'UDARA' => [
+                'modes' => ['H'],
+                'charts' => ['H' => 'Angkutan Udara']
+            ],
+            'KERETA' => [
+                'modes' => ['C', 'D', 'E'],
+                'charts' => ['C' => 'KA Antarkota', 'E' => 'KA Perkotaan']
+            ]
+        ];
+
+        // Prepare Date Labels
+        $dates = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates[] = $curr->format('d M'); // Format: 18 Des
+            $curr->addDay();
+        }
+        // DB Date Strings for querying
+        $dbDates = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dbDates[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        $result = ['dates' => $dates, 'tabs' => []];
+
+        foreach ($tabs as $key => $config) {
+            $modeCodes = $config['modes'];
+            
+            // 1. TOP 10 ORIGIN SIMPUL (Aggregate all modes in this tab)
+            // Use ref_transport_nodes name via Join or simple GroupBy code if names not needed in query (Post processing)
+            // Better to Join for Names.
+            // Note: origin_simpul might be a Code. User wants "Top 10 Origin Simpul Darat".
+            $topOrigin = DB::table('spatial_movements as sm')
+                ->join('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
+                ->select('n.name', DB::raw('SUM(sm.total) as total'))
+                ->whereIn('sm.kode_moda', $modeCodes)
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->groupBy('n.name')
+                ->orderByDesc('total')
+                ->limit(10)
+                ->get();
+            
+            // 2. TOP 10 DEST SIMPUL
+            $topDest = DB::table('spatial_movements as sm')
+                // Note: dest_simpul mapping logic? Assuming ref_transport_nodes matches.
+                // Sometimes dest_simpul is "ANY" or null in dummy data, but logic supports it.
+                ->join('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
+                ->select('n.name', DB::raw('SUM(sm.total) as total'))
+                ->whereIn('sm.kode_moda', $modeCodes)
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->groupBy('n.name')
+                ->orderByDesc('total')
+                ->limit(10)
+                ->get();
+
+            // 3. DAILY CHARTS (Per Specific Mode defined in config)
+            $charts = [];
+            foreach ($config['charts'] as $code => $label) {
+                $daily = DB::table('spatial_movements')
+                    ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+                    ->where('kode_moda', $code)
+                    ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                    ->groupBy('tanggal', 'is_forecast')
+                    ->get();
+                
+                $realSeries = array_fill(0, count($dates), 0);
+                $fcSeries = array_fill(0, count($dates), 0);
+                
+                $totalReal = 0;
+                $totalFc = 0;
+
+                foreach ($daily as $row) {
+                    $idx = array_search($row->tanggal, $dbDates);
+                    if ($idx !== false) {
+                        if ($row->is_forecast) {
+                            $fcSeries[$idx] += (int) $row->total;
+                            $totalFc += (int) $row->total;
+                        } else {
+                            $realSeries[$idx] += (int) $row->total;
+                            $totalReal += (int) $row->total;
+                        }
+                    }
+                }
+
+                $charts[] = [
+                    'label' => $label,
+                    'series_real' => $realSeries,
+                    'series_forecast' => $fcSeries,
+                    'total_real' => $totalReal,
+                    'total_forecast' => $totalFc
+                ];
+            }
+
+            $result['tabs'][$key] = [
+                'top_origin' => $topOrigin,
+                'top_dest' => $topDest,
+                'daily_charts' => $charts
+            ];
+        }
+
+        return $result;
+    }
     
     public function jabodetabekPergerakanOrang() { return view('placeholder', ['title' => 'Pergerakan & Orang', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Pergerakan & Orang']]); }
     public function jabodetabekPergerakanOrangOpsel() { return view('placeholder', ['title' => 'Pergerakan & Orang (Opsel)', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Pergerakan & Orang (Opsel)']]); }
