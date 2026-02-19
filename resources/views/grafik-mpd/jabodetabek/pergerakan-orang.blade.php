@@ -2,6 +2,15 @@
 
 @section('title', $title)
 
+@push('css')
+<style>
+    .chart-container {
+        height: 400px;
+        width: 100%;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="row">
     <div class="col-12">
@@ -18,84 +27,27 @@
     </div>
 </div>
 
-<!-- INFO CARDS -->
+{{-- CHARTS ONLY (KPIs Removed per Request) --}}
+
 <div class="row">
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-h-100">
+    {{-- CHART 1: PERGERAKAN HARIAN --}}
+    <div class="col-12">
+        <div class="card">
             <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <span class="text-muted mb-3 lh-1 d-block text-truncate">Total Pergerakan (Real)</span>
-                        <h4 class="mb-3">
-                            <span class="counter-value" data-target="{{ $data['summary']['movement_real'] }}">0</span>
-                        </h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <span class="text-muted mb-3 lh-1 d-block text-truncate">Total Pergerakan (Forecast)</span>
-                        <h4 class="mb-3">
-                            <span class="counter-value" data-target="{{ $data['summary']['movement_forecast'] }}">0</span>
-                        </h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <span class="text-muted mb-3 lh-1 d-block text-truncate">Total Orang (Real)</span>
-                        <h4 class="mb-3">
-                            <span class="counter-value" data-target="{{ $data['summary']['people_real'] }}">0</span>
-                        </h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xl-3 col-md-6">
-        <div class="card card-h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="flex-grow-1">
-                        <span class="text-muted mb-3 lh-1 d-block text-truncate">Total Orang (Forecast)</span>
-                        <h4 class="mb-3">
-                            <span class="counter-value" data-target="{{ $data['summary']['people_forecast'] }}">0</span>
-                        </h4>
-                    </div>
-                </div>
+                <h4 class="card-title mb-4 text-center">Grafik Pergerakan Harian Jabodetabek (Real vs Forecast)</h4>
+                <div id="chart-movement" dir="ltr" class="chart-container"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- CHARTS -->
 <div class="row">
-    <!-- CHART 1: PERGERAKAN HARIAN -->
-    <div class="col-xl-12">
+    {{-- CHART 2: ORANG HARIAN --}}
+    <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title mb-4">Grafik Pergerakan Harian Jabodetabek (Real vs Forecast)</h4>
-                <div id="chart-movement" class="apex-charts" dir="ltr"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CHART 2: ORANG HARIAN -->
-    <div class="col-xl-12">
-        <div class="card">
-            <div class="card-body">
-                <h4 class="card-title mb-4">Grafik Orang Harian Jabodetabek (Real vs Forecast)</h4>
-                <div id="chart-people" class="apex-charts" dir="ltr"></div>
+                <h4 class="card-title mb-4 text-center">Grafik Orang Harian Jabodetabek (Real vs Forecast)</h4>
+                <div id="chart-people" dir="ltr" class="chart-container"></div>
             </div>
         </div>
     </div>
@@ -103,43 +55,98 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('assets/libs/apexcharts/apexcharts.min.js') }}"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const dates = @json($data['dates']);
+        const data = @json($data);
+        const dates = data.dates || [];
         
-        // Common Options
+        // Common Highcharts Options (Matched with Nasional Pergerakan)
         const commonOptions = {
-            chart: {
-                height: 350,
-                type: 'line',
-                zoom: { enabled: false },
-                toolbar: { show: false }
+            chart: { type: 'column' },
+            title: { text: undefined },
+            xAxis: { 
+                categories: dates,
+                crosshair: true,
+                labels: {
+                    formatter: function() { 
+                        // Robust Date Formatting (YYYY-MM-DD -> DD-MM-YYYY)
+                        if (typeof this.value !== 'string') return this.value;
+                        const parts = this.value.split('-');
+                        if(parts.length === 3) {
+                            return parts[2] + '-' + parts[1] + '-' + parts[0];
+                        }
+                        return this.value;
+                    }
+                }
             },
-            stroke: { width: [3, 3], curve: 'smooth' },
-            xaxis: { categories: dates },
+            yAxis: {
+                min: 0,
+                title: { text: null }, 
+                labels: {
+                    formatter: function() { 
+                        if(this.value >= 1000000) return (this.value / 1000000).toFixed(1) + 'M';
+                        if(this.value >= 1000) return (this.value / 1000).toFixed(0) + 'k';
+                        return this.value;
+                    }
+                }
+            },
             tooltip: {
-                y: { formatter: function (val) { return val.toLocaleString('id-ID'); } }
+                headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                    '<td style="padding:0"><b>{point.y:,.0f}</b></td></tr>',
+                footerFormat: '</table>',
+                shared: true,
+                useHTML: true
             },
-            grid: { borderColor: '#f1f1f1' },
-            legend: { position: 'top' }
+            plotOptions: {
+                column: {
+                    pointPadding: 0.2, 
+                    borderWidth: 0,
+                    minPointLength: 3, 
+                    dataLabels: {
+                        enabled: true,
+                        rotation: -90,
+                        color: '#999', 
+                        align: 'right',
+                        format: '{point.y:,.0f}', 
+                        y: -5, 
+                        style: {
+                            fontSize: '9px',
+                            fontFamily: 'Verdana, sans-serif',
+                            textOutline: 'none'
+                        }
+                    }
+                }
+            },
+            credits: { enabled: false },
+            legend: {
+                align: 'center',
+                verticalAlign: 'bottom',
+                layout: 'horizontal'
+            }
         };
 
         // Render Movement Chart
-        const optionsMov = {
-            ...commonOptions,
-            series: @json($data['chart_movement']),
-            colors: ['#2caffe', '#fec107']
-        };
-        new ApexCharts(document.querySelector("#chart-movement"), optionsMov).render();
+        Highcharts.chart('chart-movement', Highcharts.merge(commonOptions, {
+            series: data.chart_movement.map(s => ({
+                name: s.name,
+                data: s.data,
+                color: s.color
+            }))
+        }));
 
         // Render People Chart
-        const optionsPpl = {
-            ...commonOptions,
-            series: @json($data['chart_people']),
-            colors: ['#2caffe', '#fec107']
-        };
-        new ApexCharts(document.querySelector("#chart-people"), optionsPpl).render();
+        Highcharts.chart('chart-people', Highcharts.merge(commonOptions, {
+            series: data.chart_people.map(s => ({
+                name: s.name,
+                data: s.data,
+                color: s.color
+            }))
+        }));
     });
 </script>
 @endpush
