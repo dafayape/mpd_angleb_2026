@@ -929,7 +929,121 @@ class GrafikMpdController extends Controller
             ]
         ];
     }
-    public function jabodetabekOdKabkota() { return view('placeholder', ['title' => 'O-D Kab/Kota', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'O-D Kab/Kota']]); }
+    public function jabodetabekOdKabkota(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+
+        // Cache Key
+        $cacheKey = 'grafik:jabodetabek:od-kabkota:v1';
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getJabodetabekOdData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Jabodetabek OD Error: ' . $e->getMessage());
+            $data = $this->getJabodetabekOdData($startDate, $endDate);
+        }
+
+        return view('grafik-mpd.jabodetabek.od-kabkota', [
+            'title' => 'O-D Kabupaten/Kota (Jabodetabek)',
+            'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'O-D Kab/Kota'],
+            'data' => $data
+        ]);
+    }
+
+    private function getJabodetabekOdData($startDate, $endDate)
+    {
+        $jabodetabekCodes = [
+            '3171', '3172', '3173', '3174', '3175', '3101',
+            '3201', '3271',
+            '3276',
+            '3603', '3671', '3674',
+            '3216', '3275'
+        ];
+
+        // 1. Query: Sum Total by Origin City & Dest City
+        try {
+            $query = DB::table('spatial_movements as sm')
+                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+                ->select(
+                    'oc.code as origin_code',
+                    'oc.name as origin_name',
+                    'dc.code as dest_code',
+                    'dc.name as dest_name',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.is_forecast', false)
+                ->where(function($q) use ($jabodetabekCodes) {
+                     // Internal O-D: Both must be in Jabodetabek? Or just one?
+                     // Usually "O-D Kab/Kota Jabodetabek" implies movements within the region or to/from.
+                     // Let's assume Internal (Both In) to show interactions between cities.
+                     $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                       ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+                })
+                ->groupBy('oc.code', 'oc.name', 'dc.code', 'dc.name')
+                ->get();
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Jabodetabek OD Query Error: ' . $e->getMessage());
+            return ['top_origin' => [], 'top_dest' => [], 'sankey' => [], 'total_national' => 0];
+        }
+
+        // 2. Process Data
+        $totalVol = $query->sum('total_volume');
+
+        // A. Top Origin
+        $topOrigin = $query->groupBy('origin_code')
+            ->map(function ($rows) use ($totalVol) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->origin_code,
+                    'name' => $rows->first()->origin_name,
+                    'total' => $subTotal,
+                    'pct' => $totalVol > 0 ? ($subTotal / $totalVol) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        // B. Top Destination
+        $topDest = $query->groupBy('dest_code')
+            ->map(function ($rows) use ($totalVol) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->dest_code,
+                    'name' => $rows->first()->dest_name,
+                    'total' => $subTotal,
+                    'pct' => $totalVol > 0 ? ($subTotal / $totalVol) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        // C. Sankey Data
+        // To avoid self-loops cluttering or if desired, filter origin != dest?
+        // Usually Sankey shows flow. Self-loops (internal movement within city) might be valid but can look weird.
+        // Let's include all for now.
+        $sankeyData = $query->map(function($row) {
+            return [
+                'from' => $row->origin_name,
+                'to' => $row->dest_name,
+                'weight' => (int) $row->total_volume
+            ];
+        })->values();
+
+        return [
+            'top_origin' => $topOrigin,
+            'top_dest' => $topDest,
+            'sankey' => $sankeyData,
+            'total_volume' => $totalVol
+        ];
+    }
     public function jabodetabekModeShare() { return view('placeholder', ['title' => 'Mode Share', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Mode Share']]); }
     public function jabodetabekSimpul() { return view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Simpul']]); }
 
