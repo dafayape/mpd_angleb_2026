@@ -107,21 +107,28 @@
             legend: {
                 enabled: true,
                 useHTML: true,
+                align: 'center',
+                verticalAlign: 'bottom',
+                layout: 'horizontal',
+                width: '100%',
+                itemWidth: 300, // Fixed width to create grid (approx 3 columns on desktop)
                 itemStyle: {
                     fontSize: '13px',
                     fontWeight: 'normal',
-                    color: '#333'
+                    color: '#333',
+                    textOverflow: 'ellipsis'
                 },
-                itemMarginBottom: 10,
-                layout: 'horizontal',
-                width: '100%',
+                itemMarginBottom: 15,
+                navigation: {
+                    enabled: false // Disable scroll buttons
+                },
                 labelFormatter: function() {
                     const val = Highcharts.numberFormat(this.y, 0, ',', '.');
                     const pct = Highcharts.numberFormat(this.percentage, 2, ',', '.');
                     return `
-                        <div style="display: flex; flex-direction: column; line-height: 1.2;">
-                            <span style="font-weight: bold; font-size: 14px; margin-bottom: 2px;">${this.name}</span>
-                            <span style="color: #666; font-size: 12px;">${val} | ${pct}%</span>
+                        <div style="width: 250px; line-height: 1.4;">
+                            <div style="font-weight: bold; font-size: 14px; margin-bottom: 2px;">${this.name}</div>
+                            <div style="color: #666; font-size: 12px;">${val} | ${pct}%</div>
                         </div>
                     `;
                 }
