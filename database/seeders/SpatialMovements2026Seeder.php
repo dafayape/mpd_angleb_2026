@@ -41,41 +41,85 @@ class SpatialMovements2026Seeder extends Seeder
 
     private function insertDummyRecord($date, $opsel, $isForecast)
     {
-        // Fetch valid codes once (static cache would be better but this is fine for seeded loop)
-        static $simpulCodes = null;
-        if (!$simpulCodes) {
-            $simpulCodes = DB::table('ref_transport_nodes')->pluck('code')->toArray();
+        // 1. Fetch Node Categories from DB (Cached static)
+        static $nodes = null;
+        if (!$nodes) {
+            $rawNodes = DB::table('ref_transport_nodes')->select('code', 'name')->get();
+            $nodes = [
+                'AIR' => [],
+                'SEA' => [], // Includes Ferry
+                'RAIL' => [], // GEN
+                'LAND' => []  // If any specific, otherwise reuse RAIL/GEN or assume Terminals use specific codes
+            ];
+            foreach ($rawNodes as $node) {
+                if (str_starts_with($node->code, 'AIR-')) $nodes['AIR'][] = $node->code;
+                elseif (str_starts_with($node->code, 'SEA-')) $nodes['SEA'][] = $node->code;
+                elseif (str_starts_with($node->code, 'GEN-')) $nodes['RAIL'][] = $node->code;
+                else $nodes['LAND'][] = $node->code; // Fallback
+            }
         }
 
-        // Random Total: 500k - 2M
-        $total = rand(500000, 2000000);
+        // 2. Define Mode Groups
+        // Air: H
+        // Sea: F (Laut), G (Ferry)
+        // Rail: C (Antar), D (KC), E (Urban)
+        // Land: A (AKAP), B (AKDP), I, J, K
+        $modeGroups = [
+            'AIR' => ['H'],
+            'SEA' => ['F', 'G'],
+            'RAIL' => ['C', 'D', 'E'],
+            'LAND' => ['A', 'B', 'I', 'J', 'K']
+        ];
 
-        // Adjust Forecast slightly from Real to look realistic
-        if ($isForecast) {
-            $total = (int) ($total * (rand(90, 110) / 100));
+        // 3. Pick a Category Weighted by Probability
+        // Land > Commuter Rail > Sea > Air
+        $category = 'LAND';
+        $rand = rand(1, 100);
+        if ($rand <= 10) $category = 'AIR';      // 10%
+        elseif ($rand <= 25) $category = 'SEA';  // 15%
+        elseif ($rand <= 50) $category = 'RAIL'; // 25%
+        else $category = 'LAND';                 // 50%
+
+        // 4. Select Mode
+        $selectedMode = $modeGroups[$category][array_rand($modeGroups[$category])];
+
+        // 5. Select Origin/Dest based on Category
+        // For Land, if no specific Land nodes, we might use Cities (3276, 3171) or GEN nodes as terminals
+        // Let's use RAIL nodes for Land too if LAND is empty (Intermodal Hubs)
+        $pool = $nodes[$category];
+        if (empty($pool)) {
+           // Fallback for Land if empty: Use Rail nodes (common aggregation)
+           if ($category === 'LAND' && !empty($nodes['RAIL'])) $pool = $nodes['RAIL'];
+           else return; // Skip if no nodes
         }
 
-        // Random Valid Mode (A-K) to match ModaSeeder
-        // A=Bus AKAP, B=Bus AKDP, C=KA Antar, D=KC, E=KA Urban, F=Laut, G=Ferry, H=Udara, I=Mobil, J=Motor, K=Sepeda
-        $modes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
-        $selectedMode = $modes[array_rand($modes)];
+        $origin = $pool[array_rand($pool)];
+        $dest = $pool[array_rand($pool)];
+        while($dest === $origin && count($pool) > 1) {
+             $dest = $pool[array_rand($pool)];
+        }
+
+        // 6. Generate Volume
+        // Rail/Land > Sea > Air
+        $baseVolume = match($category) {
+            'LAND' => rand(500000, 3000000),
+            'RAIL' => rand(100000, 1000000),
+            'SEA'  => rand(5000, 50000),
+            'AIR'  => rand(1000, 20000),
+        };
         
-        // Random Origin/Dest from Valid Codes
-        $origin = $simpulCodes ? $simpulCodes[array_rand($simpulCodes)] : 'DUMMY_ORIGIN';
-        $dest = $simpulCodes ? $simpulCodes[array_rand($simpulCodes)] : 'DUMMY_DEST';
-
-        // Ensure distinct
-        while($dest === $origin && count($simpulCodes) > 1) {
-             $dest = $simpulCodes[array_rand($simpulCodes)];
+        $total = $baseVolume;
+        if ($isForecast) {
+            $total = (int) ($total * (rand(95, 105) / 100)); // tight forecast
         }
 
         DB::table('spatial_movements')->insert([
             'tanggal' => $date,
             'opsel' => $opsel,
             'is_forecast' => $isForecast,
-            'kategori' => 'DUMMY',
-            'kode_origin_kabupaten_kota' => '3273', // Bandung (Valid)
-            'kode_dest_kabupaten_kota' => '3171', // Jakpus (Valid)
+            'kategori' => 'REAL_PATTERN_SIMULATION', // Marker for "Real-like" data
+            'kode_origin_kabupaten_kota' => '3273', // Bandung (Placeholder for City)
+            'kode_dest_kabupaten_kota' => '3171', // Jakpus
             'kode_origin_simpul' => $origin,
             'kode_dest_simpul' => $dest,
             'kode_moda' => $selectedMode, 

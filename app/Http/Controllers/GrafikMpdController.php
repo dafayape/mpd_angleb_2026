@@ -407,8 +407,8 @@ class GrafikMpdController extends Controller
         $startDate = \Carbon\Carbon::create(2026, 3, 13);
         $endDate = \Carbon\Carbon::create(2026, 3, 29);
 
-        // Cache Key v5 for Dashboard Layout (Granular Sections)
-        $cacheKey = 'grafik:nasional:simpul:v5';
+        // Cache Key v6: Connected to Real Data Source (PostGIS/Spatial)
+        $cacheKey = 'grafik:nasional:simpul:v6';
 
         try {
             $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
