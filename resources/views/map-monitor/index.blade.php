@@ -234,7 +234,8 @@
                     <span class="badge bg-secondary mb-2">${props.category}</span>
                     <div style="font-size: 12px;">
                         <strong>Volume:</strong> ${props.volume.toLocaleString('id-ID')}<br>
-                        <strong>Radius:</strong> ${Math.round(props.radius).toLocaleString('id-ID')} m
+                        <strong>Radius:</strong> ${Math.round(props.radius).toLocaleString('id-ID')} m<br>
+                        <strong>Koordinat:</strong> ${lat.toFixed(5)}, ${lng.toFixed(5)}
                     </div>
                 </div>
             `;
