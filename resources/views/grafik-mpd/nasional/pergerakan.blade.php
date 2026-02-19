@@ -7,7 +7,7 @@
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0 font-size-18">{{ $title }}</h4>
-            <div class="page-title-right">
+                <div class="page-title-right">
                 <ol class="breadcrumb m-0">
                     @foreach($breadcrumb as $crumb)
                         <li class="breadcrumb-item {{ $loop->last ? 'active' : '' }}">
@@ -15,6 +15,9 @@
                         </li>
                     @endforeach
                 </ol>
+                <div class="mt-2 text-end">
+                    <span class="badge bg-info font-size-12">Periode: 13 Mar 2026 - 29 Mar 2026</span>
+                </div>
             </div>
         </div>
     </div>
@@ -150,9 +153,12 @@
                 crosshair: true,
                 labels: {
                     formatter: function() { 
-                        // Format Date like "18-12-2025"
-                        const d = new Date(this.value);
-                        return ("0" + d.getDate()).slice(-2) + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + d.getFullYear();
+                        // Expect "YYYY-MM-DD"
+                        var parts = this.value.split('-');
+                        if(parts.length === 3) {
+                            return parts[2] + '-' + parts[1] + '-' + parts[0];
+                        }
+                        return this.value;
                     }
                 }
             },
