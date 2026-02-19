@@ -142,89 +142,98 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const data = @json($charts);
-        const dates = data.dates;
-        
-        // Common Options
-        const commonOptions = {
-            chart: { type: 'column' },
-            xAxis: { 
-                categories: dates,
-                crosshair: true,
-                labels: {
-                    formatter: function() { 
-                        // Expect "YYYY-MM-DD"
-                        var parts = this.value.split('-');
-                        if(parts.length === 3) {
-                            return parts[2] + '-' + parts[1] + '-' + parts[0];
-                        }
-                        return this.value;
-                    }
-                }
-            },
-            yAxis: {
-                min: 0,
-                title: { text: 'Total' },
-                labels: {
-                    formatter: function() { 
-                        if(this.value >= 1000000) return (this.value / 1000000).toFixed(1) + 'M';
-                        if(this.value >= 1000) return (this.value / 1000).toFixed(0) + 'k';
-                        return this.value;
-                    }
-                }
-            },
-            tooltip: {
-                headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-                pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-                    '<td style="padding:0"><b>{point.y:,.0f}</b></td></tr>',
-                footerFormat: '</table>',
-                shared: true,
-                useHTML: true
-            },
-            plotOptions: {
-                column: {
-                    pointPadding: 0.1, // Reduce padding to make bars thicker
-                    borderWidth: 0,
-                    dataLabels: {
-                        enabled: true,
-                        rotation: -90,
-                        color: '#FFFFFF',
-                        align: 'right',
-                        format: '{point.y:,.0f}', // Display full number
-                        y: 10, // vertical position
-                        style: {
-                            fontSize: '9px',
-                            fontFamily: 'Verdana, sans-serif'
+        try {
+            const data = @json($charts);
+            const dates = data.dates;
+            
+            // Common Options
+            const commonOptions = {
+                chart: { type: 'column' },
+                xAxis: { 
+                    categories: dates,
+                    crosshair: true,
+                    labels: {
+                        formatter: function() { 
+                            // Robust date formatting
+                            if (typeof this.value !== 'string') return this.value;
+                            var parts = this.value.split('-');
+                            if(parts.length === 3) {
+                                return parts[2] + '-' + parts[1] + '-' + parts[0];
+                            }
+                            return this.value;
                         }
                     }
+                },
+                yAxis: {
+                    min: 0,
+                    title: { text: null }, // Hide title to save space as requested in reference style
+                    labels: {
+                        formatter: function() { 
+                            if(this.value >= 1000000) return (this.value / 1000000).toFixed(1) + 'M';
+                            if(this.value >= 1000) return (this.value / 1000).toFixed(0) + 'k';
+                            return this.value;
+                        }
+                    }
+                },
+                tooltip: {
+                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                        '<td style="padding:0"><b>{point.y:,.0f}</b></td></tr>',
+                    footerFormat: '</table>',
+                    shared: true,
+                    useHTML: true
+                },
+                plotOptions: {
+                    column: {
+                        pointPadding: 0.2, 
+                        borderWidth: 0,
+                        minPointLength: 3, // Ensure 0 values show a small line
+                        dataLabels: {
+                            enabled: true,
+                            rotation: -90,
+                            color: '#999', // Grey if 0/inside
+                            align: 'right',
+                            format: '{point.y:,.0f}', 
+                            y: -5, // Float above bar
+                            style: {
+                                fontSize: '9px',
+                                fontFamily: 'Verdana, sans-serif',
+                                textOutline: 'none' // Cleaner look
+                            }
+                        }
+                    }
+                },
+                credits: { enabled: false },
+                legend: {
+                    align: 'center',
+                    verticalAlign: 'bottom',
+                    layout: 'horizontal'
                 }
-            },
-            credits: { enabled: false }
-        };
+            };
 
-        // 1. Pergerakan Trend (Real vs Forecast)
-        Highcharts.chart('chart-pergerakan-trend', Highcharts.merge(commonOptions, {
-            title: { text: '' },
-            series: data.series_trend
-        }));
+            // 1. Pergerakan Trend (Real vs Forecast)
+            Highcharts.chart('chart-pergerakan-trend', Highcharts.merge(commonOptions, {
+                series: data.series_trend
+            }));
 
-        // 2. Orang Trend (Real vs Forecast) - Same Data for now
-        Highcharts.chart('chart-orang-trend', Highcharts.merge(commonOptions, {
-             title: { text: '' },
-             series: data.series_trend
-        }));
+            // 2. Orang Trend (Real vs Forecast)
+            Highcharts.chart('chart-orang-trend', Highcharts.merge(commonOptions, {
+                 series: data.series_trend
+            }));
 
-        // 3. Pergerakan Opsel
-        Highcharts.chart('chart-pergerakan-opsel', Highcharts.merge(commonOptions, {
-             title: { text: '' },
-             series: data.series_opsel
-        }));
+            // 3. Pergerakan Opsel
+            Highcharts.chart('chart-pergerakan-opsel', Highcharts.merge(commonOptions, {
+                 series: data.series_opsel
+            }));
 
-         // 4. Orang Opsel - Same Data for now
-         Highcharts.chart('chart-orang-opsel', Highcharts.merge(commonOptions, {
-             title: { text: '' },
-             series: data.series_opsel
-        }));
+             // 4. Orang Opsel
+             Highcharts.chart('chart-orang-opsel', Highcharts.merge(commonOptions, {
+                 series: data.series_opsel
+            }));
+
+        } catch (e) {
+            console.error('Chart Render Error:', e);
+        }
     });
 </script>
 @endpush
