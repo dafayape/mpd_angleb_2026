@@ -189,13 +189,6 @@
                         </li>
 
                         <li>
-                            <a href="{{ route('keynote') }}" class="waves-effect">
-                                <i class="bx bx-slideshow"></i>
-                                <span>Keynote Material</span>
-                            </a>
-                        </li>
-
-                        <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
                                 <span>Grafik MPD</span>

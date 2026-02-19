@@ -33,30 +33,45 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
+                <!-- AI Analysis Section -->
+                <div class="alert alert-soft-primary border-primary mb-4 p-3 rounded-3 shadow-sm bg-white" role="alert">
+                    <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0 me-3">
+                            <i class="bx bx-bot fs-1 text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="alert-heading fw-bold text-primary mb-2">AI Summary & Insights</h5>
+                            <div id="ai-analysis-content" class="text-dark" style="line-height: 1.6;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div> Menganalisis data...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Summary Cards -->
                 <div class="row mb-3 text-center">
                     <div class="col-md-3">
-                        <div class="p-3 border rounded bg-light">
-                            <h6 class="text-muted mb-1">Total Paparan</h6>
-                            <h4 class="mb-0 text-primary" id="sum-paparan">0</h4>
+                        <div class="p-3 border rounded bg-light shadow-sm">
+                            <h6 class="text-muted mb-1 text-uppercase small fw-bold">Target (Paparan)</h6>
+                            <h4 class="mb-0 text-primary fw-bold" id="sum-paparan">0</h4>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="p-3 border rounded bg-light">
-                            <h6 class="text-muted mb-1">Total Aktual</h6>
-                            <h4 class="mb-0 text-success" id="sum-aktual">0</h4>
+                        <div class="p-3 border rounded bg-light shadow-sm">
+                            <h6 class="text-muted mb-1 text-uppercase small fw-bold">Realisasi (Aktual)</h6>
+                            <h4 class="mb-0 text-success fw-bold" id="sum-aktual">0</h4>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="p-3 border rounded bg-light">
-                            <h6 class="text-muted mb-1">Selisih</h6>
-                            <h4 class="mb-0" id="sum-selisih">0</h4>
+                        <div class="p-3 border rounded bg-light shadow-sm">
+                            <h6 class="text-muted mb-1 text-uppercase small fw-bold">Selisih</h6>
+                            <h4 class="mb-0 fw-bold" id="sum-selisih">0</h4>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="p-3 border rounded bg-light">
-                            <h6 class="text-muted mb-1">Capaian Nasional</h6>
-                            <h4 class="mb-0" id="sum-persen">0%</h4>
+                        <div class="p-3 border rounded bg-light shadow-sm">
+                            <h6 class="text-muted mb-1 text-uppercase small fw-bold">Capaian (%)</h6>
+                            <h4 class="mb-0 fw-bold" id="sum-persen">0%</h4>
                         </div>
                     </div>
                 </div>
@@ -139,7 +154,22 @@ document.addEventListener('DOMContentLoaded', function() {
         const persen = summary.persen || 0;
         const persenElem = document.getElementById('sum-persen');
         persenElem.textContent = persen + '%';
-        persenElem.className = 'mb-0 ' + (persen >= 100 ? 'text-success' : (persen >= 80 ? 'text-warning' : 'text-danger'));
+        persenElem.className = 'mb-0 fw-bold ' + (persen >= 100 ? 'text-success' : (persen >= 80 ? 'text-warning' : 'text-danger'));
+
+        // Update AI Analysis
+        const aiContainer = document.getElementById('ai-analysis-content');
+        if (data.analysis && data.analysis.length > 0) {
+            let aiHtml = '<ul class="mb-0 ps-3">';
+            data.analysis.forEach(point => {
+                // Convert **bold** to <b>bold</b>
+                const formattedPoint = point.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                aiHtml += `<li class="mb-1">${formattedPoint}</li>`;
+            });
+            aiHtml += '</ul>';
+            aiContainer.innerHTML = aiHtml;
+        } else {
+            aiContainer.innerHTML = '<span class="text-muted">Tidak ada data yang cukup untuk analisis AI.</span>';
+        }
 
         // Update Table
         const tbody = document.getElementById('table-body');

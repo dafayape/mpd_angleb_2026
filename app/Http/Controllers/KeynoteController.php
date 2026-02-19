@@ -97,12 +97,48 @@ class KeynoteController extends Controller
                     $periodLabel .= ' — ' . \Carbon\Carbon::parse($endDate)->format('d M Y');
                 }
 
+                // --- AI Analysis Logic ---
+                $analysis = [];
+
+                // 1. Volume Analysis
+                if ($totalPaparan > 0) {
+                    $diff = $totalAktual - $totalPaparan;
+                    $percentDiff = round(($diff / $totalPaparan) * 100, 1);
+                    $trend = $diff >= 0 ? "melampaui" : "di bawah";
+                    $analysis[] = "Total pergerakan aktual tercatat sebesar **" . number_format($totalAktual) . "**, yang berarti **{$percentDiff}%** {$trend} target paparan.";
+                }
+
+                // 2. Top Simpul Analysis
+                if (!empty($tableData)) {
+                    $topSimpul = $tableData[0];
+                    $analysis[] = "Titik kepadatan tertinggi terpantau di **{$topSimpul['name']}** dengan total volume **" . number_format($topSimpul['aktual']) . "**.";
+                }
+
+                // 3. Achievement Analysis
+                $avgCapaian = count($tableData) > 0 ? array_sum(array_column($tableData, 'aktual')) / count($tableData) : 0;
+                $lowPerformers = array_filter($tableData, function($row) { return $row['paparan'] > 0 && ($row['aktual'] / $row['paparan']) < 0.8; });
+                
+                if (count($lowPerformers) > 0) {
+                    $names = array_slice(array_column($lowPerformers, 'name'), 0, 3);
+                    $analysis[] = "Perhatian diperlukan pada **" . count($lowPerformers) . " simpul** yang capaiannya di bawah 80%, termasuk: " . implode(", ", $names) . ".";
+                } else {
+                    $analysis[] = "Secara umum, mayoritas simpul menunjukkan performa capaian yang baik mendekati atau melebihi target.";
+                }
+
+                // 4. Recommendation
+                if ($totalAktual > $totalPaparan) {
+                    $analysis[] = "Rekomendasi: Pertahankan kapasitas layanan di simpul-simpul utama untuk mengantisipasi lonjakan lebih lanjut.";
+                } else {
+                    $analysis[] = "Rekomendasi: Evaluasi faktor eksternal yang mungkin menyebabkan realisasi di bawah prediksi pada beberapa sektor.";
+                }
+
                 return response()->json([
                     'start_date' => $startDate,
                     'end_date' => $endDate,
                     'period_label' => $periodLabel,
                     'opsel_filter' => $opselFilter ?: 'Semua Opsel',
                     'table_data' => $tableData,
+                    'analysis' => $analysis, // Add Analysis to response
                     'summary' => [
                         'total_paparan' => $totalPaparan,
                         'total_aktual' => $totalAktual,
