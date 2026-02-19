@@ -36,7 +36,7 @@
     <div class="col-xl-6">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title mb-4 text-center">Distribusi Pergerakan Moda Transportasi (Real)</h4>
+                <h4 class="card-title mb-4 text-center">Distribusi Angkutan (Pergerakan - Real)</h4>
                 <div id="chart-movement" class="chart-container"></div>
             </div>
         </div>
@@ -46,7 +46,7 @@
     <div class="col-xl-6">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title mb-4 text-center">Distribusi Orang Moda Transportasi (Real)</h4>
+                <h4 class="card-title mb-4 text-center">Distribusi Angkutan (Orang - Real)</h4>
                 <div id="chart-people" class="chart-container"></div>
             </div>
         </div>
@@ -64,95 +64,64 @@
         const pieMovement = @json($data['pie_movement']);
         const piePeople = @json($data['pie_people']);
 
-        const commonOptions = {
-            chart: {
-                plotBackgroundColor: null,
-                plotBorderWidth: null,
-                plotShadow: false,
-                type: 'pie'
+        const pieConfig = (data, elementId) => ({
+            chart: { 
+                type: 'pie',
+                height: 500
             },
-            title: { text: null },
+            title: { text: '' },
             tooltip: {
-                pointFormat: '<b>{point.name}</b>: {point.y:,.0f} ({point.percentage:.1f}%)'
+                pointFormat: '<b>{point.y:,.0f}</b> ({point.percentage:.2f}%)'
             },
             accessibility: {
                 point: { valueSuffix: '%' }
             },
             plotOptions: {
                 pie: {
+                    innerSize: '60%', // DONUT (Matches Nasional)
                     allowPointSelect: true,
                     cursor: 'pointer',
+                    showInLegend: true,
                     dataLabels: {
                         enabled: true,
-                        format: '<b>{point.name}</b>: {point.y:,.0f} ({point.percentage:.1f}%)',
-                        distance: -50, // Inside or close
-                        filter: {
-                            property: 'percentage',
-                            operator: '>',
-                            value: 4
+                        useHTML: true,
+                        // Match Nasional Label Format: Name <br> Value <br> (Percent)
+                        formatter: function() {
+                             if(this.percentage < 1) return null; // Hide tiny labels
+                             return '<b>' + this.point.name + '</b><br>' + 
+                                    Highcharts.numberFormat(this.y, 0) + '<br>' + 
+                                    '<span style="color:#666">(' + Highcharts.numberFormat(this.percentage, 2) + '%)</span>';
                         },
-                        style: {
-                            fontSize: '10px',
-                            textOutline: 'none',
-                            color: 'white' 
-                        }
-                    },
-                    showInLegend: true,
-                    innerSize: '50%' // Donut Chart
+                        distance: 30,
+                        color: 'black'
+                    }
                 }
             },
             legend: {
+                enabled: true,
                 align: 'center',
                 verticalAlign: 'bottom',
                 layout: 'horizontal',
-                itemStyle: { fontSize: '10px' } 
+                useHTML: true,
+                // Match Nasional Legend Format
+                labelFormatter: function () {
+                    return '<b>' + this.name + '</b><br/>' +
+                           '<span style="font-size:11px;color:#555">' +
+                           Highcharts.numberFormat(this.y, 0) + ' | ' +
+                           Highcharts.numberFormat(this.percentage, 2) + '%' +
+                           '</span>';
+                }
             },
+            series: [{
+                name: 'Total',
+                colorByPoint: true,
+                data: data
+            }],
             credits: { enabled: false }
-        };
+        });
 
-        // Render Movement Chart
-        Highcharts.chart('chart-movement', Highcharts.merge(commonOptions, {
-            series: [{
-                name: 'Moda',
-                colorByPoint: true,
-                data: pieMovement
-            }],
-            plotOptions: {
-                pie: {
-                    dataLabels: {
-                        // Custom formatter for readability logic if needed, 
-                        // but standard format above works for basic donut
-                        formatter: function() {
-                             if(this.percentage < 2) return null; // Hide small labels
-                             return this.point.name + ': ' + Highcharts.numberFormat(this.y, 0) + ' (' + Highcharts.numberFormat(this.percentage, 1) + '%)';
-                        },
-                        distance: 20, // Outside label for better visibility
-                        color: 'black'
-                    }
-                }
-            }
-        }));
-
-        // Render People Chart
-        Highcharts.chart('chart-people', Highcharts.merge(commonOptions, {
-            series: [{
-                name: 'Moda',
-                colorByPoint: true,
-                data: piePeople
-            }],
-             plotOptions: {
-                pie: {
-                    dataLabels: {
-                        formatter: function() {
-                             if(this.percentage < 2) return null;
-                             return this.point.name + ': ' + Highcharts.numberFormat(this.y, 0) + ' (' + Highcharts.numberFormat(this.percentage, 1) + '%)';
-                        },
-                        distance: 20,
-                        color: 'black'
-                    }
-                }
-            }
-        }));
+        Highcharts.chart('chart-movement', pieConfig(pieMovement, 'chart-movement'));
+        Highcharts.chart('chart-people', pieConfig(piePeople, 'chart-people'));
     });
 </script>
 @endpush
