@@ -41,6 +41,12 @@ class SpatialMovements2026Seeder extends Seeder
 
     private function insertDummyRecord($date, $opsel, $isForecast)
     {
+        // Fetch valid codes once (static cache would be better but this is fine for seeded loop)
+        static $simpulCodes = null;
+        if (!$simpulCodes) {
+            $simpulCodes = DB::table('ref_transport_nodes')->pluck('code')->toArray();
+        }
+
         // Random Total: 500k - 2M
         $total = rand(500000, 2000000);
 
@@ -52,9 +58,16 @@ class SpatialMovements2026Seeder extends Seeder
         // Random Valid Mode (A-K) to match ModaSeeder
         // A=Bus AKAP, B=Bus AKDP, C=KA Antar, D=KC, E=KA Urban, F=Laut, G=Ferry, H=Udara, I=Mobil, J=Motor, K=Sepeda
         $modes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
-        // Weighted: More I and J
-        $weightedModes = array_merge($modes, ['I', 'I', 'I', 'J', 'J', 'J', 'J']);
-        $selectedMode = $weightedModes[array_rand($weightedModes)];
+        $selectedMode = $modes[array_rand($modes)];
+        
+        // Random Origin/Dest from Valid Codes
+        $origin = $simpulCodes ? $simpulCodes[array_rand($simpulCodes)] : 'DUMMY_ORIGIN';
+        $dest = $simpulCodes ? $simpulCodes[array_rand($simpulCodes)] : 'DUMMY_DEST';
+
+        // Ensure distinct
+        while($dest === $origin && count($simpulCodes) > 1) {
+             $dest = $simpulCodes[array_rand($simpulCodes)];
+        }
 
         DB::table('spatial_movements')->insert([
             'tanggal' => $date,
@@ -63,8 +76,8 @@ class SpatialMovements2026Seeder extends Seeder
             'kategori' => 'DUMMY',
             'kode_origin_kabupaten_kota' => '3273', // Bandung (Valid)
             'kode_dest_kabupaten_kota' => '3171', // Jakpus (Valid)
-            'kode_origin_simpul' => 'DUMMY_ORIGIN',
-            'kode_dest_simpul' => 'DUMMY_DEST',
+            'kode_origin_simpul' => $origin,
+            'kode_dest_simpul' => $dest,
             'kode_moda' => $selectedMode, 
             'total' => $total,
             'created_at' => now(),
