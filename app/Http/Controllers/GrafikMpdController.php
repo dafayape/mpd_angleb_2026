@@ -407,8 +407,8 @@ class GrafikMpdController extends Controller
         $startDate = \Carbon\Carbon::create(2026, 3, 13);
         $endDate = \Carbon\Carbon::create(2026, 3, 29);
 
-        // Cache Key v4 for Dashboard Layout (Sections)
-        $cacheKey = 'grafik:nasional:simpul:v4';
+        // Cache Key v5 for Dashboard Layout (Granular Sections)
+        $cacheKey = 'grafik:nasional:simpul:v5';
 
         try {
             $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
@@ -439,7 +439,7 @@ class GrafikMpdController extends Controller
                         'modes' => ['A', 'B', 'I', 'J', 'K'], 
                         'daily_charts' => ['A' => 'Bus AKAP', 'B' => 'Bus AKDP'],
                         'show_top_10' => true,
-                        'show_top_od' => true
+                        'show_top_od' => false // REMOVE per request
                     ]
                 ]
             ],
@@ -449,7 +449,7 @@ class GrafikMpdController extends Controller
                         'title' => 'Pelabuhan Penyeberangan',
                         'subtitle' => 'Kode 1.3.d.1',
                         'modes' => ['G'], 
-                        'daily_charts' => ['G' => 'Angkutan Penyeberangan'],
+                        'daily_charts' => ['G' => 'Kapal Penyeberangan'],
                         'show_top_10' => true,
                         'show_top_od' => true
                     ],
@@ -457,7 +457,7 @@ class GrafikMpdController extends Controller
                         'title' => 'Pelabuhan Laut',
                         'subtitle' => 'Kode 1.3.f.1',
                         'modes' => ['F'],
-                        'daily_charts' => ['F' => 'Angkutan Laut'],
+                        'daily_charts' => ['F' => 'Kapal Laut'],
                         'show_top_10' => true,
                         'show_top_od' => true
                     ]
@@ -471,18 +471,34 @@ class GrafikMpdController extends Controller
                         'modes' => ['H'],
                         'daily_charts' => ['H' => 'Angkutan Udara'],
                         'show_top_10' => true,
-                        'show_top_od' => true
+                        'show_top_od' => false // REMOVE per request
                     ]
                 ]
             ],
             'KERETA' => [
                 'sections' => [
                      [
-                        'title' => 'Simpul Kereta Api',
+                        'title' => 'Kereta Api (Antar Kota)',
                         'subtitle' => 'Kode 1.3.b.1',
-                        'modes' => ['C', 'D', 'E'],
-                        'daily_charts' => ['C' => 'KA Antarkota', 'E' => 'KA Perkotaan'],
-                        'show_top_10' => true,
+                        'modes' => ['C'],
+                        'daily_charts' => ['C' => 'K.A. Antar Kota'],
+                        'show_top_10' => true, // "tambahin top 10 stasiun antar kota"
+                        'show_top_od' => true  // "tambahin top 10 rute"
+                    ],
+                    [
+                        'title' => 'Kereta Api (Perkotaan)',
+                        'subtitle' => 'Kode 1.3.b.2',
+                        'modes' => ['E'],
+                        'daily_charts' => ['E' => 'K.A. Perkotaan'],
+                        'show_top_10' => true, // "tambahin top 10 stasiun perkotaan"
+                        'show_top_od' => true
+                    ],
+                    [
+                        'title' => 'Kereta Api Cepat (Whoosh)',
+                        'subtitle' => 'Kode 1.3.d.1',
+                        'modes' => ['D'],
+                        'daily_charts' => ['D' => 'K.A. Cepat Whoosh'],
+                        'show_top_10' => false, // Only "rute" requested for global, specific stasiun not mentioned for Whoosh
                         'show_top_od' => true
                     ]
                 ]
