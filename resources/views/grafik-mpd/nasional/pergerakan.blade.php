@@ -81,23 +81,50 @@
     </div>
 </div>
 
+{{-- Charts Section --}}
+{{-- 1. Pergerakan Harian (REAL vs FORECAST) --}}
 <div class="row">
-    {{-- Main Chart: Forecast vs Real --}}
-    <div class="col-xl-8">
+    <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title mb-4">Grafik Pergerakan Harian (Forecast vs Real)</h4>
-                <div id="chart-daily-trend" class="apex-charts" dir="ltr"></div>
+                <h4 class="card-title mb-4 text-center">Pergerakan Per Hari (REAL vs FORECAST)</h4>
+                <div id="chart-pergerakan-trend" class="apex-charts" dir="ltr"></div>
             </div>
         </div>
     </div>
-    
-    {{-- Pie Chart: Operator Share --}}
-    <div class="col-xl-4">
+</div>
+
+{{-- 2. Orang Harian (REAL vs FORECAST) --}}
+<div class="row">
+    <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title mb-4">Share Operator Seluler</h4>
-                <div id="chart-opsel-share" class="apex-charts" dir="ltr"></div>
+                <h4 class="card-title mb-4 text-center">Orang Per Hari (REAL vs FORECAST)</h4>
+                <div id="chart-orang-trend" class="apex-charts" dir="ltr"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- 3. Pergerakan Harian per OPSEL --}}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-4 text-center">Pergerakan Harian per OPSEL</h4>
+                <div id="chart-pergerakan-opsel" class="apex-charts" dir="ltr"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- 4. Orang Harian per OPSEL --}}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-4 text-center">Orang Harian per OPSEL</h4>
+                <div id="chart-orang-opsel" class="apex-charts" dir="ltr"></div>
             </div>
         </div>
     </div>
@@ -113,71 +140,85 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const data = @json($charts);
+        const dates = data.dates;
         
-        // 1. Daily Trend Chart
-        Highcharts.chart('chart-daily-trend', {
-            chart: { type: 'spline' },
-            title: { text: '' },
+        // Common Options
+        const commonOptions = {
+            chart: { type: 'column' },
             xAxis: { 
-                categories: data.dates,
-                crosshair: true
+                categories: dates,
+                crosshair: true,
+                labels: {
+                    formatter: function() { 
+                        // Format Date like "18-12-2025"
+                        const d = new Date(this.value);
+                        return ("0" + d.getDate()).slice(-2) + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + d.getFullYear();
+                    }
+                }
             },
             yAxis: {
-                title: { text: 'Volume Pergerakan' },
+                min: 0,
+                title: { text: 'Total' },
                 labels: {
-                    formatter: function() { return this.value / 1000 + 'k'; }
+                    formatter: function() { 
+                        if(this.value >= 1000000) return (this.value / 1000000).toFixed(1) + 'M';
+                        if(this.value >= 1000) return (this.value / 1000).toFixed(0) + 'k';
+                        return this.value;
+                    }
                 }
             },
             tooltip: {
+                headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                    '<td style="padding:0"><b>{point.y:,.0f}</b></td></tr>',
+                footerFormat: '</table>',
                 shared: true,
-                valueSuffix: ' pergerakan'
-            },
-            credits: { enabled: false },
-            plotOptions: {
-                spline: {
-                    marker: { radius: 4, lineColor: '#666666', lineWidth: 1 }
-                }
-            },
-            series: [{
-                name: 'Real',
-                data: data.series.real,
-                color: '#556ee6' // Primary Blue
-            }, {
-                name: 'Forecast',
-                data: data.series.forecast,
-                color: '#f1b44c', // Warning Yellow
-                dashStyle: 'ShortDash'
-            }]
-        });
-
-        // 2. Operator Share Pie Chart
-        Highcharts.chart('chart-opsel-share', {
-            chart: { type: 'pie' },
-            title: { text: '' },
-            tooltip: {
-                pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y:,.0f})'
-            },
-            accessibility: {
-                point: { valueSuffix: '%' }
+                useHTML: true
             },
             plotOptions: {
-                pie: {
-                    allowPointSelect: true,
-                    cursor: 'pointer',
+                column: {
+                    pointPadding: 0.1, // Reduce padding to make bars thicker
+                    borderWidth: 0,
                     dataLabels: {
                         enabled: true,
-                        format: '<b>{point.name}</b>: {point.percentage:.1f} %'
-                    },
-                    showInLegend: true
+                        rotation: -90,
+                        color: '#FFFFFF',
+                        align: 'right',
+                        format: '{point.y:,.0f}', // Display full number
+                        y: 10, // vertical position
+                        style: {
+                            fontSize: '9px',
+                            fontFamily: 'Verdana, sans-serif'
+                        }
+                    }
                 }
             },
-            credits: { enabled: false },
-            series: [{
-                name: 'Share',
-                colorByPoint: true,
-                data: data.pie_opsel
-            }]
-        });
+            credits: { enabled: false }
+        };
+
+        // 1. Pergerakan Trend (Real vs Forecast)
+        Highcharts.chart('chart-pergerakan-trend', Highcharts.merge(commonOptions, {
+            title: { text: '' },
+            series: data.series_trend
+        }));
+
+        // 2. Orang Trend (Real vs Forecast) - Same Data for now
+        Highcharts.chart('chart-orang-trend', Highcharts.merge(commonOptions, {
+             title: { text: '' },
+             series: data.series_trend
+        }));
+
+        // 3. Pergerakan Opsel
+        Highcharts.chart('chart-pergerakan-opsel', Highcharts.merge(commonOptions, {
+             title: { text: '' },
+             series: data.series_opsel
+        }));
+
+         // 4. Orang Opsel - Same Data for now
+         Highcharts.chart('chart-orang-opsel', Highcharts.merge(commonOptions, {
+             title: { text: '' },
+             series: data.series_opsel
+        }));
     });
 </script>
 @endpush

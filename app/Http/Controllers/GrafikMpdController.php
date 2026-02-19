@@ -37,14 +37,7 @@ class GrafikMpdController extends Controller
 
     private function getChartData($startDate, $endDate)
     {
-        // 1. Fetch Daily Trend (Real vs Forecast)
-        $daily = DB::table('spatial_movements')
-            ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
-            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->groupBy('tanggal', 'is_forecast')
-            ->orderBy('tanggal')
-            ->get();
-
+        // Init Daily Dates
         $dates = [];
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
@@ -52,27 +45,43 @@ class GrafikMpdController extends Controller
             $curr->addDay();
         }
 
-        $series = [
+        // 1. Fetch Daily Trend (Real vs Forecast)
+        // Query
+        $daily = DB::table('spatial_movements')
+            ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->groupBy('tanggal', 'is_forecast')
+            ->orderBy('tanggal')
+            ->get();
+
+        $dailySeries = [
             'REAL' => array_fill_keys($dates, 0),
             'FORECAST' => array_fill_keys($dates, 0)
         ];
 
         foreach ($daily as $row) {
             $type = $row->is_forecast ? 'FORECAST' : 'REAL';
-            $series[$type][$row->tanggal] = (int) $row->total;
+            $dailySeries[$type][$row->tanggal] = (int) $row->total;
         }
 
-        // 2. Fetch Operator Share (Total Period)
-        $opsel = DB::table('spatial_movements')
-            ->select('opsel', DB::raw('SUM(total) as total'))
-            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->where('is_forecast', false) // Real only for share? Or both? User usually wants Real share.
-            ->groupBy('opsel')
-            ->get();
+        // 2. Fetch Daily Operator Breakdown (Real Only usually, but let's see if we need Forecast too? 
+        // The image shows "Pergerakan Harian per OPSEL", likely Real. I will fetch Real.
         
-        $opselData = [];
-        foreach ($opsel as $row) {
-            // Normalize
+        $opselDaily = DB::table('spatial_movements')
+            ->select('tanggal', 'opsel', DB::raw('SUM(total) as total'))
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('is_forecast', false)
+            ->groupBy('tanggal', 'opsel')
+            ->get();
+
+        $opselSeries = [
+            'XL' => array_fill_keys($dates, 0),
+            'IOH' => array_fill_keys($dates, 0),
+            'TSEL' => array_fill_keys($dates, 0)
+        ];
+
+        foreach ($opselDaily as $row) {
+             // Normalize
             $raw = strtoupper($row->opsel);
             $name = 'OTHER';
             if (str_contains($raw, 'XL') || str_contains($raw, 'AXIS')) $name = 'XL';
@@ -80,31 +89,32 @@ class GrafikMpdController extends Controller
             elseif (str_contains($raw, 'TELKOMSEL') || str_contains($raw, 'TSEL')) $name = 'TSEL';
 
             if ($name === 'OTHER') continue;
-
-            if (!isset($opselData[$name])) $opselData[$name] = 0;
-            $opselData[$name] += $row->total;
+            
+            $opselSeries[$name][$row->tanggal] += (int) $row->total;
         }
 
-        // 3. Calculate Totals
-        $totalReal = array_sum($series['REAL']);
-        $totalForecast = array_sum($series['FORECAST']);
-        $totalPpl = $totalReal; // 1:1 Assumption as per previous logic
+        // 3. Calculate Totals for Summary
+        $totalReal = array_sum($dailySeries['REAL']);
+        $totalForecast = array_sum($dailySeries['FORECAST']);
+        $totalPpl = $totalReal; 
 
         return [
             'dates' => $dates,
-            'series' => [
-                'real' => array_values($series['REAL']),
-                'forecast' => array_values($series['FORECAST'])
-            ],
-            'pie_opsel' => [
-                ['name' => 'XL', 'y' => $opselData['XL'] ?? 0, 'color' => '#556ee6'], // Primary Blue
-                ['name' => 'IOH', 'y' => $opselData['IOH'] ?? 0, 'color' => '#f1b44c'], // Warning Yellow
-                ['name' => 'TSEL', 'y' => $opselData['TSEL'] ?? 0, 'color' => '#f46a6a'] // Danger Red
-            ],
             'summary' => [
                 'real' => $totalReal,
                 'forecast' => $totalForecast,
                 'people' => $totalPpl
+            ],
+            // Chart 1 & 2 Data (Pergerakan & Orang) - Real vs Forecast
+            'series_trend' => [
+                ['name' => 'REAL', 'data' => array_values($dailySeries['REAL']), 'color' => '#2caffe'], // Light Blue
+                ['name' => 'FORECAST', 'data' => array_values($dailySeries['FORECAST']), 'color' => '#fec107'] // Yellow
+            ],
+            // Chart 3 & 4 Data (Opsel) - Stacked or Grouped? Image 2 shows Grouped.
+            'series_opsel' => [
+                ['name' => 'XL', 'data' => array_values($opselSeries['XL']), 'color' => '#2caffe'], // Blue
+                ['name' => 'IOH', 'data' => array_values($opselSeries['IOH']), 'color' => '#fec107'], // Yellow
+                ['name' => 'TSEL', 'data' => array_values($opselSeries['TSEL']), 'color' => '#ff3d60'] // Red
             ]
         ];
     }
