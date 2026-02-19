@@ -49,9 +49,12 @@ class SpatialMovements2026Seeder extends Seeder
             $total = (int) ($total * (rand(90, 110) / 100));
         }
 
-        // Random Valid Mode (Weighted for Mobil/Motor)
-        $modes = ['I', 'J', 'I', 'J', 'I', 'J', 'A', 'B', 'C', 'H'];
-        $selectedMode = $modes[array_rand($modes)];
+        // Random Valid Mode (A-K) to match ModaSeeder
+        // A=Bus AKAP, B=Bus AKDP, C=KA Antar, D=KC, E=KA Urban, F=Laut, G=Ferry, H=Udara, I=Mobil, J=Motor, K=Sepeda
+        $modes = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+        // Weighted: More I and J
+        $weightedModes = array_merge($modes, ['I', 'I', 'I', 'J', 'J', 'J', 'J']);
+        $selectedMode = $weightedModes[array_rand($weightedModes)];
 
         DB::table('spatial_movements')->insert([
             'tanggal' => $date,

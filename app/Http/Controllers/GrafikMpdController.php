@@ -233,7 +233,7 @@ class GrafikMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 29);
 
-        $cacheKey = 'grafik:nasional:mode-share:v5';
+        $cacheKey = 'grafik:nasional:mode-share:v6';
 
         try {
             // \Illuminate\Support\Facades\Log::info("Generating Mode Share Data v5 for $startDate to $endDate");
@@ -335,17 +335,22 @@ class GrafikMpdController extends Controller
             $dailyRaw[$code]['mov'][$type][$date] = $mov;
         }
 
+
+
         // Format Pie Data
         $piePeople = [];
         $pieMovement = [];
         foreach ($totals as $code => $data) {
-            if ($data['ppl'] > 0) {
-                $piePeople[] = ['name' => $data['name'], 'y' => $data['ppl']];
-                $pieMovement[] = ['name' => $data['name'], 'y' => $data['mov']];
-            }
+            // ALWAYS include, even if 0, as per request "tampilin tapi 0 nilainya"
+            $piePeople[] = ['name' => $data['name'], 'y' => $data['ppl']];
+            $pieMovement[] = ['name' => $data['name'], 'y' => $data['mov']];
         }
         
-        // Sort Pie Data
+        // Sort Pie Data (Optional: If we want fixed order A-K, remove usort. If we want big to small, keep it.)
+        // Request said: "moda nya nyesuaian sama @[database/seeders/ModaSeeder.php]" -> Implies Order A-K?
+        // Reference image shows sorting by size (Motor 63%, Mobil 18%...). 
+        // But user said "tampilin tapi 0 nilainya".
+        // Let's keep sorting by size for readability, but allow 0s to exist at bottom.
         usort($piePeople, fn($a, $b) => $b['y'] <=> $a['y']);
         usort($pieMovement, fn($a, $b) => $b['y'] <=> $a['y']);
 
