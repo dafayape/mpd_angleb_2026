@@ -84,16 +84,18 @@
                     showInLegend: true,
                     dataLabels: {
                         enabled: true,
-                        useHTML: true,
+                        useHTML: false, // Use SVG for reliable connectors
                         // Match Nasional Label Format: Name <br> Value <br> (Percent)
                         formatter: function() {
                              if(this.percentage < 1) return null; // Hide tiny labels
                              return '<b>' + this.point.name + '</b><br>' + 
                                     Highcharts.numberFormat(this.y, 0) + '<br>' + 
-                                    '<span style="color:#666">(' + Highcharts.numberFormat(this.percentage, 2) + '%)</span>';
+                                    '<span style="color:#666; font-weight:normal">(' + Highcharts.numberFormat(this.percentage, 2) + '%)</span>';
                         },
                         distance: 30,
-                        color: 'black'
+                        color: 'black',
+                        connectorColor: '#000000',
+                        connectorShape: 'crookedLine'
                     }
                 }
             },

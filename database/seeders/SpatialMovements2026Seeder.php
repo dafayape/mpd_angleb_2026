@@ -28,11 +28,13 @@ class SpatialMovements2026Seeder extends Seeder
             $date = $curr->format('Y-m-d');
             
             foreach ($operators as $opsel) {
-                // 1. Create REAL Data
-                $this->insertDummyRecord($date, $opsel, false);
-
-                // 2. Create FORECAST Data
-                $this->insertDummyRecord($date, $opsel, true);
+                // Generate more data per day (e.g., 50 records per operator)
+                for ($i = 0; $i < 50; $i++) {
+                    // 1. Create REAL Data
+                    $this->insertDummyRecord($date, $opsel, false);
+                    // 2. Create FORECAST Data
+                    $this->insertDummyRecord($date, $opsel, true);
+                }
             }
 
             $curr->addDay();
@@ -44,6 +46,13 @@ class SpatialMovements2026Seeder extends Seeder
         // Fetch Node Categories & Cities from DB (Cached static)
         static $nodes = null;
         static $cities = null; 
+        static $jabodetabekCodes = [
+            '3171', '3172', '3173', '3174', '3175', '3101', // DKI
+            '3201', '3271', // Bogor
+            '3276', // Depok
+            '3603', '3671', '3674', // Tangerang
+            '3216', '3275' // Bekasi
+        ];
 
         if (!$nodes || !$cities) {
             $rawNodes = DB::table('ref_transport_nodes')->select('code', 'name')->get();
@@ -101,11 +110,17 @@ class SpatialMovements2026Seeder extends Seeder
              $dest = $pool[array_rand($pool)];
         }
         
-        // 6. Select Origin/Dest City (Random from DB)
-        $originCity = !empty($cities) ? $cities[array_rand($cities)] : '3273';
-        $destCity = !empty($cities) ? $cities[array_rand($cities)] : '3171';
+        // 6. Select Origin/Dest City
+        // 50% Chance to be Jabodetabek to ensure dashboard data
+        if (rand(0, 1) === 1) {
+            $originCity = $jabodetabekCodes[array_rand($jabodetabekCodes)];
+            $destCity = $jabodetabekCodes[array_rand($jabodetabekCodes)];
+        } else {
+            $originCity = !empty($cities) ? $cities[array_rand($cities)] : '3273';
+            $destCity = !empty($cities) ? $cities[array_rand($cities)] : '3171';
+        }
         while($destCity === $originCity && count($cities) > 1) {
-            $destCity = $cities[array_rand($cities)];
+            $destCity = !empty($cities) ? $cities[array_rand($cities)] : '3171';
         }
 
         // 7. Generate Volume

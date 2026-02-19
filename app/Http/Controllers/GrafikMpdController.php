@@ -1194,6 +1194,154 @@ class GrafikMpdController extends Controller
             'pie_people' => $piePeople
         ];
     }
-    public function jabodetabekSimpul() { return view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Simpul']]); }
+    public function jabodetabekSimpul(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+
+        // Cache Key
+        $cacheKey = 'grafik:jabodetabek:simpul:v1';
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getJabodetabekSimpulData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Jabodetabek Simpul Error: ' . $e->getMessage());
+            $data = $this->getJabodetabekSimpulData($startDate, $endDate);
+        }
+
+        return view('grafik-mpd.jabodetabek.simpul', [
+            'title' => 'Dashboard Simpul Transportasi (Jabodetabek)',
+            'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Simpul'],
+            'data' => $data
+        ]);
+    }
+
+    private function getJabodetabekSimpulData($startDate, $endDate)
+    {
+        // 1. Define Jabodetabek Cities
+        $jabodetabekCodes = [
+            '3171', '3172', '3173', '3174', '3175', '3101', // DKI
+            '3201', '3271', // Bogor
+            '3276', // Depok
+            '3603', '3671', '3674', // Tangerang
+            '3216', '3275' // Bekasi
+        ];
+
+        // 2. Define Tabs & Categories
+        $tabs = [
+            'DARAT' => ['A', 'B'], // Bus AKAP, AKDP
+            'LAUT' => ['F', 'G'],  // Laut, Penyeberangan
+            'UDARA' => ['H'],      // Udara
+            'KERETA' => ['C', 'D', 'E'] // KA Antar, KCJB, KRL
+        ];
+
+        $dates = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        $result = ['dates' => $dates, 'tabs' => []];
+
+        // 3. Process Each Tab
+        foreach ($tabs as $tabName => $modes) {
+            
+            // Daily Chart Data
+            $dailyQuery = DB::table('spatial_movements')
+                ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('kode_moda', $modes)
+                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes) // Filter Jabo Origin
+                ->groupBy('tanggal', 'is_forecast')
+                ->get();
+
+            $seriesReal = array_fill_keys($dates, 0);
+            $seriesForecast = array_fill_keys($dates, 0);
+            $totalReal = 0;
+            $totalForecast = 0;
+
+            foreach ($dailyQuery as $row) {
+                if ($row->is_forecast) {
+                    $seriesForecast[$row->tanggal] = (int) $row->total;
+                    $totalForecast += (int) $row->total;
+                } else {
+                    $seriesReal[$row->tanggal] = (int) $row->total;
+                    $totalReal += (int) $row->total;
+                }
+            }
+
+            // Top 10 Origin Simpul (Real Only)
+            $topOrigin = DB::table('spatial_movements as sm')
+                // Join to get Name (optional, or use code)
+                ->leftJoin('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
+                ->select('sm.kode_origin_simpul as code', DB::raw('COALESCE(n.name, sm.kode_origin_simpul) as name'), DB::raw('SUM(sm.total) as total'))
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('sm.kode_moda', $modes)
+                ->where('sm.is_forecast', false)
+                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('sm.kode_origin_simpul', 'n.name')
+                ->orderByDesc('total')
+                ->limit(10)
+                ->get();
+
+            // Top 10 Dest Simpul (Real Only)
+            $topDest = DB::table('spatial_movements as sm')
+                ->leftJoin('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
+                ->select('sm.kode_dest_simpul as code', DB::raw('COALESCE(n.name, sm.kode_dest_simpul) as name'), DB::raw('SUM(sm.total) as total'))
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('sm.kode_moda', $modes)
+                ->where('sm.is_forecast', false)
+                // Filter Dest Jabo? Probably yes for consistency "Simpul Jabo"
+                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('sm.kode_dest_simpul', 'n.name')
+                ->orderByDesc('total')
+                ->limit(10)
+                ->get();
+
+            // Top 10 OD Route
+             $topOD = DB::table('spatial_movements as sm')
+                ->leftJoin('ref_transport_nodes as o', 'sm.kode_origin_simpul', '=', 'o.code')
+                ->leftJoin('ref_transport_nodes as d', 'sm.kode_dest_simpul', '=', 'd.code')
+                ->select(
+                    DB::raw("CONCAT(COALESCE(o.name, sm.kode_origin_simpul), ' -> ', COALESCE(d.name, sm.kode_dest_simpul)) as name"),
+                    DB::raw('SUM(sm.total) as total')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('sm.kode_moda', $modes)
+                ->where('sm.is_forecast', false)
+                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
+                ->orderByDesc('total')
+                ->limit(10)
+                ->get();
+
+
+            $result['tabs'][$tabName] = [
+                'sections' => [
+                    [
+                        'title' => 'Simpul ' . $tabName, // e.g. "Simpul DARAT"
+                        'subtitle' => 'Periode 13-29 Maret 2026 (Jabodetabek)',
+                        'daily_charts' => [
+                            [
+                                'label' => 'Total Pergerakan ' . $tabName,
+                                'series_real' => array_values($seriesReal),
+                                'series_forecast' => array_values($seriesForecast),
+                                'total_real' => $totalReal,
+                                'total_forecast' => $totalForecast
+                            ]
+                        ],
+                        'top_origin' => $topOrigin,
+                        'top_dest' => $topDest,
+                        'top_od' => $topOD
+                    ]
+                ]
+            ];
+        }
+
+        return $result;
+    }
 
 }
