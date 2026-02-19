@@ -243,7 +243,7 @@ class MapMonitorController extends Controller
                 });
             }
 
-            $simpuls = $query->limit(20)->get();
+            $simpuls = $query->orderBy('name', 'asc')->limit(100)->get();
 
             // FALLBACK if DB Empty/Fail
             if ($simpuls->isEmpty()) {
