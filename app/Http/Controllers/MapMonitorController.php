@@ -42,40 +42,48 @@ class MapMonitorController extends Controller
             
             if (!$selectedDate) {
                 // If DB is empty, max() returns null. Default to Angleb Start Date.
-                $selectedDate = \Illuminate\Support\Facades\Cache::remember('map_monitor:max_date', 3600, function() {
+                $selectedDate = \Illuminate\Support\Facades\Cache::remember('map_monitor:max_date:v2', 3600, function() {
                     return SpatialMovement::max('tanggal') ?? '2026-03-13';
                 });
             }
 
-            $cacheKey = "map_monitor:data:{$selectedDate}"; // e.g. map_monitor:data:2026-03-20
+            // Version V2 to force clear old cache
+            $cacheKey = "map_monitor:data:v2:{$selectedDate}"; 
 
             // Cache for 1 hour (3600s)
             return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($selectedDate) {
                 
-                // --- AUTO SEEDING LOGIC (For Environment where CLI Seeder Fails) ---
-                // ALWAYS ensure these 10 real Simpuls exist, regardless of other data.
-                $realSimpuls = [
-                    ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306],
-                    ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456],
-                    ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537],
-                    ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542],
-                    ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502],
-                    ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906],
-                    ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833],
-                    ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115],
-                    ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822],
-                    ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972],
-                ];
+                \Illuminate\Support\Facades\Log::info("MapMonitor: Generating data for {$selectedDate}");
 
-                foreach ($realSimpuls as $s) {
-                    // Use raw SQL for PostGIS insertion to ensure correctness
-                    // ON CONFLICT DO NOTHING ensures we don't duplicate or error out
-                    DB::statement("
-                        INSERT INTO ref_transport_nodes (code, name, category, location, created_at, updated_at)
-                        VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), NOW(), NOW())
-                        ON CONFLICT (code) DO NOTHING
-                    ", [$s['code'], $s['name'], $s['category'], $s['lng'], $s['lat']]);
+                // --- AUTO SEEDING LOGIC (For Environment where CLI Seeder Fails) ---
+                $simpulCount = Simpul::whereNotNull('location')->count();
+                if ($simpulCount === 0) {
+                    \Illuminate\Support\Facades\Log::info("MapMonitor: Seeding Simpuls...");
+                    // Seed Simpuls (Real World Coordinates)
+                    $realSimpuls = [
+                        ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306],
+                        ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456],
+                        ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537],
+                        ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542],
+                        ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502],
+                        ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906],
+                        ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833],
+                        ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115],
+                        ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822],
+                        ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972],
+                    ];
+
+                    foreach ($realSimpuls as $s) {
+                        // Use raw SQL for PostGIS insertion to ensure correctness
+                        // ON CONFLICT DO NOTHING ensures we don't duplicate or error out
+                        DB::statement("
+                            INSERT INTO ref_transport_nodes (code, name, category, location, created_at, updated_at)
+                            VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), NOW(), NOW())
+                            ON CONFLICT (code) DO NOTHING
+                        ", [$s['code'], $s['name'], $s['category'], $s['lng'], $s['lat']]);
+                    }
                 }
+
 
                 // Check Spatial Movements for this date
                 $moveCount = SpatialMovement::where('tanggal', $selectedDate)->count();
