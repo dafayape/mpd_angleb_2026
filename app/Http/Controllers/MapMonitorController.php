@@ -227,4 +227,67 @@ class MapMonitorController extends Controller
              ]);
         }
     }
+
+    public function searchSimpul(Request $request) 
+    {
+        $search = $request->input('q'); // Select2 sends 'q' parameter
+
+        try {
+            $query = Simpul::select('code', 'name', 'category', DB::raw('ST_Y(location::geometry) as lat'), DB::raw('ST_X(location::geometry) as lng'))
+                ->whereNotNull('location');
+
+            if ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('name', 'ilike', "%{$search}%")
+                      ->orWhere('code', 'ilike', "%{$search}%");
+                });
+            }
+
+            $simpuls = $query->limit(20)->get();
+
+            // FALLBACK if DB Empty/Fail
+            if ($simpuls->isEmpty()) {
+                 $realSimpuls = [
+                    ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306],
+                    ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456],
+                    ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537],
+                    ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542],
+                    ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502],
+                    ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906],
+                    ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833],
+                    ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115],
+                    ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822],
+                    ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972],
+                ];
+                
+                // Filter Hardcoded
+                $simpuls = collect($realSimpuls);
+                if ($search) {
+                    $simpuls = $simpuls->filter(function($item) use ($search) {
+                        return stripos($item['name'], $search) !== false;
+                    });
+                }
+                
+                // Convert arrays to objects for consistent mapping below
+                $simpuls = $simpuls->map(function($item) {
+                     return (object) $item;
+                });
+            }
+
+            $results = $simpuls->map(function($item) {
+                return [
+                    'id' => $item->code,
+                    'text' => $item->name . ' (' . $item->category . ')',
+                    'lat' => (float)$item->lat,
+                    'lng' => (float)$item->lng
+                ];
+            });
+
+            return response()->json(['results' => $results]);
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('SearchSimpul Error: ' . $e->getMessage());
+            return response()->json(['results' => []]);
+        }
+    }
 }

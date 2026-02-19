@@ -18,6 +18,7 @@ class Simpul extends Model
         'category',
         'sub_category',
         'location',
+        'radius', // LTS Integrated
     ];
 
     // Accessor for Lat/Lng from PostGIS Geometry

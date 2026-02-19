@@ -127,149 +127,182 @@
                 <div class="d-flex align-items-center mb-2">
                     <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #00ff00; opacity: 0.6;"></span>
                     <span>Rendah (< 33%)</span>
-                </div>
-                <div class="d-flex align-items-center mb-2">
-                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffff00; opacity: 0.6;"></span>
-                    <span>Sedang (33% - 66%)</span>
-                </div>
-                <div class="d-flex align-items-center mb-2">
-                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
-                    <span>Tinggi (> 66%)</span>
-                </div>
-                <div class="mt-2 pt-2 border-top text-muted">
-                    <small><strong>Data:</strong> <span id="displayDate">-</span></small><br>
-                    <small style="font-size: 10px;">* Radius logaritmik volume.</small>
+    // 0. Init Select2 with AJAX (Server-Side Integration)
+    $('#simpulSearch').select2({
+        placeholder: "Cari Simpul (Terintegrasi Database)...",
+        allowClear: true,
+        ajax: {
+            url: "{{ route('map-monitor.search-simpul') }}",
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term // Search term
+                };
+            },
+            processResults: function (data) {
+                return {
+                    results: data.results
+                };
+            },
+            cache: true
+        },
+        minimumInputLength: 0 // Allow opening without typing to see defaults
+    });
+
+    // 1. Initialize Map (Center Indonesia)
+    const map = L.map('map').setView([-2.5489, 118.0149], 5);
+
+    // 2. Add Tile Layer (CartoDB Positron for clean look)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+    }).addTo(map);
+
+    // 3. Variables
+    let circlesLayerGroup = L.layerGroup().addTo(map);
+    let layersMap = {}; // Map ID -> Layer
+    const dateFilter = document.getElementById('dateFilter');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    // 4. Add Legend Control
+    const legend = L.control({position: 'bottomright'});
+    legend.onAdd = function (map) {
+        const div = L.DomUtil.create('div', 'legend-control');
+        div.innerHTML = `
+            <h6>Legenda Kepadatan</h6>
+            <div class="d-flex align-items-center mb-2">
+                <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #00ff00; opacity: 0.6;"></span>
+                <span>Rendah (< 33%)</span>
+            </div>
+            <div class="d-flex align-items-center mb-2">
+                <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffff00; opacity: 0.6;"></span>
+                <span>Sedang (33% - 66%)</span>
+            </div>
+            <div class="d-flex align-items-center mb-2">
+                <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
+                <span>Tinggi (> 66%)</span>
+            </div>
+            <div class="mt-2 pt-2 border-top text-muted">
+                <small><strong>Data:</strong> <span id="displayDate">-</span></small><br>
+                <small style="font-size: 10px;">* Radius logaritmik volume.</small>
+            </div>
+        `;
+        return div;
+    };
+    legend.addTo(map);
+
+    // 5. Fetch Data
+    async function fetchData() {
+        const selectedDate = dateFilter.value;
+        const url = `{{ route('map-monitor.data') }}?date=${selectedDate}`;
+
+        loadingOverlay.style.display = 'flex';
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            // Update Legend Date
+            const displayDateElem = document.getElementById('displayDate');
+            if (displayDateElem && data.selected_date) {
+                displayDateElem.textContent = data.selected_date;
+            }
+
+            // Render Features
+            renderSimpul(data.features, data.max_volume);
+            
+            // NOTE: No need to populateSearch client-side anymore, 
+            // as we use AJAX integration with Lookup Table now.
+
+        } catch (error) {
+            console.error('Error fetching map data:', error);
+            
+        } finally {
+            loadingOverlay.style.display = 'none';
+        }
+    }
+
+    // 6. Render Simpul
+    function renderSimpul(features, maxVolume) {
+        circlesLayerGroup.clearLayers();
+        layersMap = {}; // Reset Map
+
+        if (!features || features.length === 0) return;
+
+        const bounds = L.latLngBounds();
+
+        features.forEach(f => {
+            if (!f.geometry || !f.geometry.coordinates) return;
+
+            const lng = f.geometry.coordinates[0];
+            const lat = f.geometry.coordinates[1];
+            const props = f.properties;
+
+            // Create Circle
+            const circle = L.circle([lat, lng], {
+                color: props.color,
+                fillColor: props.color,
+                fillOpacity: 0.5,
+                radius: props.radius, // Metres
+                weight: 1
+            }).addTo(circlesLayerGroup);
+
+            // Popup Content
+            const popupContent = `
+                <div style="font-family: Poppins, sans-serif; min-width: 150px;">
+                    <h6 style="margin:0 0 5px; font-weight:600;">${props.name}</h6>
+                    <span class="badge bg-secondary mb-2">${props.category}</span>
+                    <div style="font-size: 12px;">
+                        <strong>Volume:</strong> ${props.volume.toLocaleString('id-ID')}<br>
+                        <strong>Radius:</strong> ${Math.round(props.radius).toLocaleString('id-ID')} m
+                    </div>
                 </div>
             `;
-            return div;
-        };
-        legend.addTo(map);
 
-        // 5. Fetch Data
-        async function fetchData() {
-            const selectedDate = dateFilter.value;
-            const url = `{{ route('map-monitor.data') }}?date=${selectedDate}`;
-
-            loadingOverlay.style.display = 'flex';
-
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-
-                // Update Legend Date
-                const displayDateElem = document.getElementById('displayDate');
-                if (displayDateElem && data.selected_date) {
-                    displayDateElem.textContent = data.selected_date;
-                }
-
-                // Render Features
-                renderSimpul(data.features, data.max_volume);
-                
-                // Populate Search
-                populateSearch(data.features);
-
-            } catch (error) {
-                console.error('Error fetching map data:', error);
-                
-            } finally {
-                loadingOverlay.style.display = 'none';
-            }
-        }
-
-        // 6. Render Simpul
-        function renderSimpul(features, maxVolume) {
-            circlesLayerGroup.clearLayers();
-            layersMap = {}; // Reset Map
-
-            if (!features || features.length === 0) return;
-
-            const bounds = L.latLngBounds();
-
-            features.forEach(f => {
-                if (!f.geometry || !f.geometry.coordinates) return;
-
-                const lng = f.geometry.coordinates[0];
-                const lat = f.geometry.coordinates[1];
-                const props = f.properties;
-
-                // Create Circle
-                const circle = L.circle([lat, lng], {
-                    color: props.color,
-                    fillColor: props.color,
-                    fillOpacity: 0.5,
-                    radius: props.radius, // Metres
-                    weight: 1
-                }).addTo(circlesLayerGroup);
-
-                // Popup Content
-                const popupContent = `
-                    <div style="font-family: Poppins, sans-serif; min-width: 150px;">
-                        <h6 style="margin:0 0 5px; font-weight:600;">${props.name}</h6>
-                        <span class="badge bg-secondary mb-2">${props.category}</span>
-                        <div style="font-size: 12px;">
-                            <strong>Volume:</strong> ${props.volume.toLocaleString('id-ID')}<br>
-                            <strong>Radius:</strong> ${Math.round(props.radius).toLocaleString('id-ID')} m
-                        </div>
-                    </div>
-                `;
-
-                circle.bindPopup(popupContent);
-                bounds.extend([lat, lng]);
-                
-                // Store for Search
-                layersMap[props.id] = circle;
-            });
-
-            // Fit Bounds if valid
-            if (bounds.isValid()) {
-                map.fitBounds(bounds, { padding: [50, 50] });
-            }
-        }
-        
-        // 7. Populate Search
-        function populateSearch(features) {
-             const $select = $('#simpulSearch');
-             $select.empty();
-             $select.append('<option value="">Cari Simpul...</option>');
-             
-             if (!features) return;
-             
-             // Sort by name
-             features.sort((a, b) => a.properties.name.localeCompare(b.properties.name));
-             
-             features.forEach(f => {
-                 const newOption = new Option(f.properties.name + ' (' + f.properties.category + ')', f.properties.id, false, false);
-                 $select.append(newOption);
-             });
-             
-             $select.trigger('change');
-        }
-        
-        // 8. Handle Search Selection
-        $('#simpulSearch').on('select2:select', function (e) {
-            const data = e.params.data;
-            const simpulId = data.id;
+            circle.bindPopup(popupContent);
+            bounds.extend([lat, lng]);
             
-            if(layersMap[simpulId]) {
-                const layer = layersMap[simpulId];
-                const latLng = layer.getLatLng();
-                
-                map.flyTo(latLng, 14, {
-                    duration: 1.5
-                });
-                
-                // Open Popup after zoom
-                setTimeout(() => {
-                    layer.openPopup();
-                }, 1500);
-            }
+            // Store for Search Lookup
+            layersMap[props.id] = circle;
         });
 
-        // 9. Event Listeners
-        dateFilter.addEventListener('change', fetchData);
+        // Fit Bounds if valid
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+    }
+    
+    // 7. Handle Search Selection (From Server-Side Integration)
+    $('#simpulSearch').on('select2:select', function (e) {
+        const data = e.params.data;
+        // data.id = code
+        // data.lat, data.lng = coordinates from server
+        
+        const lat = data.lat;
+        const lng = data.lng;
+        
+        if (lat && lng) {
+             map.flyTo([lat, lng], 14, {
+                duration: 1.5
+            });
 
-        // Initial Load
-        fetchData();
+            // Try to open popup if layer exists
+            const simpulId = data.id;
+             if(layersMap[simpulId]) {
+                setTimeout(() => {
+                    layersMap[simpulId].openPopup();
+                }, 1500);
+            }
+        }
     });
+
+    // 8. Event Listeners
+    dateFilter.addEventListener('change', fetchData);
+
+    // Initial Load
+    fetchData();
+});
 </script>
 @endpush
