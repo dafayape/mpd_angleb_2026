@@ -85,7 +85,10 @@
 
         // 1. PIE CHARTS
         const pieConfig = (title, data) => ({
-            chart: { type: 'pie' },
+            chart: { 
+                type: 'pie',
+                height: 400
+            },
             title: { text: '' },
             plotOptions: {
                 pie: {
@@ -94,9 +97,33 @@
                     cursor: 'pointer',
                     dataLabels: {
                         enabled: true,
-                        format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                        connectorShape: 'crookedLine',
+                        crookDistance: '70%',
+                        format: '<b>{point.name}</b><br>{point.y:,.0f}<br>({point.percentage:.2f}%)'
                     },
                     showInLegend: true
+                }
+            },
+            legend: {
+                enabled: true,
+                useHTML: true,
+                itemStyle: {
+                    fontSize: '13px',
+                    fontWeight: 'normal',
+                    color: '#333'
+                },
+                itemMarginBottom: 10,
+                layout: 'horizontal',
+                width: '100%',
+                labelFormatter: function() {
+                    const val = Highcharts.numberFormat(this.y, 0, ',', '.');
+                    const pct = Highcharts.numberFormat(this.percentage, 2, ',', '.');
+                    return `
+                        <div style="display: flex; flex-direction: column; line-height: 1.2;">
+                            <span style="font-weight: bold; font-size: 14px; margin-bottom: 2px;">${this.name}</span>
+                            <span style="color: #666; font-size: 12px;">${val} | ${pct}%</span>
+                        </div>
+                    `;
                 }
             },
             series: [{
