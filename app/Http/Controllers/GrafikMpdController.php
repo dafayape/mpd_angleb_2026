@@ -233,7 +233,7 @@ class GrafikMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 29);
 
-        $cacheKey = 'grafik:nasional:mode-share:v2';
+        $cacheKey = 'grafik:nasional:mode-share:v3';
 
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
@@ -253,13 +253,8 @@ class GrafikMpdController extends Controller
 
     private function getModeShareData($startDate, $endDate)
     {
-        // 1. Get Specific Modes (Mobil & Motor)
-        // I = Mobil Pribadi, J = Motor Pribadi
-        $targetModes = ['I', 'J'];
-        $modes = DB::table('ref_transport_modes')
-            ->whereIn('code', $targetModes)
-            ->orderBy('code')
-            ->get();
+        // 1. Get All Modes from Reference
+        $modes = DB::table('ref_transport_modes')->orderBy('code')->get();
         
         // 2. Prepare Date Range
         $dates = [];
@@ -269,8 +264,7 @@ class GrafikMpdController extends Controller
             $curr->addDay();
         }
 
-        // 3. Query Daily Data by Mode (Real vs Forecast)
-        // Group by Date, Mode, IsForecast
+        // 3. Query Daily Data (All Modes)
         $dailyQuery = DB::table('spatial_movements as sm')
             ->join('ref_transport_modes as m', 'sm.kode_moda', '=', 'm.code')
             ->select(
@@ -280,85 +274,119 @@ class GrafikMpdController extends Controller
                 'sm.is_forecast',
                 DB::raw('SUM(sm.total) as total')
             )
-            ->whereIn('m.code', $targetModes)
             ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->groupBy('m.code', 'm.name', 'sm.tanggal', 'sm.is_forecast')
             ->get();
 
         // 4. Structure Data
         
-        // Occupancy Factors (Assumption: DB Total = People)
+        // Detailed Occupancy Factors (Estimates for Orang -> Pergerakan conv)
         $occupancy = [
+            'A' => 30,  // Bus AKAP
+            'B' => 25,  // Bus AKDP
+            'C' => 300, // KA Antarkota
+            'D' => 600, // KA KCJB
+            'E' => 100, // KA Perkotaan
+            'F' => 200, // Laut
+            'G' => 50,  // Penyeberangan
+            'H' => 100, // Udara
             'I' => 3.5, // Mobil
-            'J' => 1.5  // Motor
+            'J' => 1.5, // Motor
+            'K' => 1,   // Sepeda
         ];
 
-        // A. Pie Chart Data
-        // - Pergerakan (Vehicle)
-        // - Orang (People)
-        $piePeople = []; 
-        $pieMovement = [];
-        $totals = ['I' => ['ppl' => 0, 'mov' => 0], 'J' => ['ppl' => 0, 'mov' => 0]];
+        // Init Totals
+        $totals = [];
+        foreach ($modes as $mode) {
+            $totals[$mode->code] = ['ppl' => 0, 'mov' => 0, 'name' => $mode->name];
+        }
 
-        // B. Daily Charts Data
-        // Structure: [Key => [Real => [], Forecast => []]]
-        // Key: Mobil-Orang, Mobil-Pergerakan, Motor-Orang, Motor-Pergerakan
-        $seriesData = [
-            'Mobil-Orang' => ['real' => array_fill_keys($dates, 0), 'forecast' => array_fill_keys($dates, 0)],
-            'Mobil-Pergerakan' => ['real' => array_fill_keys($dates, 0), 'forecast' => array_fill_keys($dates, 0)],
-            'Motor-Orang' => ['real' => array_fill_keys($dates, 0), 'forecast' => array_fill_keys($dates, 0)],
-            'Motor-Pergerakan' => ['real' => array_fill_keys($dates, 0), 'forecast' => array_fill_keys($dates, 0)],
-        ];
+        // Init Daily Series containers
+        // We will store raw data first, then format
+        $dailyRaw = []; // [ModeCode][Type (Real/Ppl, etc)][Date] = Value
 
         foreach ($dailyQuery as $row) {
-            $code = $row->mode_code; // I or J
+            $code = $row->mode_code;
             $date = $row->tanggal;
             $ppl = (int) $row->total;
-            $type = $row->is_forecast ? 'forecast' : 'real';
+            $isForecast = (bool) $row->is_forecast;
+            $type = $isForecast ? 'forecast' : 'real';
             
             // Calculate Movement
             $factor = $occupancy[$code] ?? 1;
             $mov = (int) round($ppl / $factor);
 
-            // Determine Keys
-            $label = ($code === 'I') ? 'Mobil' : 'Motor';
-            
-            // Add to Series
-            $seriesData["{$label}-Orang"][$type][$date] += $ppl;
-            $seriesData["{$label}-Pergerakan"][$type][$date] += $mov;
-
-            // Add to Pie Totals (Real Only)
-            if ($type === 'real') {
+            // Accumulate for Pie (Real Only)
+            if (!$isForecast) {
+                if (!isset($totals[$code])) {
+                    $totals[$code] = ['ppl' => 0, 'mov' => 0, 'name' => $row->mode_name];
+                }
                 $totals[$code]['ppl'] += $ppl;
                 $totals[$code]['mov'] += $mov;
             }
+
+            // Accumulate for Daily
+            if (!isset($dailyRaw[$code])) $dailyRaw[$code] = [];
+            
+            // Initialize date keys if needed (optimization: do it on demand or pre-fill)
+            // Simpler: Just add to flat array, fill zeros later
+            $dailyRaw[$code]['ppl'][$type][$date] = $ppl;
+            $dailyRaw[$code]['mov'][$type][$date] = $mov;
         }
 
         // Format Pie Data
-        foreach ($targetModes as $code) {
-            $name = ($code === 'I') ? 'Mobil Pribadi' : 'Motor Pribadi';
-            $piePeople[] = ['name' => $name, 'y' => $totals[$code]['ppl']];
-            $pieMovement[] = ['name' => $name, 'y' => $totals[$code]['mov']];
+        $piePeople = [];
+        $pieMovement = [];
+        foreach ($totals as $code => $data) {
+            if ($data['ppl'] > 0) {
+                $piePeople[] = ['name' => $data['name'], 'y' => $data['ppl']];
+                $pieMovement[] = ['name' => $data['name'], 'y' => $data['mov']];
+            }
         }
+        
+        // Sort Pie Data
+        usort($piePeople, fn($a, $b) => $b['y'] <=> $a['y']);
+        usort($pieMovement, fn($a, $b) => $b['y'] <=> $a['y']);
 
         // Format Daily Charts
         $dailyCharts = [];
-        $chartOrder = [
-            'Mobil-Pergerakan', 
-            'Mobil-Orang', 
-            'Motor-Pergerakan', 
-            'Motor-Orang'
-        ];
+        // Loop through MODES to maintain order (or sort by total volume?)
+        // Let's sort by Total People Volume Descending to show most relevant first
+        $sortedModeCodes = array_keys($totals);
+        usort($sortedModeCodes, function($a, $b) use ($totals) {
+            return $totals[$b]['ppl'] <=> $totals[$a]['ppl'];
+        });
 
-        foreach ($chartOrder as $key) {
-            $parts = explode('-', $key);
-            $modeName = $parts[0] . ' Harian ' . $parts[1]; // e.g. Mobil Harian Pergerakan
+        foreach ($sortedModeCodes as $code) {
+            if ($totals[$code]['ppl'] == 0 && empty($dailyRaw[$code])) continue; // Skip empty modes
+
+            $modeName = $totals[$code]['name'];
             
+            // 1. Chart: Harian Pergerakan
+            $movReal = []; $movFc = [];
+            // 2. Chart: Harian Orang
+            $pplReal = []; $pplFc = [];
+
+            foreach ($dates as $d) {
+                $movReal[] = $dailyRaw[$code]['mov']['real'][$d] ?? 0;
+                $movFc[] = $dailyRaw[$code]['mov']['forecast'][$d] ?? 0;
+                $pplReal[] = $dailyRaw[$code]['ppl']['real'][$d] ?? 0;
+                $pplFc[] = $dailyRaw[$code]['ppl']['forecast'][$d] ?? 0;
+            }
+
+            // Add Charts pair
             $dailyCharts[] = [
-                'title' => $modeName,
+                'title' => $modeName . ' Harian Pergerakan',
                 'series' => [
-                    ['name' => 'REAL', 'data' => array_values($seriesData[$key]['real']), 'color' => '#2caffe'],
-                    ['name' => 'FORECAST', 'data' => array_values($seriesData[$key]['forecast']), 'color' => '#fec107']
+                    ['name' => 'REAL', 'data' => $movReal, 'color' => '#2caffe'],
+                    ['name' => 'FORECAST', 'data' => $movFc, 'color' => '#fec107']
+                ]
+            ];
+            $dailyCharts[] = [
+                'title' => $modeName . ' Harian Orang',
+                'series' => [
+                    ['name' => 'REAL', 'data' => $pplReal, 'color' => '#2caffe'],
+                    ['name' => 'FORECAST', 'data' => $pplFc, 'color' => '#fec107']
                 ]
             ];
         }
