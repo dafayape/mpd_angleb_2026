@@ -43,52 +43,49 @@
     </div>
 </div>
 
-<div class="row mt-4">
     {{-- Left Column: Stats --}}
     <div class="col-xl-4">
         {{-- Total Orang dan Pergerakan --}}
         <div class="card">
             <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Jumlah Orang dan Pergerakan</h5>
+                <h5 class="card-title mb-0 text-primary">Total Pergerakan (Aktual)</h5>
             </div>
             <div class="card-body">
-                <p class="mb-1 text-muted fw-medium">Total Orang dan Pergerakan</p>
+                <p class="mb-1 text-muted fw-medium">Total Akumulasi (13-29 Mar)</p>
                 <div class="mb-4">
-                    <h2 class="mb-0 fw-bold text-primary">700.000 <span class="fs-6 text-muted fw-normal">Orang</span></h2>
-                    <h2 class="mb-0 fw-bold text-warning">1.845.050 <span class="fs-6 text-muted fw-normal">pergerakan</span></h2>
+                    <h2 class="mb-0 fw-bold text-primary">{{ number_format($total_real, 0, ',', '.') }} <span class="fs-6 text-muted fw-normal">Pergerakan</span></h2>
+                    <small class="text-muted">Target Forecast: {{ number_format($total_forecast, 0, ',', '.') }}</small>
+                </div>
+                <div class="alert alert-success bg-success-subtle text-success border-0 mb-0">
+                    <i class="mdi mdi-check-circle-outline me-1"></i> {!! $analysis['general'] !!}
                 </div>
             </div>
         </div>
 
-        {{-- Perbandingan Pergerakan --}}
-        <div class="card">
+        {{-- Capaian Forecast --}}
+        <div class="card mt-3">
              <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Perbandingan Pergerakan Dengan Tahun Lalu</h5>
+                <h5 class="card-title mb-0 text-primary">Capaian Terhadap Forecast</h5>
             </div>
             <div class="card-body">
-                <p class="mb-3 fw-bold">Perbandingan Pergerakan</p>
+                <p class="mb-3 fw-bold">Progress Capaian</p>
                 
                 {{-- Custom Progress/Bar --}}
                 <div class="mb-3">
-                    <div class="d-flex justify-content-end mb-1">
-                         <span class="fw-bold text-white small px-2 py-1 bg-primary rounded">1.500.000</span>
+                    <div class="d-flex justify-content-between mb-1">
+                         <span class="text-muted small">Aktual</span>
+                         <span class="fw-bold text-primary small">{{ number_format($total_real, 0, ',', '.') }}</span>
                     </div>
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: 80%;" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                </div>
-                
-                 <div class="mb-3">
-                    <div class="d-flex justify-content-end mb-1">
-                         <span class="fw-bold text-white small px-2 py-1 bg-warning rounded">1.845.050</span>
-                    </div>
-                    <div class="progress" style="height: 30px;">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min($persen_capaian, 100) }}%;" aria-valuenow="{{ $persen_capaian }}" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
                 </div>
 
-                 <div class="mt-3">
-                    <span class="badge bg-success-subtle text-success fs-5 fw-bold px-3 py-2">+25%</span>
+                 <div class="mt-3 text-center">
+                    <span class="badge {{ $persen_capaian >= 100 ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning' }} fs-5 fw-bold px-3 py-2">
+                        {{ number_format($persen_capaian, 1) }}%
+                    </span>
+                    <p class="text-muted small mt-2 mb-0">dari total target forecast</p>
                 </div>
 
             </div>
@@ -99,7 +96,7 @@
     <div class="col-xl-8">
         <div class="card h-100">
              <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Tren Jumlah Orang dan Pergerakan per OPSEL</h5>
+                <h5 class="card-title mb-0 text-primary">Perbandingan Aktual vs Forecast per Operator</h5>
             </div>
             <div class="card-body">
                 <div id="chart-opsel" style="height: 350px;"></div>
@@ -107,8 +104,8 @@
                 <div class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start">
                     <i class="mdi mdi-information-outline fs-4 mt-1"></i>
                     <div>
-                        <h6 class="alert-heading fw-bold mb-1 text-info">Analisis Trend Orang</h6>
-                        <p class="mb-0 small">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Amet nihil adipisci sunt quasi culpa, tempore expedita similique at quisquam fugiat sed omnis! Minima, expedita consequatur!</p>
+                        <h6 class="alert-heading fw-bold mb-1 text-info">Analisis Operator</h6>
+                        <p class="mb-0 small">{!! $analysis['opsel'] !!}</p>
                     </div>
                 </div>
             </div>
@@ -121,19 +118,19 @@
     <div class="col-12">
         <div class="card">
              <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Jumlah Pergerakan Per moda</h5>
+                <h5 class="card-title mb-0 text-primary">Tren Pergerakan Harian per Moda</h5>
             </div>
             <div class="card-body">
-                {{-- Placeholder for map/chart --}}
-                <div id="chart-moda" class="w-100" style="height: 400px; background-color: #e9ecef; display: flex; align-items: center; justify-content: center;"></div>
-                 <p class="text-center fw-bold mt-2">Line Chart Dalam 1 hari memunculkan semua total pergerakan Permoda</p>
+                {{-- Chart --}}
+                <div id="chart-moda" class="w-100" style="height: 400px;"></div>
+                 <p class="text-center fw-bold mt-2 text-muted small">Grafik menunjukkan tren pergerakan harian untuk setiap moda transportasi (13 Mar - 29 Mar 2026)</p>
 
 
                  <div class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start">
                     <i class="mdi mdi-information-outline fs-4 mt-1"></i>
                     <div>
-                        <h6 class="alert-heading fw-bold mb-1 text-info">Analisis Pergerakan</h6>
-                        <p class="mb-0 small">Lorem ipsum, dolor sit amet consectetur adipisicing elit. Amet nihil adipisci sunt quasi culpa, tempore expedita similique at quisquam fugiat sed omnis! Minima, expedita consequatur!</p>
+                        <h6 class="alert-heading fw-bold mb-1 text-info">Analisis Moda Transportasi</h6>
+                        <p class="mb-0 small">{!! $analysis['moda'] !!}</p>
                     </div>
                 </div>
             </div>
@@ -150,9 +147,10 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const chartData = @json($chartData);
+        const chartOpsel = @json($chart_opsel);
+        const chartModa = @json($chart_moda);
 
-        // Chart 1: Opsel (Column)
+        // Chart 1: Opsel (Column: Real vs Forecast)
         Highcharts.chart('chart-opsel', {
             chart: {
                 type: 'column'
@@ -161,13 +159,13 @@
                 text: ''
             },
             xAxis: {
-                categories: chartData.tren_orang_pergerakan_opsel.categories,
+                categories: chartOpsel.categories,
                 crosshair: true
             },
             yAxis: {
                 min: 0,
                 title: {
-                    text: ''
+                    text: 'Jumlah Pergerakan'
                 },
                 labels: {
                     formatter: function () {
@@ -175,10 +173,10 @@
                     }
                 }
             },
-            tooltip: { // Basic tooltip
+            tooltip: {
                 headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
                 pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-                    '<td style="padding:0"><b>{point.y:.1f}</b></td></tr>',
+                    '<td style="padding:0"><b>{point.y:,.0f}</b></td></tr>',
                 footerFormat: '</table>',
                 shared: true,
                 useHTML: true
@@ -187,63 +185,61 @@
                 column: {
                     pointPadding: 0.1,
                     borderWidth: 0,
-                    dataLabels: {
-                        enabled: false
-                    }
+                    borderRadius: 5
                 }
             },
-            series: chartData.tren_orang_pergerakan_opsel.series,
-            credits: {
-                enabled: false
-            }
+            series: chartOpsel.series,
+            credits: { enabled: false }
         });
 
-        // Chart 2: Moda (Line)
+        // Chart 2: Moda (Line: Daily Trend)
         Highcharts.chart('chart-moda', {
+            chart: {
+                type: 'spline' // Smoother line
+            },
             title: {
                 text: ''
             },
             yAxis: {
                 title: {
                     text: 'Jumlah Pergerakan'
+                },
+                labels: {
+                    formatter: function () {
+                        return this.value / 1000 + 'rb';
+                    }
                 }
             },
             xAxis: {
-                categories: chartData.jumlah_pergerakan_per_moda.categories,
+                categories: chartModa.categories,
                 accessibility: {
-                    rangeDescription: 'Range: 00:00 to 23:59'
+                    rangeDescription: 'Range: 13 Mar to 29 Mar'
                 }
             },
             legend: {
-                layout: 'vertical',
-                align: 'right',
-                verticalAlign: 'middle'
+                layout: 'horizontal',
+                align: 'center',
+                verticalAlign: 'bottom'
             },
             plotOptions: {
                 series: {
                     label: {
                         connectorAllowed: false
                     },
+                    marker: {
+                        enabled: true,
+                        radius: 4
+                    }
                 }
             },
-            series: chartData.jumlah_pergerakan_per_moda.series,
-            credits: {
-                enabled: false
+            tooltip: {
+                shared: true,
+                valueValues: true,
+                valueDecimals: 0,
+                valueSuffix: ' pergerakan'
             },
-             responsive: {
-                rules: [{
-                    condition: {
-                        maxWidth: 500
-                    },
-                    chartOptions: {
-                        legend: {
-                            layout: 'horizontal',
-                            align: 'center',
-                            verticalAlign: 'bottom'
-                        }
-                    }
-                }]
-            }
+            series: chartModa.series,
+            credits: { enabled: false }
         });
     });
 </script>
