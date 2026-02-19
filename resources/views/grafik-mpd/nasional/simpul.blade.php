@@ -3,16 +3,20 @@
 @section('title', $title)
 
 @push('css')
-<style>
+    .table-custom {
+        font-family: Verdana, Geneva, Tahoma, sans-serif;
+        font-size: 9px;
+    }
     .table-custom th {
         background-color: #f8f9fa;
         font-weight: 600;
         vertical-align: middle;
         text-align: center;
-        font-size: 11px;
+        font-size: 9px;
+        text-transform: uppercase;
     }
     .table-custom td {
-        font-size: 11px;
+        font-size: 9px;
         vertical-align: middle;
         text-align: right;
     }
@@ -22,7 +26,6 @@
     .hover-row:hover td {
         background-color: #e9f5ff !important;
     }
-</style>
 @endpush
 
 @section('content')
