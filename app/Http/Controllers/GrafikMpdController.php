@@ -935,7 +935,7 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 29);
 
         // Cache Key
-        $cacheKey = 'grafik:jabodetabek:od-kabkota:v1';
+        $cacheKey = 'grafik:jabodetabek:od-kabkota:v2';
 
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
