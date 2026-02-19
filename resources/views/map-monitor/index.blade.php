@@ -4,6 +4,7 @@
 
 @push('css')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
     #map {
         width: 100%;
@@ -26,6 +27,21 @@
         font-size: 14px;
         border-bottom: 1px solid #eee;
         padding-bottom: 5px;
+    }
+    /* Select2 Overlay */
+    .search-control {
+        position: absolute;
+        top: 10px;
+        left: 50px; /* Right of Zoom control */
+        z-index: 1000;
+        background: white;
+        padding: 5px;
+        border-radius: 4px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        width: 300px;
+    }
+    .select2-container {
+        width: 100% !important;
     }
 </style>
 @endpush
@@ -55,6 +71,13 @@
             <div class="card-body p-0" style="position: relative;">
                 <div id="map"></div>
                 
+                <!-- Search Overlay -->
+                <div class="search-control">
+                    <select id="simpulSearch" class="form-control" placeholder="Cari Simpul...">
+                        <option value="">Cari Simpul/Lokasi...</option>
+                    </select>
+                </div>
+
                 <!-- Loading Indicator -->
                 <div id="loadingOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 600px; background: rgba(255,255,255,0.7); z-index: 1000; align-items: center; justify-content: center;">
                     <div class="spinner-border text-primary" role="status">
@@ -69,9 +92,16 @@
 
 @push('scripts')
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // 0. Init Select2
+        $('#simpulSearch').select2({
+            placeholder: "Cari Simpul...",
+            allowClear: true
+        });
+
         // 1. Initialize Map (Center Indonesia)
         const map = L.map('map').setView([-2.5489, 118.0149], 5);
 
@@ -84,12 +114,12 @@
 
         // 3. Variables
         let circlesLayerGroup = L.layerGroup().addTo(map);
+        let layersMap = {}; // Map ID -> Layer
         const dateFilter = document.getElementById('dateFilter');
         const loadingOverlay = document.getElementById('loadingOverlay');
 
         // 4. Add Legend Control
         const legend = L.control({position: 'bottomright'});
-
         legend.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'legend-control');
             div.innerHTML = `
@@ -113,7 +143,6 @@
             `;
             return div;
         };
-
         legend.addTo(map);
 
         // 5. Fetch Data
@@ -127,8 +156,6 @@
                 const response = await fetch(url);
                 const data = await response.json();
 
-                console.log('Map Data:', data);
-
                 // Update Legend Date
                 const displayDateElem = document.getElementById('displayDate');
                 if (displayDateElem && data.selected_date) {
@@ -137,10 +164,13 @@
 
                 // Render Features
                 renderSimpul(data.features, data.max_volume);
+                
+                // Populate Search
+                populateSearch(data.features);
 
             } catch (error) {
                 console.error('Error fetching map data:', error);
-                alert('Gagal mengambil data peta.');
+                
             } finally {
                 loadingOverlay.style.display = 'none';
             }
@@ -149,6 +179,7 @@
         // 6. Render Simpul
         function renderSimpul(features, maxVolume) {
             circlesLayerGroup.clearLayers();
+            layersMap = {}; // Reset Map
 
             if (!features || features.length === 0) return;
 
@@ -184,6 +215,9 @@
 
                 circle.bindPopup(popupContent);
                 bounds.extend([lat, lng]);
+                
+                // Store for Search
+                layersMap[props.id] = circle;
             });
 
             // Fit Bounds if valid
@@ -191,8 +225,47 @@
                 map.fitBounds(bounds, { padding: [50, 50] });
             }
         }
+        
+        // 7. Populate Search
+        function populateSearch(features) {
+             const $select = $('#simpulSearch');
+             $select.empty();
+             $select.append('<option value="">Cari Simpul...</option>');
+             
+             if (!features) return;
+             
+             // Sort by name
+             features.sort((a, b) => a.properties.name.localeCompare(b.properties.name));
+             
+             features.forEach(f => {
+                 const newOption = new Option(f.properties.name + ' (' + f.properties.category + ')', f.properties.id, false, false);
+                 $select.append(newOption);
+             });
+             
+             $select.trigger('change');
+        }
+        
+        // 8. Handle Search Selection
+        $('#simpulSearch').on('select2:select', function (e) {
+            const data = e.params.data;
+            const simpulId = data.id;
+            
+            if(layersMap[simpulId]) {
+                const layer = layersMap[simpulId];
+                const latLng = layer.getLatLng();
+                
+                map.flyTo(latLng, 14, {
+                    duration: 1.5
+                });
+                
+                // Open Popup after zoom
+                setTimeout(() => {
+                    layer.openPopup();
+                }, 1500);
+            }
+        });
 
-        // 7. Event Listeners
+        // 9. Event Listeners
         dateFilter.addEventListener('change', fetchData);
 
         // Initial Load

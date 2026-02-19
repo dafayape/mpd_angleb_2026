@@ -34,84 +34,97 @@ class MapMonitorController extends Controller
     public function getData(Request $request)
     {
         try {
-            // 1. Fetch Simpuls
-            $simpuls = Simpul::select(
-                'code', 
-                'name', 
-                'category', 
-                'sub_category',
-                DB::raw('ST_Y(location::geometry) as lat'),
-                DB::raw('ST_X(location::geometry) as lng')
-            )->whereNotNull('location')->get();
-
-            // 2. Determine Date (Filter or Latest)
             $selectedDate = $request->input('date');
+
+            // Cache Key based on Date
+            // If date is null, we need to find max date first, but that's fast.
+            // Let's cache the "latest date" query or just cache the result after we know the date.
             
             if (!$selectedDate) {
-                $selectedDate = SpatialMovement::max('tanggal');
-            }
-            
-            // 3. Calculate Density (Volume)
-            $volumes = [];
-            if ($selectedDate) {
-                $volumes = SpatialMovement::where('tanggal', $selectedDate)
-                    ->select('kode_origin_simpul', DB::raw('SUM(total) as total_volume'))
-                    ->groupBy('kode_origin_simpul')
-                    ->pluck('total_volume', 'kode_origin_simpul')
-                    ->toArray();
+                // Cache the Max Date query too? 
+                // Probably overkill, but let's do it for "optimal" feel
+                $selectedDate = \Illuminate\Support\Facades\Cache::remember('map_monitor:max_date', 3600, function() {
+                    return SpatialMovement::max('tanggal');
+                });
             }
 
-            if ($simpuls->isEmpty()) {
-                throw new \Exception("No data available");
-            }
+            $cacheKey = "map_monitor:data:{$selectedDate}"; // e.g. map_monitor:data:2026-03-20
 
-            // 4. Max Volume for scaling
-            $maxVolume = max($volumes) ?: 1;
-
-            // 5. Format Data
-            $features = $simpuls->map(function ($simpul) use ($volumes, $maxVolume) {
-                $volume = $volumes[$simpul->code] ?? 0;
+            // Cache for 1 hour (3600s)
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($selectedDate) {
                 
-                // Color Scaling
-                $ratio = $volume / $maxVolume;
-                $color = '#00ff00'; // Green
-                if ($ratio > 0.33) $color = '#ffff00'; // Yellow
-                if ($ratio > 0.66) $color = '#ff0000'; // Red
+                // 1. Fetch Simpuls (Optimized with PostGIS)
+                $simpuls = Simpul::select(
+                    'code', 
+                    'name', 
+                    'category', 
+                    'sub_category',
+                    DB::raw('ST_Y(location::geometry) as lat'),
+                    DB::raw('ST_X(location::geometry) as lng')
+                )->whereNotNull('location')->get();
 
-                // LOGARITHMIC SCALING to prevent overlapping
-                // Base 300m + Log scale
-                // If volume is 0, radius is small (300).
-                // If volume is high, it grows slowly.
-                $radius = 0;
-                if ($volume > 0) {
-                    $radius = 300 + (log($volume, 10) * 300); 
-                } else {
-                    $radius = 100; // Minimal visibility
+                // 2. Calculate Density (Volume)
+                $volumes = [];
+                if ($selectedDate) {
+                    $volumes = SpatialMovement::where('tanggal', $selectedDate)
+                        ->select('kode_origin_simpul', DB::raw('SUM(total) as total_volume'))
+                        ->groupBy('kode_origin_simpul')
+                        ->pluck('total_volume', 'kode_origin_simpul')
+                        ->toArray();
                 }
 
-                return [
-                    'type' => 'Feature',
-                    'geometry' => [
-                        'type' => 'Point',
-                        'coordinates' => [$simpul->lng, $simpul->lat]
-                    ],
-                    'properties' => [
-                        'id' => $simpul->code,
-                        'name' => $simpul->name,
-                        'category' => $simpul->category,
-                        'volume' => $volume,
-                        'color' => $color,
-                        'radius' => $radius
-                    ]
-                ];
+                if ($simpuls->isEmpty()) {
+                    throw new \Exception("No data available");
+                }
+
+                // 3. Max Volume for scaling
+                $maxVolume = max($volumes) ?: 1;
+
+                // 4. Format Data
+                $features = $simpuls->map(function ($simpul) use ($volumes, $maxVolume) {
+                    $volume = $volumes[$simpul->code] ?? 0;
+                    
+                    // Color Scaling
+                    $ratio = $volume / $maxVolume;
+                    $color = '#00ff00'; // Green
+                    if ($ratio > 0.33) $color = '#ffff00'; // Yellow
+                    if ($ratio > 0.66) $color = '#ff0000'; // Red
+
+                    // LOGARITHMIC SCALING
+                    $radius = 0;
+                    if ($volume > 0) {
+                        $radius = 300 + (log($volume, 10) * 300); 
+                    } else {
+                        $radius = 100;
+                    }
+
+                    return [
+                        'type' => 'Feature',
+                        'geometry' => [
+                            'type' => 'Point',
+                            'coordinates' => [$simpul->lng, $simpul->lat]
+                        ],
+                        'properties' => [
+                            'id' => $simpul->code,
+                            'name' => $simpul->name,
+                            'category' => $simpul->category,
+                            'volume' => $volume,
+                            'color' => $color,
+                            'radius' => $radius
+                        ]
+                    ];
+                });
+
+                return response()->json([
+                    'type' => 'FeatureCollection',
+                    'selected_date' => $selectedDate,
+                    'max_volume' => $maxVolume,
+                    'features' => $features
+                ]);
+
             });
 
-            return response()->json([
-                'type' => 'FeatureCollection',
-                'selected_date' => $selectedDate,
-                'max_volume' => $maxVolume,
-                'features' => $features
-            ]);
+        } catch (\Throwable $e) {
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('MapMonitor Error: ' . $e->getMessage());
