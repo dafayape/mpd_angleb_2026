@@ -61,7 +61,7 @@
     <div class="col-xl-12">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title mb-4">{{ $chart['mode_name'] }} Harian Pergerakan</h4>
+                <h4 class="card-title mb-4">{{ $chart['title'] }}</h4>
                 <div id="chart-mode-{{ $index }}" class="chart-container"></div>
             </div>
         </div>
@@ -79,11 +79,12 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const dates = @json($data['dates']);
-        const pieData = @json($data['pie_data']);
+        const piePeople = @json($data['pie_people']);
+        const pieMovement = @json($data['pie_movement']);
         const dailyCharts = @json($data['daily_charts']);
 
         // 1. PIE CHARTS
-        const pieConfig = (title, containerId) => ({
+        const pieConfig = (title, data) => ({
             chart: { type: 'pie' },
             title: { text: '' },
             plotOptions: {
@@ -101,13 +102,13 @@
             series: [{
                 name: 'Volume',
                 colorByPoint: true,
-                data: pieData
+                data: data
             }],
             credits: { enabled: false }
         });
 
-        Highcharts.chart('pie-movement', pieConfig('Pergerakan', 'pie-movement'));
-        Highcharts.chart('pie-people', pieConfig('Orang', 'pie-people')); // Same data for now
+        Highcharts.chart('pie-movement', pieConfig('Pergerakan', pieMovement));
+        Highcharts.chart('pie-people', pieConfig('Orang', piePeople));
 
         // 2. DAILY BAR CHARTS
         dailyCharts.forEach((chartData, index) => {

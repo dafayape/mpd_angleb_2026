@@ -49,16 +49,20 @@ class SpatialMovements2026Seeder extends Seeder
             $total = (int) ($total * (rand(90, 110) / 100));
         }
 
+        // Random Valid Mode (Weighted for Mobil/Motor)
+        $modes = ['I', 'J', 'I', 'J', 'I', 'J', 'A', 'B', 'C', 'H'];
+        $selectedMode = $modes[array_rand($modes)];
+
         DB::table('spatial_movements')->insert([
             'tanggal' => $date,
             'opsel' => $opsel,
             'is_forecast' => $isForecast,
             'kategori' => 'DUMMY',
-            'kode_origin_kabupaten_kota' => '0000',
-            'kode_dest_kabupaten_kota' => '0000',
+            'kode_origin_kabupaten_kota' => '3273', // Bandung (Valid)
+            'kode_dest_kabupaten_kota' => '3171', // Jakpus (Valid)
             'kode_origin_simpul' => 'DUMMY_ORIGIN',
             'kode_dest_simpul' => 'DUMMY_DEST',
-            'kode_moda' => 'X', // Dummy Mode
+            'kode_moda' => $selectedMode, 
             'total' => $total,
             'created_at' => now(),
             'updated_at' => now(),

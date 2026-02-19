@@ -253,9 +253,13 @@ class GrafikMpdController extends Controller
 
     private function getModeShareData($startDate, $endDate)
     {
-        // 1. Get All Modes
-        $modes = DB::table('ref_transport_modes')->orderBy('code')->get();
-        // Fallback names if empty? Seeder exists, so should be fine.
+        // 1. Get Specific Modes (Mobil & Motor)
+        // I = Mobil Pribadi, J = Motor Pribadi
+        $targetModes = ['I', 'J'];
+        $modes = DB::table('ref_transport_modes')
+            ->whereIn('code', $targetModes)
+            ->orderBy('code')
+            ->get();
         
         // 2. Prepare Date Range
         $dates = [];
@@ -276,80 +280,94 @@ class GrafikMpdController extends Controller
                 'sm.is_forecast',
                 DB::raw('SUM(sm.total) as total')
             )
+            ->whereIn('m.code', $targetModes)
             ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->groupBy('m.code', 'm.name', 'sm.tanggal', 'sm.is_forecast')
             ->get();
 
         // 4. Structure Data
         
-        // A. Pie Chart Data (Total Real per Mode)
-        $pieData = []; // [name, y]
-        $modeTotals = []; // Keyed by mode code for sorting
+        // Occupancy Factors (Assumption: DB Total = People)
+        $occupancy = [
+            'I' => 3.5, // Mobil
+            'J' => 1.5  // Motor
+        ];
 
-        // B. Daily Charts Data (Real vs Forecast per Mode)
-        $dailyCharts = []; 
+        // A. Pie Chart Data
+        // - Pergerakan (Vehicle)
+        // - Orang (People)
+        $piePeople = []; 
+        $pieMovement = [];
+        $totals = ['I' => ['ppl' => 0, 'mov' => 0], 'J' => ['ppl' => 0, 'mov' => 0]];
 
-        // Init structures
-        foreach ($modes as $mode) {
-             $dailyCharts[$mode->code] = [
-                'name' => $mode->name,
-                'real' => array_fill_keys($dates, 0),
-                'forecast' => array_fill_keys($dates, 0)
-             ];
-             $modeTotals[$mode->code] = 0;
-        }
+        // B. Daily Charts Data
+        // Structure: [Key => [Real => [], Forecast => []]]
+        // Key: Mobil-Orang, Mobil-Pergerakan, Motor-Orang, Motor-Pergerakan
+        $seriesData = [
+            'Mobil-Orang' => ['real' => array_fill_keys($dates, 0), 'forecast' => array_fill_keys($dates, 0)],
+            'Mobil-Pergerakan' => ['real' => array_fill_keys($dates, 0), 'forecast' => array_fill_keys($dates, 0)],
+            'Motor-Orang' => ['real' => array_fill_keys($dates, 0), 'forecast' => array_fill_keys($dates, 0)],
+            'Motor-Pergerakan' => ['real' => array_fill_keys($dates, 0), 'forecast' => array_fill_keys($dates, 0)],
+        ];
 
         foreach ($dailyQuery as $row) {
-            $code = $row->mode_code;
+            $code = $row->mode_code; // I or J
             $date = $row->tanggal;
-            $val = (int) $row->total;
+            $ppl = (int) $row->total;
             $type = $row->is_forecast ? 'forecast' : 'real';
+            
+            // Calculate Movement
+            $factor = $occupancy[$code] ?? 1;
+            $mov = (int) round($ppl / $factor);
 
-            if (isset($dailyCharts[$code])) {
-                $dailyCharts[$code][$type][$date] += $val;
-                
-                if ($type === 'real') {
-                    $modeTotals[$code] += $val;
-                }
+            // Determine Keys
+            $label = ($code === 'I') ? 'Mobil' : 'Motor';
+            
+            // Add to Series
+            $seriesData["{$label}-Orang"][$type][$date] += $ppl;
+            $seriesData["{$label}-Pergerakan"][$type][$date] += $mov;
+
+            // Add to Pie Totals (Real Only)
+            if ($type === 'real') {
+                $totals[$code]['ppl'] += $ppl;
+                $totals[$code]['mov'] += $mov;
             }
         }
 
-        // Finalize Pie Data
-        foreach ($modes as $mode) {
-            $total = $modeTotals[$mode->code];
-            if ($total > 0) {
-                 $pieData[] = [
-                    'name' => $mode->name,
-                    'y' => $total,
-                    'code' => $mode->code // Custom prop
-                 ];
-            }
+        // Format Pie Data
+        foreach ($targetModes as $code) {
+            $name = ($code === 'I') ? 'Mobil Pribadi' : 'Motor Pribadi';
+            $piePeople[] = ['name' => $name, 'y' => $totals[$code]['ppl']];
+            $pieMovement[] = ['name' => $name, 'y' => $totals[$code]['mov']];
         }
-        
-        // Sort Pie Data desc
-        usort($pieData, function($a, $b) {
-            return $b['y'] <=> $a['y'];
-        });
 
-        // Finalize Daily Series
-        $finalDailyCharts = [];
-        foreach ($dailyCharts as $code => $chart) {
-            // Only add if there is data
-             if (array_sum($chart['real']) > 0 || array_sum($chart['forecast']) > 0) {
-                 $finalDailyCharts[] = [
-                    'mode_name' => $chart['name'],
-                    'series' => [
-                        ['name' => 'REAL', 'data' => array_values($chart['real']), 'color' => '#2caffe'],
-                        ['name' => 'FORECAST', 'data' => array_values($chart['forecast']), 'color' => '#fec107']
-                    ]
-                 ];
-             }
+        // Format Daily Charts
+        $dailyCharts = [];
+        $chartOrder = [
+            'Mobil-Pergerakan', 
+            'Mobil-Orang', 
+            'Motor-Pergerakan', 
+            'Motor-Orang'
+        ];
+
+        foreach ($chartOrder as $key) {
+            $parts = explode('-', $key);
+            $modeName = $parts[0] . ' Harian ' . $parts[1]; // e.g. Mobil Harian Pergerakan
+            
+            $dailyCharts[] = [
+                'title' => $modeName,
+                'series' => [
+                    ['name' => 'REAL', 'data' => array_values($seriesData[$key]['real']), 'color' => '#2caffe'],
+                    ['name' => 'FORECAST', 'data' => array_values($seriesData[$key]['forecast']), 'color' => '#fec107']
+                ]
+            ];
         }
 
         return [
             'dates' => $dates,
-            'pie_data' => $pieData,
-            'daily_charts' => $finalDailyCharts
+            'pie_people' => $piePeople,
+            'pie_movement' => $pieMovement,
+            'daily_charts' => $dailyCharts
         ];
     }
     public function nasionalSimpul() { return view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Simpul']]); }
