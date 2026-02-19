@@ -228,7 +228,130 @@ class GrafikMpdController extends Controller
     }
     
     public function nasionalTopKabkota() { return view('placeholder', ['title' => 'Top Kab/Kota', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Top Kab/Kota']]); }
-    public function nasionalModeShare() { return view('placeholder', ['title' => 'Mode Share', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Mode Share']]); }
+    public function nasionalModeShare(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+
+        $cacheKey = 'grafik:nasional:mode-share:v1';
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getModeShareData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+             \Illuminate\Support\Facades\Log::error('Mode Share Error: ' . $e->getMessage());
+            $data = $this->getModeShareData($startDate, $endDate);
+        }
+
+        return view('grafik-mpd.nasional.mode-share', [
+            'title' => 'Mode Share Nasional',
+            'breadcrumb' => ['Grafik MPD', 'Nasional', 'Mode Share'],
+            'data' => $data
+        ]);
+    }
+
+    private function getModeShareData($startDate, $endDate)
+    {
+        // 1. Get All Modes
+        $modes = DB::table('ref_transport_modes')->orderBy('code')->get();
+        // Fallback names if empty? Seeder exists, so should be fine.
+        
+        // 2. Prepare Date Range
+        $dates = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        // 3. Query Daily Data by Mode (Real vs Forecast)
+        // Group by Date, Mode, IsForecast
+        $dailyQuery = DB::table('spatial_movements as sm')
+            ->join('ref_transport_modes as m', 'sm.kode_moda', '=', 'm.code')
+            ->select(
+                'm.code as mode_code',
+                'm.name as mode_name',
+                'sm.tanggal',
+                'sm.is_forecast',
+                DB::raw('SUM(sm.total) as total')
+            )
+            ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->groupBy('m.code', 'm.name', 'sm.tanggal', 'sm.is_forecast')
+            ->get();
+
+        // 4. Structure Data
+        
+        // A. Pie Chart Data (Total Real per Mode)
+        $pieData = []; // [name, y]
+        $modeTotals = []; // Keyed by mode code for sorting
+
+        // B. Daily Charts Data (Real vs Forecast per Mode)
+        $dailyCharts = []; 
+
+        // Init structures
+        foreach ($modes as $mode) {
+             $dailyCharts[$mode->code] = [
+                'name' => $mode->name,
+                'real' => array_fill_keys($dates, 0),
+                'forecast' => array_fill_keys($dates, 0)
+             ];
+             $modeTotals[$mode->code] = 0;
+        }
+
+        foreach ($dailyQuery as $row) {
+            $code = $row->mode_code;
+            $date = $row->tanggal;
+            $val = (int) $row->total;
+            $type = $row->is_forecast ? 'forecast' : 'real';
+
+            if (isset($dailyCharts[$code])) {
+                $dailyCharts[$code][$type][$date] += $val;
+                
+                if ($type === 'real') {
+                    $modeTotals[$code] += $val;
+                }
+            }
+        }
+
+        // Finalize Pie Data
+        foreach ($modes as $mode) {
+            $total = $modeTotals[$mode->code];
+            if ($total > 0) {
+                 $pieData[] = [
+                    'name' => $mode->name,
+                    'y' => $total,
+                    'code' => $mode->code // Custom prop
+                 ];
+            }
+        }
+        
+        // Sort Pie Data desc
+        usort($pieData, function($a, $b) {
+            return $b['y'] <=> $a['y'];
+        });
+
+        // Finalize Daily Series
+        $finalDailyCharts = [];
+        foreach ($dailyCharts as $code => $chart) {
+            // Only add if there is data
+             if (array_sum($chart['real']) > 0 || array_sum($chart['forecast']) > 0) {
+                 $finalDailyCharts[] = [
+                    'mode_name' => $chart['name'],
+                    'series' => [
+                        ['name' => 'REAL', 'data' => array_values($chart['real']), 'color' => '#2caffe'],
+                        ['name' => 'FORECAST', 'data' => array_values($chart['forecast']), 'color' => '#fec107']
+                    ]
+                 ];
+             }
+        }
+
+        return [
+            'dates' => $dates,
+            'pie_data' => $pieData,
+            'daily_charts' => $finalDailyCharts
+        ];
+    }
     public function nasionalSimpul() { return view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Simpul']]); }
     
     public function jabodetabekPergerakanOrang() { return view('placeholder', ['title' => 'Pergerakan & Orang', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Pergerakan & Orang']]); }
