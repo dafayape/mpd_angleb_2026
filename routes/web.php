@@ -49,7 +49,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/map-monitor/data', [\App\Http\Controllers\MapMonitorController::class, 'getData'])->name('map-monitor.data');
     Route::get('/map-monitor/search-simpul', [\App\Http\Controllers\MapMonitorController::class, 'searchSimpul'])->name('map-monitor.search-simpul');
 
-    // Keynote Material
+    // Executive Summary
+    Route::prefix('executive-summary')->name('executive.')->group(function () {
+        Route::get('/daily-report', [\App\Http\Controllers\DailyReportController::class, 'index'])->name('daily-report');
+        Route::get('/summary', [\App\Http\Controllers\KeynoteController::class, 'index'])->name('summary'); // Reuses KeynoteController
+        Route::get('/summary/data', [\App\Http\Controllers\KeynoteController::class, 'getData'])->name('summary.data');
+    });
+
+    // Keynote Material (Redirect or Alias for legacy)
+    // Route::get('/keynote-material', [\App\Http\Controllers\KeynoteController::class, 'index'])->name('keynote'); 
+    // Commented out to prefer the new structure, but user might have bookmarked it.
+    // Let's keep the alias for safety if needed, or remove it. User asked for Executive Summary.
+    // I'll double route it to be safe.
     Route::get('/keynote-material', [\App\Http\Controllers\KeynoteController::class, 'index'])->name('keynote');
     Route::get('/keynote-material/data', [\App\Http\Controllers\KeynoteController::class, 'getData'])->name('keynote.data');
 

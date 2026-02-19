@@ -178,6 +178,8 @@
             <div data-simplebar class="h-100">
                 <div id="sidebar-menu">
                     <ul class="metismenu list-unstyled" id="side-menu">
+                
+
                         <li class="menu-title">MPD</li>
                         <li>
                             <a href="{{ route('dashboard') }}" class="waves-effect">
@@ -236,6 +238,18 @@
                                 <i class="bx bx-map"></i>
                                 <span>Map Monitor</span>
                             </a>
+                        </li>
+                        <li class="menu-title">EXECUTIVE SUMMARY</li>
+
+                        <li>
+                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                <i class="bx bx-file"></i>
+                                <span>Laporan</span>
+                            </a>
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li><a href="{{ route('executive.daily-report') }}">Daily Report</a></li>
+                                <li><a href="{{ route('executive.summary') }}">Summary</a></li>
+                            </ul>
                         </li>
 
                         <li class="menu-title">Master</li>
