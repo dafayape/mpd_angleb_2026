@@ -233,9 +233,10 @@ class GrafikMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 29);
 
-        $cacheKey = 'grafik:nasional:mode-share:v4';
+        $cacheKey = 'grafik:nasional:mode-share:v5';
 
         try {
+            // \Illuminate\Support\Facades\Log::info("Generating Mode Share Data v5 for $startDate to $endDate");
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
                 return $this->getModeShareData($startDate, $endDate);
             });
