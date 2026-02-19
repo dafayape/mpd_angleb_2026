@@ -98,8 +98,25 @@
     document.addEventListener('DOMContentLoaded', function() {
         // 0. Init Select2
         $('#simpulSearch').select2({
-            placeholder: "Cari Simpul...",
-            allowClear: true
+            placeholder: "Cari Simpul (Terintegrasi Database)...",
+            allowClear: true,
+            ajax: {
+                url: "{{ route('map-monitor.search-simpul') }}",
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        q: params.term // Search term
+                    };
+                },
+                processResults: function (data) {
+                    return {
+                        results: data.results
+                    };
+                },
+                cache: true
+            },
+            minimumInputLength: 0 // Allow opening without typing to see defaults
         });
 
         // 1. Initialize Map (Center Indonesia)
