@@ -130,21 +130,6 @@
     </div>
 </div>
 
-{{-- Section: Akumulasi --}}
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title mb-4 text-primary">AKUMULASI PERGERAKAN ORANG (NASIONAL)</h5>
-                
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover table-sm w-100 mb-0" style="border-collapse: collapse; border-spacing: 0; font-size: 11px;">
-                        <thead class="table-light text-center align-middle">
-                            <tr>
-                                <th rowspan="2" class="bg-light shadow-sm" style="min-width: 150px;">Tanggal</th>
-                                <th colspan="2" class="bg-success text-white shadow-sm">REAL</th>
-                            </tr>
-                            <tr>
                                 <th class="bg-soft-success text-success" style="min-width: 150px;">Pergerakan</th>
                                 <th class="bg-soft-success text-success" style="min-width: 150px;">Orang</th>
                             </tr>

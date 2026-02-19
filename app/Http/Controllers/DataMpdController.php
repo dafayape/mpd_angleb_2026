@@ -381,22 +381,188 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 29);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
-        $cacheKey = 'mpd:nasional:pergerakan:v1';
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v2';
         
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getPergerakanData($startDate, $endDate, []);
+                return $this->getPergerakanDataTables($startDate, $endDate);
             });
         } catch (\Throwable $e) {
-            $data = $this->getPergerakanData($startDate, $endDate, []);
+            $data = $this->getPergerakanDataTables($startDate, $endDate);
         }
 
         return view('data-mpd.nasional.pergerakan', [
             'title' => 'Pergerakan Nasional',
             'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'Pergerakan'],
             'dates' => $dates,
-            'data' => $data
+            'real' => $data['real'],
+            'forecast' => $data['forecast'],
+            'accum' => $data['accum']
         ]);
+    }
+
+    private function getPergerakanDataTables($startDate, $endDate, $filterCodes = [])
+    {
+        // Init Structure
+        $dateKeys = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dateKeys[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        $opsels = ['XL', 'IOH', 'TSEL'];
+        $types = ['REAL', 'FORECAST'];
+
+        // Temporary storage to calc totals first (for percentage)
+        $temp = [
+            'REAL' => [],
+            'FORECAST' => []
+        ];
+        
+        $opselTotals = [
+            'REAL' => array_fill_keys($opsels, 0),
+            'FORECAST' => array_fill_keys($opsels, 0)
+        ];
+
+        // Fetch Data
+        try {
+            $query = DB::table('spatial_movements')
+                ->select(
+                    'tanggal',
+                    'opsel',
+                    'is_forecast',
+                    DB::raw('SUM(total) as total_volume')
+                )
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+
+            // Apply Filters if provided (e.g. Jabodetabek)
+            if (!empty($filterCodes)) {
+                 $query->whereIn('kode_origin_kabupaten_kota', $filterCodes);
+            }
+
+            $rows = $query->groupBy('tanggal', 'opsel', 'is_forecast')->get();
+
+            foreach ($rows as $row) {
+                $type = $row->is_forecast ? 'FORECAST' : 'REAL';
+                $date = $row->tanggal;
+                
+                // Colors/Opsel Normalization
+                $rawOpsel = strtoupper($row->opsel);
+                $opsel = 'OTHER';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
+                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
+                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+
+                if ($opsel === 'OTHER') continue;
+
+                $vol = $row->total_volume;
+
+                if (!isset($temp[$type][$date])) $temp[$type][$date] = [];
+                if (!isset($temp[$type][$date][$opsel])) $temp[$type][$date][$opsel] = 0;
+                
+                $temp[$type][$date][$opsel] += $vol;
+                $opselTotals[$type][$opsel] += $vol;
+            }
+        } catch (\Throwable $e) {
+             \Illuminate\Support\Facades\Log::error('Pergerakan Tables Error: ' . $e->getMessage());
+        }
+
+        // Process Final Structure
+        $final = [
+            'real' => [],
+            'forecast' => [],
+            'accum' => [] // Specifically for the Accumulation Table (Real)
+        ];
+
+        // Helper for Label
+        $formatLabel = function($val) {
+             if ($val >= 1000000) return number_format($val / 1000000, 2, ',', '.') . ' juta';
+             if ($val >= 1000) return number_format($val / 1000, 2, ',', '.') . ' ribu';
+             return number_format($val, 0, ',', '.');
+        };
+
+        // Running Accumulators
+        $runningAccum = [
+            'REAL' => ['total_mov' => 0, 'total_ppl' => 0],
+            'FORECAST' => ['total_mov' => 0, 'total_ppl' => 0]
+        ];
+
+        foreach ($types as $type) {
+            $arrKey = strtolower($type);
+            
+            foreach ($dateKeys as $date) {
+                $row = [
+                    'date' => $date,
+                    'opsels' => [],
+                    'total_mov' => 0,
+                    'total_ppl' => 0,
+                    'accum_mov' => 0,
+                    'accum_ppl' => 0
+                ];
+
+                // Opsels
+                foreach ($opsels as $op) {
+                    $vol = $temp[$type][$date][$op] ?? 0;
+                    $grand = $opselTotals[$type][$op];
+                    $pct = $grand > 0 ? ($vol / $grand) * 100 : 0;
+                    
+                    $row['opsels'][$op] = [
+                        'vol' => $vol,
+                        'pct' => $pct,
+                        'label' => $formatLabel($vol)
+                    ];
+
+                    $row['total_mov'] += $vol;
+                }
+                
+                // People 1:1 ratio assume
+                $row['total_ppl'] = $row['total_mov']; 
+
+                // Update Accumulation
+                $runningAccum[$type]['total_mov'] += $row['total_mov'];
+                $runningAccum[$type]['total_ppl'] += $row['total_ppl'];
+
+                $row['accum_mov'] = $runningAccum[$type]['total_mov'];
+                $row['accum_ppl'] = $runningAccum[$type]['total_ppl'];
+
+                $final[$arrKey][$date] = $row;
+            }
+        }
+
+        // Accumulation Table (Derived from Real)
+        foreach ($final['real'] as $date => $row) {
+            $grandTotalReal = $runningAccum['REAL']['total_mov'];
+            
+            $pctMov = $grandTotalReal > 0 ? ($row['total_mov'] / $grandTotalReal) * 100 : 0;
+            $pctPpl = $grandTotalReal > 0 ? ($row['total_ppl'] / $grandTotalReal) * 100 : 0;
+
+            $final['accum'][$date] = [
+                'mov' => [
+                    'vol' => $row['total_mov'],
+                    'pct' => $pctMov,
+                    'label' => $formatLabel($row['total_mov']),
+                    'accum' => $row['accum_mov']
+                ],
+                'ppl' => [
+                    'vol' => $row['total_ppl'],
+                    'pct' => $pctPpl,
+                    'label' => $formatLabel($row['total_ppl']),
+                    'accum' => $row['accum_ppl']
+                ]
+            ];
+        }
+        
+        // Re-loop to fix percentages in Accum table (since GrandTotal is only known at end)
+        $grandTotalMov = $runningAccum['REAL']['total_mov'];
+        $grandTotalPpl = $runningAccum['REAL']['total_ppl'];
+
+        foreach ($final['accum'] as $date => &$row) {
+             $row['mov']['pct'] = $grandTotalMov > 0 ? ($row['mov']['vol'] / $grandTotalMov) * 100 : 0;
+             $row['ppl']['pct'] = $grandTotalPpl > 0 ? ($row['ppl']['vol'] / $grandTotalPpl) * 100 : 0;
+        }
+
+        return $final;
     }
 
     private function getDatesCollection($startDate, $endDate)
@@ -552,24 +718,26 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         // 2. Caching Key
-        $cacheKey = 'mpd:jabodetabek:pergerakan:v1';
+        $cacheKey = 'mpd:jabodetabek:pergerakan:tables:v2';
         
         $jabodetabekCodes = $this->getJabodetabekCodes();
         
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getPergerakanData($startDate, $endDate, $jabodetabekCodes);
+                return $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes);
             });
         } catch (\Throwable $e) {
             // Redis/DB Fallback
-            $data = $this->getPergerakanData($startDate, $endDate, $jabodetabekCodes);
+            $data = $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes);
         }
 
         return view('data-mpd.jabodetabek.pergerakan', [
             'title' => 'Pergerakan Jabodetabek',
             'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Pergerakan'],
             'dates' => $dates,
-            'data' => $data // Structure: [Date] => ['XL' => [...], 'IOH' => [...]]
+            'real' => $data['real'],
+            'forecast' => $data['forecast'],
+            'accum' => $data['accum']
         ]);
     }
 
