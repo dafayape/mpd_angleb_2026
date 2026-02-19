@@ -1094,7 +1094,7 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 29);
 
         // Cache Key
-        $cacheKey = 'grafik:jabodetabek:mode-share:v1';
+        $cacheKey = 'grafik:jabodetabek:mode-share:v2';
 
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
@@ -1121,6 +1121,9 @@ class GrafikMpdController extends Controller
             '3603', '3671', '3674',
             '3216', '3275'
         ];
+
+        // 1. Get All Modes
+        $allModes = DB::table('ref_transport_modes')->select('code', 'name')->orderBy('code')->get();
 
         // Occupancy Factors (Avg People per Vehicle)
         $occupancy = [
@@ -1152,36 +1155,37 @@ class GrafikMpdController extends Controller
             'Sepeda' => '#4CAF50'
         ];
 
-        // Query: Sum Total by Mode (Real Only)
-        // Filter by Jabodetabek Origin
+        // 2. Query Data (Real Only, Jabo Origin)
         $query = DB::table('spatial_movements as sm')
-            ->join('ref_transport_modes as m', 'sm.kode_moda', '=', 'm.code')
-            ->select('m.code', 'm.name', DB::raw('SUM(sm.total) as total_people'))
-            ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->where('sm.is_forecast', false)
-            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-            ->groupBy('m.code', 'm.name')
-            ->get();
+            ->select('kode_moda', DB::raw('SUM(total) as total_people'))
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('is_forecast', false)
+            ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('kode_moda')
+            ->get()
+            ->keyBy('kode_moda');
 
         $pieMovement = [];
         $piePeople = [];
 
-        foreach ($query as $row) {
-            $code = $row->code;
-            $name = $row->name;
-            $ppl = (int) $row->total_people;
+        foreach ($allModes as $mode) {
+            $code = $mode->code;
+            $name = $mode->name;
+            
+            // Get Data or 0
+            $ppl = isset($query[$code]) ? (int) $query[$code]->total_people : 0;
             
             // Calculate Movement (Vehicle units)
             $factor = $occupancy[$code] ?? 1;
             $mov = (int) round($ppl / $factor);
 
-            $color = $colors[$name] ?? null;
+            $color = $colors[$name] ?? '#999999';
 
             $pieMovement[] = ['name' => $name, 'y' => $mov, 'color' => $color];
             $piePeople[] = ['name' => $name, 'y' => $ppl, 'color' => $color];
         }
 
-        // Sort by Y desc
+        // Sort by Y desc (keeping 0s at bottom naturally)
         usort($pieMovement, fn($a, $b) => $b['y'] <=> $a['y']);
         usort($piePeople, fn($a, $b) => $b['y'] <=> $a['y']);
 
