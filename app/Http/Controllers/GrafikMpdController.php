@@ -233,7 +233,7 @@ class GrafikMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 29);
 
-        $cacheKey = 'grafik:nasional:mode-share:v1';
+        $cacheKey = 'grafik:nasional:mode-share:v2';
 
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
