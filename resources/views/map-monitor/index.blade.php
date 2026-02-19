@@ -127,71 +127,23 @@
                 <div class="d-flex align-items-center mb-2">
                     <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #00ff00; opacity: 0.6;"></span>
                     <span>Rendah (< 33%)</span>
-    // 0. Init Select2 with AJAX (Server-Side Integration)
-    $('#simpulSearch').select2({
-        placeholder: "Cari Simpul (Terintegrasi Database)...",
-        allowClear: true,
-        ajax: {
-            url: "{{ route('map-monitor.search-simpul') }}",
-            dataType: 'json',
-            delay: 250,
-            data: function (params) {
-                return {
-                    q: params.term // Search term
-                };
-            },
-            processResults: function (data) {
-                return {
-                    results: data.results
-                };
-            },
-            cache: true
-        },
-        minimumInputLength: 0 // Allow opening without typing to see defaults
-    });
-
-    // 1. Initialize Map (Center Indonesia)
-    const map = L.map('map').setView([-2.5489, 118.0149], 5);
-
-    // 2. Add Tile Layer (CartoDB Positron for clean look)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 19
-    }).addTo(map);
-
-    // 3. Variables
-    let circlesLayerGroup = L.layerGroup().addTo(map);
-    let layersMap = {}; // Map ID -> Layer
-    const dateFilter = document.getElementById('dateFilter');
-    const loadingOverlay = document.getElementById('loadingOverlay');
-
-    // 4. Add Legend Control
-    const legend = L.control({position: 'bottomright'});
-    legend.onAdd = function (map) {
-        const div = L.DomUtil.create('div', 'legend-control');
-        div.innerHTML = `
-            <h6>Legenda Kepadatan</h6>
-            <div class="d-flex align-items-center mb-2">
-                <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #00ff00; opacity: 0.6;"></span>
-                <span>Rendah (< 33%)</span>
-            </div>
-            <div class="d-flex align-items-center mb-2">
-                <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffff00; opacity: 0.6;"></span>
-                <span>Sedang (33% - 66%)</span>
-            </div>
-            <div class="d-flex align-items-center mb-2">
-                <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
-                <span>Tinggi (> 66%)</span>
-            </div>
-            <div class="mt-2 pt-2 border-top text-muted">
-                <small><strong>Data:</strong> <span id="displayDate">-</span></small><br>
-                <small style="font-size: 10px;">* Radius logaritmik volume.</small>
-            </div>
-        `;
-        return div;
-    };
-    legend.addTo(map);
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffff00; opacity: 0.6;"></span>
+                    <span>Sedang (33% - 66%)</span>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
+                    <span>Tinggi (> 66%)</span>
+                </div>
+                <div class="mt-2 pt-2 border-top text-muted">
+                    <small><strong>Data:</strong> <span id="displayDate">-</span></small><br>
+                    <small style="font-size: 10px;">* Radius logaritmik volume.</small>
+                </div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
 
     // 5. Fetch Data
     async function fetchData() {
