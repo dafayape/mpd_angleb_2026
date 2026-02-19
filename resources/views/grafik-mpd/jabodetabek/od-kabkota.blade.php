@@ -122,6 +122,49 @@
 
     </div>
 </div>
+
+<!-- DAILY CHARTS (New Requirement) -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h4 class="card-title mb-4">AKUMULASI PERGERAKAN HARIAN TOTAL (INTER JABODETABEK & OUTBOUND)</h4>
+    </div>
+    
+    <!-- INTERNAL FLOW -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Internal Jabodetabek - Pergerakan Harian</h4>
+                <div id="chart-internal-mov" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Internal Jabodetabek - Orang Harian</h4>
+                <div id="chart-internal-ppl" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OUTBOUND FLOW -->
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Keluar Jabodetabek - Pergerakan Harian</h4>
+                <div id="chart-outbound-mov" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-body">
+                <h4 class="card-title mb-3">Keluar Jabodetabek - Orang Harian</h4>
+                <div id="chart-outbound-ppl" style="height: 350px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -133,12 +176,9 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const sankeyData = @json($data['sankey']);
-
-        // Limit Sankey links if too many (performance/clutter)
-        // Sort by weight desc, take top 50?
-        // sankeyData.sort((a,b) => b.weight - a.weight);
-        // const limitedSankey = sankeyData.slice(0, 50);
-
+        const dates = @json($data['dates']);
+        
+        // 1. Sankey Chart
         Highcharts.chart('sankey-container', {
             title: { text: '' },
             accessibility: {
@@ -163,6 +203,68 @@
             },
             credits: { enabled: false }
         });
+
+        // 2. Common Options for Bar/Line Charts
+        const commonOptions = {
+            chart: { type: 'column' },
+            title: { text: undefined },
+            xAxis: { 
+                categories: dates,
+                crosshair: true,
+                labels: {
+                    formatter: function() { 
+                        if (typeof this.value !== 'string') return this.value;
+                        const parts = this.value.split('-');
+                        if(parts.length === 3) return parts[2] + '-' + parts[1] + '-' + parts[0];
+                        return this.value;
+                    }
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: { text: null },
+                labels: {
+                    formatter: function() { 
+                        if(this.value >= 1000000) return (this.value / 1000000).toFixed(1) + 'M';
+                        if(this.value >= 1000) return (this.value / 1000).toFixed(0) + 'k';
+                        return this.value;
+                    }
+                }
+            },
+            tooltip: { shared: true },
+            plotOptions: {
+                column: {
+                    borderRadius: 2,
+                    dataLabels: { enabled: false }
+                }
+            },
+            credits: { enabled: false },
+            legend: { enabled: false }
+        };
+
+        // 3. Render 4 Charts
+        const chartData = {
+            'chart-internal-mov': @json($data['chart_internal_mov']),
+            'chart-internal-ppl': @json($data['chart_internal_ppl']),
+            'chart-outbound-mov': @json($data['chart_outbound_mov']),
+            'chart-outbound-ppl': @json($data['chart_outbound_ppl'])
+        };
+        const colors = {
+            'chart-internal-mov': '#2caffe', // Blue
+            'chart-internal-ppl': '#6610f2', // Purple
+            'chart-outbound-mov': '#fec107', // Yellow
+            'chart-outbound-ppl': '#ff3d60'  // Red
+        };
+
+        for (const [id, seriesData] of Object.entries(chartData)) {
+            Highcharts.chart(id, Highcharts.merge(commonOptions, {
+                series: [{
+                    name: 'Total',
+                    data: seriesData,
+                    color: colors[id]
+                }]
+            }));
+        }
     });
 </script>
 @endpush

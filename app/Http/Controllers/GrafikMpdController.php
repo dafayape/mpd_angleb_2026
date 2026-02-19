@@ -963,7 +963,7 @@ class GrafikMpdController extends Controller
             '3216', '3275'
         ];
 
-        // 1. Query: Sum Total by Origin City & Dest City
+        // 1. Query Top/Sankey: Sum Total by Origin City & Dest City (INTERNAL FLOW Only)
         try {
             $query = DB::table('spatial_movements as sm')
                 ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
@@ -978,9 +978,7 @@ class GrafikMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false)
                 ->where(function($q) use ($jabodetabekCodes) {
-                     // Internal O-D: Both must be in Jabodetabek? Or just one?
-                     // Usually "O-D Kab/Kota Jabodetabek" implies movements within the region or to/from.
-                     // Let's assume Internal (Both In) to show interactions between cities.
+                     // Internal O-D: Both must be in Jabodetabek
                      $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                        ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
                 })
@@ -989,10 +987,10 @@ class GrafikMpdController extends Controller
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Jabodetabek OD Query Error: ' . $e->getMessage());
-            return ['top_origin' => [], 'top_dest' => [], 'sankey' => [], 'total_national' => 0];
+            $query = collect();
         }
 
-        // 2. Process Data
+        // 2. Process Top/Sankey Data
         $totalVol = $query->sum('total_volume');
 
         // A. Top Origin
@@ -1026,9 +1024,6 @@ class GrafikMpdController extends Controller
             ->values();
 
         // C. Sankey Data
-        // To avoid self-loops cluttering or if desired, filter origin != dest?
-        // Usually Sankey shows flow. Self-loops (internal movement within city) might be valid but can look weird.
-        // Let's include all for now.
         $sankeyData = $query->map(function($row) {
             return [
                 'from' => $row->origin_name,
@@ -1037,11 +1032,60 @@ class GrafikMpdController extends Controller
             ];
         })->values();
 
+        // 3. DAILY CHARTS (Internal & Outbound)
+        // We need 4 Charts:
+        // 1. Internal Jabodetabek Movement (Real)
+        // 2. Internal Jabodetabek People (Real)
+        // 3. Outbound Jabodetabek Movement (Real) (Origin Jabo, Dest Outside)
+        // 4. Outbound Jabodetabek People (Real)
+        
+        $dates = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        // Query Daily
+        $daily = DB::table('spatial_movements')
+            ->select('tanggal', 'kode_origin_kabupaten_kota as origin', 'kode_dest_kabupaten_kota as dest', DB::raw('SUM(total) as total'))
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('is_forecast', false)
+            ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes) // Always Origin Jabo for this context
+            ->groupBy('tanggal', 'origin', 'dest')
+            ->get();
+
+        $internalMov = array_fill_keys($dates, 0);
+        $outboundMov = array_fill_keys($dates, 0);
+
+        foreach ($daily as $row) {
+            $isDestJabo = in_array($row->dest, $jabodetabekCodes);
+            $val = (int) $row->total;
+            
+            if ($isDestJabo) {
+                // Internal
+                $internalMov[$row->tanggal] += $val;
+            } else {
+                // Outbound
+                $outboundMov[$row->tanggal] += $val;
+            }
+        }
+
+        // People Simulation (Factor 2.2)
+        $internalPpl = array_map(fn($v) => (int)($v / 2.2), $internalMov);
+        $outboundPpl = array_map(fn($v) => (int)($v / 2.2), $outboundMov);
+
         return [
+            'dates' => $dates,
             'top_origin' => $topOrigin,
             'top_dest' => $topDest,
             'sankey' => $sankeyData,
-            'total_volume' => $totalVol
+            'total_volume' => $totalVol,
+            // Chart Data
+            'chart_internal_mov' => array_values($internalMov),
+            'chart_internal_ppl' => array_values($internalPpl),
+            'chart_outbound_mov' => array_values($outboundMov),
+            'chart_outbound_ppl' => array_values($outboundPpl)
         ];
     }
     public function jabodetabekModeShare() { return view('placeholder', ['title' => 'Mode Share', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Mode Share']]); }
