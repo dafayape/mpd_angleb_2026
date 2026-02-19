@@ -227,7 +227,105 @@ class GrafikMpdController extends Controller
         ];
     }
     
-    public function nasionalTopKabkota() { return view('placeholder', ['title' => 'Top Kab/Kota', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Top Kab/Kota']]); }
+    public function nasionalTopKabkota(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+
+        // Cache Key
+        $cacheKey = 'grafik:nasional:top-kabkota:v1';
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getTopKabKotaData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Top KabKota Error: ' . $e->getMessage());
+            $data = $this->getTopKabKotaData($startDate, $endDate);
+        }
+
+        return view('grafik-mpd.nasional.top-kabkota', [
+            'title' => 'Top 10 Kabupaten/Kota',
+            'breadcrumb' => ['Grafik MPD', 'Nasional', 'Top Kab/Kota'],
+            'data' => $data
+        ]);
+    }
+
+    private function getTopKabKotaData($startDate, $endDate)
+    {
+        // 1. Query: Sum Total by Origin City & Dest City
+        // Join with ref_cities to get Name
+        
+        try {
+            $query = DB::table('spatial_movements as sm')
+                // Join Origin City
+                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+                ->join('ref_provinces as op', 'oc.province_code', '=', 'op.code')
+                // Join Dest City
+                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+                ->join('ref_provinces as dp', 'dc.province_code', '=', 'dp.code')
+                ->select(
+                    'oc.code as origin_code',
+                    'oc.name as origin_name',
+                    'op.name as origin_prov_name', // Optional: Show Prov
+                    'dc.code as dest_code',
+                    'dc.name as dest_name',
+                    'dp.name as dest_prov_name',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                // ->where('sm.is_forecast', false) // Use Real + Forecast? Or just Real? Usually Real for Rankings.
+                // Let's stick to Real for consistency with other ranking pages unless requested otherwise.
+                ->where('sm.is_forecast', false) 
+                ->groupBy('oc.code', 'oc.name', 'op.name', 'dc.code', 'dc.name', 'dp.name')
+                ->get();
+
+        } catch (\Throwable $e) {
+             \Illuminate\Support\Facades\Log::error('Top KabKota Query Error: ' . $e->getMessage());
+             return ['top_origin' => [], 'top_dest' => [], 'total_national' => 0];
+        }
+
+        // 2. Process Data
+        $totalNational = $query->sum('total_volume');
+        
+        // A. Top 10 Origin
+        $topOrigin = $query->groupBy('origin_code')
+            ->map(function ($rows) use ($totalNational) {
+                $first = $rows->first();
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $first->origin_code,
+                    'name' => $first->origin_name . ' (' . $first->origin_prov_name . ')', // Append Prov for clarity
+                    'total' => $subTotal,
+                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        // B. Top 10 Destination
+        $topDest = $query->groupBy('dest_code')
+            ->map(function ($rows) use ($totalNational) {
+                $first = $rows->first();
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $first->dest_code,
+                    'name' => $first->dest_name . ' (' . $first->dest_prov_name . ')',
+                    'total' => $subTotal,
+                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        return [
+            'top_origin' => $topOrigin,
+            'top_dest' => $topDest,
+            'total_national' => $totalNational
+        ];
+    }
     public function nasionalModeShare(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);

@@ -41,9 +41,11 @@ class SpatialMovements2026Seeder extends Seeder
 
     private function insertDummyRecord($date, $opsel, $isForecast)
     {
-        // 1. Fetch Node Categories from DB (Cached static)
+        // Fetch Node Categories & Cities from DB (Cached static)
         static $nodes = null;
-        if (!$nodes) {
+        static $cities = null; 
+
+        if (!$nodes || !$cities) {
             $rawNodes = DB::table('ref_transport_nodes')->select('code', 'name')->get();
             $nodes = [
                 'AIR' => [],
@@ -57,6 +59,8 @@ class SpatialMovements2026Seeder extends Seeder
                 elseif (str_starts_with($node->code, 'GEN-')) $nodes['RAIL'][] = $node->code;
                 else $nodes['LAND'][] = $node->code; // Fallback
             }
+
+            $cities = DB::table('ref_cities')->pluck('code')->toArray();
         }
 
         // 2. Define Mode Groups
@@ -84,8 +88,6 @@ class SpatialMovements2026Seeder extends Seeder
         $selectedMode = $modeGroups[$category][array_rand($modeGroups[$category])];
 
         // 5. Select Origin/Dest based on Category
-        // For Land, if no specific Land nodes, we might use Cities (3276, 3171) or GEN nodes as terminals
-        // Let's use RAIL nodes for Land too if LAND is empty (Intermodal Hubs)
         $pool = $nodes[$category];
         if (empty($pool)) {
            // Fallback for Land if empty: Use Rail nodes (common aggregation)
@@ -98,8 +100,15 @@ class SpatialMovements2026Seeder extends Seeder
         while($dest === $origin && count($pool) > 1) {
              $dest = $pool[array_rand($pool)];
         }
+        
+        // 6. Select Origin/Dest City (Random from DB)
+        $originCity = !empty($cities) ? $cities[array_rand($cities)] : '3273';
+        $destCity = !empty($cities) ? $cities[array_rand($cities)] : '3171';
+        while($destCity === $originCity && count($cities) > 1) {
+            $destCity = $cities[array_rand($cities)];
+        }
 
-        // 6. Generate Volume
+        // 7. Generate Volume
         // Rail/Land > Sea > Air
         $baseVolume = match($category) {
             'LAND' => rand(500000, 3000000),
@@ -118,8 +127,8 @@ class SpatialMovements2026Seeder extends Seeder
             'opsel' => $opsel,
             'is_forecast' => $isForecast,
             'kategori' => 'REAL_PATTERN_SIMULATION', // Marker for "Real-like" data
-            'kode_origin_kabupaten_kota' => '3273', // Bandung (Placeholder for City)
-            'kode_dest_kabupaten_kota' => '3171', // Jakpus
+            'kode_origin_kabupaten_kota' => $originCity, // Real City
+            'kode_dest_kabupaten_kota' => $destCity,   // Real City
             'kode_origin_simpul' => $origin,
             'kode_dest_simpul' => $dest,
             'kode_moda' => $selectedMode, 
