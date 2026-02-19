@@ -233,7 +233,7 @@ class GrafikMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 29);
 
-        $cacheKey = 'grafik:nasional:mode-share:v3';
+        $cacheKey = 'grafik:nasional:mode-share:v4';
 
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
@@ -350,15 +350,12 @@ class GrafikMpdController extends Controller
 
         // Format Daily Charts
         $dailyCharts = [];
-        // Loop through MODES to maintain order (or sort by total volume?)
-        // Let's sort by Total People Volume Descending to show most relevant first
-        $sortedModeCodes = array_keys($totals);
-        usort($sortedModeCodes, function($a, $b) use ($totals) {
-            return $totals[$b]['ppl'] <=> $totals[$a]['ppl'];
-        });
+        // Only Mobil (I) and Motor (J) for Daily Charts as per request
+        $targetDailyModes = ['I', 'J'];
 
-        foreach ($sortedModeCodes as $code) {
-            if ($totals[$code]['ppl'] == 0 && empty($dailyRaw[$code])) continue; // Skip empty modes
+        foreach ($targetDailyModes as $code) {
+            // Check if exists in totals (it should if seeder has it)
+            if (!isset($totals[$code])) continue;
 
             $modeName = $totals[$code]['name'];
             
@@ -368,6 +365,7 @@ class GrafikMpdController extends Controller
             $pplReal = []; $pplFc = [];
 
             foreach ($dates as $d) {
+                // Use data if exists, else 0
                 $movReal[] = $dailyRaw[$code]['mov']['real'][$d] ?? 0;
                 $movFc[] = $dailyRaw[$code]['mov']['forecast'][$d] ?? 0;
                 $pplReal[] = $dailyRaw[$code]['ppl']['real'][$d] ?? 0;
