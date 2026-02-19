@@ -7,7 +7,7 @@
     <div class="col-12">
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0 font-size-18">{{ $title }}</h4>
-                <div class="page-title-right">
+            <div class="page-title-right">
                 <ol class="breadcrumb m-0">
                     @foreach($breadcrumb as $crumb)
                         <li class="breadcrumb-item {{ $loop->last ? 'active' : '' }}">
@@ -15,9 +15,6 @@
                         </li>
                     @endforeach
                 </ol>
-                <div class="mt-2 text-end">
-                    <span class="badge bg-info font-size-12">Periode: 13 Mar 2026 - 29 Mar 2026</span>
-                </div>
             </div>
         </div>
     </div>
@@ -91,7 +88,7 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4 text-center">Pergerakan Per Hari (REAL vs FORECAST)</h4>
-                <div id="chart-pergerakan-trend" dir="ltr" style="height: 400px;"></div>
+                <div id="chart-pergerakan-trend" dir="ltr" class="chart-container"></div>
             </div>
         </div>
     </div>
@@ -103,7 +100,7 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4 text-center">Orang Per Hari (REAL vs FORECAST)</h4>
-                <div id="chart-orang-trend" dir="ltr" style="height: 400px;"></div>
+                <div id="chart-orang-trend" dir="ltr" class="chart-container"></div>
             </div>
         </div>
     </div>
@@ -115,7 +112,7 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4 text-center">Pergerakan Harian per OPSEL</h4>
-                <div id="chart-pergerakan-opsel" dir="ltr" style="height: 400px;"></div>
+                <div id="chart-pergerakan-opsel" dir="ltr" class="chart-container"></div>
             </div>
         </div>
     </div>
@@ -127,13 +124,22 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4 text-center">Orang Harian per OPSEL</h4>
-                <div id="chart-orang-opsel" dir="ltr" style="height: 400px;"></div>
+                <div id="chart-orang-opsel" dir="ltr" class="chart-container"></div>
             </div>
         </div>
     </div>
 </div>
 
 @endsection
+
+@push('css')
+<style>
+    .chart-container {
+        height: 400px;
+        width: 100%;
+    }
+</style>
+@endpush
 
 @push('js')
 <script src="https://code.highcharts.com/highcharts.js"></script>
@@ -144,9 +150,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         try {
             const data = @json($charts);
-            const dates = data.dates;
+            const dates = data.dates || [];
             
-            // Common Options
+            // Common Highcharts Options
             const commonOptions = {
                 chart: { type: 'column' },
                 xAxis: { 
@@ -154,9 +160,9 @@
                     crosshair: true,
                     labels: {
                         formatter: function() { 
-                            // Robust date formatting
+                            // Robust Date Formatting (YYYY-MM-DD -> DD-MM-YYYY)
                             if (typeof this.value !== 'string') return this.value;
-                            var parts = this.value.split('-');
+                            const parts = this.value.split('-');
                             if(parts.length === 3) {
                                 return parts[2] + '-' + parts[1] + '-' + parts[0];
                             }
@@ -166,7 +172,7 @@
                 },
                 yAxis: {
                     min: 0,
-                    title: { text: null }, // Hide title to save space as requested in reference style
+                    title: { text: null }, // Minimized look
                     labels: {
                         formatter: function() { 
                             if(this.value >= 1000000) return (this.value / 1000000).toFixed(1) + 'M';
@@ -187,18 +193,18 @@
                     column: {
                         pointPadding: 0.2, 
                         borderWidth: 0,
-                        minPointLength: 3, // Ensure 0 values show a small line
+                        minPointLength: 3, // Ensures 0-values are visible as flat lines
                         dataLabels: {
                             enabled: true,
                             rotation: -90,
-                            color: '#999', // Grey if 0/inside
+                            color: '#999', // Grey for 0/low values
                             align: 'right',
                             format: '{point.y:,.0f}', 
-                            y: -5, // Float above bar
+                            y: -5, 
                             style: {
                                 fontSize: '9px',
                                 fontFamily: 'Verdana, sans-serif',
-                                textOutline: 'none' // Cleaner look
+                                textOutline: 'none'
                             }
                         }
                     }
@@ -218,7 +224,7 @@
 
             // 2. Orang Trend (Real vs Forecast)
             Highcharts.chart('chart-orang-trend', Highcharts.merge(commonOptions, {
-                 series: data.series_trend
+                 series: data.series_trend // Using same data series as requested
             }));
 
             // 3. Pergerakan Opsel
@@ -228,11 +234,11 @@
 
              // 4. Orang Opsel
              Highcharts.chart('chart-orang-opsel', Highcharts.merge(commonOptions, {
-                 series: data.series_opsel
+                 series: data.series_opsel // Using same data series as requested
             }));
 
         } catch (e) {
-            console.error('Chart Render Error:', e);
+            console.error('Highcharts Rendering Error:', e);
         }
     });
 </script>
