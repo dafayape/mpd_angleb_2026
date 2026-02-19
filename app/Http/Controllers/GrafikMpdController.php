@@ -832,7 +832,103 @@ class GrafikMpdController extends Controller
             ]
         ];
     }
-    public function jabodetabekPergerakanOrangOpsel() { return view('placeholder', ['title' => 'Pergerakan & Orang (Opsel)', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Pergerakan & Orang (Opsel)']]); }
+    public function jabodetabekPergerakanOrangOpsel(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+
+        // Cache Key
+        $cacheKey = 'grafik:jabodetabek:pergerakan-orang-opsel:v1';
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getJabodetabekOpselData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Jabodetabek Opsel Error: ' . $e->getMessage());
+            $data = $this->getJabodetabekOpselData($startDate, $endDate);
+        }
+
+        return view('grafik-mpd.jabodetabek.pergerakan-orang-opsel', [
+            'title' => 'Dashboard Pergerakan & Orang per Operator (Jabodetabek)',
+            'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Pergerakan & Orang (Opsel)'],
+            'data' => $data
+        ]);
+    }
+
+    private function getJabodetabekOpselData($startDate, $endDate)
+    {
+        $jabodetabekCodes = [
+            '3171', '3172', '3173', '3174', '3175', '3101',
+            '3201', '3271',
+            '3276',
+            '3603', '3671', '3674',
+            '3216', '3275'
+        ];
+
+        // Init Daily Dates
+        $dates = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dates[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        // Query: Sum Total by Date & Opsel, Filter by Jabodetabek
+        // Real Data Only usually for Opsel breakdown
+        $query = DB::table('spatial_movements')
+            ->select('tanggal', 'opsel', DB::raw('SUM(total) as total'))
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('is_forecast', false) 
+            ->where(function($q) use ($jabodetabekCodes) {
+                $q->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                  ->orWhereIn('kode_dest_kabupaten_kota', $jabodetabekCodes);
+            })
+            ->groupBy('tanggal', 'opsel')
+            ->orderBy('tanggal')
+            ->get();
+
+        // Structure Series
+        $seriesMov = [
+            'XL' => array_fill_keys($dates, 0),
+            'IOH' => array_fill_keys($dates, 0),
+            'TSEL' => array_fill_keys($dates, 0)
+        ];
+        $seriesPpl = [
+            'XL' => array_fill_keys($dates, 0),
+            'IOH' => array_fill_keys($dates, 0),
+            'TSEL' => array_fill_keys($dates, 0)
+        ];
+
+        foreach ($query as $row) {
+            // Normalize Opsel Name
+            $raw = strtoupper($row->opsel);
+            $name = 'OTHER';
+            if (str_contains($raw, 'XL') || str_contains($raw, 'AXIS')) $name = 'XL';
+            elseif (str_contains($raw, 'INDOSAT') || str_contains($raw, 'IOH') || str_contains($raw, 'TRI')) $name = 'IOH';
+            elseif (str_contains($raw, 'TELKOMSEL') || str_contains($raw, 'TSEL')) $name = 'TSEL';
+
+            if ($name === 'OTHER') continue;
+
+            $val = (int) $row->total;
+            $seriesMov[$name][$row->tanggal] += $val;
+            $seriesPpl[$name][$row->tanggal] += (int) ($val / 2.2); // Sim Ppl
+        }
+
+        return [
+            'dates' => $dates,
+            'chart_movement' => [
+                ['name' => 'XL', 'data' => array_values($seriesMov['XL']), 'color' => '#2caffe'],
+                ['name' => 'IOH', 'data' => array_values($seriesMov['IOH']), 'color' => '#fec107'],
+                ['name' => 'TSEL', 'data' => array_values($seriesMov['TSEL']), 'color' => '#ff3d60']
+            ],
+            'chart_people' => [
+                ['name' => 'XL', 'data' => array_values($seriesPpl['XL']), 'color' => '#2caffe'],
+                ['name' => 'IOH', 'data' => array_values($seriesPpl['IOH']), 'color' => '#fec107'],
+                ['name' => 'TSEL', 'data' => array_values($seriesPpl['TSEL']), 'color' => '#ff3d60']
+            ]
+        ];
+    }
     public function jabodetabekOdKabkota() { return view('placeholder', ['title' => 'O-D Kab/Kota', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'O-D Kab/Kota']]); }
     public function jabodetabekModeShare() { return view('placeholder', ['title' => 'Mode Share', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Mode Share']]); }
     public function jabodetabekSimpul() { return view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Simpul']]); }
