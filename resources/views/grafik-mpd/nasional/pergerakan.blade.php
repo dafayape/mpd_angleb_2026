@@ -20,67 +20,6 @@
     </div>
 </div>
 
-{{-- Summary Cards --}}
-<div class="row">
-    <div class="col-md-4">
-        <div class="card mini-stats-wid">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-muted fw-medium">Real Pergerakan</p>
-                        <h4 class="mb-0">{{ number_format($charts['summary']['real'], 0, ',', '.') }}</h4>
-                    </div>
-                    <div class="flex-shrink-0 align-self-center">
-                        <div class="mini-stat-icon avatar-sm rounded-circle bg-primary">
-                            <span class="avatar-title">
-                                <i class="bx bx-run font-size-24"></i>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card mini-stats-wid">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-muted fw-medium">Forecast Pergerakan</p>
-                        <h4 class="mb-0">{{ number_format($charts['summary']['forecast'], 0, ',', '.') }}</h4>
-                    </div>
-                    <div class="flex-shrink-0 align-self-center">
-                        <div class="mini-stat-icon avatar-sm rounded-circle bg-warning">
-                            <span class="avatar-title">
-                                <i class="bx bx-trending-up font-size-24"></i>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card mini-stats-wid">
-            <div class="card-body">
-                <div class="d-flex">
-                    <div class="flex-grow-1">
-                        <p class="text-muted fw-medium">Total Orang</p>
-                        <h4 class="mb-0">{{ number_format($charts['summary']['people'], 0, ',', '.') }}</h4>
-                    </div>
-                    <div class="flex-shrink-0 align-self-center">
-                        <div class="mini-stat-icon avatar-sm rounded-circle bg-success">
-                            <span class="avatar-title">
-                                <i class="bx bx-user font-size-24"></i>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 {{-- Charts Section --}}
 {{-- 1. Pergerakan Harian (REAL vs FORECAST) --}}
 <div class="row">
