@@ -155,6 +155,7 @@
             // Common Highcharts Options
             const commonOptions = {
                 chart: { type: 'column' },
+                title: { text: undefined },
                 xAxis: { 
                     categories: dates,
                     crosshair: true,
