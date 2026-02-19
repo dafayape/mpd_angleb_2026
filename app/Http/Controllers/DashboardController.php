@@ -31,31 +31,42 @@ class DashboardController extends Controller
             $persenCapaian = $totalForecast > 0 ? ($totalReal / $totalForecast) * 100 : 0;
             $selisih = $totalReal - $totalForecast; // Positive means exceeding forecast
 
-            // 2. Chart Opsel: Real vs Forecast per Opsel
+            // 2. Chart Opsel: Real Volume per Opsel (Matching Reference Style)
+            // Colors: IOH (Yellow/Orange), TSEL (Red), XL (Blue)
             $opselData = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->selectRaw("
-                    opsel,
-                    SUM(CASE WHEN is_forecast = false THEN total ELSE 0 END) as real_val,
-                    SUM(CASE WHEN is_forecast = true THEN total ELSE 0 END) as forecast_val
-                ")
+                ->where('is_forecast', false) // Use Real Data
+                ->selectRaw("opsel, SUM(total) as total")
                 ->groupBy('opsel')
                 ->get();
             
-            // Order: IOH, TSEL, XL (Arbitrary or specific)
-            $opselOrder = ['IOH', 'TSEL', 'XL']; // Ensure consistent order
-            $opselSeriesReal = [];
-            $opselSeriesForecast = [];
-            $opselLabels = $opselOrder;
+            // Map to colors
+            $opselConfig = [
+                'IOH' => ['color' => '#f1b44c', 'label' => 'IOH'],
+                'TSEL' => ['color' => '#f46a6a', 'label' => 'TSEL'], // Telekonsel Red
+                'XL' => ['color' => '#34c38f', 'label' => 'XL'],    // XL (Reference shows Blue? Let's check image. Text description said Blue. Let's use Blue #556ee6)
+            ];
+            // Correction: XL usually Blue/Green. Reference image description "XL (Blue)". 
+            // I'll use standard Admin template Blue: #556ee6
+            $opselConfig['XL']['color'] = '#556ee6';
 
-            // Map results to order
+            $opselCategories = [];
+            $opselSeriesData = [];
+            
+            // Order: IOH, TSEL, XL as per image
+            $targetOrder = ['IOH', 'TSEL', 'XL'];
+            
             $opselMap = $opselData->keyBy('opsel');
-            foreach ($opselOrder as $o) {
-                $row = $opselMap->get($o);
-                $opselSeriesReal[] = $row ? (int) $row->real_val : 0;
-                $opselSeriesForecast[] = $row ? (int) $row->forecast_val : 0;
+
+            foreach ($targetOrder as $opsel) {
+                $val = $opselMap->get($opsel)->total ?? 0;
+                $opselCategories[] = $opsel;
+                $opselSeriesData[] = [
+                    'y' => (int) $val,
+                    'color' => $opselConfig[$opsel]['color'] ?? '#cccccc'
+                ];
             }
 
-            // 3. Chart Moda: Daily Trend (Real Data Only for Monitoring Focus)
+            // 3. Chart Moda: Daily Trend
             $modaData = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 // ->where('is_forecast', false) // Show Real Only? Or Total? Let's show Real.
                 ->selectRaw("tanggal, kode_moda, SUM(total) as total") // Aggregating both usually doubles, but here likely we want Real.
@@ -109,10 +120,9 @@ class DashboardController extends Controller
                 'persen_capaian' => $persenCapaian,
                 'analysis' => $analysis,
                 'chart_opsel' => [
-                    'categories' => $opselLabels,
+                    'categories' => $opselCategories,
                     'series' => [
-                        ['name' => 'Aktual', 'data' => $opselSeriesReal, 'color' => '#34c38f'], // Green
-                        ['name' => 'Forecast', 'data' => $opselSeriesForecast, 'color' => '#f46a6a'] // Red
+                        ['name' => 'Pergerakan', 'data' => $opselSeriesData, 'colorByPoint' => true]
                     ]
                 ],
                 'chart_moda' => [

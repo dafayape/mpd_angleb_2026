@@ -62,30 +62,49 @@
             </div>
         </div>
 
-        {{-- Capaian Forecast --}}
-        <div class="card mt-3">
+        {{-- Perbandingan Pergerakan --}}
+        <div class="card h-100">
              <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Capaian Terhadap Forecast</h5>
+                <h5 class="card-title mb-0 text-primary">Perbandingan Pergerakan Dengan Tahun Lalu</h5>
             </div>
             <div class="card-body">
-                <p class="mb-3 fw-bold">Progress Capaian</p>
+                <p class="mb-3 fw-bold">Perbandingan Pergerakan</p>
                 
-                {{-- Custom Progress/Bar --}}
+                @php
+                    $maxValue = max($total_real, $total_forecast);
+                    $widthReal = $maxValue > 0 ? ($total_real / $maxValue) * 100 : 0;
+                    $widthForecast = $maxValue > 0 ? ($total_forecast / $maxValue) * 100 : 0;
+                @endphp
+
+                {{-- Horizontal Bar: Forecast (Blue) --}}
                 <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                         <span class="text-muted small">Aktual</span>
-                         <span class="fw-bold text-primary small">{{ number_format($total_real, 0, ',', '.') }}</span>
+                    <div class="d-flex align-items-center">
+                         <div class="flex-grow-1 bg-light rounded" style="height: 30px; overflow: hidden;">
+                             <div class="bg-primary h-100 d-flex align-items-center justify-content-end pe-2 text-white fw-bold" style="width: {{ $widthForecast }}%;">
+                             </div>
+                         </div>
+                         <div class="ms-3 fw-bold text-primary" style="min-width: 80px; text-align: right;">{{ number_format($total_forecast, 0, ',', '.') }}</div>
                     </div>
-                    <div class="progress" style="height: 10px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min($persen_capaian, 100) }}%;" aria-valuenow="{{ $persen_capaian }}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
+                    <small class="text-muted">Target / Forecast</small>
                 </div>
 
-                 <div class="mt-3 text-center">
-                    <span class="badge {{ $persen_capaian >= 100 ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning' }} fs-5 fw-bold px-3 py-2">
-                        {{ number_format($persen_capaian, 1) }}%
+                {{-- Horizontal Bar: Real (Yellow) --}}
+                <div class="mb-3">
+                    <div class="d-flex align-items-center">
+                         <div class="flex-grow-1 bg-light rounded" style="height: 30px; overflow: hidden;">
+                             <div class="bg-warning h-100 d-flex align-items-center justify-content-end pe-2 text-white fw-bold" style="width: {{ $widthReal }}%;">
+                             </div>
+                         </div>
+                         <div class="ms-3 fw-bold text-warning" style="min-width: 80px; text-align: right;">{{ number_format($total_real, 0, ',', '.') }}</div>
+                    </div>
+                    <small class="text-muted">Aktual (Real)</small>
+                </div>
+                
+                 <div class="mt-4">
+                    <span class="badge {{ $persen_capaian >= 100 ? 'bg-success-subtle text-success' : 'bg-success-subtle text-success' }} fs-5 fw-bold px-3 py-2">
+                        +{{ number_format($persen_capaian - 100, 1) }}%
                     </span>
-                    <p class="text-muted small mt-2 mb-0">dari total target forecast</p>
+                    <span class="text-muted ms-2">dari target forecast</span>
                 </div>
 
             </div>
@@ -96,7 +115,7 @@
     <div class="col-xl-8">
         <div class="card h-100">
              <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Perbandingan Aktual vs Forecast per Operator</h5>
+                <h5 class="card-title mb-0 text-primary">Tren Jumlah Orang dan Pergerakan per OPSEL</h5>
             </div>
             <div class="card-body">
                 <div id="chart-opsel" style="height: 350px;"></div>
@@ -104,7 +123,7 @@
                 <div class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start">
                     <i class="mdi mdi-information-outline fs-4 mt-1"></i>
                     <div>
-                        <h6 class="alert-heading fw-bold mb-1 text-info">Analisis Operator</h6>
+                        <h6 class="alert-heading fw-bold mb-1 text-info">Analisis Trend Orang</h6>
                         <p class="mb-0 small">{!! $analysis['opsel'] !!}</p>
                     </div>
                 </div>
