@@ -1088,7 +1088,108 @@ class GrafikMpdController extends Controller
             'chart_outbound_ppl' => array_values($outboundPpl)
         ];
     }
-    public function jabodetabekModeShare() { return view('placeholder', ['title' => 'Mode Share', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Mode Share']]); }
+    public function jabodetabekModeShare(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+
+        // Cache Key
+        $cacheKey = 'grafik:jabodetabek:mode-share:v1';
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getJabodetabekModeShareData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Jabodetabek Mode Share Error: ' . $e->getMessage());
+            $data = $this->getJabodetabekModeShareData($startDate, $endDate);
+        }
+
+        return view('grafik-mpd.jabodetabek.mode-share', [
+            'title' => 'Mode Share (Jabodetabek)',
+            'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Mode Share'],
+            'data' => $data
+        ]);
+    }
+
+    private function getJabodetabekModeShareData($startDate, $endDate)
+    {
+        $jabodetabekCodes = [
+            '3171', '3172', '3173', '3174', '3175', '3101',
+            '3201', '3271',
+            '3276',
+            '3603', '3671', '3674',
+            '3216', '3275'
+        ];
+
+        // Occupancy Factors (Avg People per Vehicle)
+        $occupancy = [
+            'A' => 30,  // Bus AKAP
+            'B' => 25,  // Bus AKDP
+            'C' => 300, // KA Antarkota
+            'D' => 600, // KA KCJB
+            'E' => 100, // KA Perkotaan
+            'F' => 200, // Laut
+            'G' => 50,  // Penyeberangan
+            'H' => 100, // Udara
+            'I' => 3.5, // Mobil
+            'J' => 1.5, // Motor
+            'K' => 1,   // Sepeda
+        ];
+
+        // Mode Colors (approximate based on image/common usage)
+        $colors = [
+            'Motor' => '#2caffe', // Blue
+            'Mobil' => '#00e396', // Green
+            'Angkutan Kereta Api Perkotaan' => '#546E7A', // Dark Grey/Blue
+            'Angkutan Jalan (Bus AKAP)' => '#ff3d60', // Red
+            'Angkutan Jalan (Bus AKDP)' => '#008ffb', // Light Blue
+            'Angkutan Kereta Api Antarkota' => '#feb019', // Orange
+            'Angkutan Udara' => '#775dd0', // Purple
+            'Angkutan Laut' => '#ff4560', 
+            'Angkutan Penyeberangan' => '#00D9E9',
+            'Angkutan Kereta Api KCJB' => '#A300D6',
+            'Sepeda' => '#4CAF50'
+        ];
+
+        // Query: Sum Total by Mode (Real Only)
+        // Filter by Jabodetabek Origin
+        $query = DB::table('spatial_movements as sm')
+            ->join('ref_transport_modes as m', 'sm.kode_moda', '=', 'm.code')
+            ->select('m.code', 'm.name', DB::raw('SUM(sm.total) as total_people'))
+            ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('sm.is_forecast', false)
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('m.code', 'm.name')
+            ->get();
+
+        $pieMovement = [];
+        $piePeople = [];
+
+        foreach ($query as $row) {
+            $code = $row->code;
+            $name = $row->name;
+            $ppl = (int) $row->total_people;
+            
+            // Calculate Movement (Vehicle units)
+            $factor = $occupancy[$code] ?? 1;
+            $mov = (int) round($ppl / $factor);
+
+            $color = $colors[$name] ?? null;
+
+            $pieMovement[] = ['name' => $name, 'y' => $mov, 'color' => $color];
+            $piePeople[] = ['name' => $name, 'y' => $ppl, 'color' => $color];
+        }
+
+        // Sort by Y desc
+        usort($pieMovement, fn($a, $b) => $b['y'] <=> $a['y']);
+        usort($piePeople, fn($a, $b) => $b['y'] <=> $a['y']);
+
+        return [
+            'pie_movement' => $pieMovement,
+            'pie_people' => $piePeople
+        ];
+    }
     public function jabodetabekSimpul() { return view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Grafik MPD', 'Jabodetabek', 'Simpul']]); }
 
 }
