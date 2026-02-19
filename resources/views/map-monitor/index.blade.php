@@ -2,6 +2,34 @@
 
 @section('title', 'Map Monitor')
 
+@push('css')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+    #map {
+        width: 100%;
+        height: 600px;
+        border-radius: 4px;
+        z-index: 1;
+    }
+    .legend-control {
+        background: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        max-width: 250px;
+        font-family: "Poppins", sans-serif;
+        font-size: 12px;
+    }
+    .legend-control h6 {
+        margin: 0 0 5px;
+        font-weight: 600;
+        font-size: 14px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 5px;
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="row">
     <div class="col-12">
@@ -24,29 +52,13 @@
 <div class="row">
     <div class="col-12">
         <div class="card">
-            <div class="card-body p-0">
-                <div id="map" style="width: 100%; height: 600px; border-radius: 4px;"></div>
+            <div class="card-body p-0" style="position: relative;">
+                <div id="map"></div>
                 
-                <!-- Legend Overlay -->
-                <div id="legend" class="bg-white p-3 rounded shadow-sm m-3" style="position: absolute; bottom: 20px; right: 20px; max-width: 250px; z-index: 1000; display: none;">
-                    <h6 class="mb-2 border-bottom pb-2">Legenda Kepadatan</h6>
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #00ff00; opacity: 0.6;"></span>
-                        <small>Rendah (< 33%)</small>
-                    </div>
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffff00; opacity: 0.6;"></span>
-                        <small>Sedang (33% - 66%)</small>
-                    </div>
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
-                        <small>Tinggi (> 66%)</small>
-                    </div>
-                    <div class="mt-2 pt-2 border-top">
-                        <small class="d-block mb-1"><strong>Data:</strong> <span id="displayDate">-</span></small>
-                        <small class="text-muted" style="font-size: 11px;">
-                            * Radius logaritmik berdasarkan volume.
-                        </small>
+                <!-- Loading Indicator -->
+                <div id="loadingOverlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 600px; background: rgba(255,255,255,0.7); z-index: 1000; align-items: center; justify-content: center;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
             </div>
@@ -56,124 +68,135 @@
 @endsection
 
 @push('scripts')
-{{-- Load Google Maps API (Use Env Variable if available or Placeholder) --}}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY', '') }}&loading=async&callback=initMap" async defer></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
 <script>
-    let map;
-    let circles = [];
-    const dateFilter = document.getElementById('dateFilter');
-    const displayDate = document.getElementById('displayDate');
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Initialize Map (Center Indonesia)
+        const map = L.map('map').setView([-2.5489, 118.0149], 5);
 
-    function initMap() {
-        // Default Center (Indonesia)
-        const center = { lat: -2.5489, lng: 118.0149 }; 
-        const mapOptions = {
-            zoom: 5,
-            center: center,
-            mapTypeId: google.maps.MapTypeId.ROADMAP,
-            styles: [
-                {
-                    featureType: "poi",
-                    elementType: "labels",
-                    stylers: [{ visibility: "off" }]
-                }
-            ]
+        // 2. Add Tile Layer (CartoDB Positron for clean look)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // 3. Variables
+        let circlesLayerGroup = L.layerGroup().addTo(map);
+        const dateFilter = document.getElementById('dateFilter');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        // 4. Add Legend Control
+        const legend = L.control({position: 'bottomright'});
+
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'legend-control');
+            div.innerHTML = `
+                <h6>Legenda Kepadatan</h6>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #00ff00; opacity: 0.6;"></span>
+                    <span>Rendah (< 33%)</span>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffff00; opacity: 0.6;"></span>
+                    <span>Sedang (33% - 66%)</span>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
+                    <span>Tinggi (> 66%)</span>
+                </div>
+                <div class="mt-2 pt-2 border-top text-muted">
+                    <small><strong>Data:</strong> <span id="displayDate">-</span></small><br>
+                    <small style="font-size: 10px;">* Radius logaritmik volume.</small>
+                </div>
+            `;
+            return div;
         };
 
-        map = new google.maps.Map(document.getElementById("map"), mapOptions);
+        legend.addTo(map);
 
-        // Show Legend
-        const legend = document.getElementById('legend');
-        map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(legend);
-        legend.style.display = 'block';
+        // 5. Fetch Data
+        async function fetchData() {
+            const selectedDate = dateFilter.value;
+            const url = `{{ route('map-monitor.data') }}?date=${selectedDate}`;
 
-        // Fetch Data on Load
-        fetchData();
+            loadingOverlay.style.display = 'flex';
 
-        // Fetch Data on Date Change
-        dateFilter.addEventListener('change', fetchData);
-    }
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
 
-    function fetchData() {
-        const selectedDate = dateFilter.value;
-        const url = `{{ route('map-monitor.data') }}?date=${selectedDate}`;
+                console.log('Map Data:', data);
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                console.log('Map Data Received:', data); // Debug Log
-                
                 // Update Legend Date
-                if (data.selected_date) {
-                    displayDate.textContent = data.selected_date;
-                    // Sync dropdown if coming from default
-                    if (!dateFilter.value) dateFilter.value = data.selected_date;
+                const displayDateElem = document.getElementById('displayDate');
+                if (displayDateElem && data.selected_date) {
+                    displayDateElem.textContent = data.selected_date;
                 }
 
-                if (data.features) {
-                    renderSimpul(data.features);
-                    
-                    // Fit bounds if data exists
-                    if (data.features.length > 0) {
-                        const bounds = new google.maps.LatLngBounds();
-                        data.features.forEach(f => {
-                            if (f.geometry.coordinates) {
-                                bounds.extend({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0] });
-                            }
-                        });
-                        if (circles.length > 0) map.fitBounds(bounds);
-                    }
-                }
-            })
-            .catch(error => console.error('Error fetching map data:', error));
-    }
+                // Render Features
+                renderSimpul(data.features, data.max_volume);
 
-    function renderSimpul(features) {
-        // Clear existing circles
-        circles.forEach(c => c.setMap(null));
-        circles = [];
+            } catch (error) {
+                console.error('Error fetching map data:', error);
+                alert('Gagal mengambil data peta.');
+            } finally {
+                loadingOverlay.style.display = 'none';
+            }
+        }
 
-        const infowindow = new google.maps.InfoWindow();
+        // 6. Render Simpul
+        function renderSimpul(features, maxVolume) {
+            circlesLayerGroup.clearLayers();
 
-        features.forEach(feature => {
-            if (!feature.geometry.coordinates) return;
+            if (!features || features.length === 0) return;
 
-            const lat = feature.geometry.coordinates[1];
-            const lng = feature.geometry.coordinates[0];
-            const props = feature.properties;
+            const bounds = L.latLngBounds();
 
-            const circle = new google.maps.Circle({
-                strokeColor: props.color,
-                strokeOpacity: 0.8,
-                strokeWeight: 1,
-                fillColor: props.color,
-                fillOpacity: 0.5,
-                map: map,
-                center: { lat: lat, lng: lng },
-                radius: props.radius, // meters (Logarithmic)
-                clickable: true
-            });
+            features.forEach(f => {
+                if (!f.geometry || !f.geometry.coordinates) return;
 
-            // Add Click Listener
-            circle.addListener("click", () => {
-                const content = `
-                    <div style="font-family: Poppins, sans-serif;">
-                        <h6 class="mb-1">${props.name}</h6>
+                const lng = f.geometry.coordinates[0];
+                const lat = f.geometry.coordinates[1];
+                const props = f.properties;
+
+                // Create Circle
+                const circle = L.circle([lat, lng], {
+                    color: props.color,
+                    fillColor: props.color,
+                    fillOpacity: 0.5,
+                    radius: props.radius, // Metres
+                    weight: 1
+                }).addTo(circlesLayerGroup);
+
+                // Popup Content
+                const popupContent = `
+                    <div style="font-family: Poppins, sans-serif; min-width: 150px;">
+                        <h6 style="margin:0 0 5px; font-weight:600;">${props.name}</h6>
                         <span class="badge bg-secondary mb-2">${props.category}</span>
-                        <div class="mt-2">
+                        <div style="font-size: 12px;">
                             <strong>Volume:</strong> ${props.volume.toLocaleString('id-ID')}<br>
                             <strong>Radius:</strong> ${Math.round(props.radius).toLocaleString('id-ID')} m
                         </div>
                     </div>
                 `;
-                infowindow.setContent(content);
-                infowindow.setPosition(circle.getCenter());
-                infowindow.open(map);
+
+                circle.bindPopup(popupContent);
+                bounds.extend([lat, lng]);
             });
 
-            circles.push(circle);
-        });
-    }
+            // Fit Bounds if valid
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        // 7. Event Listeners
+        dateFilter.addEventListener('change', fetchData);
+
+        // Initial Load
+        fetchData();
+    });
 </script>
 @endpush
