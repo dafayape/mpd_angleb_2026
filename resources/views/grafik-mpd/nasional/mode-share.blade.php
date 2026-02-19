@@ -34,31 +34,30 @@
     </div>
 </div>
 
-<!-- PIE CHARTS (DONUTS) -->
+<!-- PIE CHARTS -->
 <div class="row">
-    <div class="col-xl-6">
+    <div class="col-xl-6 col-lg-6">
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4">Distribusi Angkutan (Pergerakan - Real)</h4>
-                <div id="pie-movement" class="pie-container"></div>
+                <div id="pie-movement" class="chart-container"></div>
             </div>
         </div>
     </div>
-    <div class="col-xl-6">
+    <div class="col-xl-6 col-lg-6">
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4">Distribusi Angkutan (Orang - Real)</h4>
-                <div id="pie-people" class="pie-container"></div>
+                <div id="pie-people" class="chart-container"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- DAILY CHARTS BY MODE -->
-<div class="row" id="daily-charts-wrapper">
-    <!-- Generated via JS loop or Blade loop -->
+<div class="row">
+    <!-- DAILY CHARTS LOOP -->
     @foreach($data['daily_charts'] as $index => $chart)
-    <div class="col-xl-12">
+    <div class="col-xl-6 col-lg-6">
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4">{{ $chart['title'] }}</h4>
@@ -84,14 +83,13 @@
         const dailyCharts = @json($data['daily_charts']);
 
         // 1. PIE CHARTS
-        // 1. PIE CHARTS
-        const pieConfig = (title, subtitle, data) => ({
+        const pieConfig = (data) => ({
             chart: { 
                 type: 'pie',
                 // height: 600 // Reference uses 600px
             },
-            title: { text: title },
-            subtitle: { text: subtitle },
+            title: { text: '' },
+            subtitle: { text: '' },
             tooltip: {
                 pointFormat: '<b>{point.y:,.0f}</b> ({point.percentage:.2f}%)'
             },
@@ -132,15 +130,15 @@
             credits: { enabled: false }
         });
 
-        Highcharts.chart('pie-movement', pieConfig('Distribusi Angkutan (Pergerakan - Real)', '[Kode : 1.3.d.1] Berdasarkan jenis angkutan', pieMovement));
-        Highcharts.chart('pie-people', pieConfig('Distribusi Angkutan (Orang - Real)', '[Kode : 1.3.d.2] Berdasarkan jenis angkutan', piePeople));
+        Highcharts.chart('pie-movement', pieConfig(pieMovement));
+        Highcharts.chart('pie-people', pieConfig(piePeople));
 
         // 2. DAILY BAR CHARTS
         dailyCharts.forEach((chartData, index) => {
             Highcharts.chart(`chart-mode-${index}`, {
                 chart: { type: 'column' },
                 title: { text: '' }, // Handled by Card Title
-                subtitle: { text: `[Kode : 1.3.c.${index % 2 === 0 ? '1' : '2'}]` }, // 1=Pergerakan, 2=Orang
+                subtitle: { text: '' },
                 colors: ['#1E88E5', '#FBC02D'], // Real Blue, Forecast Yellow
                 xAxis: {
                     categories: dates,
