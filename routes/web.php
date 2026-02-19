@@ -47,9 +47,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/data-mpd/jabodetabek/mode-share', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekModeShare'])->name('data-mpd.jabodetabek.mode-share');
     Route::get('/data-mpd/jabodetabek/od-simpul', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekOdSimpul'])->name('data-mpd.jabodetabek.od-simpul');
 
+    // Map Monitor
     Route::get('/map-monitor', [\App\Http\Controllers\MapMonitorController::class, 'index'])->name('map-monitor');
     Route::get('/map-monitor/data', [\App\Http\Controllers\MapMonitorController::class, 'getData'])->name('map-monitor.data');
     Route::get('/map-monitor/search-simpul', [\App\Http\Controllers\MapMonitorController::class, 'searchSimpul'])->name('map-monitor.search-simpul');
+
+    // Keynote Material
+    Route::get('/keynote-material', [\App\Http\Controllers\KeynoteController::class, 'index'])->name('keynote');
+    Route::get('/keynote-material/data', [\App\Http\Controllers\KeynoteController::class, 'getData'])->name('keynote.data');
 
     // Master Referensi — data dari database (seeder)
     Route::prefix('master/referensi')->name('master.referensi.')->group(function () {
