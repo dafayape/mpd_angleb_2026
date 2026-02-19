@@ -118,7 +118,115 @@ class GrafikMpdController extends Controller
     }
     
     // Placeholder methods for other routes to prevent errors
-    public function nasionalOdProvinsi() { return view('placeholder', ['title' => 'O-D Provinsi', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'O-D Provinsi']]); }
+    public function nasionalOdProvinsi(Request $request) 
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 29);
+
+        $cacheKey = 'grafik:nasional:od-provinsi:v1';
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getOdProvinsiData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getOdProvinsiData($startDate, $endDate);
+        }
+
+        return view('grafik-mpd.nasional.od-provinsi', [
+            'title' => 'O-D Provinsi',
+            'breadcrumb' => ['Grafik MPD', 'Nasional', 'O-D Provinsi'],
+            'data' => $data
+        ]);
+    }
+
+    private function getOdProvinsiData($startDate, $endDate)
+    {
+        // 1. Query: Sum Total by Origin Prov & Dest Prov
+        // We assume spatial_movements.kode_origin_kabupaten_kota matches ref_cities.code
+        // And ref_cities.province_code matches ref_provinces.code
+        
+        try {
+            $query = DB::table('spatial_movements as sm')
+                // Join Origin City & Province
+                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+                ->join('ref_provinces as op', 'oc.province_code', '=', 'op.code')
+                // Join Dest City & Province
+                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+                ->join('ref_provinces as dp', 'dc.province_code', '=', 'dp.code')
+                ->select(
+                    'op.code as origin_code',
+                    'op.name as origin_name',
+                    'dp.code as dest_code',
+                    'dp.name as dest_name',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.is_forecast', false) // Real Only as per request? "O-D Provinsi Real"
+                ->groupBy('op.code', 'op.name', 'dp.code', 'dp.name')
+                ->get();
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('OD Provinsi Query Error: ' . $e->getMessage());
+            $query = collect();
+        }
+
+        // 2. Process Data
+        $totalNational = $query->sum('total_volume');
+        
+        // A. Top 10 Origin
+        $topOrigin = $query->groupBy('origin_code')
+            ->map(function ($rows) use ($totalNational) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->origin_code,
+                    'name' => $rows->first()->origin_name,
+                    'total' => $subTotal,
+                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        // B. Top 10 Destination
+        $topDest = $query->groupBy('dest_code')
+            ->map(function ($rows) use ($totalNational) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->dest_code,
+                    'name' => $rows->first()->dest_name,
+                    'total' => $subTotal,
+                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        // C. Sankey Data
+        // Nodes: List of distinct Origin & Dest Provinces
+        // Links: Origin -> Dest with weight
+        // Highcharts Sankey requires 'from', 'to', 'weight'
+        // To avoid circular or weird rendering, usually we might prefix nodes or just use names if distinct enough.
+        // Province names are unique.
+        
+        $sankeyData = $query->map(function($row) {
+            return [
+                'from' => $row->origin_name,
+                'to' => $row->dest_name,
+                'weight' => (int) $row->total_volume
+            ];
+        })->values();
+
+        return [
+            'top_origin' => $topOrigin,
+            'top_dest' => $topDest,
+            'sankey' => $sankeyData,
+            'total_national' => $totalNational
+        ];
+    }
+    
     public function nasionalTopKabkota() { return view('placeholder', ['title' => 'Top Kab/Kota', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Top Kab/Kota']]); }
     public function nasionalModeShare() { return view('placeholder', ['title' => 'Mode Share', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Mode Share']]); }
     public function nasionalSimpul() { return view('placeholder', ['title' => 'Simpul', 'breadcrumb' => ['Grafik MPD', 'Nasional', 'Simpul']]); }
