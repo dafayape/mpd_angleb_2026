@@ -22,53 +22,57 @@
 </div>
 
 {{-- Info Cards --}}
-<div class="row">
+<div class="row g-4">
     <div class="col-md-6">
-        <div class="card h-100">
+        <div class="card h-100 shadow-sm">
             <div class="card-body">
                 <h5 class="card-title text-primary mb-3">Latar Belakang MPD</h5>
-                <hr class="mt-0 mb-3">
-                <p class="text-muted mb-0">Periode Lebaran menjadi salah satu momen dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan signifikan pergerakan antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada tanggal 21 dan 22 Maret 2026 sehingga berhimpitan dengan Hari Raya Nyepi pada tanggal 19 Maret 2026.</p>
+                <hr class="mt-0 mb-3 opacity-25">
+                <p class="text-muted mb-0 small" style="text-align: justify;">Periode Lebaran menjadi salah satu momen dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan signifikan pergerakan antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada tanggal 21 dan 22 Maret 2026 sehingga berhimpitan dengan Hari Raya Nyepi pada tanggal 19 Maret 2026.</p>
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card h-100">
+        <div class="card h-100 shadow-sm">
             <div class="card-body">
                 <h5 class="card-title text-primary mb-3">Metodelogi MPD</h5>
-                <hr class="mt-0 mb-3">
-                <p class="text-muted mb-0">Periode Lebaran menjadi salah satu momen dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan signifikan pergerakan antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada tanggal 21 dan 22 Maret 2026 sehingga berhimpitan dengan Hari Raya Nyepi pada tanggal 19 Maret 2026.</p>
+                <hr class="mt-0 mb-3 opacity-25">
+                <p class="text-muted mb-0 small" style="text-align: justify;">Periode Lebaran menjadi salah satu momen dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan signifikan pergerakan antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada tanggal 21 dan 22 Maret 2026 sehingga berhimpitan dengan Hari Raya Nyepi pada tanggal 19 Maret 2026.</p>
             </div>
         </div>
     </div>
 </div>
 
+<div class="row g-4 mt-2">
     {{-- Left Column: Stats --}}
-    <div class="col-xl-4">
+    <div class="col-xl-4 d-flex flex-column gap-4">
         {{-- Total Orang dan Pergerakan --}}
-        <div class="card">
-            <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Total Pergerakan (Aktual)</h5>
+        <div class="card shadow-sm mb-0">
+            <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h5 class="card-title mb-0 text-primary fw-bold">Total Pergerakan (Aktual)</h5>
             </div>
-            <div class="card-body">
-                <p class="mb-1 text-muted fw-medium">Total Akumulasi (13-29 Mar)</p>
-                <div class="mb-4">
-                    <h2 class="mb-0 fw-bold text-primary">{{ number_format($total_real, 0, ',', '.') }} <span class="fs-6 text-muted fw-normal">Pergerakan</span></h2>
+            <div class="card-body pb-4">
+                <p class="mb-2 text-muted fw-medium small">Total Akumulasi (13-29 Mar)</p>
+                <div class="mb-3">
+                    <h2 class="mb-0 fw-bold text-primary display-6">{{ number_format($total_real, 0, ',', '.') }} <span class="fs-6 text-muted fw-normal">Pergerakan</span></h2>
                     <small class="text-muted">Target Forecast: {{ number_format($total_forecast, 0, ',', '.') }}</small>
                 </div>
-                <div class="alert alert-success bg-success-subtle text-success border-0 mb-0">
-                    <i class="mdi mdi-check-circle-outline me-1"></i> {!! $analysis['general'] !!}
+                <div class="alert alert-success bg-success-subtle text-success border-0 mb-0 py-2 px-3">
+                    <div class="d-flex align-items-center">
+                        <i class="mdi mdi-check-circle-outline me-2 fs-5"></i>
+                        <span class="small fst-italic">{!! strip_tags($analysis['general']) !!}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
         {{-- Perbandingan Pergerakan --}}
-        <div class="card h-100">
-             <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Perbandingan Pergerakan Dengan Tahun Lalu</h5>
+        <div class="card shadow-sm mb-0 flex-grow-1">
+             <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h5 class="card-title mb-0 text-primary fw-bold">Perbandingan Pergerakan Dengan Tahun Lalu</h5>
             </div>
             <div class="card-body">
-                <p class="mb-3 fw-bold">Perbandingan Pergerakan</p>
+                <p class="mb-4 fw-bold small text-uppercase text-muted">Perbandingan Pergerakan</p>
                 
                 @php
                     $maxValue = max($total_real, $total_forecast);
@@ -77,34 +81,34 @@
                 @endphp
 
                 {{-- Horizontal Bar: Forecast (Blue) --}}
-                <div class="mb-3">
-                    <div class="d-flex align-items-center">
-                         <div class="flex-grow-1 bg-light rounded" style="height: 30px; overflow: hidden;">
-                             <div class="bg-primary h-100 d-flex align-items-center justify-content-end pe-2 text-white fw-bold" style="width: {{ $widthForecast }}%;">
+                <div class="mb-4">
+                    <div class="d-flex align-items-center mb-1">
+                         <div class="flex-grow-1 bg-light rounded-pill" style="height: 25px; overflow: hidden;">
+                             <div class="bg-primary h-100 d-flex align-items-center justify-content-end pe-2 text-white fw-bold small" style="width: {{ $widthForecast }}%;">
                              </div>
                          </div>
-                         <div class="ms-3 fw-bold text-primary" style="min-width: 80px; text-align: right;">{{ number_format($total_forecast, 0, ',', '.') }}</div>
+                         <div class="ms-3 fw-bold text-primary text-end" style="width: 100px;">{{ number_format($total_forecast, 0, ',', '.') }}</div>
                     </div>
-                    <small class="text-muted">Target / Forecast</small>
+                    <small class="text-muted d-block ms-1" style="font-size: 11px;">Target / Forecast</small>
                 </div>
 
                 {{-- Horizontal Bar: Real (Yellow) --}}
-                <div class="mb-3">
-                    <div class="d-flex align-items-center">
-                         <div class="flex-grow-1 bg-light rounded" style="height: 30px; overflow: hidden;">
-                             <div class="bg-warning h-100 d-flex align-items-center justify-content-end pe-2 text-white fw-bold" style="width: {{ $widthReal }}%;">
+                <div class="mb-4">
+                    <div class="d-flex align-items-center mb-1">
+                         <div class="flex-grow-1 bg-light rounded-pill" style="height: 25px; overflow: hidden;">
+                             <div class="bg-warning h-100 d-flex align-items-center justify-content-end pe-2 text-white fw-bold small" style="width: {{ $widthReal }}%;">
                              </div>
                          </div>
-                         <div class="ms-3 fw-bold text-warning" style="min-width: 80px; text-align: right;">{{ number_format($total_real, 0, ',', '.') }}</div>
+                         <div class="ms-3 fw-bold text-warning text-end" style="width: 100px;">{{ number_format($total_real, 0, ',', '.') }}</div>
                     </div>
-                    <small class="text-muted">Aktual (Real)</small>
+                    <small class="text-muted d-block ms-1" style="font-size: 11px;">Aktual (Real)</small>
                 </div>
                 
-                 <div class="mt-4">
+                 <div class="mt-auto">
                     <span class="badge {{ $persen_capaian >= 100 ? 'bg-success-subtle text-success' : 'bg-success-subtle text-success' }} fs-5 fw-bold px-3 py-2">
                         +{{ number_format($persen_capaian - 100, 1) }}%
                     </span>
-                    <span class="text-muted ms-2">dari target forecast</span>
+                    <span class="text-muted ms-2 small">dari target forecast</span>
                 </div>
 
             </div>
@@ -113,18 +117,20 @@
 
     {{-- Right Column: Chart per OPSEL --}}
     <div class="col-xl-8">
-        <div class="card h-100">
-             <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Tren Jumlah Orang dan Pergerakan per OPSEL</h5>
+        <div class="card h-100 shadow-sm">
+             <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h5 class="card-title mb-0 text-primary fw-bold">Tren Jumlah Orang dan Pergerakan per OPSEL</h5>
             </div>
-            <div class="card-body">
-                <div id="chart-opsel" style="height: 350px;"></div>
+            <div class="card-body d-flex flex-column">
+                <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+                    <div id="chart-opsel" class="w-100" style="height: 380px;"></div>
+                </div>
                 
-                <div class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start">
+                <div class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start rounded-3">
                     <i class="mdi mdi-information-outline fs-4 mt-1"></i>
                     <div>
-                        <h6 class="alert-heading fw-bold mb-1 text-info">Analisis Trend Orang</h6>
-                        <p class="mb-0 small">{!! $analysis['opsel'] !!}</p>
+                        <h6 class="alert-heading fw-bold mb-1 text-info font-size-14">Analisis Trend Orang</h6>
+                        <p class="mb-0 small" style="line-height: 1.5;">{!! $analysis['opsel'] !!}</p>
                     </div>
                 </div>
             </div>
@@ -135,21 +141,21 @@
 {{-- Bottom Chart: Per Moda --}}
 <div class="row mt-4">
     <div class="col-12">
-        <div class="card">
-             <div class="card-header bg-transparent border-bottom">
-                <h5 class="card-title mb-0 text-primary">Tren Pergerakan Harian per Moda</h5>
+        <div class="card shadow-sm">
+             <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h5 class="card-title mb-0 text-primary fw-bold">Tren Pergerakan Harian per Moda</h5>
             </div>
             <div class="card-body">
                 {{-- Chart --}}
                 <div id="chart-moda" class="w-100" style="height: 400px;"></div>
-                 <p class="text-center fw-bold mt-2 text-muted small">Grafik menunjukkan tren pergerakan harian untuk setiap moda transportasi (13 Mar - 29 Mar 2026)</p>
+                 <p class="text-center fw-bold mt-2 text-muted small fst-italic">Grafik menunjukkan tren pergerakan harian untuk setiap moda transportasi (13 Mar - 29 Mar 2026)</p>
 
 
-                 <div class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start">
+                 <div class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start rounded-3">
                     <i class="mdi mdi-information-outline fs-4 mt-1"></i>
                     <div>
-                        <h6 class="alert-heading fw-bold mb-1 text-info">Analisis Moda Transportasi</h6>
-                        <p class="mb-0 small">{!! $analysis['moda'] !!}</p>
+                        <h6 class="alert-heading fw-bold mb-1 text-info font-size-14">Analisis Moda Transportasi</h6>
+                        <p class="mb-0 small" style="line-height: 1.5;">{!! $analysis['moda'] !!}</p>
                     </div>
                 </div>
             </div>
