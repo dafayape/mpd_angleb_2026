@@ -91,7 +91,7 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4 text-center">Pergerakan Per Hari (REAL vs FORECAST)</h4>
-                <div id="chart-pergerakan-trend" class="apex-charts" dir="ltr"></div>
+                <div id="chart-pergerakan-trend" dir="ltr" style="height: 400px;"></div>
             </div>
         </div>
     </div>
@@ -103,7 +103,7 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4 text-center">Orang Per Hari (REAL vs FORECAST)</h4>
-                <div id="chart-orang-trend" class="apex-charts" dir="ltr"></div>
+                <div id="chart-orang-trend" dir="ltr" style="height: 400px;"></div>
             </div>
         </div>
     </div>
@@ -115,7 +115,7 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4 text-center">Pergerakan Harian per OPSEL</h4>
-                <div id="chart-pergerakan-opsel" class="apex-charts" dir="ltr"></div>
+                <div id="chart-pergerakan-opsel" dir="ltr" style="height: 400px;"></div>
             </div>
         </div>
     </div>
@@ -127,7 +127,7 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title mb-4 text-center">Orang Harian per OPSEL</h4>
-                <div id="chart-orang-opsel" class="apex-charts" dir="ltr"></div>
+                <div id="chart-orang-opsel" dir="ltr" style="height: 400px;"></div>
             </div>
         </div>
     </div>
