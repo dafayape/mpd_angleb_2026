@@ -34,26 +34,31 @@ class MapMonitorController extends Controller
     public function getData(Request $request)
     {
         try {
-            $selectedDate = $request->input('date');
+            // Periode (date range) support
+            $startDate = $request->input('start_date', '2026-03-13');
+            $endDate = $request->input('end_date', '2026-03-29');
 
-            // Cache Key based on Date
-            // If date is null, we need to find max date first, but that's fast.
-            // Let's cache the "latest date" query or just cache the result after we know the date.
-            
-            if (!$selectedDate) {
-                // If DB is empty, max() returns null. Default to Angleb Start Date.
-                $selectedDate = \Illuminate\Support\Facades\Cache::remember('map_monitor:max_date:v2', 3600, function() {
-                    return SpatialMovement::max('tanggal') ?? '2026-03-13';
-                });
+            // Validate dates
+            try {
+                $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
+                $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
+            } catch (\Throwable $e) {
+                $startDate = '2026-03-13';
+                $endDate = '2026-03-29';
             }
 
-            // Version V2 to force clear old cache
-            $cacheKey = "map_monitor:data:v2:{$selectedDate}"; 
+            // Ensure start <= end
+            if ($startDate > $endDate) {
+                [$startDate, $endDate] = [$endDate, $startDate];
+            }
+
+            // Cache key based on period
+            $cacheKey = "map_monitor:data:v3:{$startDate}:{$endDate}";
 
             // Cache for 1 hour (3600s)
-            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($selectedDate) {
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
                 
-                \Illuminate\Support\Facades\Log::info("MapMonitor: Generating data for {$selectedDate}");
+                \Illuminate\Support\Facades\Log::info("MapMonitor: Generating data for {$startDate} to {$endDate}");
 
                 // --- AUTO SEEDING LOGIC (For Environment where CLI Seeder Fails) ---
                 $simpulCount = Simpul::whereNotNull('location')->count();
@@ -85,8 +90,8 @@ class MapMonitorController extends Controller
                 }
 
 
-                // Check Spatial Movements for this date
-                $moveCount = SpatialMovement::where('tanggal', $selectedDate)->count();
+                // Check Spatial Movements for this period
+                $moveCount = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])->count();
                 if ($moveCount === 0) {
                      // Get the codes we just ensured exist
                      $simpulCodes = collect($realSimpuls)->pluck('code')->toArray();
@@ -95,7 +100,7 @@ class MapMonitorController extends Controller
                         $inserts = [];
                         foreach ($simpulCodes as $code) {
                             $inserts[] = [
-                                'tanggal' => $selectedDate,
+                                'tanggal' => $startDate,
                                 'opsel' => 'XL', // Dummy Opsel
                                 'is_forecast' => false,
                                 'kategori' => 'DUMMY',
@@ -124,15 +129,12 @@ class MapMonitorController extends Controller
                     DB::raw('ST_X(location::geometry) as lng')
                 )->whereNotNull('location')->get();
 
-                // 2. Calculate Density (Volume)
-                $volumes = [];
-                if ($selectedDate) {
-                    $volumes = SpatialMovement::where('tanggal', $selectedDate)
-                        ->select('kode_origin_simpul', DB::raw('SUM(total) as total_volume'))
-                        ->groupBy('kode_origin_simpul')
-                        ->pluck('total_volume', 'kode_origin_simpul')
-                        ->toArray();
-                }
+                // 2. Calculate Density (Volume) — aggregated across the period
+                $volumes = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->select('kode_origin_simpul', DB::raw('SUM(total) as total_volume'))
+                    ->groupBy('kode_origin_simpul')
+                    ->pluck('total_volume', 'kode_origin_simpul')
+                    ->toArray();
 
                 // --- ULTIMATE FALLBACK: If DB is empty or PostGIS fails, use Hardcoded Data ---
                 if ($simpuls->isEmpty()) {
@@ -201,9 +203,17 @@ class MapMonitorController extends Controller
                     ];
                 });
 
+                // Format period label
+                $periodLabel = \Carbon\Carbon::parse($startDate)->format('d M Y');
+                if ($startDate !== $endDate) {
+                    $periodLabel .= ' — ' . \Carbon\Carbon::parse($endDate)->format('d M Y');
+                }
+
                 return response()->json([
                     'type' => 'FeatureCollection',
-                    'selected_date' => $selectedDate,
+                    'start_date' => $startDate,
+                    'end_date' => $endDate,
+                    'period_label' => $periodLabel,
                     'max_volume' => $maxVolume,
                     'features' => $features
                 ]);

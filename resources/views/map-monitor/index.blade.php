@@ -52,13 +52,14 @@
         <div class="page-title-box d-sm-flex align-items-center justify-content-between">
             <h4 class="mb-sm-0 font-size-18">Map Monitor - Kepadatan Simpul</h4>
             <div class="page-title-right">
-                <form class="d-flex align-items-center">
-                    <label for="dateFilter" class="me-2 mb-0 fw-bold">Tanggal:</label>
-                    <select id="dateFilter" class="form-select form-select-sm" style="width: 200px;">
-                        @foreach($available_dates as $date)
-                            <option value="{{ $date }}">{{ \Carbon\Carbon::parse($date)->format('d F Y') }}</option>
-                        @endforeach
-                    </select>
+                <form class="d-flex align-items-center gap-2" id="periodForm">
+                    <label class="mb-0 fw-bold text-nowrap">Periode:</label>
+                    <input type="date" id="startDate" class="form-control form-control-sm" value="2026-03-13" min="2026-03-13" max="2026-03-29" style="width: 155px;">
+                    <span class="text-muted fw-bold">&mdash;</span>
+                    <input type="date" id="endDate" class="form-control form-control-sm" value="2026-03-29" min="2026-03-13" max="2026-03-29" style="width: 155px;">
+                    <button type="submit" class="btn btn-sm btn-primary text-nowrap">
+                        <i class="mdi mdi-magnify me-1"></i>Terapkan
+                    </button>
                 </form>
             </div>
         </div>
@@ -164,8 +165,9 @@
 
     // 5. Fetch Data
     async function fetchData() {
-        const selectedDate = dateFilter.value;
-        const url = `{{ route('map-monitor.data') }}?date=${selectedDate}`;
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const url = `{{ route('map-monitor.data') }}?start_date=${startDate}&end_date=${endDate}`;
 
         loadingOverlay.style.display = 'flex';
 
@@ -173,17 +175,14 @@
             const response = await fetch(url);
             const data = await response.json();
 
-            // Update Legend Date
+            // Update Legend Date with period label
             const displayDateElem = document.getElementById('displayDate');
-            if (displayDateElem && data.selected_date) {
-                displayDateElem.textContent = data.selected_date;
+            if (displayDateElem && data.period_label) {
+                displayDateElem.textContent = data.period_label;
             }
 
             // Render Features
             renderSimpul(data.features, data.max_volume);
-            
-            // NOTE: No need to populateSearch client-side anymore, 
-            // as we use AJAX integration with Lookup Table now.
 
         } catch (error) {
             console.error('Error fetching map data:', error);
@@ -268,7 +267,27 @@
     });
 
     // 8. Event Listeners
-    dateFilter.addEventListener('change', fetchData);
+    document.getElementById('periodForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Validate: start <= end
+        const s = document.getElementById('startDate');
+        const ed = document.getElementById('endDate');
+        if (s.value > ed.value) {
+            [s.value, ed.value] = [ed.value, s.value];
+        }
+        fetchData();
+    });
+
+    // Also fetch on date input change for quick single-day selection
+    document.getElementById('startDate').addEventListener('change', function() {
+        // If endDate < startDate, auto-correct
+        const ed = document.getElementById('endDate');
+        if (this.value > ed.value) ed.value = this.value;
+    });
+    document.getElementById('endDate').addEventListener('change', function() {
+        const sd = document.getElementById('startDate');
+        if (this.value < sd.value) sd.value = this.value;
+    });
 
     // Initial Load
     fetchData();
