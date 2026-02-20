@@ -272,7 +272,7 @@
                         <li>
                             <a href="{{ route('datasource.upload') }}" class="waves-effect">
                                 <i class="bx bx-upload"></i>
-                                <span>Upload File (xlsx)</span>
+                                <span>Upload File (CSV)</span>
                             </a>
                         </li>
                         <li>
