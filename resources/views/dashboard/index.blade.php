@@ -34,7 +34,13 @@
                                     ['tgl' => 15, 'hari' => 'Minggu', 'h' => 'H-6', 'bg' => 'bg-danger text-white'],
                                     ['tgl' => 16, 'hari' => 'Senin', 'h' => 'H-5', 'bg' => 'bg-warning bg-soft'],
                                     ['tgl' => 17, 'hari' => 'Selasa', 'h' => 'H-4', 'bg' => 'bg-warning bg-soft'],
-                                    ['tgl' => 18, 'hari' => 'Rabu', 'h' => 'H-3', 'bg' => 'bg-warning'],
+                                    [
+                                        'tgl' => 18,
+                                        'hari' => 'Rabu',
+                                        'h' => 'H-3',
+                                        'bg' => 'bg-warning',
+                                        'active' => true,
+                                    ],
                                     ['tgl' => 19, 'hari' => 'Kamis', 'h' => 'H-2', 'bg' => 'bg-success text-white'],
                                     ['tgl' => 20, 'hari' => 'Jumat', 'h' => 'H-1', 'bg' => 'bg-warning'],
                                     ['tgl' => 21, 'hari' => 'Sabtu', 'h' => 'H', 'bg' => 'bg-success text-white'],
@@ -57,7 +63,9 @@
                                     <div class="p-2 fw-bold fs-5 {{ $d['bg'] }} position-relative">
                                         {{ $d['tgl'] }}
                                     </div>
-                                    <div class="p-1 small border-top bg-light" style="font-size: 10px;">{{ $d['h'] }}
+                                    <div class="p-1 small border-top bg-light"
+                                        style="font-size: 10px; {{ isset($d['active']) && $d['active'] ? 'border-bottom: 2px solid #0d6efd !important;' : '' }}">
+                                        {{ $d['h'] }}
                                     </div>
                                 </div>
                             @endforeach
@@ -81,9 +89,10 @@
                                 <!-- Nyepi -->
                                 <div class="position-absolute d-flex flex-column align-items-center"
                                     style="left: {{ (6 / 18) * 100 }}%; width: {{ (1 / 18) * 100 }}%; top: 0;">
+                                    <div style="color: #34c38f; font-size: 10px; line-height: 0.8; margin-top: -2px;">
+                                        &#8595;</div>
                                     <div class="text-center bg-success text-white rounded shadow-sm px-2 text-nowrap"
-                                        style="padding: 3px 0; font-size: 8px; font-weight: bold; margin-top: 5px;">HARI
-                                        RAYA NYEPI</div>
+                                        style="padding: 3px 0; font-size: 8px; font-weight: bold;">HARI RAYA NYEPI</div>
                                 </div>
 
                                 <!-- Hari Raya Lebaran -->
