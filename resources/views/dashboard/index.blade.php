@@ -14,11 +14,12 @@
         </div>
     </div>
 
+    <!-- Overlay Kalender -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 text-start">
-                    <h5 class="fw-bold text-primary mb-0">Overlay Kalender Angkutan Lebaran 2026</h5>
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h6 class="card-title mb-0 text-primary">Penarikan Mobile Positioning Data Angkutan Lebaran 2026</h6>
                 </div>
                 <div class="card-body overflow-auto">
                     {{-- Simple Custom Calendar Visualization --}}
@@ -161,7 +162,6 @@
                 </div>
             </div>
         </div>
-    </div>
     </div>
 
     {{-- Highlight Alert --}}
