@@ -1,25 +1,25 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\UserController;
 use App\Http\Controllers\DatasourceController;
 use App\Http\Controllers\MasterReferensiController;
-use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
 
     Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    
+
     // Profile
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 
     // Grafik MPD Routes
-    Route::controller(\App\Http\Controllers\GrafikMpdController::class)->group(function() {
+    Route::controller(\App\Http\Controllers\GrafikMpdController::class)->group(function () {
         // Nasional
         Route::get('/grafik-mpd/nasional/pergerakan', 'nasionalPergerakan')->name('grafik-mpd.nasional.pergerakan');
         Route::get('/grafik-mpd/nasional/od-provinsi', 'nasionalOdProvinsi')->name('grafik-mpd.nasional.od-provinsi');
@@ -52,15 +52,12 @@ Route::middleware(['auth'])->group(function () {
     // Executive Summary
     Route::prefix('executive-summary')->name('executive.')->group(function () {
         Route::get('/daily-report', [\App\Http\Controllers\DailyReportController::class, 'index'])->name('daily-report');
-        Route::get('/summary', [\App\Http\Controllers\KeynoteController::class, 'index'])->name('summary'); // Reuses KeynoteController
-        Route::get('/summary/data', [\App\Http\Controllers\KeynoteController::class, 'getData'])->name('summary.data');
+
+        Route::get('/summary', [\App\Http\Controllers\ExecutiveSummaryController::class, 'index'])->name('summary');
+        Route::get('/summary/data', [\App\Http\Controllers\ExecutiveSummaryController::class, 'getData'])->name('summary.data');
     });
 
-    // Keynote Material (Redirect or Alias for legacy)
-    // Route::get('/keynote-material', [\App\Http\Controllers\KeynoteController::class, 'index'])->name('keynote'); 
-    // Commented out to prefer the new structure, but user might have bookmarked it.
-    // Let's keep the alias for safety if needed, or remove it. User asked for Executive Summary.
-    // I'll double route it to be safe.
+    // Keynote Material (Restored)
     Route::get('/keynote-material', [\App\Http\Controllers\KeynoteController::class, 'index'])->name('keynote');
     Route::get('/keynote-material/data', [\App\Http\Controllers\KeynoteController::class, 'getData'])->name('keynote.data');
 
@@ -90,11 +87,11 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::get('/sso-login', function (Request $request) {
-    $userId    = $request->query('user_id');
+    $userId = $request->query('user_id');
     $timestamp = $request->query('timestamp');
     $signature = $request->query('signature');
 
-    if (!$userId || !$timestamp || !$signature) {
+    if (! $userId || ! $timestamp || ! $signature) {
         abort(403, 'Parameter SSO tidak lengkap.');
     }
 
@@ -102,9 +99,9 @@ Route::get('/sso-login', function (Request $request) {
         abort(403, 'Tautan SSO sudah kedaluwarsa.');
     }
 
-    $expected = hash_hmac('sha256', $userId . '|' . $timestamp, config('app.key'));
+    $expected = hash_hmac('sha256', $userId.'|'.$timestamp, config('app.key'));
 
-    if (!hash_equals($expected, $signature)) {
+    if (! hash_equals($expected, $signature)) {
         abort(403, 'Tanda tangan SSO tidak valid.');
     }
 
