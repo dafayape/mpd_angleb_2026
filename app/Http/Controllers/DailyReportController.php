@@ -12,6 +12,12 @@ class DailyReportController extends Controller
     {
         $startDate = $request->input('start_date', '2026-03-13');
         $endDate = $request->input('end_date', '2026-03-29');
+
+        // Enforce Date Limits Server-Side (13 Mar 2026 - 29 Mar 2026)
+        if ($startDate < '2026-03-13') $startDate = '2026-03-13';
+        if ($startDate > '2026-03-29') $startDate = '2026-03-29';
+        if ($endDate < '2026-03-13') $endDate = '2026-03-13';
+        if ($endDate > '2026-03-29') $endDate = '2026-03-29';
         
         // Cache data for report
         $cacheKey = "dailyreport:text:v1:{$startDate}:{$endDate}";

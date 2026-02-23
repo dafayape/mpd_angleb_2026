@@ -10,9 +10,11 @@
                 <h4 class="mb-0 font-size-18">Daily Report (Text Format)</h4>
                 <div class="d-flex flex-column flex-md-row gap-2">
                     <form class="d-flex align-items-center gap-2" method="GET">
-                        <input type="date" name="start_date" class="form-control" value="{{ $start_date }}">
+                        <input type="date" name="start_date" class="form-control" value="{{ $start_date }}"
+                            min="2026-03-13" max="2026-03-29">
                         <span class="text-muted fw-bold">&mdash;</span>
-                        <input type="date" name="end_date" class="form-control" value="{{ $end_date }}">
+                        <input type="date" name="end_date" class="form-control" value="{{ $end_date }}"
+                            min="2026-03-13" max="2026-03-29">
                         <button type="submit" class="btn btn-primary d-none d-md-block">Terapkan</button>
                         <button type="submit" class="btn btn-primary d-block d-md-none"><i
                                 class="mdi mdi-magnify"></i></button>
@@ -40,19 +42,23 @@
                             <p class="mb-1">A.&nbsp;&nbsp;&nbsp;Pergerakan NASIONAL:</p>
                             <ol class="ps-4 mb-3">
                                 <li class="mb-1">Total/akumulasi realisasi pergerakan orang adalah sebanyak
-                                    <strong>{{ number_format($nasional_total, 0, ',', '.') }}</strong> orang;</li>
+                                    <strong>{{ number_format($nasional_total, 0, ',', '.') }}</strong> orang;
+                                </li>
                                 <li class="mb-1">Realisasi pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari
                                     <strong>{{ $nasional_highest_date }}</strong> sebanyak
-                                    <strong>{{ number_format($nasional_highest_total, 0, ',', '.') }}</strong> orang.</li>
+                                    <strong>{{ number_format($nasional_highest_total, 0, ',', '.') }}</strong> orang.
+                                </li>
                             </ol>
 
                             <p class="mb-1">B.&nbsp;&nbsp;&nbsp;Pergerakan JABODETABEK:</p>
                             <ol class="ps-4 mb-3">
                                 <li class="mb-1">Total/akumulasi realisasi pergerakan orang adalah sebanyak
-                                    <strong>{{ number_format($jabo_total, 0, ',', '.') }}</strong> orang;</li>
+                                    <strong>{{ number_format($jabo_total, 0, ',', '.') }}</strong> orang;
+                                </li>
                                 <li class="mb-1">Realisasi pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari
                                     <strong>{{ $jabo_highest_date }}</strong> sebanyak
-                                    <strong>{{ number_format($jabo_highest_total, 0, ',', '.') }}</strong> orang.</li>
+                                    <strong>{{ number_format($jabo_highest_total, 0, ',', '.') }}</strong> orang.
+                                </li>
                             </ol>
 
                             <p class="mb-3">
