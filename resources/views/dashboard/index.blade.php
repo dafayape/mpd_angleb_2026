@@ -47,9 +47,9 @@
                                     ['tgl' => 22, 'hari' => 'Minggu', 'h' => 'H+1', 'bg' => 'bg-success text-white'],
                                     ['tgl' => 23, 'hari' => 'Senin', 'h' => 'H+2', 'bg' => 'bg-warning'],
                                     ['tgl' => 24, 'hari' => 'Selasa', 'h' => 'H+3', 'bg' => 'bg-warning'],
-                                    ['tgl' => 25, 'hari' => 'Rabu', 'h' => 'H+4', 'bg' => ''],
-                                    ['tgl' => 26, 'hari' => 'Kamis', 'h' => 'H+5', 'bg' => ''],
-                                    ['tgl' => 27, 'hari' => 'Jumat', 'h' => 'H+6', 'bg' => ''],
+                                    ['tgl' => 25, 'hari' => 'Rabu', 'h' => 'H+4', 'bg' => 'bg-warning bg-soft'],
+                                    ['tgl' => 26, 'hari' => 'Kamis', 'h' => 'H+5', 'bg' => 'bg-warning bg-soft'],
+                                    ['tgl' => 27, 'hari' => 'Jumat', 'h' => 'H+6', 'bg' => 'bg-warning bg-soft'],
                                     ['tgl' => 28, 'hari' => 'Sabtu', 'h' => 'H+7', 'bg' => 'bg-danger text-white'],
                                     ['tgl' => 29, 'hari' => 'Minggu', 'h' => 'H+8', 'bg' => 'bg-danger text-white'],
                                     ['tgl' => 30, 'hari' => 'Senin', 'h' => 'H+9', 'bg' => ''],
@@ -144,13 +144,19 @@
                             <!-- Row 3: Libur Sekolah & Posko -->
                             <div class="position-relative w-100" style="height: 45px; margin-top: 5px;">
                                 <!-- Libur Sekolah JABODETABEK -->
+                                <style>
+                                    .hover-libur:hover {
+                                        background-color: #d1d3d4 !important;
+                                        cursor: pointer;
+                                    }
+                                </style>
                                 <div class="position-absolute d-flex flex-column"
                                     style="left: {{ (3 / 18) * 100 }}%; width: {{ (15 / 18) * 100 }}%; top: 0;">
                                     <div class="w-100"
                                         style="border-top: 1.5px solid #8e959c; border-left: 1.5px solid #8e959c; border-right: 1.5px solid #8e959c; height: 6px;">
                                     </div>
-                                    <div class="text-center w-100 fw-bold border"
-                                        style="background-color: #e2e3e5; color: #495057; font-size: 9px; padding: 3px 0; margin-top: -1px; border-color: #adb5bd !important;">
+                                    <div class="text-center w-100 fw-bold border hover-libur"
+                                        style="background-color: #e2e3e5; color: #495057; font-size: 9px; padding: 3px 0; margin-top: -1px; border-color: #adb5bd !important; transition: background-color 0.2s ease;">
                                         LIBUR SEKOLAH JABODETABEK
                                     </div>
                                 </div>
