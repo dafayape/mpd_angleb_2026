@@ -146,17 +146,17 @@
                                 <!-- Libur Sekolah JABODETABEK -->
                                 <style>
                                     .hover-libur:hover {
-                                        background-color: #d1d3d4 !important;
+                                        filter: brightness(0.9);
                                         cursor: pointer;
                                     }
                                 </style>
-                                <div class="position-absolute d-flex flex-column"
-                                    style="left: {{ (3 / 18) * 100 }}%; width: {{ (15 / 18) * 100 }}%; top: 0;">
+                                <div class="position-absolute d-flex flex-column align-items-center"
+                                    style="left: {{ (3 / 18) * 100 }}%; width: {{ (12 / 18) * 100 }}%; top: 0;">
                                     <div class="w-100"
                                         style="border-top: 1.5px solid #8e959c; border-left: 1.5px solid #8e959c; border-right: 1.5px solid #8e959c; height: 6px;">
                                     </div>
-                                    <div class="text-center w-100 fw-bold border hover-libur"
-                                        style="background-color: #e2e3e5; color: #495057; font-size: 9px; padding: 3px 0; margin-top: -1px; border-color: #adb5bd !important; transition: background-color 0.2s ease;">
+                                    <div class="text-center fw-bold rounded hover-libur shadow-sm px-2 text-white"
+                                        style="background-color: #3b82f6; font-size: 8px; padding: 2px 0; margin-top: -1px; border: 1px solid #2563eb; white-space: nowrap;">
                                         LIBUR SEKOLAH JABODETABEK
                                     </div>
                                 </div>
