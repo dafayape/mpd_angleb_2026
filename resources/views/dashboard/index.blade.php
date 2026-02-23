@@ -55,7 +55,6 @@
                             @endphp
 
                             @foreach ($days as $idx => $d)
-                                g text
                                 <div class="flex-fill {{ $idx !== count($days) - 1 ? 'border-end' : '' }}"
                                     style="width: {{ 100 / 18 }}%;">
                                     <div class="timeline-day-header p-1 bg-light fw-bold text-uppercase border-bottom">
