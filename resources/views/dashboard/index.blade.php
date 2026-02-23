@@ -22,211 +22,256 @@
                     <h5 class="fw-bold text-primary mb-0">Overlay Kalender Angkutan Lebaran 2026</h5>
                 </div>
                 <div class="card-body">
-                    <div class="timeline-calendar">
-                        <div class="timeline-wrapper">
+                    <div class="table-responsive-xl mb-0">
+                        <table class="table table-bordered calendar-grid-table min-w-1000 mb-0">
+                            <thead>
+                                <tr>
+                                    <th width="14.28%">Senin</th>
+                                    <th width="14.28%">Selasa</th>
+                                    <th width="14.28%">Rabu</th>
+                                    <th width="14.28%">Kamis</th>
+                                    <th width="14.28%">Jumat</th>
+                                    <th width="14.28%">Sabtu</th>
+                                    <th width="14.28%">Minggu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Week 1: 19 - 22 Feb -->
+                                <tr>
+                                    <td colspan="3" class="bg-empty-day border-0"></td>
+                                    <td>
+                                        <div class="calendar-date-header">19 Februari</div>
+                                        <ol class="calendar-task-list">
+                                            <li>Tahap persiapan dan koordinasi</li>
+                                            <li>Meeting dengan tim IT</li>
+                                            <li>Penyampaian timeline, target, dan deliverables</li>
+                                        </ol>
+                                    </td>
+                                    <td>
+                                        <div class="calendar-date-header">20 Februari</div>
+                                    </td>
+                                    <td>
+                                        <div class="calendar-date-header">21 Februari</div>
+                                    </td>
+                                    <td>
+                                        <div class="calendar-date-header">22 Februari</div>
+                                    </td>
+                                </tr>
+                                <!-- Week 2: 23 Feb - 1 Mar -->
+                                <tr class="bg-light">
+                                    <th>23 Februari</th>
+                                    <th>24 Februari</th>
+                                    <th>25 Februari</th>
+                                    <th>26 Februari</th>
+                                    <th>27 Februari</th>
+                                    <th>28 Februari</th>
+                                    <th>1 Maret</th>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <ol class="calendar-task-list">
+                                            <li>Penyusunan daftar kebutuhan analisis dan output</li>
+                                            <li>Persiapan pengembangan sistem oleh tim IT</li>
+                                        </ol>
+                                    </td>
+                                    <td colspan="3">
+                                        <ol class="calendar-task-list">
+                                            <li>Sinkronisasi substansi</li>
+                                            <li>Review keynote material yang akan ditampilkan di dalam dashboard</li>
+                                        </ol>
+                                    </td>
+                                    <td colspan="2" class="align-middle">
+                                        Review progres pengembangan sistem dan validasi kesesuaian data yang ada di sistem
+                                        dengan kebutuhan analisis
+                                    </td>
+                                </tr>
+                                <!-- Week 3: 2 Mar - 8 Mar -->
+                                <tr class="bg-light">
+                                    <th>2 Maret</th>
+                                    <th>3 Maret</th>
+                                    <th>4 Maret</th>
+                                    <th>5 Maret</th>
+                                    <th class="bg-beta-ready">6 Maret</th>
+                                    <th>7 Maret</th>
+                                    <th>8 Maret</th>
+                                </tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <ol class="calendar-task-list">
+                                            <li>Uji coba dan finalisasi sistem</li>
+                                            <li>Pengolahan data dummy yang diterima dari Opsel</li>
+                                            <li>Validasi kesesuaian data yang ada di sistem dengan kebutuhan analisis dan
+                                                output yang diharapkan</li>
+                                        </ol>
+                                    </td>
+                                    <td class="bg-beta-ready align-middle text-center">
+                                        <strong>Target sistem sudah siap 100%</strong><br>
+                                        <small>(Beta Version)</small>
+                                    </td>
+                                    <td colspan="2" class="bg-empty-day border-0"></td>
+                                </tr>
+                                <!-- Week 4: 9 Mar - 15 Mar -->
+                                <tr class="bg-light">
+                                    <th>9 Maret</th>
+                                    <th>10 Maret</th>
+                                    <th>11 Maret</th>
+                                    <th>12 Maret</th>
+                                    <th class="bg-posko-period">13 Maret</th>
+                                    <th class="bg-posko-period">14 Maret</th>
+                                    <th class="bg-posko-period">15 Maret</th>
+                                </tr>
+                                <tr>
+                                    <td colspan="4">
+                                        <ol class="calendar-task-list">
+                                            <li>Uji coba (<em>beta testing</em>) dan <em>final cross-check</em> data</li>
+                                            <li><em>Cross-check</em> kesesuaian data dan output-nya (tabel, grafik, desire
+                                                line, dll)</li>
+                                        </ol>
+                                    </td>
+                                    <td class="bg-posko-period">
+                                        <ol class="calendar-task-list">
+                                            <li>Penarikan data MPD Hari-1<br>(H-8 Lebaran)</li>
+                                            <li>QC data harian (data anomali, data tidak lengkap, dan lainnya)</li>
+                                            <li>Monitoring kestabilan sistem</li>
+                                        </ol>
+                                    </td>
+                                    <td class="bg-posko-period">
+                                        <ol class="calendar-task-list">
+                                            <li>Penarikan data MPD Hari-2<br>(H-7 Lebaran)</li>
+                                            <li>QC data harian (data anomali, data tidak lengkap, dan lainnya)</li>
+                                            <li>Monitoring kestabilan sistem</li>
+                                        </ol>
+                                    </td>
+                                    <td class="bg-posko-period">
+                                        <ol class="calendar-task-list">
+                                            <li>Penarikan data MPD Hari-3<br>(H-6 Lebaran)</li>
+                                            <li>QC data harian (data anomali, data tidak lengkap, dan lainnya)</li>
+                                            <li>Monitoring kestabilan sistem</li>
+                                        </ol>
+                                    </td>
+                                </tr>
 
-                            <div class="text-center mb-3">
-                                <h6 class="fw-bold mb-0 text-muted">MARET 2026</h6>
-                            </div>
+                                <!-- Week 5: 16 Mar - 22 Mar -->
+                                <tr class="bg-posko-period border-top">
+                                    <th>16 Maret</th>
+                                    <th>17 Maret</th>
+                                    <th>18 Maret</th>
+                                    <th>19 Maret</th>
+                                    <th>20 Maret</th>
+                                    <th>21 Maret</th>
+                                    <th>22 Maret</th>
+                                </tr>
+                                <tr class="bg-posko-period">
+                                    @php
+                                        $w5_dates = [
+                                            ['day' => 'Hari-4', 'h' => 'H-5 Lebaran'],
+                                            ['day' => 'Hari-5', 'h' => 'H-4 Lebaran'],
+                                            ['day' => 'Hari-6', 'h' => 'H-3 Lebaran'],
+                                            ['day' => 'Hari-7', 'h' => 'H-2 Lebaran'],
+                                            ['day' => 'Hari-8', 'h' => 'H-1 Lebaran'],
+                                            ['day' => 'Hari-9', 'h' => 'Hari Pertama Lebaran'],
+                                            ['day' => 'Hari-10', 'h' => 'H+1 Lebaran'],
+                                        ];
+                                    @endphp
+                                    @foreach ($w5_dates as $d)
+                                        <td>
+                                            <ol class="calendar-task-list">
+                                                <li>Penarikan data MPD {{ $d['day'] }}<br>({{ $d['h'] }})</li>
+                                                <li>QC data harian (data anomali, data tidak lengkap, dan lainnya)</li>
+                                                <li>Monitoring kestabilan sistem</li>
+                                            </ol>
+                                        </td>
+                                    @endforeach
+                                </tr>
 
-                            <!-- Grid Kalender -->
-                            <div class="timeline-grid">
-                                <!-- Header Hari -->
-                                <div class="timeline-day-header">Jumat</div>
-                                <div class="timeline-day-header">Sabtu</div>
-                                <div class="timeline-day-header">Minggu</div>
-                                <div class="timeline-day-header">Senin</div>
-                                <div class="timeline-day-header">Selasa</div>
-                                <div class="timeline-day-header">Rabu</div>
-                                <div class="timeline-day-header">Kamis</div>
-                                <div class="timeline-day-header">Jumat</div>
-                                <div class="timeline-day-header">Sabtu</div>
-                                <div class="timeline-day-header">Minggu</div>
-                                <div class="timeline-day-header">Senin</div>
-                                <div class="timeline-day-header">Selasa</div>
-                                <div class="timeline-day-header">Rabu</div>
-                                <div class="timeline-day-header">Kamis</div>
-                                <div class="timeline-day-header">Jumat</div>
-                                <div class="timeline-day-header">Sabtu</div>
-                                <div class="timeline-day-header">Minggu</div>
-                                <div class="timeline-day-header">Senin</div>
+                                <!-- Week 6: 23 Mar - 29 Mar -->
+                                <tr class="bg-posko-period border-top">
+                                    <th>23 Maret</th>
+                                    <th>24 Maret</th>
+                                    <th>25 Maret</th>
+                                    <th>26 Maret</th>
+                                    <th>27 Maret</th>
+                                    <th>28 Maret</th>
+                                    <th>29 Maret</th>
+                                </tr>
+                                <tr class="bg-posko-period">
+                                    @php
+                                        $w6_dates = [
+                                            ['day' => 'Hari-11', 'h' => 'H+2 Lebaran'],
+                                            ['day' => 'Hari-12', 'h' => 'H+3 Lebaran'],
+                                            ['day' => 'Hari-13', 'h' => 'H+4 Lebaran'],
+                                            ['day' => 'Hari-14', 'h' => 'H+5 Lebaran'],
+                                            ['day' => 'Hari-15', 'h' => 'H+6 Lebaran'],
+                                            ['day' => 'Hari-16', 'h' => 'H+7 Lebaran'],
+                                            ['day' => 'Hari-17', 'h' => 'H+8 Lebaran'],
+                                        ];
+                                    @endphp
+                                    @foreach ($w6_dates as $d)
+                                        <td>
+                                            <ol class="calendar-task-list">
+                                                <li>Penarikan data MPD {{ $d['day'] }}<br>({{ $d['h'] }})</li>
+                                                <li>QC data harian (data anomali, data tidak lengkap, dan lainnya)</li>
+                                                <li>Monitoring kestabilan sistem</li>
+                                            </ol>
+                                        </td>
+                                    @endforeach
+                                </tr>
 
-                                <!-- Tanggal -->
-                                <div class="timeline-date-box date-bg-gray">13</div>
-                                <div class="timeline-date-box date-bg-red">14</div>
-                                <div class="timeline-date-box date-bg-red">15</div>
-                                <div class="timeline-date-box date-bg-gray" style="background-color: #f1f5f7;">16</div>
-                                <div class="timeline-date-box date-bg-gray" style="background-color: #f1f5f7;">17</div>
-                                <div class="timeline-date-box date-bg-yellow">18</div>
-                                <div class="timeline-date-box date-bg-green">19</div>
-                                <div class="timeline-date-box date-bg-yellow">20</div>
-                                <div class="timeline-date-box date-bg-green">21</div>
-                                <div class="timeline-date-box date-bg-green">22</div>
-                                <div class="timeline-date-box date-bg-yellow">23</div>
-                                <div class="timeline-date-box date-bg-yellow">24</div>
-                                <div class="timeline-date-box date-bg-gray">25</div>
-                                <div class="timeline-date-box date-bg-gray">26</div>
-                                <div class="timeline-date-box date-bg-gray">27</div>
-                                <div class="timeline-date-box date-bg-red">28</div>
-                                <div class="timeline-date-box date-bg-red">29</div>
-                                <div class="timeline-date-box date-bg-gray">30</div>
+                                <!-- Week 7: 30 Mar - 5 Apr -->
+                                <tr class="bg-light">
+                                    <th class="bg-posko-period">30 Maret</th>
+                                    <th class="bg-posko-period">31 Maret</th>
+                                    <th>1 April</th>
+                                    <th>2 April</th>
+                                    <th>3 April</th>
+                                    <th>4 April</th>
+                                    <th>5 April</th>
+                                </tr>
+                                <tr>
+                                    <td class="bg-posko-period">
+                                        <ol class="calendar-task-list">
+                                            <li>Penarikan data MPD Hari-18<br>(H+9 Lebaran)</li>
+                                            <li>QC data harian (data anomali, data tidak lengkap, dan lainnya)</li>
+                                            <li>Monitoring kestabilan sistem</li>
+                                        </ol>
+                                    </td>
+                                    <td class="bg-posko-period align-middle">
+                                        Finalisasi laporan hasil olah data MPD Angleb 2026
+                                    </td>
+                                    <td class="align-middle">
+                                        Finalisasi laporan hasil olah data MPD Angleb 2026
+                                    </td>
+                                    <td class="align-middle">
+                                        Penyusunan Dokumen Policy Paper dan Policy Brief
+                                    </td>
+                                    <td class="align-middle">
+                                        Penyusunan Dokumen Policy Paper dan Policy Brief
+                                    </td>
+                                    <td colspan="2" class="bg-empty-day border-0"></td>
+                                </tr>
 
-                                <!-- Label H- -->
-                                <div class="timeline-h-label">H-8</div>
-                                <div class="timeline-h-label">H-7</div>
-                                <div class="timeline-h-label">H-6</div>
-                                <div class="timeline-h-label">H-5</div>
-                                <div class="timeline-h-label">H-4</div>
-                                <div class="timeline-h-label">H-3</div>
-                                <div class="timeline-h-label">H-2</div>
-                                <div class="timeline-h-label">H-1</div>
-                                <div class="timeline-h-label">H</div>
-                                <div class="timeline-h-label">H+1</div>
-                                <div class="timeline-h-label">H+2</div>
-                                <div class="timeline-h-label">H+3</div>
-                                <div class="timeline-h-label">H+4</div>
-                                <div class="timeline-h-label">H+5</div>
-                                <div class="timeline-h-label">H+6</div>
-                                <div class="timeline-h-label">H+7</div>
-                                <div class="timeline-h-label">H+8</div>
-                                <div class="timeline-h-label">H+9</div>
-                            </div>
-
-                            <!-- Baris Event (Berlapis) -->
-                            <!-- Baris 1: WFA & Hari Raya -->
-                            <div class="event-bars-container mt-3" style="height: 24px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div class="event-bar event-wfa start-col-4 col-span-3">Potensi Penerapan WFA</div>
-                                <div class="event-bar event-nyepi-hari start-col-7 col-span-1 border-0 rounded"
-                                    style="margin-top: 4px;">Hari Raya Nyepi <i class="mdi mdi-arrow-down position-absolute"
-                                        style="top:-15px;"></i></div>
-                                <div
-                                    class="event-bar event-lebaran-hari start-col-9 col-span-2 border-0 rounded bg-success">
-                                    Hari Raya Lebaran</div>
-                                <div class="event-bar event-wfa start-col-13 col-span-3">Potensi Penerapan WFA</div>
-                            </div>
-
-                            <!-- Baris 2: Cuti Bersama -->
-                            <div class="event-bars-container" style="height: 24px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div class="event-bar event-nyepi-cuti start-col-6 col-span-3">Cuti Bersama Nyepi</div>
-                                <div class="event-bar event-lebaran-cuti start-col-8 col-span-5 border-0">Cuti Bersama
-                                    Lebaran</div>
-                            </div>
-
-                            <!-- Baris 3: Kosong untuk spacing -->
-                            <div class="event-bars-container mt-0 mb-1" style="height: 15px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                            </div>
-
-                            <!-- Baris 4: Libur Sekolah -->
-                            <div class="event-bars-container" style="height: 24px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div class="event-bar event-sekolah start-col-4 col-span-15">Libur Sekolah Jabodetabek</div>
-                            </div>
-
-                            <!-- Baris 5: Posko Angleb -->
-                            <div class="event-bars-container" style="height: 24px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div class="event-bar event-posko col-span-18">Pelaksanaan Posko Angleb 2026</div>
-                            </div>
-
-                        </div>
+                                <!-- Week 8: 6 Apr - 12 Apr -->
+                                <tr class="bg-light">
+                                    <th>6 April</th>
+                                    <th>7 April</th>
+                                    <th>8 April</th>
+                                    <th>9 April</th>
+                                    <th class="bg-deliverable">10 April</th>
+                                    <th>11 April</th>
+                                    <th>12 April</th>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle">Penyusunan Dokumen Policy Paper dan Policy Brief</td>
+                                    <td class="align-middle">Penyusunan Dokumen Policy Paper dan Policy Brief</td>
+                                    <td class="align-middle">Penyusunan Dokumen Policy Paper dan Policy Brief</td>
+                                    <td class="align-middle">Penyusunan Dokumen Policy Paper dan Policy Brief</td>
+                                    <td class="bg-deliverable align-middle text-center">
+                                        <strong>Penyampaian Seluruh Deliverables ke BKT</strong>
+                                    </td>
+                                    <td colspan="2" class="bg-empty-day border-0"></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -240,10 +285,14 @@
                 <h5 class="alert-heading font-size-14 text-info"><i class="mdi mdi-information-outline me-1"></i>
                     Highlight
                     Survei Angkutan Lebaran 2026</h5>
-                <p class="mb-0 font-size-13">Dalam rangka persiapan dan pelaksanaan layanan Angkutan Lebaran (Angleb) tahun
-                    2026, Badan Kebijakan Transportasi melaksanakan survei online pada periode <strong>15 - 30 Januari
-                        2026</strong> untuk mengidentifikasi preferensi dan mengukur persepsi masyarakat yang akan melakukan
-                    perjalanan. Survei tersebut bekerja sama dengan <strong>LAPI ITB, BPS, dan Kementerian Komdigi.</strong>
+                <p class="mb-0 font-size-13">Dalam rangka persiapan dan pelaksanaan layanan Angkutan
+                    Lebaran (Angleb) tahun
+                    2026, Badan Kebijakan Transportasi melaksanakan survei online pada periode
+                    <strong>15 - 30 Januari
+                        2026</strong> untuk mengidentifikasi preferensi dan mengukur persepsi masyarakat
+                    yang akan melakukan
+                    perjalanan. Survei tersebut bekerja sama dengan <strong>LAPI ITB, BPS, dan
+                        Kementerian Komdigi.</strong>
                 </p>
             </div>
         </div>
@@ -256,9 +305,12 @@
                 <div class="card-body">
                     <h5 class="card-title text-primary mb-3">Latar Belakang MPD</h5>
                     <hr class="mt-0 mb-3 opacity-25">
-                    <p class="text-muted mb-0 small" style="text-align: justify;">Periode Lebaran menjadi salah satu momen
-                        dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan signifikan pergerakan
-                        antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada tanggal 21 dan 22 Maret
+                    <p class="text-muted mb-0 small" style="text-align: justify;">Periode Lebaran
+                        menjadi salah satu momen
+                        dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan
+                        signifikan pergerakan
+                        antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada
+                        tanggal 21 dan 22 Maret
                         2026 sehingga berhimpitan dengan Hari Raya Nyepi pada tanggal 19 Maret 2026.</p>
                 </div>
             </div>
@@ -268,9 +320,12 @@
                 <div class="card-body">
                     <h5 class="card-title text-primary mb-3">Metodelogi MPD</h5>
                     <hr class="mt-0 mb-3 opacity-25">
-                    <p class="text-muted mb-0 small" style="text-align: justify;">Periode Lebaran menjadi salah satu momen
-                        dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan signifikan pergerakan
-                        antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada tanggal 21 dan 22 Maret
+                    <p class="text-muted mb-0 small" style="text-align: justify;">Periode Lebaran
+                        menjadi salah satu momen
+                        dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan
+                        signifikan pergerakan
+                        antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada
+                        tanggal 21 dan 22 Maret
                         2026 sehingga berhimpitan dengan Hari Raya Nyepi pada tanggal 19 Maret 2026.</p>
                 </div>
             </div>
@@ -288,7 +343,8 @@
                 <div class="card-body pb-4">
                     <p class="mb-2 text-muted fw-medium small">Total Akumulasi (13-29 Mar)</p>
                     <div class="mb-3">
-                        <h2 class="mb-0 fw-bold text-primary display-6">{{ number_format($total_real, 0, ',', '.') }} <span
+                        <h2 class="mb-0 fw-bold text-primary display-6">
+                            {{ number_format($total_real, 0, ',', '.') }} <span
                                 class="fs-6 text-muted fw-normal">Pergerakan</span></h2>
                         <small class="text-muted">Target Forecast:
                             {{ number_format($total_forecast, 0, ',', '.') }}</small>
@@ -305,7 +361,8 @@
             {{-- Perbandingan Pergerakan --}}
             <div class="card shadow-sm mb-0 flex-grow-1">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Perbandingan Pergerakan Dengan Tahun Lalu</h5>
+                    <h5 class="card-title mb-0 text-primary fw-bold">Perbandingan Pergerakan Dengan
+                        Tahun Lalu</h5>
                 </div>
                 <div class="card-body">
                     <p class="mb-4 fw-bold small text-uppercase text-muted">Perbandingan Pergerakan</p>
@@ -327,7 +384,8 @@
                             <div class="ms-3 fw-bold text-primary text-end" style="width: 100px;">
                                 {{ number_format($total_forecast, 0, ',', '.') }}</div>
                         </div>
-                        <small class="text-muted d-block ms-1" style="font-size: 11px;">Target / Forecast</small>
+                        <small class="text-muted d-block ms-1" style="font-size: 11px;">Target /
+                            Forecast</small>
                     </div>
 
                     {{-- Horizontal Bar: Real (Yellow) --}}
@@ -341,7 +399,8 @@
                             <div class="ms-3 fw-bold text-warning text-end" style="width: 100px;">
                                 {{ number_format($total_real, 0, ',', '.') }}</div>
                         </div>
-                        <small class="text-muted d-block ms-1" style="font-size: 11px;">Aktual (Real)</small>
+                        <small class="text-muted d-block ms-1" style="font-size: 11px;">Aktual
+                            (Real)</small>
                     </div>
 
                     <div class="mt-auto">
@@ -360,7 +419,8 @@
         <div class="col-xl-8">
             <div class="card h-100 shadow-sm">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Tren Jumlah Orang dan Pergerakan per OPSEL</h5>
+                    <h5 class="card-title mb-0 text-primary fw-bold">Tren Jumlah Orang dan Pergerakan
+                        per OPSEL</h5>
                 </div>
                 <div class="card-body d-flex flex-column">
                     <div class="flex-grow-1 d-flex align-items-center justify-content-center">
@@ -371,8 +431,10 @@
                         class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start rounded-3">
                         <i class="mdi mdi-information-outline fs-4 mt-1"></i>
                         <div>
-                            <h6 class="alert-heading fw-bold mb-1 text-info font-size-14">Analisis Trend Orang</h6>
-                            <p class="mb-0 small" style="line-height: 1.5;">{!! $analysis['opsel'] !!}</p>
+                            <h6 class="alert-heading fw-bold mb-1 text-info font-size-14">Analisis
+                                Trend Orang</h6>
+                            <p class="mb-0 small" style="line-height: 1.5;">{!! $analysis['opsel'] !!}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -385,12 +447,14 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Tren Pergerakan Harian per Moda</h5>
+                    <h5 class="card-title mb-0 text-primary fw-bold">Tren Pergerakan Harian per Moda
+                    </h5>
                 </div>
                 <div class="card-body">
                     {{-- Chart --}}
                     <div id="chart-moda" class="w-100" style="height: 400px;"></div>
-                    <p class="text-center fw-bold mt-2 text-muted small fst-italic">Grafik menunjukkan tren pergerakan
+                    <p class="text-center fw-bold mt-2 text-muted small fst-italic">Grafik menunjukkan
+                        tren pergerakan
                         harian untuk setiap moda transportasi (13 Mar - 29 Mar 2026)</p>
 
 
@@ -398,8 +462,10 @@
                         class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start rounded-3">
                         <i class="mdi mdi-information-outline fs-4 mt-1"></i>
                         <div>
-                            <h6 class="alert-heading fw-bold mb-1 text-info font-size-14">Analisis Moda Transportasi</h6>
-                            <p class="mb-0 small" style="line-height: 1.5;">{!! $analysis['moda'] !!}</p>
+                            <h6 class="alert-heading fw-bold mb-1 text-info font-size-14">Analisis Moda
+                                Transportasi</h6>
+                            <p class="mb-0 small" style="line-height: 1.5;">{!! $analysis['moda'] !!}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -411,6 +477,78 @@
 
 @push('styles')
     <style>
+        /* CSS for Monthly Grid Calendar */
+        .calendar-grid-table th,
+        .calendar-grid-table td {
+            border: 1px solid #ced4da;
+            vertical-align: top;
+        }
+
+        .calendar-grid-table th {
+            text-align: center;
+            padding: 8px;
+            font-size: 13px;
+            background-color: #f8f9fa;
+        }
+
+        .calendar-grid-table td {
+            padding: 10px;
+            width: 14.28%;
+            font-size: 13px;
+        }
+
+        .calendar-date-header {
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .calendar-task-list {
+            padding-left: 20px;
+            margin-bottom: 0;
+            color: #495057;
+        }
+
+        .calendar-task-list li {
+            margin-bottom: 4px;
+        }
+
+        .calendar-task-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Custom Background Colors */
+        .bg-empty-day {
+            background-color: #e9ecef;
+            opacity: 0.5;
+        }
+
+        .bg-beta-ready {
+            background-color: #ffebd6;
+            /* Light orange/yellow */
+        }
+
+        .bg-posko-period {
+            background-color: #e0f2f1;
+            /* Light teal/cyan */
+        }
+
+        .bg-deliverable {
+            background-color: #ffebd6;
+            /* Match the Beta Ready color for emphasis */
+        }
+
+        /* Ensure table is responsive */
+        .table-responsive-xl {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .min-w-1000 {
+            min-width: 1000px;
+        }
+
         /* Horizontal Calendar Timeline */
         .timeline-calendar {
             width: 100%;
@@ -613,7 +751,6 @@
 
         .start-col-13 {
             grid-column-start: 13;
-        }
         }
     </style>
 @endpush
