@@ -195,89 +195,209 @@
 
 @push('styles')
     <style>
-        /* CSS for Vertical Timeline in Modal */
-        .timeline-overlay {
-            position: relative;
-            padding: 20px 0;
+        /* Horizontal Calendar Timeline */
+        .timeline-calendar {
+            width: 100%;
+            overflow-x: auto;
+            padding-bottom: 20px;
         }
 
-        .timeline-overlay::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 45px;
-            width: 3px;
-            background: #e9ecef;
+        .timeline-wrapper {
+            min-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
-        .timeline-item {
-            position: relative;
-            margin-bottom: 30px;
-        }
-
-        .timeline-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .timeline-icon {
-            position: absolute;
-            left: 28px;
-            top: 0;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+        .timeline-grid {
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            /* 18 days: 13 to 30 Mar */
             text-align: center;
-            line-height: 36px;
-            background: #fff;
-            border: 3px solid #556ee6;
-            color: #556ee6;
-            font-size: 16px;
-            z-index: 1;
         }
 
-        .timeline-icon.bg-success {
-            border-color: #34c38f;
-            color: #34c38f;
+        .timeline-day-header {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #495057;
+            padding: 5px 0;
+            background-color: #f1f5f7;
+            border: 1px solid #fff;
         }
 
-        .timeline-icon.bg-warning {
-            border-color: #f1b44c;
-            color: #f1b44c;
+        .timeline-date-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #fff;
+            padding: 10px 0;
+            color: #fff;
+            font-weight: 700;
+            font-size: 18px;
+            height: 60px;
         }
 
-        .timeline-content {
-            margin-left: 90px;
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .timeline-content h5 {
-            margin-top: 0;
-            margin-bottom: 5px;
-            font-size: 15px;
-            font-weight: 600;
-        }
-
-        .timeline-content .date {
-            display: inline-block;
-            font-size: 12px;
-            color: #74788d;
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-
-        .timeline-content ul {
-            padding-left: 20px;
-            margin-bottom: 0;
-            font-size: 13px;
+        /* Date Colors based on mockup */
+        .date-bg-gray {
+            background-color: #fff;
+            border: 1px solid #e9ecef;
             color: #495057;
         }
 
-        .timeline-content ul li {
-            margin-bottom: 4px;
+        .date-bg-red {
+            background-color: #f46a6a;
+        }
+
+        .date-bg-yellow {
+            background-color: #f1b44c;
+        }
+
+        .date-bg-green {
+            background-color: #34c38f;
+        }
+
+        .timeline-h-label {
+            font-size: 10px;
+            color: #74788d;
+            background-color: #e9ecef;
+            padding: 4px 0;
+            border: 1px solid #fff;
+        }
+
+        /* Event Bars Area */
+        .event-bars-container {
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            position: relative;
+            gap: 2px;
+            margin-top: 10px;
+        }
+
+        .event-bar {
+            border-radius: 4px;
+            padding: 4px 0;
+            font-size: 9px;
+            font-weight: 700;
+            text-align: center;
+            text-transform: uppercase;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+        }
+
+        /* Event Colors */
+        .event-wfa {
+            background-color: #fef0d7;
+            color: #c0852e;
+            border-top: 2px solid #f1b44c;
+        }
+
+        .event-nyepi-cuti {
+            background-color: #f1b44c;
+            color: #fff;
+        }
+
+        .event-nyepi-hari {
+            background-color: #34c38f;
+            color: #fff;
+        }
+
+        .event-lebaran-cuti {
+            background-color: #f1b44c;
+            color: #fff;
+            border-top: 2px solid #34c38f;
+        }
+
+        .event-lebaran-hari {
+            background-color: #34c38f;
+            color: #fff;
+            border-top: 2px solid #34c38f;
+        }
+
+        .event-sekolah {
+            background-color: #e2e3e5;
+            color: #383d41;
+            border-left: 2px solid #6c757d;
+            border-right: 2px solid #6c757d;
+            border-radius: 0;
+        }
+
+        .event-posko {
+            background-color: #2ab57d;
+            /* BKT Blue/Teal */
+            color: #ffffff;
+            background-color: #3b82f6;
+            /* Blueish */
+            border-radius: 4px;
+        }
+
+        .timeline-grid-lines {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            pointer-events: none;
+        }
+
+        .timeline-grid-lines>div {
+            border-right: 1px dashed #eff2f7;
+        }
+
+        .timeline-grid-lines>div:last-child {
+            border-right: none;
+        }
+
+        /* Grid Spans for Events */
+        .col-span-1 {
+            grid-column: span 1;
+        }
+
+        .col-span-2 {
+            grid-column: span 2;
+        }
+
+        .col-span-3 {
+            grid-column: span 3;
+        }
+
+        .col-span-4 {
+            grid-column: span 4;
+        }
+
+        .col-span-5 {
+            grid-column: span 5;
+        }
+
+        .col-span-18 {
+            grid-column: span 18;
+        }
+
+        .start-col-4 {
+            grid-column-start: 4;
+        }
+
+        .start-col-6 {
+            grid-column-start: 6;
+        }
+
+        .start-col-7 {
+            grid-column-start: 7;
+        }
+
+        .start-col-8 {
+            grid-column-start: 8;
+        }
+
+        .start-col-13 {
+            grid-column-start: 13;
+        }
         }
     </style>
 @endpush
@@ -295,65 +415,212 @@
                         aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="timeline-overlay">
+                    <div class="timeline-calendar">
+                        <div class="timeline-wrapper">
 
-                        <!-- Tahap 1 -->
-                        <div class="timeline-item">
-                            <div class="timeline-icon">
-                                <i class="bx bx-cog"></i>
+                            <div class="text-center mb-3">
+                                <h5 class="fw-bold mb-0">MARET 2026</h5>
                             </div>
-                            <div class="timeline-content">
-                                <h5 class="text-primary">Tahap Persiapan & Finalisasi Sistem</h5>
-                                <span class="date"><i class="bx bx-time-five me-1"></i> 23 Februari - 12 Maret
-                                    2026</span>
-                                <ul>
-                                    <li>Penyusunan daftar kebutuhan analisis, output, dan sinkronisasi laporan.</li>
-                                    <li>Review <em>keynote material</em> MPD.</li>
-                                    <li>Pengembangan, uji coba (beta testing), dan finalisasi sistem oleh tim IT.</li>
-                                    <li><strong>Target 6 Maret 2026:</strong> Kesiapan sistem 100%.</li>
-                                    <li>Validasi data dummy dari Opsel untuk memastikan format dan struktur tabel.</li>
-                                </ul>
+
+                            <!-- Grid Kalender -->
+                            <div class="timeline-grid">
+                                <!-- Header Hari -->
+                                <div class="timeline-day-header">Jumat</div>
+                                <div class="timeline-day-header">Sabtu</div>
+                                <div class="timeline-day-header">Minggu</div>
+                                <div class="timeline-day-header">Senin</div>
+                                <div class="timeline-day-header">Selasa</div>
+                                <div class="timeline-day-header">Rabu</div>
+                                <div class="timeline-day-header">Kamis</div>
+                                <div class="timeline-day-header">Jumat</div>
+                                <div class="timeline-day-header">Sabtu</div>
+                                <div class="timeline-day-header">Minggu</div>
+                                <div class="timeline-day-header">Senin</div>
+                                <div class="timeline-day-header">Selasa</div>
+                                <div class="timeline-day-header">Rabu</div>
+                                <div class="timeline-day-header">Kamis</div>
+                                <div class="timeline-day-header">Jumat</div>
+                                <div class="timeline-day-header">Sabtu</div>
+                                <div class="timeline-day-header">Minggu</div>
+                                <div class="timeline-day-header">Senin</div>
+
+                                <!-- Tanggal -->
+                                <div class="timeline-date-box date-bg-gray">13</div>
+                                <div class="timeline-date-box date-bg-red">14</div>
+                                <div class="timeline-date-box date-bg-red">15</div>
+                                <div class="timeline-date-box date-bg-gray" style="background-color: #f1f5f7;">16</div>
+                                <div class="timeline-date-box date-bg-gray" style="background-color: #f1f5f7;">17</div>
+                                <div class="timeline-date-box date-bg-yellow">18</div>
+                                <div class="timeline-date-box date-bg-green">19</div>
+                                <div class="timeline-date-box date-bg-yellow">20</div>
+                                <div class="timeline-date-box date-bg-green">21</div>
+                                <div class="timeline-date-box date-bg-green">22</div>
+                                <div class="timeline-date-box date-bg-yellow">23</div>
+                                <div class="timeline-date-box date-bg-yellow">24</div>
+                                <div class="timeline-date-box date-bg-gray">25</div>
+                                <div class="timeline-date-box date-bg-gray">26</div>
+                                <div class="timeline-date-box date-bg-gray">27</div>
+                                <div class="timeline-date-box date-bg-red">28</div>
+                                <div class="timeline-date-box date-bg-red">29</div>
+                                <div class="timeline-date-box date-bg-gray">30</div>
+
+                                <!-- Label H- -->
+                                <div class="timeline-h-label">H-8</div>
+                                <div class="timeline-h-label">H-7</div>
+                                <div class="timeline-h-label">H-6</div>
+                                <div class="timeline-h-label">H-5</div>
+                                <div class="timeline-h-label">H-4</div>
+                                <div class="timeline-h-label">H-3</div>
+                                <div class="timeline-h-label">H-2</div>
+                                <div class="timeline-h-label">H-1</div>
+                                <div class="timeline-h-label">H</div>
+                                <div class="timeline-h-label">H+1</div>
+                                <div class="timeline-h-label">H+2</div>
+                                <div class="timeline-h-label">H+3</div>
+                                <div class="timeline-h-label">H+4</div>
+                                <div class="timeline-h-label">H+5</div>
+                                <div class="timeline-h-label">H+6</div>
+                                <div class="timeline-h-label">H+7</div>
+                                <div class="timeline-h-label">H+8</div>
+                                <div class="timeline-h-label">H+9</div>
                             </div>
+
+                            <!-- Baris Event (Berlapis) -->
+                            <!-- Baris 1: WFA & Hari Raya -->
+                            <div class="event-bars-container mt-3" style="height: 24px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div class="event-bar event-wfa start-col-4 col-span-3">Potensi Penerapan WFA</div>
+                                <div class="event-bar event-nyepi-hari start-col-7 col-span-1 border-0 rounded"
+                                    style="margin-top: 4px;">Hari Raya Nyepi <i
+                                        class="mdi mdi-arrow-down position-absolute" style="top:-15px;"></i></div>
+                                <div
+                                    class="event-bar event-lebaran-hari start-col-9 col-span-2 border-0 rounded bg-success">
+                                    Hari Raya Lebaran</div>
+                                <div class="event-bar event-wfa start-col-13 col-span-3">Potensi Penerapan WFA</div>
+                            </div>
+
+                            <!-- Baris 2: Cuti Bersama -->
+                            <div class="event-bars-container" style="height: 24px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div class="event-bar event-nyepi-cuti start-col-6 col-span-3">Cuti Bersama Nyepi</div>
+                                <div class="event-bar event-lebaran-cuti start-col-8 col-span-5 border-0">Cuti Bersama
+                                    Lebaran</div>
+                            </div>
+
+                            <!-- Baris 3: Kosong untuk spacing -->
+                            <div class="event-bars-container mt-0 mb-1" style="height: 15px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                            </div>
+
+                            <!-- Baris 4: Libur Sekolah -->
+                            <div class="event-bars-container" style="height: 24px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div class="event-bar event-sekolah start-col-4 col-span-15">Libur Sekolah Jabodetabek
+                                </div>
+                            </div>
+
+                            <!-- Baris 5: Posko Angleb -->
+                            <div class="event-bars-container" style="height: 24px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div class="event-bar event-posko col-span-18">Pelaksanaan Posko Angleb 2026</div>
+                            </div>
+
                         </div>
-
-                        <!-- Tahap 2 -->
-                        <div class="timeline-item">
-                            <div class="timeline-icon bg-warning">
-                                <i class="bx bx-data"></i>
-                            </div>
-                            <div class="timeline-content border-warning border-start border-4">
-                                <h5 class="text-warning">Tahap Pengolahan Data (Periode Posko)</h5>
-                                <span class="date"><i class="bx bx-time-five me-1"></i> 13 Maret - 30 Maret 2026</span>
-                                <ul>
-                                    <li><strong>Penarikan Data Harian Opsel:</strong> Rekam pergerakan harian mulai dari H-8
-                                        Lebaran hingga H+9 Lebaran secara rutin.</li>
-                                    <li><strong>Quality Control (QC) Data Harian:</strong> Memeriksa indikasi anomali,
-                                        ketidaklengkapan data (null), dan standar struktur data masuk.</li>
-                                    <li><strong>Monitoring Kestabilan Sistem:</strong> Memastikan kelancaran sistem dalam
-                                        menangani injeksi data besar.</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <!-- Tahap 3 -->
-                        <div class="timeline-item">
-                            <div class="timeline-icon bg-success">
-                                <i class="bx bx-book-content"></i>
-                            </div>
-                            <div class="timeline-content border-success border-start border-4">
-                                <h5 class="text-success">Tahap Penyusunan Laporan & Finalisasi</h5>
-                                <span class="date"><i class="bx bx-time-five me-1"></i> 31 Maret - 12 April 2026</span>
-                                <ul>
-                                    <li><strong>31 Mar - 1 Apr:</strong> Finalisasi laporan hasil keseluruhan olah data MPD
-                                        Angkutan Lebaran 2026.</li>
-                                    <li><strong>2 Apr - 12 Apr:</strong> Penyusunan Dokumen <em>Policy Paper</em> dan
-                                        <em>Policy Brief</em>.
-                                    </li>
-                                    <li>Penyerahan output rekomendasi penyempurnaan sistem MPD.</li>
-                                </ul>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
                 <div class="modal-footer bg-light">
