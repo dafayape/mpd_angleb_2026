@@ -39,7 +39,6 @@
                                         'hari' => 'Rabu',
                                         'h' => 'H-3',
                                         'bg' => 'bg-warning',
-                                        'active' => true,
                                     ],
                                     ['tgl' => 19, 'hari' => 'Kamis', 'h' => 'H-2', 'bg' => 'bg-success text-white'],
                                     ['tgl' => 20, 'hari' => 'Jumat', 'h' => 'H-1', 'bg' => 'bg-warning'],
