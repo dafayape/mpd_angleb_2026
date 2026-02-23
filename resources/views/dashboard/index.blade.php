@@ -21,59 +21,138 @@
                     <h5 class="fw-bold text-primary mb-0">Overlay Kalender Angkutan Lebaran 2026</h5>
                 </div>
                 <div class="card-body overflow-auto">
+                    {{-- Simple Custom Calendar Visualization --}}
                     <div style="min-width: 800px;">
-                        <h6 class="text-center fw-bold text-uppercase mb-3" style="color: #495057;">MARET 2026</h6>
+                        <h6 class="text-center fw-bold mb-3">MARET 2026</h6>
                         <div class="d-flex border text-center font-size-12">
+                            <!-- Header Days -->
                             @php
                                 $days = [
-                                    ['tgl' => 13, 'hari' => 'Jumat', 'h' => 'H-8'],
-                                    ['tgl' => 14, 'hari' => 'Sabtu', 'h' => 'H-7'],
-                                    ['tgl' => 15, 'hari' => 'Minggu', 'h' => 'H-6'],
-                                    ['tgl' => 16, 'hari' => 'Senin', 'h' => 'H-5'],
-                                    ['tgl' => 17, 'hari' => 'Selasa', 'h' => 'H-4'],
-                                    ['tgl' => 18, 'hari' => 'Rabu', 'h' => 'H-3'],
-                                    ['tgl' => 19, 'hari' => 'Kamis', 'h' => 'H-2'],
-                                    ['tgl' => 20, 'hari' => 'Jumat', 'h' => 'H-1'],
-                                    ['tgl' => 21, 'hari' => 'Sabtu', 'h' => 'H'],
-                                    ['tgl' => 22, 'hari' => 'Minggu', 'h' => 'H+1'],
-                                    ['tgl' => 23, 'hari' => 'Senin', 'h' => 'H+2'],
-                                    ['tgl' => 24, 'hari' => 'Selasa', 'h' => 'H+3'],
-                                    ['tgl' => 25, 'hari' => 'Rabu', 'h' => 'H+4'],
-                                    ['tgl' => 26, 'hari' => 'Kamis', 'h' => 'H+5'],
-                                    ['tgl' => 27, 'hari' => 'Jumat', 'h' => 'H+6'],
-                                    ['tgl' => 28, 'hari' => 'Sabtu', 'h' => 'H+7'],
-                                    ['tgl' => 29, 'hari' => 'Minggu', 'h' => 'H+8'],
-                                    ['tgl' => 30, 'hari' => 'Senin', 'h' => 'H+9'],
+                                    ['tgl' => 13, 'hari' => 'Jumat', 'h' => 'H-8', 'bg' => ''],
+                                    ['tgl' => 14, 'hari' => 'Sabtu', 'h' => 'H-7', 'bg' => 'bg-danger text-white'],
+                                    ['tgl' => 15, 'hari' => 'Minggu', 'h' => 'H-6', 'bg' => 'bg-danger text-white'],
+                                    ['tgl' => 16, 'hari' => 'Senin', 'h' => 'H-5', 'bg' => 'bg-warning bg-soft'],
+                                    ['tgl' => 17, 'hari' => 'Selasa', 'h' => 'H-4', 'bg' => 'bg-warning bg-soft'],
+                                    ['tgl' => 18, 'hari' => 'Rabu', 'h' => 'H-3', 'bg' => 'bg-warning'],
+                                    ['tgl' => 19, 'hari' => 'Kamis', 'h' => 'H-2', 'bg' => 'bg-success text-white'],
+                                    ['tgl' => 20, 'hari' => 'Jumat', 'h' => 'H-1', 'bg' => 'bg-warning'],
+                                    ['tgl' => 21, 'hari' => 'Sabtu', 'h' => 'H', 'bg' => 'bg-success text-white'],
+                                    ['tgl' => 22, 'hari' => 'Minggu', 'h' => 'H+1', 'bg' => 'bg-success text-white'],
+                                    ['tgl' => 23, 'hari' => 'Senin', 'h' => 'H+2', 'bg' => 'bg-warning'],
+                                    ['tgl' => 24, 'hari' => 'Selasa', 'h' => 'H+3', 'bg' => 'bg-warning'],
+                                    ['tgl' => 25, 'hari' => 'Rabu', 'h' => 'H+4', 'bg' => ''],
+                                    ['tgl' => 26, 'hari' => 'Kamis', 'h' => 'H+5', 'bg' => ''],
+                                    ['tgl' => 27, 'hari' => 'Jumat', 'h' => 'H+6', 'bg' => ''],
+                                    ['tgl' => 28, 'hari' => 'Sabtu', 'h' => 'H+7', 'bg' => 'bg-danger text-white'],
+                                    ['tgl' => 29, 'hari' => 'Minggu', 'h' => 'H+8', 'bg' => 'bg-danger text-white'],
+                                    ['tgl' => 30, 'hari' => 'Senin', 'h' => 'H+9', 'bg' => ''],
                                 ];
                             @endphp
 
-                            @foreach ($days as $idx => $d)
-                                <div class="flex-fill {{ $idx !== count($days) - 1 ? 'border-end' : '' }}"
-                                    style="width: {{ 100 / 18 }}%;">
-                                    <div class="timeline-day-header p-1 bg-light fw-bold text-uppercase border-bottom">
-                                        {{ $d['hari'] }}
-                                    </div>
-                                    <div class="timeline-date-box p-2 fw-bold fs-5 text-white"
-                                        style="background-color: #2581f1;">
+                            @foreach ($days as $d)
+                                <div class="flex-fill border-end" style="width: {{ 100 / 18 }}%;">
+                                    <div class="p-1 bg-light fw-bold text-uppercase" style="font-size: 10px;">
+                                        {{ $d['hari'] }}</div>
+                                    <div class="p-2 fw-bold fs-5 {{ $d['bg'] }} position-relative">
                                         {{ $d['tgl'] }}
                                     </div>
-                                    <div class="timeline-h-label p-1 small border-top">
-                                        {{ $d['h'] }}
+                                    <div class="p-1 small border-top bg-light" style="font-size: 10px;">{{ $d['h'] }}
                                     </div>
                                 </div>
                             @endforeach
                         </div>
 
-                        <div class="position-relative mt-2" style="height: 40px;">
-                            <div class="position-relative w-100" style="height: 45px; margin-top: 5px;">
-                                <div class="position-absolute d-flex flex-column"
-                                    style="left: 0; width: 100%; top: 0; padding: 0 2px;">
+                        {{-- Annotations --}}
+                        <div class="position-relative mt-2" style="height: 125px;">
+                            <!-- Row 1: Top Annotations -->
+                            <div class="position-relative w-100" style="height: 35px; margin-top: 10px;">
+                                <!-- Potensi WFA 1 -->
+                                <div class="position-absolute d-flex flex-column align-items-center"
+                                    style="left: {{ (3 / 18) * 100 }}%; width: {{ (2 / 18) * 100 }}%; top: 0;">
                                     <div class="w-100"
-                                        style="border-left: 2px solid #2581f1; border-right: 2px solid #2581f1; height: 8px;">
+                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
+                                    </div>
+                                    <div class="text-center rounded mt-1 shadow-sm text-dark px-2 text-nowrap"
+                                        style="background-color: #fef4e4; padding: 3px 0; font-size: 8px; font-weight: bold; border: 1px solid #f1b44c;">
+                                        POTENSI PENERAPAN WFA</div>
+                                </div>
+
+                                <!-- Nyepi -->
+                                <div class="position-absolute d-flex flex-column align-items-center"
+                                    style="left: {{ (6 / 18) * 100 }}%; width: {{ (1 / 18) * 100 }}%; top: 0;">
+                                    <div class="text-center bg-success text-white rounded shadow-sm px-2 text-nowrap"
+                                        style="padding: 3px 0; font-size: 8px; font-weight: bold; margin-top: 5px;">HARI
+                                        RAYA NYEPI</div>
+                                </div>
+
+                                <!-- Hari Raya Lebaran -->
+                                <div class="position-absolute d-flex flex-column align-items-center"
+                                    style="left: {{ (8 / 18) * 100 }}%; width: {{ (2 / 18) * 100 }}%; top: 0;">
+                                    <div class="w-100"
+                                        style="border-top: 1.5px solid #34c38f; border-left: 1.5px solid #34c38f; border-right: 1.5px solid #34c38f; height: 6px;">
+                                    </div>
+                                    <div class="text-center bg-success text-white rounded mt-1 shadow-sm px-2 text-nowrap"
+                                        style="padding: 3px 0; font-size: 8px; font-weight: bold;">HARI RAYA LEBARAN</div>
+                                </div>
+
+                                <!-- Potensi WFA 2 -->
+                                <div class="position-absolute d-flex flex-column align-items-center"
+                                    style="left: {{ (12 / 18) * 100 }}%; width: {{ (3 / 18) * 100 }}%; top: 0;">
+                                    <div class="w-100"
+                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
+                                    </div>
+                                    <div class="text-center rounded mt-1 shadow-sm text-dark px-2 text-nowrap"
+                                        style="background-color: #fef4e4; padding: 3px 0; font-size: 8px; font-weight: bold; border: 1px solid #f1b44c;">
+                                        POTENSI PENERAPAN WFA</div>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Middle Annotations -->
+                            <div class="position-relative w-100" style="height: 35px;">
+                                <!-- Cuti Nyepi -->
+                                <div class="position-absolute d-flex flex-column align-items-center"
+                                    style="left: {{ (5 / 18) * 100 }}%; width: {{ (1 / 18) * 100 }}%; top: 0;">
+                                    <div class="w-100"
+                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
+                                    </div>
+                                    <div class="text-center bg-warning text-dark rounded shadow-sm mt-1 px-3 text-nowrap"
+                                        style="padding: 3px 0; font-size: 8px; font-weight: bold;">CUTI BERSAMA NYEPI</div>
+                                </div>
+
+                                <!-- Cuti Lebaran -->
+                                <div class="position-absolute d-flex flex-column align-items-center"
+                                    style="left: {{ (7 / 18) * 100 }}%; width: {{ (5 / 18) * 100 }}%; top: 0;">
+                                    <div class="w-100"
+                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
+                                    </div>
+                                    <div class="text-center bg-warning text-dark rounded shadow-sm mt-1 px-4 text-nowrap"
+                                        style="padding: 3px 0; font-size: 8px; font-weight: bold;">CUTI BERSAMA LEBARAN
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Libur Sekolah & Posko -->
+                            <div class="position-relative w-100" style="height: 45px; margin-top: 5px;">
+                                <!-- Libur Sekolah JABODETABEK -->
+                                <div class="position-absolute d-flex flex-column"
+                                    style="left: {{ (3 / 18) * 100 }}%; width: {{ (15 / 18) * 100 }}%; top: 0;">
+                                    <div class="w-100"
+                                        style="border-top: 1.5px solid #8e959c; border-left: 1.5px solid #8e959c; border-right: 1.5px solid #8e959c; height: 6px;">
+                                    </div>
+                                    <div class="text-center w-100 fw-bold border"
+                                        style="background-color: #e2e3e5; color: #495057; font-size: 9px; padding: 3px 0; margin-top: -1px; border-color: #adb5bd !important;">
+                                        LIBUR SEKOLAH JABODETABEK
+                                    </div>
+                                </div>
+
+                                <!-- Posko Bar -->
+                                <div class="position-absolute d-flex flex-column" style="left: 0; width: 100%; top: 25px;">
+                                    <div class="w-100"
+                                        style="border-left: 1.5px solid #0d6efd; border-right: 1.5px solid #0d6efd; height: 6px;">
                                     </div>
                                     <div class="text-center text-white fw-bold shadow-sm"
-                                        style="background: #2581f1; padding: 6px 0; font-size: 11px; width: 100%; border-radius: 4px; margin-top: -1px;">
-                                        PENARIKAN DATA MOBILE POSITIONING DATA ANGKUTAN LEBARAN 2026
+                                        style="background: #2389f4; padding: 5px 0; font-size: 10px; width: 100%; border-radius: 4px; border: 1px solid #0d6efd; margin-top: -1px;">
+                                        PELAKSANAAN POSKO ANGLEB 2026
                                     </div>
                                 </div>
                             </div>
