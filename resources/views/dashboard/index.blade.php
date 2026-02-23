@@ -18,8 +18,8 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 text-center">
-                    <h5 class="fw-bold text-primary mb-0">Penarikan Mobile Positioning Data Angkutan Lebaran 2026</h5>
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 text-start">
+                    <h5 class="fw-bold text-primary mb-0">Overlay Kalender Angkutan Lebaran 2026</h5>
                 </div>
                 <div class="card-body overflow-auto">
                     {{-- Graphic Timeline Replace --}}
@@ -78,10 +78,10 @@
                                 <div class="position-absolute d-flex flex-column"
                                     style="left: 0; width: 100%; top: 0px; padding: 0 2px;">
                                     <div class="w-100"
-                                        style="border-left: 2px solid #1c68c6; border-right: 2px solid #1c68c6; height: 8px;">
+                                        style="border-left: 2px solid #2581f1; border-right: 2px solid #2581f1; height: 8px;">
                                     </div>
                                     <div class="text-center text-white fw-bold shadow-sm"
-                                        style="background: #2581f1; padding: 6px 0; font-size: 11px; width: 100%; border-radius: 4px; border: 1px solid #1c68c6; margin-top: -1px;">
+                                        style="background: #2581f1; padding: 6px 0; font-size: 11px; width: 100%; border-radius: 4px; border: none; margin-top: -1px;">
                                         PENARIKAN DATA MOBILE POSITIONING DATA ANGKUTAN LEBARAN 2026
                                     </div>
                                 </div>
