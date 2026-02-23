@@ -14,7 +14,6 @@
         </div>
     </div>
 
-    {{-- Timeline Card Overlay --}}
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm border-0">
@@ -22,35 +21,29 @@
                     <h5 class="fw-bold text-primary mb-0">Overlay Kalender Angkutan Lebaran 2026</h5>
                 </div>
                 <div class="card-body overflow-auto">
-                    {{-- Graphic Timeline Replace --}}
                     <div style="min-width: 800px;">
                         <h6 class="text-center fw-bold text-uppercase mb-3" style="color: #495057;">MARET 2026</h6>
                         <div class="d-flex border text-center font-size-12">
                             @php
                                 $days = [
-                                    ['tgl' => 13, 'hari' => 'Jumat', 'h' => 'H-8', 'bg' => 'bg-light date-bg-gray'],
-                                    ['tgl' => 14, 'hari' => 'Sabtu', 'h' => 'H-7', 'bg' => 'date-bg-red text-white'],
-                                    ['tgl' => 15, 'hari' => 'Minggu', 'h' => 'H-6', 'bg' => 'date-bg-red text-white'],
-                                    ['tgl' => 16, 'hari' => 'Senin', 'h' => 'H-5', 'bg' => 'bg-warning bg-soft'],
-                                    ['tgl' => 17, 'hari' => 'Selasa', 'h' => 'H-4', 'bg' => 'bg-warning bg-soft'],
-                                    ['tgl' => 18, 'hari' => 'Rabu', 'h' => 'H-3', 'bg' => 'date-bg-yellow text-white'],
-                                    ['tgl' => 19, 'hari' => 'Kamis', 'h' => 'H-2', 'bg' => 'date-bg-green text-white'],
-                                    ['tgl' => 20, 'hari' => 'Jumat', 'h' => 'H-1', 'bg' => 'date-bg-yellow text-white'],
-                                    ['tgl' => 21, 'hari' => 'Sabtu', 'h' => 'H', 'bg' => 'date-bg-green text-white'],
-                                    ['tgl' => 22, 'hari' => 'Minggu', 'h' => 'H+1', 'bg' => 'date-bg-green text-white'],
-                                    ['tgl' => 23, 'hari' => 'Senin', 'h' => 'H+2', 'bg' => 'date-bg-yellow text-white'],
-                                    [
-                                        'tgl' => 24,
-                                        'hari' => 'Selasa',
-                                        'h' => 'H+3',
-                                        'bg' => 'date-bg-blue text-white',
-                                    ],
-                                    ['tgl' => 25, 'hari' => 'Rabu', 'h' => 'H+4', 'bg' => 'bg-light date-bg-gray'],
-                                    ['tgl' => 26, 'hari' => 'Kamis', 'h' => 'H+5', 'bg' => 'bg-light date-bg-gray'],
-                                    ['tgl' => 27, 'hari' => 'Jumat', 'h' => 'H+6', 'bg' => 'bg-light date-bg-gray'],
-                                    ['tgl' => 28, 'hari' => 'Sabtu', 'h' => 'H+7', 'bg' => 'date-bg-red text-white'],
-                                    ['tgl' => 29, 'hari' => 'Minggu', 'h' => 'H+8', 'bg' => 'date-bg-red text-white'],
-                                    ['tgl' => 30, 'hari' => 'Senin', 'h' => 'H+9', 'bg' => 'bg-light date-bg-gray'],
+                                    ['tgl' => 13, 'hari' => 'Jumat', 'h' => 'H-8'],
+                                    ['tgl' => 14, 'hari' => 'Sabtu', 'h' => 'H-7'],
+                                    ['tgl' => 15, 'hari' => 'Minggu', 'h' => 'H-6'],
+                                    ['tgl' => 16, 'hari' => 'Senin', 'h' => 'H-5'],
+                                    ['tgl' => 17, 'hari' => 'Selasa', 'h' => 'H-4'],
+                                    ['tgl' => 18, 'hari' => 'Rabu', 'h' => 'H-3'],
+                                    ['tgl' => 19, 'hari' => 'Kamis', 'h' => 'H-2'],
+                                    ['tgl' => 20, 'hari' => 'Jumat', 'h' => 'H-1'],
+                                    ['tgl' => 21, 'hari' => 'Sabtu', 'h' => 'H'],
+                                    ['tgl' => 22, 'hari' => 'Minggu', 'h' => 'H+1'],
+                                    ['tgl' => 23, 'hari' => 'Senin', 'h' => 'H+2'],
+                                    ['tgl' => 24, 'hari' => 'Selasa', 'h' => 'H+3'],
+                                    ['tgl' => 25, 'hari' => 'Rabu', 'h' => 'H+4'],
+                                    ['tgl' => 26, 'hari' => 'Kamis', 'h' => 'H+5'],
+                                    ['tgl' => 27, 'hari' => 'Jumat', 'h' => 'H+6'],
+                                    ['tgl' => 28, 'hari' => 'Sabtu', 'h' => 'H+7'],
+                                    ['tgl' => 29, 'hari' => 'Minggu', 'h' => 'H+8'],
+                                    ['tgl' => 30, 'hari' => 'Senin', 'h' => 'H+9'],
                                 ];
                             @endphp
 
@@ -58,8 +51,10 @@
                                 <div class="flex-fill {{ $idx !== count($days) - 1 ? 'border-end' : '' }}"
                                     style="width: {{ 100 / 18 }}%;">
                                     <div class="timeline-day-header p-1 bg-light fw-bold text-uppercase border-bottom">
-                                        {{ $d['hari'] }}</div>
-                                    <div class="timeline-date-box p-2 fw-bold fs-5 {{ $d['bg'] }}">
+                                        {{ $d['hari'] }}
+                                    </div>
+                                    <div class="timeline-date-box p-2 fw-bold fs-5 text-white"
+                                        style="background-color: #2581f1;">
                                         {{ $d['tgl'] }}
                                     </div>
                                     <div class="timeline-h-label p-1 small border-top">
@@ -69,19 +64,15 @@
                             @endforeach
                         </div>
 
-                        {{-- Event Annotations --}}
                         <div class="position-relative mt-2" style="height: 40px;">
-                            <!-- Row 3: Posko Bar -->
                             <div class="position-relative w-100" style="height: 45px; margin-top: 5px;">
-
-                                <!-- Posko Bar -->
                                 <div class="position-absolute d-flex flex-column"
-                                    style="left: 0; width: 100%; top: 0px; padding: 0 2px;">
+                                    style="left: 0; width: 100%; top: 0; padding: 0 2px;">
                                     <div class="w-100"
                                         style="border-left: 2px solid #2581f1; border-right: 2px solid #2581f1; height: 8px;">
                                     </div>
                                     <div class="text-center text-white fw-bold shadow-sm"
-                                        style="background: #2581f1; padding: 6px 0; font-size: 11px; width: 100%; border-radius: 4px; border: none; margin-top: -1px;">
+                                        style="background: #2581f1; padding: 6px 0; font-size: 11px; width: 100%; border-radius: 4px; margin-top: -1px;">
                                         PENARIKAN DATA MOBILE POSITIONING DATA ANGKUTAN LEBARAN 2026
                                     </div>
                                 </div>
