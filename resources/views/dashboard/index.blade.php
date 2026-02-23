@@ -43,7 +43,7 @@
                                         'tgl' => 24,
                                         'hari' => 'Selasa',
                                         'h' => 'H+3',
-                                        'bg' => 'date-bg-yellow text-white',
+                                        'bg' => 'date-bg-blue text-white',
                                     ],
                                     ['tgl' => 25, 'hari' => 'Rabu', 'h' => 'H+4', 'bg' => 'bg-light date-bg-gray'],
                                     ['tgl' => 26, 'hari' => 'Kamis', 'h' => 'H+5', 'bg' => 'bg-light date-bg-gray'],
@@ -55,6 +55,7 @@
                             @endphp
 
                             @foreach ($days as $idx => $d)
+                                g text
                                 <div class="flex-fill {{ $idx !== count($days) - 1 ? 'border-end' : '' }}"
                                     style="width: {{ 100 / 18 }}%;">
                                     <div class="timeline-day-header p-1 bg-light fw-bold text-uppercase border-bottom">
