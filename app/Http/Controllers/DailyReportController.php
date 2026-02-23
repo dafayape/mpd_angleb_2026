@@ -10,43 +10,70 @@ class DailyReportController extends Controller
 {
     public function index(Request $request)
     {
-        $date = $request->input('date', '2026-03-14'); // Default date for testing
+        $startDate = $request->input('start_date', '2026-03-13');
+        $endDate = $request->input('end_date', '2026-03-29');
         
         // Cache data for report
-        $cacheKey = "dailyreport:v1:{$date}";
-        $data = Cache::remember($cacheKey, 3600, function () use ($date) {
+        $cacheKey = "dailyreport:text:v1:{$startDate}:{$endDate}";
+        $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
             
-            // 1. Totals
-            $totals = \App\Models\SpatialMovement::where('tanggal', $date)
-                ->selectRaw("
-                    SUM(CASE WHEN is_forecast = false THEN total ELSE 0 END) as total_real,
-                    SUM(CASE WHEN is_forecast = true THEN total ELSE 0 END) as total_forecast
-                ")
+            // Jabodetabek codes
+            $jabodetabekCodes = [
+                '3171', '3172', '3173', '3174', '3175', '3101', // DKI
+                '3201', '3271', // Bogor
+                '3276', // Depok
+                '3603', '3671', '3674', // Tangerang
+                '3216', '3275' // Bekasi
+            ];
+
+            // --- A. NASIONAL ---
+            // 1. Total Nasional
+            $nasionalTotal = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                ->where('is_forecast', false)
+                ->sum('total');
+
+            // 2. Highest Day Nasional
+            $nasionalHighest = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                ->where('is_forecast', false)
+                ->select('tanggal', DB::raw('SUM(total) as daily_total'))
+                ->groupBy('tanggal')
+                ->orderByDesc('daily_total')
                 ->first();
 
-            // 2. By Opsel (Real)
-            $opselData = \App\Models\SpatialMovement::where('tanggal', $date)
+            // --- B. JABODETABEK ---
+            // 1. Total Jabodetabek
+            $jaboTotal = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', false)
-                ->select('opsel', DB::raw('SUM(total) as total'))
-                ->groupBy('opsel')
-                ->get();
+                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->sum('total');
 
-            // 3. By Mode (Real) - Top 3
-            $modeData = \App\Models\SpatialMovement::where('tanggal', $date)
+            // 2. Highest Day Jabodetabek
+            $jaboHighest = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', false)
-                ->select('kode_moda', DB::raw('SUM(total) as total'))
-                ->groupBy('kode_moda')
-                ->orderByDesc('total')
-                ->limit(3)
-                ->get();
+                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->select('tanggal', DB::raw('SUM(total) as daily_total'))
+                ->groupBy('tanggal')
+                ->orderByDesc('daily_total')
+                ->first();
+
+            // Formatted Dates
+            \Carbon\Carbon::setLocale('id'); // Ensure Indonesian dates
+            $formattedStart = \Carbon\Carbon::parse($startDate)->isoFormat('D MMM YYYY');
+            $formattedEnd = \Carbon\Carbon::parse($endDate)->isoFormat('D MMM YYYY');
+            
+            $nasionalHighestDate = $nasionalHighest ? \Carbon\Carbon::parse($nasionalHighest->tanggal)->isoFormat('dddd, D MMMM YYYY') : '-';
+            $jaboHighestDate = $jaboHighest ? \Carbon\Carbon::parse($jaboHighest->tanggal)->isoFormat('dddd, D MMMM YYYY') : '-';
 
             return [
-                'date' => $date,
-                'formattedDate' => \Carbon\Carbon::parse($date)->isoFormat('dddd, D MMMM Y'),
-                'total_real' => (int) $totals->total_real ?? 0,
-                'total_forecast' => (int) $totals->total_forecast ?? 0,
-                'opsel_data' => $opselData,
-                'mode_data' => $modeData
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'period_string' => "tgl {$formattedStart} s.d. {$formattedEnd}",
+                'nasional_total' => $nasionalTotal,
+                'nasional_highest_date' => $nasionalHighestDate,
+                'nasional_highest_total' => $nasionalHighest ? $nasionalHighest->daily_total : 0,
+                'jabo_total' => $jaboTotal,
+                'jabo_highest_date' => $jaboHighestDate,
+                'jabo_highest_total' => $jaboHighest ? $jaboHighest->daily_total : 0,
             ];
         });
 

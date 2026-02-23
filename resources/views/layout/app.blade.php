@@ -12,7 +12,8 @@
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" id="bootstrap-style" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/app.min.css') }}" id="app-style" rel="stylesheet" type="text/css" />
@@ -23,7 +24,12 @@
     <style>
         *,
         body,
-        h1, h2, h3, h4, h5, h6,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
         .navbar-header,
         .vertical-menu,
         .footer,
@@ -130,7 +136,8 @@
                         </a>
                     </div>
 
-                    <button type="button" class="btn btn-sm px-3 font-size-16 header-item waves-effect" id="vertical-menu-btn">
+                    <button type="button" class="btn btn-sm px-3 font-size-16 header-item waves-effect"
+                        id="vertical-menu-btn">
                         <i class="fa fa-fw fa-bars"></i>
                     </button>
 
@@ -141,15 +148,19 @@
 
                 <div class="d-flex">
                     <div class="dropdown d-none d-lg-inline-block ms-1">
-                        <button type="button" class="btn header-item noti-icon waves-effect" data-bs-toggle="fullscreen">
+                        <button type="button" class="btn header-item noti-icon waves-effect"
+                            data-bs-toggle="fullscreen">
                             <i class="bx bx-fullscreen"></i>
                         </button>
                     </div>
 
                     <div class="dropdown d-inline-block">
-                        <button type="button" class="btn header-item waves-effect" id="page-header-user-dropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <div class="rounded-circle header-profile-user bg-soft-primary d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-                                <span class="text-primary fw-bold font-size-14">{{ strtoupper(substr(Auth::user()->name ?? 'User', 0, 2)) }}</span>
+                        <button type="button" class="btn header-item waves-effect" id="page-header-user-dropdown"
+                            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <div class="rounded-circle header-profile-user bg-soft-primary d-inline-flex align-items-center justify-content-center"
+                                style="width: 36px; height: 36px;">
+                                <span
+                                    class="text-primary fw-bold font-size-14">{{ strtoupper(substr(Auth::user()->name ?? 'User', 0, 2)) }}</span>
                             </div>
                             <span class="d-none d-xl-inline-block ms-1">{{ Auth::user()->name ?? 'Pengguna' }}</span>
                             <i class="mdi mdi-chevron-down d-none d-xl-inline-block"></i>
@@ -178,13 +189,20 @@
             <div data-simplebar class="h-100">
                 <div id="sidebar-menu">
                     <ul class="metismenu list-unstyled" id="side-menu">
-                
+
 
                         <li class="menu-title">MPD</li>
                         <li>
                             <a href="{{ route('dashboard') }}" class="waves-effect">
                                 <i class="bx bx-home-circle"></i>
                                 <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a href="{{ route('keynote') }}" class="waves-effect">
+                                <i class="bx bx-slideshow"></i>
+                                <span>Keynote Material</span>
                             </a>
                         </li>
 
@@ -197,13 +215,17 @@
                                 <li class="menu-title" style="padding-left:0;">Nasional</li>
                                 <li><a href="{{ route('grafik-mpd.nasional.pergerakan') }}">Pergerakan</a></li>
                                 <li><a href="{{ route('grafik-mpd.nasional.od-provinsi') }}">O-D Provinsi</a></li>
-                                <li><a href="{{ route('grafik-mpd.nasional.top-kabkota') }}">Top Kabupaten/Kota</a></li>
+                                <li><a href="{{ route('grafik-mpd.nasional.top-kabkota') }}">Top Kabupaten/Kota</a>
+                                </li>
                                 <li><a href="{{ route('grafik-mpd.nasional.mode-share') }}">Mode Share</a></li>
                                 <li><a href="{{ route('grafik-mpd.nasional.simpul') }}">Simpul</a></li>
                                 <li class="menu-title" style="padding-left:0;">Jabodetabek</li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang') }}">Pergerakan & Orang</a></li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang-opsel') }}">Pergerakan & Orang (Opsel)</a></li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.od-kabkota') }}">O-D Kabupaten Kota</a></li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang') }}">Pergerakan &
+                                        Orang</a></li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang-opsel') }}">Pergerakan
+                                        & Orang (Opsel)</a></li>
+                                <li><a href="{{ route('grafik-mpd.jabodetabek.od-kabkota') }}">O-D Kabupaten Kota</a>
+                                </li>
                                 <li><a href="{{ route('grafik-mpd.jabodetabek.mode-share') }}">Mode Share</a></li>
                                 <li><a href="{{ route('grafik-mpd.jabodetabek.simpul') }}">Simpul</a></li>
                             </ul>
@@ -257,6 +279,7 @@
                                 <li><a href="{{ route('master.referensi.kabkota') }}">Kabupaten Kota</a></li>
                                 <li><a href="{{ route('master.referensi.simpul') }}">Simpul</a></li>
                                 <li><a href="{{ route('master.referensi.moda') }}">Moda</a></li>
+                                <li><a href="{{ route('master.referensi.rules') }}">Rules</a></li>
                             </ul>
                         </li>
 
@@ -312,7 +335,9 @@
                 <div class="container-fluid">
                     <div class="row">
                         <div class="col-sm-6">
-                            <script>document.write(new Date().getFullYear())</script> &copy; BKT-KEMENHUB (V-1.5)
+                            <script>
+                                document.write(new Date().getFullYear())
+                            </script> &copy; BKT-KEMENHUB (V-1.5)
                         </div>
                         <div class="col-sm-6">
                             <div class="text-sm-end d-none d-sm-block">
@@ -360,7 +385,7 @@
                 toast: true,
                 position: 'top',
                 icon: 'success',
-                title: '{{ session("success") }}',
+                title: '{{ session('success') }}',
                 showConfirmButton: false,
                 timer: 3000,
                 timerProgressBar: true
