@@ -1,0 +1,10314 @@
+DAFTAR KEBUTUHAN ANALISIS DAN OUTPUT
+SERTA RENCANA KERJA TIM
+PENGOLAHAN DAN ANALISIS DATA PERGERAKAN
+BERDASARKAN MOBILE POSITIONING DATA (MPD)
+SELAMA PERIODE ANGKUTAN LEBARAN 2026
+
+Berdasarkan pelaksanaan pengolahan Mobile Positioning Data (MPD) pada periode Natal 2025
+dan Tahun Baru 2026, PT LAPI ITB bersama Badan Kebijakan Transportasi (BKT) telah
+mengidenti kasi sejumlah tantangan teknis yang memengaruhi e siensi proses olah data MPD.
+Evaluasi mendalam menunjukkan adanya hambatan akibat diskrepansi struktur data tabular dari
+Operator Seluler (Opsel), ketidakseragaman pengkodean wilayah, serta perubahan format yang
+menghambat otomatisasi sistem di tengah berjalannya periode pengolahan.
+Sebagai tindak lanjut dari evaluasi tersebut, kami telah menyusun kerangka jadwal kerja yang
+lebih komprehensif dengan menitikberatkan pada fase persiapan data awal (pre-processing).
+Langkah ini mencakup sinkronisasi metadata dan standardisasi format di hulu, sehingga pada
+saat penarikan data dari Opsel dilakukan, seluruh komponen sistem telah teruji dan siap
+beroperasi 100% tanpa kendala teknis mendasar.
+Detail mengenai strategi dan rencana kerja tim tersebut akan dibahas lengkap pada ulasanulasan di bawah ini.
+
+Daftar Kebutuhan Analisis dan Output
+Sebelum membahas rencana kerja tim dalam beberapa pekan ke depan, sebagai upaya mitigasi
+atas jadwal yang padat, kami telah menyusun daftar kebutuhan analisis dan gambaran output
+yang akan dihasilkan dari pekerjaan pengolahan data selama periode angkutan lebaran 2026.
+Daftar analisis dan output ini diharapkan dapat menjadi gambaran awal bagi tim pengembang
+dashboard untuk menyediakan dashboard yang memudahkan pembacaan data selama proses
+olah data MPD harian. Melalui penerapan strategi kerja ini, diharapkan pelaksanaan pengolahan
+data MPD di periode angkutan lebaran 2026 ini akan berjalan lebih sistematis, presisi, dan
+mampu memberikan rekomendasi kebijakan yang lebih cepat bagi tim BKT.
+Tabel lengkap berisi kebutuhan analisis dan gambaran output yang akan dihasilkan pada
+pekerjaan Pengolahan dan Analisis Data Pergerakan Berdasarkan Mobile Positioning Data (MPD)
+Selama Periode Angkutan Lebaran 2026 adalah sebagai berikut:
+
+1
+
+fi
+
+fi
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+fi
+
+No
+
+Konten/Substansi
+
+Slide
+-
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Disclaimer
+
+Poin disclaimer di bawah ini diharapkan dapat
+tercantum pada text box di bagian pembuka
+dashboard (tanggal ikut terupdate mengikuti versi
+le MPD yang diunggah):
+1. Data Operator Seluler (Opsel) yang direkap pada
+pelaporan ini merupakan data yang diterima
+hingga tanggal __ Maret 2026, dengan rincian:
+a. XLSmart: Sudah memberikan data real untuk
+tanggal __ s/d __ Maret 2026 dan data
+forecast forecast __ s/d __ Maret 2026.
+b. IOH: Sudah memberikan data real untuk
+tanggal __ s/d __ Maret 2026 dan data
+forecast forecast __ s/d __ Maret 2026.
+c. Telkomsel: Sudah memberikan data real untuk
+tanggal __ s/d __ Maret 2026 dan data
+forecast forecast __ s/d __ Maret 2026.
+2. Berdasarkan kondisi dan kelengkapan data pada
+tabel, jenis analisis dan visualisasi yang dapat
+disajikan pada tingkat nasional meliputi Origin–
+Destination (OD) antarprovinsi, jumlah
+pergerakan, penggunaan moda, serta
+pergerakan moda per hari.
+3. Sementara itu, untuk wilayah Jabodetabek,
+informasi yang dapat disampaikan pada hari ini
+terbatas pada OD antarwilayah di Jabodetabek
+dan OD Jabodetabek terhadap Provinsi Nasional,
+serta jumlah pergerakan harian.
+4. Perbedaan tingkat kelengkapan dan
+keseragaman data antar Opsel berpotensi
+memengaruhi tingkat akurasi dan konsistensi
+hasil pengolahan Mobile Positioning Data (MPD).
+Oleh karena itu, angka-angka yang disajikan
+dalam paparan ini bersifat sementara dan masih
+berpotensi mengalami perubahan seiring
+dengan pembaruan dan penyempurnaan data.
+
+1
+
+Latar belakang kegiatan MPD
+
+00
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+EXECUTIVE SUMMARY
+
+Pemantauan pergerakan masyarakat pada periode Natal dan Tahun Baru (Nataru) 2025–2026 dilakukan melalui pemanfaatan Mobile Positioning Data (MPD) yang
+diperoleh dari tiga operator seluler, yaitu Telkomsel, Indosat Ooredoo Hutchison (IOH), serta XL/Smartfren. Periode pengamatan yang telah terekam dalam dataset
+saat ini mencakup tanggal realisasi data tanggal 18 Desember 2025 hingga 5 Januari 2026
+Peningkatan mobilitas penduduk pada periode Natal dan Tahun Baru (Nataru) serta Idul Fitri (Mudik) berdampak signifikan terhadap transportasi, logistik, dan
+kesiapan infrastruktur nasional.
+
+Pemanfaatan Mobile Positioning Data (MPD) dari operator seluler memberikan potensi besar untuk memetakan pola pergerakan masyarakat secara nyata, anonim,
+dan real-time. Analisis MPD ini dapat mendukung pengambilan kebijakan berbasis data oleh lembaga pemerintah seperti Kemenhub, Bappenas, tau Komdigi.
+Terdapat 2 klasifikasi data yang disampaikan dan dianalisis oleh masing-masing operator seluler, dengan definisi sebagai berikut:
+• Jumlah Pergerakan (Movement count)
+Merupakan total frekuensi perjalanan yang terjadi per hari selama periode pengamatan. Satu orang dapat dihitung lebih dari satu kali apabila melakukan lebih dari
+satu perjalanan (contoh: berangkat–pulang–beraktivitas lain). Indikator ini menggambarkan intensitas dinamika mobilitas harian.
+• Jumlah Unique Subscriber / Jumlah Orang Periode Nataru (Unique Travellers)
+Merupakan jumlah individu unik yang melakukan perjalanan selama periode 18 Desember 2025 – 5 Januari 2026, dihitung setelah proses cleansing dan
+deduplikasi menggunakan NIK/subscriber ID oleh operator. Seseorang hanya dihitung satu kali meskipun melakukan perjalanan berkali-kali sepanjang periode.
+Dari definisi tersebut, dapat disimpulkan bahwa:
+Jumlah Unik
+Subscriber
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+≤
+
+Jumlah
+Pergerakan
+
+3
+
+2
+
+No
+
+Konten/Substansi
+
+Slide
+2
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Pende nisian jumlah pergerakan
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+00
+
+dan jumlah unique subscriber
+
+EXECUTIVE SUMMARY
+
+NASIONAL
+Hasil pengolahan data dari ketiga opsel untuk unique subscriber (dari tanggal 18 Desember s/d 5 Januari 2026), yaitu:
+
+pada MPD
+
+JUMLAH PERGERAKAN
+
+RATA-RATA
+KOEFISIEN
+
+245,37 Juta
+
+2,13
+
+Pergerakan
+
+3
+
+Hasil pengolahan data dari
+
+115,20 juta
+masyarakat
+
+Jumlah pergerakan Masyarakat pada Periode Nataru 2025 – 2026, dengan nilai realisasi per tanggal 31 Desember 2025 s/d 05 Januari adalah 245.370.093 pergerakan
+dengan puncak pergerakan berada di hari Rabu, 24 Desember 2025 dan Sabtu, 3 Januari 2026 dengan jumlah pergerakan sebanyak 14.963.146 dan 14.984.975
+pergerakan atau sekitar 6,10% dan 6,11% terhadap akumulasi sesuai dengan realisasi data yang diterima;
+
+ketiga opsel untuk unique
+
+Jumlah orang/individu unik subscriber yang melakukan pergerakan pada Periode Nataru 2025 – 2026, dengan nilai realisasi hingga tanggal 5 Januari 2026 adalah
+115,20 juta orang yang bergerak selama Periode Nataru 18 Desember s/d 5 Januari 2026. Data ini menunjukkan bahwa terdapat rata-rata ebih dari satu perjalanan per
+individu selama periode pengamatan, dengan rasio sekitar 2,13 perjalanan per orang, yang sekaligus menggambarkan tingginya aktivitas mobilitas masyarakat
+menjelang dan selama pelaksanaan libur Nataru.
+
+subscriber (Nasional)
+4
+
+JUMLAH ORANG YANG
+MELAKUKAN PERJALANAN
+Jumlah Unik
+Subscriber:
+
+Berdasarkan kontribusi operator, Telkomsel mendominasi perekaman mobilitas dengan menyumbang sekitar 53,56% dari total pergerakan dan 53,07% dari total
+jumlah orang, sementara IOH menyumbang 37,65% pergerakan dan 37,50% jumlah orang, serta XL/Smartfren sebesar 8,79% pergerakan dan 9,43% jumlah orang. Hal
+ini konsisten dengan pangsa pasar pelanggan masing-masing operator sehingga valid sebagai representasi kondisi mobilitas nasional.
+
+Puncak pergerakan berdasarkan
+
+Berdasarkan hasil pengumpulan dan pengolahan data Mobile Positioning Data (MPD) pada periode 18 Desember 2025 hingga 05 Januari 2026, diperoleh gambaran
+bahwa distribusi pergerakan penduduk relatif merata pada setiap hari pengamatan. Hal ini terlihat dari stabilitas tren Jumlah Pergerakan, Jumlah Orang, dan Jumlah
+Unique Subscriber yang tidak menunjukkan lonjakan ekstrem maupun penurunan signifikan pada hari-hari tertentu.
+
+MPD
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+5
+
+4
+
+Jumlah orang/individu unique
+subscriber yang melakukan
+perjalanan
+
+6
+
+Kontribusi setiap opsel terhadap
+total pergerakan MPD
+
+7
+
+Executive
+Summary
+
+Kesimpulan sementara hasil
+pengumpulan dan pengolahan
+data MPD
+
+8
+
+Perbandingan hasil pergerakan
+realisasi MPD dan hasil survei
+prakiraan
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+00
+
+EXECUTIVE SUMMARY
+
+NASIONAL
+14,0%
+12,0%
+10,0%
+
+Perbandingan hasil MPD tahun
+ini dengan tahun-tahun
+sebelumnya
+
+0,0%
+
+Hasil Survei Prakiraan
+
+7,6%
+4,8%
+
+4,9%
+
+5,5%
+
+5,1%
+
+5,3%
+
+Sabtu 20
+Desember
+2025
+
+Minggu 21
+Desember
+2025
+
+Senin 22
+Desember
+2025
+
+6,0%
+4,0%
+
+10,5%
+
+9,9%
+7,9%
+
+8,0%
+
+2,0%
+
+9
+
+Perbandingan Pergerakan
+
+14,4%
+
+16,0%
+
+4,7%
+Jumat 19
+Desember
+2025
+
+4,7%
+Selasa 23
+Desember
+2025
+
+6,6%
+
+6,2%
+
+Rabu 24
+Desember
+2025
+
+5,6%
+
+5,3%
+
+Kamis 25
+Desember
+2025
+
+Jumat 26
+Desember
+2025
+
+5,8%
+
+5,9%
+
+Sabtu 27
+Desember
+2025
+
+5,8%
+
+5,5%
+
+5,4%
+
+3,0%
+
+Minggu 28
+Desember
+2025
+
+Senin 29
+Desember
+2025
+
+Mobile Positioning Data
+
+6,9%
+
+5,1%
+
+5,6%
+
+Selasa 30
+Desember
+2025
+
+Rabu 31
+Desember
+2025
+
+3,7%
+
+5,5%
+
+5,2%
+
+5,0%
+
+5,4%
+
+5,6%
+
+1,3%
+
+0,9%
+
+0,4%
+
+4,2%
+0,3%
+
+Kamis 1
+Jumat 2 Januari Sabtu 3 Januari Minggu 4
+Senin 5 Januari
+Januari 2026
+2026
+2026
+Januari 2026
+2026
+
+Data survei bersifat proyeksi preferensi atau niat perjalanan yang dihimpun sebelum periode Nataru berlangsung. Responden dapat menyatakan rencana perjalanan lebih
+dari satu kali atau memiliki rencana yang akhirnya tidak terealisasi. Hal ini berpotensi menyebabkan overestimation pada angka agregat survei. Sebaliknya, MPD merekam
+pergerakan aktual yang benar – benar terjadi, sehingga total agregatnya lebih konservatif
+
+Pada level harian, MPD cenderung menunjukan angka yang lebih tinggi karena mampu menangkap pergerakan harian berulang (misalnya perjalanan lokal, pulang – pergi,
+atau mobilitas jarak pendek) yang tidak selalu teridentifikasi atau dilaporkan dalam survei. Sementara itu, survei lebih fokus pada perjalanan utama (main trip) seperti
+mudik atau perjalanan jarak jauh, sehingga distribusi hariannya tampak lebih rendah meskipun total agregatnya lebih besar.
+Perbandingan Hasil MPD Tahun 2024 – 2025 dan MPD Tahun 2025 2026
+115.197.227
+
+120.000.000
+
+94.671.708
+
+100.000.000
+80.000.000
+60.000.000
+40.000.000
+
+Berdasarkan hasil agregasi jumlah unique subscriber dari ketiga operator seluler,
+diperoleh estimasi total Masyarakat yang melakukan pergerakan selama periode
+Nataru 2025/2026 sebesar 115.197.227 orang. Angka tersebut lebih besar
+sekitar 21,68% dari estimasi total Masyarakat yang melakukan pergerakan selama
+periode 2024/2025 sebesar 94.671.708 orang.
+
+20.000.000
+0
+
+MPD Tahun 2024 - 2025
+
+MPD Tahun 2025 - 2026
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+10
+
+Hasil pengolahan data dari
+ketiga opsel untuk unique
+subscriber (Intra Jabodetabek
+dan Inter Jabodetabek)
+
+11
+
+Jumlah orang/individu unique
+subsciber yang melakukan
+perjalanan (Intra Jabodetabek
+dan Inter Jabodetabek)
+
+00
+
+EXECUTIVE SUMMARY
+
+JABODETABEK
+Hasil pengolahan data dari ketiga opsel untuk unique subscriber (dari tanggal 18 Desember s/d 5 Januari 2026), yaitu:
+
+fi
+
+Inter Jabodetabek
+
+Intra Jabodetabek
+JUMLAH PERGERAKAN
+INTRA JABODETABEK
+
+RATA-RATA
+KOEFISIEN
+
+JUMLAH ORANG YANG MELAKUKAN
+PERJALANAN (INTRA JABODETABEK)
+
+42,16 juta
+
+2,543
+
+Jumlah Unik
+Subscriber:
+
+pergerakan
+
+16,58 juta
+masyarakat
+
+JUMLAH PERGERAKAN
+INTER JABODETABEK
+
+RATA-RATA
+KOEFISIEN
+
+JUMLAH ORANG YANG MELAKUKAN
+PERJALANAN (INTER JABODETABEK)
+
+51,80 juta
+
+2,543
+
+Jumlah Unik
+Subscriber:
+
+pergerakan
+
+20,37 juta
+masyarakat
+
+Jumlah pergerakan Masyarakat Intra Jabodetabek pada Periode Nataru 2025 – 2026, dengan nilai realisasi per tanggal 31 Desember 2025 s/d 05 Januari adalah 42.158.062
+pergerakan dengan puncak pergerakan berada pada tanggal 20 Desember 2025 dengan jumlah pergerakan sebanyak 2.673.894 pergerakan atau sekitar 6,34% terhadap
+akumulasi data yang diterima.
+Sedangkan untuk jumlah pergerakan Masyarakat Inter Jabodetabek hingga tanggal 05 Januari sebesar 51.797.203 pergerakan dengan puncak pergerakan berada pada tanggal
+20 Desember 2025 dengan jumlah pergerakan 3.329.643 pergerakan atau sekitar 6,43% terhadap akumulasi data yang diterima
+Jumlah orang/individu unik subscriber Masyarakat Intra Jabodetabek yang melakukan pergerakan pada Periode Nataru 2025 – 2026, dengan nilai realisasi hingga tanggal 5
+Januari 2026 adalah sebanyak 16.575.909 orang yang bergerak selama Periode Nataru 18 Desember s/d 5 Januari 2026. Data ini menunjukkan bahwa terdapat rata-rata lebih
+dari satu perjalanan per individu selama periode pengamatan, dengan rasio sekitar 2,543 kali perjalanan per orang, yang sekaligus menggambarkan tingginya aktivitas
+mobilitas masyarakat menjelang dan selama pelaksanaan libur Nataru.
+
+Sedangkan jumlah orang/individu unik subscriber Masyarakat Inter jabodetabek dengan nilai realisasi hingga tanggal 5 Januari 2026 adalah sebanyak 20.365.873 orang. Data
+ini menunjukkan bahwa terdapat rata-rata lebih dari satu perjalanan per individu selama periode pengamatan, dengan rasio sekitar 2,543 kali perjalanan per orang.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+5
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+6
+
+3
+
+No
+
+Konten/Substansi
+
+Slide
+12
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Latar belakang dan metodologi
+MPD
+
+Disediakan oleh Pak Agus, Pak Dani, dan Tim
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+06
+
+DIAGRAM ARSITEKTUR BARU (REAL TIME)
+Diagram Arsitektur Baru (Real-Time)
+
+1
+
+Usulan Arsitektur Baru
+untuk Real-Time MPD
+
+OPSEL MPD
+(Real-Time Stream/API)
+
+PUSH/STREAM (Kafka/API/Webhook)
+
+2
+
+Agar aplikasi web custom dapat
+menarik data secara real-time, perlu
+dibangun arsitektur baru dengan
+komponen ingestion, API, message
+broker, dan data lake modern.
+
+7
+
+Real-Time Ingestion Layer
+(API Gateway / Load Balancer / Traffic Filter & Validator)
+
+3
+
+MPD Ingestion
+API Server (FastAPI/Go)
+
+5
+
+MPD Processing Engine
+(ETL/ELT)
+(Python/Flink/Spark)
+
+4
+
+Message Queue / Stream
+Broker (Kafka/Redis/MQTT)
+
+6
+
+Data Lake / Warehouse
+(BQ, ClickHouse)
+
+Custom Web App (Realtime Maps, Charts, API)
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+13
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+07
+
+PENJELASAN
+
+1. Real-Time
+Ingestion Layer
+
+2. MPD Ingestion
+API Server
+
+3. Message Broker
+/ Streaming Layer
+
+4. Processing
+Engine
+
+5. Data Lake /
+Warehouse
+
+Berfungsi
+menerima data
+dari OPSEL
+secara kontinyu.
+Menggunakan:
+
+Bertugas
+menerima data,
+validasi,
+parsing, dan
+meneruskan ke
+message broker.
+1. FastAPI
+(Python)
+2. Node.js
+3. Go Lang
+(paling cepat).
+
+Diperlukan
+untuk
+menampung
+data
+berkecepatan
+tinggi:
+1.Apache Kafka
+2.Redis Stream
+3.RabbitMQ
+
+Untuk
+pemrosesan
+data real-time:
+1.Apache Flink
+2.Apache Beam
+3.Spark
+Streaming
+4.Python Worker
+(Ringan)
+
+Untuk
+penyimpanan
+jangka panjang:
+1.BigQuery
+2.ClickHouse
+3.PostgreSQL +
+TimescaleDB
+
+1.Nginx
+2.AWS API
+Gateway
+3.Traffic
+
+6. Custom Web
+Application
+Fitur:
+1. Dashboard realtime
+2. Map
+visualizations
+3. API query
+4. Alert pergerakan
+5. Playback
+historis
+Teknologi:
+1. React/Next.js
+2. Leaflet atau
+Mapbox
+3. WebSocket
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+13
+
+Persandingan pergerakan harian
+opsel
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+01
+
+total berdasarkan masing-masing
+
+14
+
+PERSANDINGAN PERGERAKAN HARIAN TOTAL BERDASARKAN OPSEL
+XLSmart
+Jumlah Pergerakan
+Jumlah
+%
+
+Hati, Tanggal
+
+Jumlah Orang
+%
+
+Jumlah Pergerakan
+Jumlah
+%
+
+IOH
+
+TSEL
+
+Jumlah Orang
+Jumlah
+%
+
+Jumlah Pergerakan
+Jumlah
+%
+
+Jumlah Orang
+Jumlah
+
+%
+
+Kamis, 18 Desember 2025
+
+726.333
+
+3,37%
+
+716,54
+
+3,21%
+
+4.123.399
+
+4,46%
+
+3.847.839
+
+4,60%
+
+5.941.439
+
+4,52%
+
+5.510.016
+
+4,52%
+
+Jumat, 19 Desember 2025
+
+823.973
+
+3,82%
+
+811,481
+
+3,64%
+
+4.180.801
+
+4,53%
+
+3.899.367
+
+4,66%
+
+6.315.110
+
+4,81%
+
+5.871.813
+
+4,82%
+
+Sabtu, 20 Desember 2025
+
+1.166.908
+
+5,41%
+
+1.146.320
+
+5,13%
+
+5.061.364
+
+5,48%
+
+4.722.150
+
+5,65%
+
+7.203.591
+
+5,48%
+
+6.697.839
+
+5,49%
+
+Minggu, 21 Desember 2025
+
+1.154.066
+
+5,35%
+
+1.133.862
+
+5,08%
+
+4.599.999
+
+4,98%
+
+4.254.000
+
+5,09%
+
+6.778.964
+
+5,16%
+
+6.287.041
+
+5,16%
+
+933.639
+
+4,33%
+
+919.644
+
+4,12%
+
+4.487.979
+
+4,86%
+
+4.181.706
+
+5,00%
+
+7.514.908
+
+5,72%
+
+7.006.884
+
+5,75%
+
+Selasa, 23 Desember 2025
+
+968.097
+
+4,49%
+
+953.107
+
+4,27%
+
+4.471.956
+
+4,84%
+
+4.166.373
+
+4,98%
+
+5.854.351
+
+4,45%
+
+5.519.352
+
+4,53%
+
+Rabu, 24 Desember 2025
+
+1.108.472
+
+5,14%
+
+1.089.959
+
+4,88%
+
+6.372.374
+
+6,90%
+
+6.022.141
+
+7,20%
+
+7.482.300
+
+5,69%
+
+6.901.600
+
+5,66%
+
+Kamis, 25 Desember 2025
+
+1.342.039
+
+6,22%
+
+1.313.132
+
+5,88%
+
+5.007.182
+
+5,42%
+
+4.640.360
+
+5,55%
+
+7.195.027
+
+5,47%
+
+6.675.246
+
+5,47%
+
+Jumat, 26 Desember 2025
+
+1.238.980
+
+5,75%
+
+1.213.719
+
+5,44%
+
+4.772.830
+
+5,17%
+
+4.418.433
+
+5,29%
+
+6.891.173
+
+5,24%
+
+6.430.114
+
+5,27%
+
+Sabtu, 27 Desember 2025
+
+1.475.616
+
+6,84%
+
+1.445.946
+
+6,48%
+
+5.498.483
+
+5,95%
+
+5.087.421
+
+6,09%
+
+7.410.497
+
+5,64%
+
+6.890.640
+
+5,65%
+
+Minggu, 28 Desember 2025
+
+1.489.130
+
+6,90%
+
+1.460.196
+
+6,54%
+
+5.377.305
+
+5,82%
+
+4.971.654
+
+5,95%
+
+7.304.023
+
+5,56%
+
+6.795.685
+
+5,57%
+
+Senin, 29 Desember 2025
+
+1.133.065
+
+5,25%
+
+1.114.811
+
+4,99%
+
+4.668.682
+
+5,05%
+
+4.296.066
+
+5.14%
+
+7.716.540
+
+5,87%
+
+7.175.680
+
+5,88%
+
+Selasa, 30 Desember 2025
+
+1.139.418
+
+5,28%
+
+1.120.613
+
+5,02%
+
+4.561.960
+
+4,94%
+
+4.232.027
+
+5,06%
+
+6.603.520
+
+5,02%
+
+6.134.814
+
+5,03%
+
+Rabu, 31 Desember 2025
+
+1.022.646
+
+4,74%
+
+1.413.702
+
+6,33%
+
+4.395.668
+
+4,76%
+
+4.258.192
+
+5,09%
+
+6.275.918
+
+4,78%
+
+7.002.444
+
+5,74%
+
+Kamis, 1 Januari 2026
+
+1.104.519
+
+5,12%
+
+1.535.684
+
+6,88%
+
+4.747.587
+
+5,14%
+
+4.672.949
+
+5,59%
+
+6.778.370
+
+5,16%
+
+6.532.113
+
+5,36%
+
+Jumat, 2 Januari 2026
+
+1.175.635
+
+5,45%
+
+1.108.875
+
+4,97%
+
+5.053.269
+
+5,47%
+
+3.864.106
+
+4,62%
+
+7.214.808
+
+5,49%
+
+6.870.771
+
+5,63%
+
+Sabtu, 3 Januari 2026
+
+1.310.417
+
+6,08%
+
+1.287.123
+
+5,77%
+
+5.632.604
+
+6,10%
+
+4.328.607
+
+5,18%
+
+8.041.954
+
+6,12%
+
+5.728.870
+
+4,70%
+
+Minggu, 4 Januari 2026
+
+1.260.013
+
+5,84%
+
+1.174.918
+
+5,26%
+
+5.415.949
+
+5,86%
+
+4.051.216
+
+4,85%
+
+7.732.625
+
+5,88%
+
+7.098.015
+
+5,82%
+
+4,40%
+
+3.948.826
+
+4,27%
+
+3.659.440
+
+4,38%
+
+5.170.746
+
+3,93%
+
+4.808.339
+
+3,94%
+
+100%
+
+92.378.217
+
+100%
+
+83.574.047
+
+100%
+
+131.425.864
+
+100%
+
+Senin, 22 Desember 2025
+
+Senin, 5 Januari 2026
+
+993.046
+
+Total
+
+4,60%
+
+21.566.012
+
+981,597
+
+100%
+
+21.941.229
+
+121.937.276
+
+100%
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+14
+
+Akumulasi pergerakan harian
+
+02
+
+dari seluruh opsel dan
+
+22
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+AKUMULASI PERGERAKAN HARIAN ALL OPERATOR
+Akumulasi
+
+AKUMULASI
+
+Jumlah Pergerakan
+
+Jumlah Orang Harian
+
+Jumlah
+
+%
+
+keterangan singkat terkait jumlah
+
+Kamis, 18 Desember 2025
+
+10.791.171
+
+4,40%
+
+10.074.395
+
+4,39%
+
+Jumat, 19 Desember 2025
+
+11.319.884
+
+4,61%
+
+10.582.661
+
+4,61%
+
+Sabtu, 20 Desember 2025
+
+13.431.863
+
+5,47%
+
+12.566.309
+
+5,48%
+
+%
+
+unique subscribernya
+
+Minggu, 21 Desember 2025
+
+12.533.029
+
+5,11%
+
+11.674.903
+
+5,09%
+
+Senin, 22 Desember 2025
+
+12.936.526
+
+5,27%
+
+12.108.234
+
+5,28%
+
+Selasa, 23 Desember 2025
+
+11.294.404
+
+4,60%
+
+10.638.832
+
+4,64%
+
+Rabu, 24 Desember 2025
+
+14.963.146
+
+6,10%
+
+14.013.700
+
+6,11%
+
+Kamis, 25 Desember 2025
+
+13.544.248
+
+5,52%
+
+12.628.738
+
+5,51%
+
+Jumat, 26 Desember 2025
+
+12.902.983
+
+5,26%
+
+12.062.266
+
+5,26%
+
+Sabtu, 27 Desember 2025
+
+14.384.596
+
+5,86%
+
+13.424.007
+
+5,85%
+
+Minggu, 28 Desember 2025
+
+14.170.458
+
+5,78%
+
+13.227.535
+
+5,77%
+
+Senin, 29 Desember 2025
+
+13.518.287
+
+5,51%
+
+12.586.557
+
+5,53%
+
+Selasa, 30 Desember 2025
+
+12.304.898
+
+5,01%
+
+11.487.454
+
+5,05%
+
+Rabu, 31 Desember 2025
+
+11.694.232
+
+4,77%
+
+12.674.338
+
+5,57%
+
+Kamis, 1 Januari 2026
+
+12.630.476
+
+5,15%
+
+12.740.746
+
+5,60%
+
+Jumat, 2 Januari 2026
+
+13.443.712
+
+5,48%
+
+11.843.752
+
+5,21%
+
+Sabtu, 3 Januari 2026
+
+14.984.975
+
+6,11%
+
+11.344.600
+
+4,99%
+
+Minggu, 4 Januari 2026
+
+14.408.587
+
+5,87%
+
+12.324.149
+
+5,42%
+
+Senin, 5 Januari 2026
+
+10.112.618
+
+4,12%
+
+9.449.376
+
+4,15%
+
+Total
+
+245.370.093
+
+100%
+
+227.452.552
+
+100%
+
+JUMLAH PERGERAKAN
+
+RATA-RATA
+KOEFISIEN
+
+245,37 Juta
+
+2,13
+
+Pergerakan
+
+JUMLAH ORANG YANG
+MELAKUKAN PERJALANAN
+
+115,20 juta
+
+Jumlah Unik
+Subscriber:
+
+masyarakat
+
+• Jumlah orang/individu unik subscriber yang melakukan pergerakan pada Periode
+Nataru 2025 – 2026, dengan nilai realisasi tanggal 18 Desember 2025 s/d 5 Januari 2026
+adalah 115.197.227 orang.
+• Jumlah pergerakan/movement count pada periode nataru adalah sebesar 245.370.093
+pergerakan, dengan puncak pergerakan di tanggal 24 Desember 2025 sebesar
+14.963.146 pergerakan dan 3 Januari 2026 dengan 14.984.975 pergerakan.
+• Dari data akumulasi tersebut maka data ini menunjukkan bahwa terdapat rata-rata lebih
+dari satu perjalanan per individu selama periode pengamatan, dengan rasio sekitar 2,13
+kali perjalanan per orang, yang sekaligus menggambarkan tingginya aktivitas
+mobilitas masyarakat menjelang dan selama pelaksanaan libur Nataru.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+15
+
+Pergerakan harial total
+(Pergerakan per hari dan orang
+per hari) + Tabel rincian jumlah
+pergerakan dan orang per hari
+
+03
+
+23
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+PERGERAKAN HARIAN TOTAL (AKUMULASI)
+
+7,00%
+
+6,15%
+5,53%
+
+6,00%
+5,00%
+
+4,44%
+
+4,66%
+
+5,16%
+
+5,57%
+
+5,32%
+
+PERGERAKAN PER HARI
+
+5,92%
+
+5,83%
+
+5,31%
+
+5,54%
+
+5,60%
+
+5,54%
+
+5,06%
+
+4,65%
+
+5,20%
+
+5,44%
+
+4,92%
+
+4,16%
+
+4,00%
+3,00%
+2,00%
+1,00%
+0,00%
+
+Tanggal
+
+Kamis 18
+Jumat 19
+Sabtu 20
+Minggu 21
+Senin 22
+Selasa 23
+Rabu 24
+Kamis 25
+Jumat 26
+Sabtu 27
+Minggu 28
+Senin 29
+Selasa 30
+Rabu 31
+Kamis 1 Januari Jumat 2 Januari Sabtu 3 Januari
+Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025
+2026
+2026
+2026
+
+H-1
+
+H-2
+
+H-3
+
+H-4
+
+H-5
+
+H-6
+
+H-7
+
+H
+
+H+1
+
+H+2
+
+H+3
+
+H+4
+
+H+5
+
+H+6
+
+H+7
+
+18-Des-25 19-Des-25 20-Des-25 21-Des-25 22-Des-25 23-Des-25 24-Des-25 25-Des-25 26-Des-25 27-Des-25 28-Des-25 29-Des-25 30-Des-25 31-Des-25 01-Jan-26
+
+H+8
+
+H+9
+
+H+10
+
+H+11
+
+02-Jan-26
+
+03-Jan-26
+
+04-Jan-26
+
+05-Jan-26
+
+Jumlah 10.791.171 11.319.884 13.431.863 12.533.029 12.936.526 11.294.404 14.963.146 13.544.248 12.902.983 14.384.596 14.170.458 13,518.287 12,304,898 11.694.232 12.630.476 13.443.712 14.984.975 14.408.587 10,112,618
+
+Minggu 4
+Januari 2026
+
+Senin 5 Januari
+2026
+
+Total pergerakan pada periode
+18 Desember 2025 s/d 5
+Januari 2026 mencapai
+
+Total
+
+245.370.093
+
+245.370.093 Pergerakan
+
+ORANG PER HARI
+7,00%
+
+5,52%
+
+6,00%
+5,00%
+
+4,43%
+
+4,65%
+
+6,16%
+5,13%
+
+5,32%
+
+5,55%
+
+4,68%
+
+5,30%
+
+5,90%
+
+5,82%
+
+5,53%
+
+5,57%
+
+5,05%
+
+5,60%
+
+5,21%
+
+4,99%
+
+5,42%
+4,15%
+
+4,00%
+3,00%
+2,00%
+1,00%
+0,00%
+
+Tanggal
+
+Kamis 18
+Jumat 19
+Sabtu 20
+Minggu 21
+Senin 22
+Selasa 23
+Rabu 24
+Kamis 25
+Jumat 26
+Sabtu 27
+Minggu 28
+Senin 29
+Selasa 30
+Rabu 31
+Kamis 1 Januari Jumat 2 Januari Sabtu 3 Januari Minggu 4 Januari Senin 5 Januari
+Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025
+2026
+2026
+2026
+2026
+2026
+
+H-1
+
+H-2
+
+H-3
+
+H-4
+
+H-5
+
+H-6
+
+H-7
+
+H
+
+H+1
+
+H+2
+
+H+3
+
+18-Des-25
+
+19-Des-25
+
+20-Des-25
+
+21-Des-25
+
+22-Des-25
+
+23-Des-25
+
+24-Des-25
+
+25-Des-25
+
+26-Des-25
+
+27-Des-25
+
+28-Des-25
+
+H+4
+
+H+5
+
+29-Des-25 30-Des-25
+
+H+6
+
+H+7
+
+H+8
+
+H+9
+
+H+10
+
+H+11
+
+31-Des-25
+
+01-Jan-26
+
+02-Jan-26
+
+03-Jan-26
+
+04-Jan-26
+
+05-Jan-26
+
+Jumlah 10.074.395 10.582.661 12.566.309 11.674.903 12.108.234 10.638.832 14.013.700 12.628.738 12.062.266 13.424.007 13.227.535 12,586,557 11,487,454 12,674,338 12,740,746 11,843,752 11,344,600 12,324,149 9,449,376
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+Total
+
+227,452,552
+
+Total pergerakan pada periode
+18 Desember 2025 s/d 5
+Januari 2026 mencapai
+
+227.452.552 Pergerakan
+
+24
+
+4
+
+No
+
+Konten/Substansi
+
+Slide
+16
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Persandingan pergerakan harian
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+04
+
+total berdasarkan masing-masing
+
+PERSANDINGAN PERGERAKAN HARIAN TOTAL BERDASARKAN OPSEL
+PERGERAKAN PER
+HARI
+
+10.000.000
+8.000.000
+
+opsel (Pergerakan per hari dan
+
+6.000.000
+
+XLSmart
+
+4.000.000
+
+IOH
+
+2.000.000
+-
+
+orang per hari)
+
+Tanggal
+XL
+IOH
+TSEL
+
+Tsel
+Kamis 18
+Desember
+2025
+
+H1
+18-Des-25
+
+Jumat 19
+Desember
+2025
+
+H2
+19-Des-25
+
+726.333
+
+823.973
+
+4.123.399
+
+4.180.801
+
+5.941.439
+
+6.315.110
+
+Sabtu 20
+Desember
+2025
+
+Minggu 21
+Desember
+2025
+
+H3
+20-Des-25
+
+Senin 22
+Desember
+2025
+
+H4
+21-Des-25
+
+Selasa 23
+Desember
+2025
+
+H5
+22-Des-25
+
+Rabu 24
+Desember
+2025
+
+Kamis 25
+Desember
+2025
+
+Jumat 26
+Desember
+2025
+
+Sabtu 27
+Desember
+2025
+
+Minggu 28
+Desember
+2025
+
+Senin 29
+Desember
+2025
+
+Selasa 30
+Desember
+2025
+
+Rabu 31
+Desember
+2025
+
+H6
+23-Des-25
+
+H7
+H8
+H9
+24-Des-25 25-Des-25 26-Des-25
+
+H17
+03-Jan-26
+
+H18
+04-Jan-26
+
+H10
+H11
+H12
+H13
+H14
+27-Des-25 28-Des-25 29-Des-25 30-Des-25 31-Des-25
+
+H15
+01-Jan-26
+
+H16
+02-Jan-26
+
+H19
+05-Jan-26
+
+Tanggal
+XL
+IOH
+TSEL
+
+131.42 Juta
+Total Pergerakan
+MPD IOH
+
+Total
+
+1.166.908
+
+1.154.066
+
+933.639
+
+968.097
+
+1.108.472 1.342.039 1.238.980 1.475.616 1.489.130 1.133.065 1.139.418 1.022.646 1.104.519 1.175.635 1.310.417
+
+1.260.013
+
+993.046
+
+5.061.364
+
+4.599.999
+
+4.487.979
+
+4.471.956
+
+6.372.374 5.007.182 4.772.830 5.498.483 5.377.305 4.668.682 4.561.960 4.395.668 4.747.587 5.053.269 5.632.604
+
+5.415.949
+
+3.948.826
+
+92.378.217
+
+7.203.591
+
+6.778.964
+
+7.514.908
+
+5.854.351
+
+7.482.300 7.195.027 6.891.173 7.410.497 7.304.023 7.716.540 6.603.520 6.275.918 6.778.370 7.214.808 8.041.954
+
+7.732.625
+
+5.170.746
+
+131.425.864
+
+92.38 Juta
+
+21.566.012
+
+TOTAL
+
+8.000.000
+7.000.000
+6.000.000
+5.000.000
+4.000.000
+3.000.000
+2.000.000
+1.000.000
+-
+
+Total Pergerakan
+MPD Tsel
+
+Kamis 1 Januari Jumat 2 Januari Sabtu 3 Januari
+Minggu 4
+Senin 5 Januari
+2026
+2026
+2026
+Januari 2026
+2026
+
+245.370.093
+
+Total Pergerakan
+MPD XL
+
+21,57 Juta
+
+ORANG PER
+HARI
+Total Pergerakan
+MPD Tsel
+
+121,94 Juta Orang
+Kamis 18
+Jumat 19
+Sabtu 20
+Minggu 21
+Senin 22
+Selasa 23
+Rabu 24
+Kamis 25
+Jumat 26
+Sabtu 27
+Minggu 28
+Senin 29
+Selasa 30
+Rabu 31
+Kamis 1 Januari Jumat 2 Januari Sabtu 3 Januari Minggu 4 Januari Senin 5 Januari
+Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025 Desember 2025
+2026
+2026
+2026
+2026
+2026
+
+H1
+18-Des-25
+
+H2
+19-Des-25
+
+716.540
+
+811.481
+
+3.847.839
+
+3.899.367
+
+5.510.016
+
+5.871.813
+
+H3
+20-Des-25
+
+H4
+21-Des-25
+
+H5
+22-Des-25
+
+H6
+23-Des-25
+
+H7
+24-Des-25
+
+H8
+25-Des-25
+
+H16
+02-Jan-26
+
+H17
+03-Jan-26
+
+H18
+04-Jan-26
+
+953.107
+
+1.089.959
+
+1.313.132 1.213.719 1.445.946 1.460.196 1.114.811 1.120.613 1.413.702 1.535.684 1.108.875
+
+1.287.123
+
+1.174.918
+
+981.597
+
+4.181.706 4.166.373 6.022.141
+
+4.640.360 4.418.433 5.087.421 4.971.654 4.296.066 4.232.027 4.258.192 4.672.949 3.864.106
+
+4.328.607
+
+4.051.216
+
+3.659.440
+
+83.574.047
+
+6.675.246 6.430.114 6.890.640 6.795.685 7.175.680 6.134.814 5.288.819 5.512.878 5.233.255
+
+5.728.870
+
+7.098.015
+
+4.808.339
+
+121.937.276
+
+1.146.320
+
+1.133.862
+
+4.722.150
+
+4.254.000
+
+6.697.839
+
+6.287.041
+
+7.006.884 5.519.352 6.901.600
+
+919.644
+
+H9
+H10
+H11
+H12
+H13
+H14
+26-Des-25 27-Des-25 28-Des-25 29-Des-25 30-Des-25 31-Des-25
+
+H15
+01-Jan-26
+
+H19
+05-Jan-26
+
+TOTAL
+
+Total
+
+Total Pergerakan
+MPD IOH
+
+83,57 Juta Orang
+
+21.941.229
+
+Total Pergerakan
+MPD XL
+
+21,94 Juta Orang
+
+227.452.552
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+17
+
+O-D Provinsi Asal (10 besar
+
+25
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+05
+
+provinsi asal favorit Nasional) &
+
+O – D PROVINSI (ASAL)
+10 Besar Provinsi Asal Favorit Nasional
+
+Desire line
+
+Rank
+
+Kode
+
+Provinsi Asal
+
+1
+
+32
+
+Jawa Barat
+
+47.725.395
+
+25.02 %
+
+2
+
+35
+
+Jawa Timur
+
+Total Pergerakan
+34.391.430
+
+Persen
+18.03 %
+
+3
+
+33
+
+Jawa Tengah
+
+28.066.655
+
+14.72 %
+
+4
+
+31
+
+Daerah Khusus Ibukota
+Jakarta
+
+23.259.377
+
+12.20 %
+
+5
+
+36
+
+Banten
+
+15.744.587
+
+8.26 %
+
+6
+
+12
+
+Sumatera Utara
+
+13.873.339
+
+7.27 %
+
+7
+
+73
+
+Sulawesi Selatan
+
+7.622.680
+
+4.00 %
+
+8
+
+51
+
+Bali
+
+6.813.711
+
+3.57 %
+
+9
+
+18
+
+Lampung
+
+6.792.756
+
+3.56 %
+
+10
+
+34
+
+Daerah Istimewa
+Yogyakarta
+
+6.431.588
+
+3.37 %
+
+Pada periode 18 Desember 2025 s/d 5 Januari 2026, Provinsi
+Jawa Barat merupakan Provinsi Asal dengan jumlah
+pergerakan terbanyak, yaitu sekitar 47,73 juta pergerakan
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+18
+
+O-D Provinsi Tujuan (10 besar
+
+26
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+06
+
+provinsi tujuan favorit Nasional)
+
+O – D PROVINSI (TUJUAN)
+10 Besar Provinsi Tujuan Favorit Nasional
+
+& Desire line
+
+Rank
+
+Kode
+
+Provinsi Tujuan
+
+1
+
+32
+
+Jawa Barat
+
+46.890.355
+
+24.46 %
+
+2
+
+35
+
+Jawa Timur
+
+Total
+Pergerakan
+34.238.582
+
+Persentase
+
+17.86 %
+
+3
+
+33
+
+Jawa Tengah
+
+28.684.328
+
+14.96 %
+
+4
+
+31
+
+Daerah Khusus Ibukota
+Jakarta
+
+24.457.043
+
+12.76 %
+
+5
+
+12
+
+Sumatera Utara
+
+14.129.889
+
+7.37 %
+
+6
+
+36
+
+Banten
+
+14.128.203
+
+7.37 %
+
+7
+
+73
+
+Sulawesi Selatan
+
+7.775.060
+
+4.06 %
+
+8
+
+34
+
+Daerah Istimewa
+Yogyakarta
+
+7.363.113
+
+3.84 %
+
+9
+
+51
+
+Bali
+
+7.304.871
+
+3.81 %
+
+10
+
+18
+
+Lampung
+
+6.723.308
+
+3.51 %
+
+Pada periode 18 Desember 2025 s/d 5 Januari 2026
+Desember, Provinsi Jawa Barat merupakan Provinsi Tujuan
+dengan jumlah pergerakan terbanyak, yaitu sekitar 46,89
+juta pergerakan
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+19
+
+Top 10 Kab/Kota (10 Besar kab/
+
+08
+
+kota asal favorit nasional dan 10
+
+TOP10 KAB/KOTA
+Top 20 Kab/Kota (Asal - Tujuan
+
+10 Besar Kabupaten/Kota Asal - Tujuan Favorit Nasional
+Tujuan
+
+besar kab/kota tujuan favorit
+nasional)
+
+27
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+Total
+
+Rank
+
+1
+
+Kabupaten Bogor
+
+6,605,521
+
+1
+
+Kabupaten Bogor
+
+7,090,417
+
+2
+
+Kota Administrasi Jakarta
+Utara
+
+5,567,991
+
+2
+
+Kota Administrasi Jakarta
+Pusat
+
+6,591,259
+
+3
+
+Kota Administrasi Jakarta
+Pusat
+
+5,310,961
+
+3
+
+Kota Administrasi Jakarta
+Barat
+
+5,048,594
+
+4
+
+Kabupaten Bekasi
+
+5,191,261
+
+4
+
+Kota Administrasi Jakarta
+Timur
+
+4,608,434
+
+5
+
+Kota Administrasi Jakarta
+Selatan
+
+5,071,861
+
+5
+
+Kota Bandung
+
+4,476,964
+
+6
+
+Kota Bekasi
+
+4,787,990
+
+Kota Administrasi Jakarta
+Selatan
+
+4,301,486
+
+6
+
+7
+
+Kabupaten Tangerang
+
+4,645,923
+
+7
+
+Kota Bekasi
+
+4,181,953
+
+8
+
+Kota Surabaya
+
+3,929,915
+
+9
+
+Kota Administrasi Jakarta
+Utara
+
+3,872,823
+
+10
+
+Kabupaten Bekasi
+
+3,847,819
+
+Rank
+
+Pergerakan
+Nasional
+
+Kabupaten/Kota
+
+8
+
+Kota Surabaya
+
+4,141,025
+
+9
+
+Kota Bandung
+
+4,120,218
+
+10
+
+Kota Tangerang
+
+3,990,261
+
+Kabupaten/Kota
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+20
+
+Mode share (pemilihan moda
+
+Total
+
+28
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+09
+
+MODE SHARE (Pergerakan)
+
+transportasi) berdasarkan jumlah
+pergerakan dan jumlah orang
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+29
+
+5
+
+No
+
+Konten/Substansi
+
+Slide
+21
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Pergerakan harian berdasarkan
+mode share (pemilihan moda
+transportasi)
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+10
+
+PERGERAKAN HARIAN BERDASARKAN MODE SHARE (1/5)
+MOBIL
+
+3.500.000
+3.000.000
+
+2.000.000
+
+2.582.067
+
+2.478.402
+
+2.500.000
+
+2.205.947
+
+2.817.494
+
+2.682.069
+2.443.291
+
+2.306.408
+
+Total Pergerakan
+MOBIL
+
+2.921.264
+2.605.357
+
+2.538.206
+
+2.619.444
+
+2.134.859
+
+1.951.613
+
+1.850.755
+
+44,52 Juta
+
+2.538.672
+
+2.433.167
+
+2.386.050
+
+1.535.771
+
+1.488.271
+
+1.500.000
+1.000.000
+500.000
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+7.451.117
+
+7.208.692
+
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+8.107.273
+
+8.003.255
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+8.099.378
+
+8.266.831
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+8.440.608
+
+8.760.958
+
+MOTOR
+Total Pergerakan
+MOTOR
+
+12.000.000
+9.677.172
+
+10.000.000
+8.000.000
+
+8.300.988
+7.136.426
+
+8.019.633
+
+7.383.119
+
+8.897.703
+
+7.794.235
+
+8.012.766
+
+8.350.303
+
+153,54 Juta
+
+8.427.819
+7.197.257
+
+6.000.000
+4.000.000
+2.000.000
+-
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+Disclaimer :
+Data real 18 Des 2025 – 05 Jan 2026 merupakan data gabungan dari 3 opsel.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+10
+
+30
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+PERGERAKAN HARIAN BERDASARKAN MODE SHARE (2/5)
+BUS AKAP
+112.525
+
+120.000
+100.000
+80.000
+
+132.501
+
+132.353
+
+140.000
+
+72.546
+
+83.659
+
+81.032
+
+122.765
+
+122.483
+
+117.069
+
+116.590
+
+105.977
+
+104.595
+
+95.514
+
+108.835
+
+103.534
+
+Total Pergerakan
+BUS AKAP
+
+108.204
+
+1,93 Juta
+
+81.974
+
+78.423
+
+52.402
+
+60.000
+40.000
+20.000
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+391.835
+
+399.089
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+BUS AKDP
+500.000
+450.000
+400.000
+350.000
+300.000
+250.000
+200.000
+150.000
+100.000
+50.000
+-
+
+395.828
+
+336.282
+
+309.658
+
+397.891
+
+433.778
+375.485
+
+334.114
+
+367.645
+
+385.431
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+392.843
+
+367.288
+
+259.347
+
+226.419
+
+Kamis, 18
+Desember
+2025
+
+372.419
+
+366.023
+
+Total Pergerakan
+BUS AKDP
+
+6,54 Juta
+221.449
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+204.702
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+Disclaimer :
+Data real 18 Des 2025 – 05 Jan 2026 merupakan data gabungan dari 3 opsel.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+10
+
+31
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+PERGERAKAN HARIAN BERDASARKAN MODE SHARE (3/5)
+KERETA API (WHOOSH)
+
+16.000
+
+12.000
+10.000
+
+14.255
+
+13.314
+
+14.000
+
+10.180
+
+12.848
+9.852
+
+8.633
+
+15.200
+
+14.342
+
+13.347
+11.824
+
+9.789
+
+14.137
+11.054
+
+10.613
+
+12.156
+
+Total Pergerakan
+WHOOSH
+
+12.767
+11.196
+
+224,1 ribu
+
+10.146
+
+8.412
+
+8.000
+6.000
+4.000
+2.000
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+717.930
+
+729.938
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+PESAWAT
+900.000
+800.000
+600.000
+500.000
+
+790.416
+
+729.575
+
+700.000
+
+Total Pergerakan
+ANGKUTAN UDARA
+
+725.416
+612.568
+
+574.184
+
+557.286
+
+533.055
+
+466.438
+
+851.331
+
+680.143
+
+613.928
+
+583.827
+
+538.624
+
+11,98 juta
+
+564.672
+
+768.544
+
+546.890
+397.226
+
+400.000
+300.000
+200.000
+100.000
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+Disclaimer :
+Data real 18 Des 2025 – 05 Jan 2026 merupakan data gabungan dari 3 opsel.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+10
+
+32
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+PERGERAKAN HARIAN BERDASARKAN MODE SHARE (4/5)
+KERETA API (PERKOTAAN)
+
+900.000
+
+600.000
+
+823.882
+
+789.457
+
+800.000
+700.000
+
+782.408
+
+695.463
+
+745.160
+673.635
+
+577.506
+
+784.799
+
+781.551
+
+737.058
+
+648.667
+
+570.082
+
+550.037
+
+724.625
+
+Total Pergerakan
+KA PERKOTAAN
+
+646.561
+
+12,61 juta
+
+626.045
+
+538.564
+467.260
+
+451.699
+
+500.000
+400.000
+300.000
+200.000
+100.000
+-
+
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+109.893
+
+113.623
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+KERETA API (JARAK JAUH)
+140.000
+
+100.000
+80.000
+
+104.802
+
+123.618
+
+123.286
+
+122.990
+
+120.000
+
+102.709
+
+128.603
+114.351
+
+128.961
+
+125.742
+112.578
+
+96.371
+
+105.131
+
+108.356
+
+80.301
+
+Total Pergerakan
+2,05 juta
+KA ANTAR KOTA
+107.206
+71.394
+
+69.904
+
+60.000
+40.000
+20.000
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+Disclaimer :
+Data real 18 Des 2025 – 05 Jan 2026 merupakan data gabungan dari 3 opsel.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+10
+
+33
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+PERGERAKAN HARIAN BERDASARKAN MODE SHARE (5/5)
+Total Pergerakan
+PENYEBERANGAN
+
+160.000
+140.000
+
+123.079
+
+120.000
+100.000
+
+96.375
+
+126.594
+
+139.071
+
+126.995
+
+138.806
+
+107.265
+
+138.391
+
+137.471
+124.484
+
+132.566
+
+119.489
+
+110.871
+
+KAPAL PENYEBERANGAN
+
+2,35 juta
+131.655
+
+135.686
+
+150.507
+
+138.291
+103.280
+
+71.789
+
+80.000
+60.000
+40.000
+20.000
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+403.349
+
+402.747
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+KAPAL LAUT
+450.000
+
+406.941
+
+400.000
+350.000
+300.000
+
+355.748
+
+378.461
+
+398.568
+
+410.443
+365.934
+
+399.605
+338.594
+
+308.282
+
+291.419
+
+366.815
+
+394.448
+
+379.037
+
+367.309
+
+364.494
+
+229.789
+
+250.000
+
+Total Pergerakan
+KAPAL LAUT
+
+6,75 juta
+185.450
+
+200.000
+150.000
+100.000
+50.000
+Kamis, 18
+Desember
+2025
+
+Jumat, 19
+Desember
+2025
+
+Sabtu, 20
+Desember
+2025
+
+Minggu, 21
+Desember
+2025
+
+Senin, 22
+Desember
+2025
+
+Selasa, 23
+Desember
+2025
+
+Rabu, 24
+Desember
+2025
+
+Kamis, 25
+Desember
+2025
+
+Jumat, 26
+Desember
+2025
+
+Sabtu, 27
+Desember
+2025
+
+Minggu, 28
+Desember
+2025
+
+Senin, 29
+Desember
+2025
+
+Selasa, 30
+Desember
+2025
+
+Rabu, 31
+Desember
+2025
+
+Kamis, 1
+Jumat, 2
+Sabtu, 3
+Minggu, 4
+Senin, 5
+Januari 2026 Januari 2026 Januari 2026 Januari 2026 Januari 2026
+
+Disclaimer :
+Data real 18 Des 2025 – 05 Jan 2026 merupakan data gabungan dari 3 opsel.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+34
+
+6
+
+No
+
+Konten/Substansi
+
+Slide
+22
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Persandingan pergerakan harian
+total berdasarkan masing-masing
+opsel (Intra Jabodetabek)
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+01
+
+PERSANDINGAN PERGERAKAN HARIAN TOTAL (INTRA JABODETABEK)
+DATA REAL
+XL
+
+Waktu
+
+TSEL
+
+IOH
+
+Jumlah Pergerakan
+
+(%)
+
+Jumlah Orang
+
+(%)
+
+Jumlah
+Pergerakan
+
+(%)
+
+Jumlah Orang
+
+(%)
+
+Jumlah Pergerakan
+
+(%)
+
+Jumlah Orang
+
+(%)
+
+160.634
+
+3,13%
+
+158.286
+
+3,14%
+
+1.071.586
+
+6,10%
+
+1.069.685
+
+6,10%
+
+1.005.041
+
+5,16%
+
+941.481
+
+5,19%
+
+183.286
+
+3,57%
+
+180.398
+
+3,58%
+
+1.129.295
+
+6,43%
+
+1.126.617
+
+6,43%
+
+1.001.063
+
+5,14%
+
+937.535
+
+5,17%
+
+294.082
+
+5,72%
+
+288.261
+
+5,72%
+
+1.246.585
+
+7,10%
+
+1.244.121
+
+7,10%
+
+1.133.227
+
+5,82%
+
+1.057.874
+
+5,83%
+
+258.917
+
+5,04%
+
+253.779
+
+5,03%
+
+873.264
+
+4,97%
+
+871.400
+
+4,97%
+
+949.292
+
+4,88%
+
+878.165
+
+4,84%
+
+193.753
+
+3,77%
+
+190.823
+
+3,78%
+
+1.065.369
+
+6,07%
+
+1.063.764
+
+6,07%
+
+1.005.463
+
+5,17%
+
+941.335
+
+5,19%
+
+209.933
+
+4,09%
+
+206.758
+
+4,10%
+
+799.419
+
+4,55%
+
+798.063
+
+4,55%
+
+1.004.256
+
+5,16%
+
+939.792
+
+5,18%
+
+245.747
+
+4,78%
+
+241.674
+
+4,79%
+
+880.816
+
+5,02%
+
+878.557
+
+5,01%
+
+1.508.323
+
+7,75%
+
+1.430.281
+
+7,89%
+
+339.533
+
+6,61%
+
+331.516
+
+6,57%
+
+952.687
+
+5,43%
+
+950.851
+
+5,43%
+
+958.336
+
+4,92%
+
+891.205
+
+4,91%
+
+287.464
+
+5,59%
+
+281.764
+
+5,59%
+
+836.496
+
+4,76%
+
+834.854
+
+4,76%
+
+952.407
+
+4,89%
+
+888.002
+
+4,90%
+
+403.275
+
+7,85%
+
+394.419
+
+7,82%
+
+891.058
+
+5,07%
+
+889.578
+
+5,08%
+
+1.117.795,0
+
+5,74%
+
+1.036.082
+
+5,71%
+
+354.239
+
+6,89%
+
+346.253
+
+6,87%
+
+810.590
+
+4,62%
+
+809.198
+
+4,62%
+
+983.000
+
+5,05%
+
+909.051
+
+5,01%
+
+240.671
+
+4,68%
+
+237.090
+
+4,70%
+
+1.001.620
+
+5,70%
+
+1.000.140
+
+5,71%
+
+1.028.656
+
+5,29%
+
+955.148
+
+5,27%
+
+256.405
+
+4,99%
+
+252.285
+
+5,00%
+
+838.571
+
+4,78%
+
+836.995
+
+4,78%
+
+957.373
+
+4,92%
+
+893.906
+
+4,93%
+
+350.245
+
+6,82%
+
+343.724
+
+6,82%
+
+872.340
+
+4,97%
+
+870.645
+
+4,97%
+
+1.008.922
+
+5,18%
+
+937.264
+
+5,17%
+
+344.364
+
+6,70%
+
+336.967
+
+6,68%
+
+867.570
+
+4,94%
+
+866.061
+
+4,94%
+
+1.107.076
+
+5,69%
+
+1.027.943
+
+5,67%
+
+243.616
+
+4,74%
+
+239.014
+
+4,74%
+
+900.766
+
+5,13%
+
+899.243
+
+5,13%
+
+880.797
+
+4,53%
+
+819.831
+
+4,52%
+
+310.422
+
+6,04%
+
+304.721
+
+6,04%
+
+714.099
+
+4,07%
+
+712.650
+
+4,07%
+
+1.006.858
+
+5,17%
+
+931.323
+
+253.559
+
+4,93%
+
+249.498
+
+4,95%
+
+840.402
+
+4,79%
+
+838.299
+
+4,78%
+
+905.096
+
+4,65%
+
+834.170
+
+207.913
+
+4,05%
+
+205.519
+
+4,08%
+
+965.769
+
+5,50%
+
+964.342
+
+5,50%
+
+948.721
+
+4,87%
+
+882.391
+
+4,87%
+
+5.138.058
+
+100,00%
+
+5.042.749
+
+100,00%
+
+17.558.302
+
+100,00%
+
+17.525.063
+
+100,00%
+
+19.461.702
+
+100,00%
+
+18.132.779
+
+100,00%
+
+18 Desember 2025
+19 Desember 2025
+20 Desember 2025
+21 Desember 2025
+22 Desember 2025
+23 Desember 2025
+24 Desember 2025
+25 Desember 2025
+26 Desember 2025
+27 Desember 2025
+28 Desember 2025
+29 Desember 2025
+30 Desember 2025
+31 Desember 2025
+1 Januari 2026
+2 Januari 2026
+3 Januari 2026
+4 Januari 2026
+5 Januari 2026
+Total
+
+5,14%
+4,60%
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+23
+
+Akumulasi pergerakan harian
+dari seluruh opsel dan
+keterangan singkat terkait jumlah
+unique subscribernya (Intra
+Jabodetabek)
+
+36
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+02
+
+PERSANDINGAN PERGERAKAN UNIQUE SUBS HARIAN TOTAL (INTRA JABODETABEK)
+DATA REAL
+
+Waktu
+
+(%)
+
+Jumlah orang
+
+(%)
+
+18 Desember 2025
+
+2.237.261
+
+5,31%
+
+2.169.452
+
+5,33%
+
+19 Desember 2025
+
+2.313.644
+
+5,49%
+
+2.244.550
+
+5,51%
+
+20 Desember 2025
+
+Jumlah Pergerakan
+
+2.673.894
+
+6,34%
+
+2.590.256
+
+6,36%
+
+21 Desember 2025
+
+2.081.473
+
+4,94%
+
+2.003.344
+
+4,92%
+
+22 Desember 2025
+
+2.264.585
+
+5,37%
+
+2.195.922
+
+5,40%
+
+23 Desember 2025
+
+2.013.608
+
+4,78%
+
+1.944.613
+
+4,78%
+
+24 Desember 2025
+
+2.634.886
+
+6,25%
+
+2.550.512
+
+6,27%
+
+25 Desember 2025
+
+2.250.556
+
+5,34%
+
+2.173.572
+
+5,34%
+
+26 Desember 2025
+
+2.076.367
+
+4,93%
+
+2.004.620
+
+4,93%
+
+27 Desember 2025
+
+2.412.128
+
+5,72%
+
+2.320.079
+
+5,70%
+
+28 Desember 2025
+
+2.147.829
+
+5,09%
+
+2.064.502
+
+5,07%
+
+29 Desember 2025
+
+2.270.947
+
+5,39%
+
+2.192.378
+
+5,39%
+
+30 Desember 2025
+
+2.052.349
+
+4,87%
+
+1.983.186
+
+4,87%
+
+JUMLAH PERGERAKAN
+INTRA JABODETABEK
+
+RATA-RATA
+KOEFISIEN
+
+JUMLAH ORANG YANG MELAKUKAN
+PERJALANAN (INTRA JABODETABEK)
+
+42,16 juta
+
+2,543
+
+Jumlah Unik
+Subscriber:
+
+pergerakan
+
+16,58 juta
+masyarakat
+
+• Jumlah unique subscriber yang melakukan pergerakan pada Periode Nataru
+2025 – 2026 di wilayah Jabodetabek pada tanggal 18 Desember 2025 - 5 Januari
+2026 (realisasi) sebanyak 16.575.909 orang.
+• Jumlah pergerakan/movement count di wilayah Jabodetabek sebesar 42.158.062
+pergerakan.
+
+31 Desember 2025
+
+2.231.507
+
+5,29%
+
+2.151.633
+
+5,29%
+
+• Dari data akumulasi tersebut maka data ini menunjukkan bahwa terdapat rata-rata
+
+1 Januari 2026
+
+2.319.010
+
+5,50%
+
+2.230.971
+
+5,48%
+
+lebih dari satu perjalanan per individu selama periode pengamatan, dengan rasio
+
+2 Januari 2026
+
+2.025.179
+
+4,80%
+
+1.958.088
+
+4,81%
+
+sekitar 2,542 kali perjalanan per orang
+
+3 Januari 2026
+
+2.031.379
+
+4,82%
+
+1.948.694
+
+4,79%
+
+4 Januari 2026
+
+1.999.057
+
+4,74%
+
+1.921.967
+
+4,72%
+
+5 Januari 2026
+
+2.122.403
+
+5,03%
+
+2.052.252
+
+5,04%
+
+42.158.062
+
+100,00%
+
+40.700.591
+
+100,00%
+
+Total
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+24
+
+Pergerakan harian total
+(pergerakan per hari dan orang
+per hari) untuk Intra
+Jabodetabek
+
+37
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+03
+
+AKUMULASI PERGERAKAN HARIAN TOTAL (INTRA JABODETABEK)
+PERGERAKAN PER HARI
+
+3.000.000
+
+6,34%
+
+2.500.000
+
+6,25%
+
+5,49%
+
+5,31%
+
+5,37%
+
+4,94%
+
+5,72%
+
+5,34%
+
+5,39%
+
+5,09%
+
+4,93%
+
+4,78%
+
+5,50%
+
+5,29%
+
+4,87%
+
+4,82%
+
+4,80%
+
+5,03%
+
+4,74%
+
+2.000.000
+1.500.000
+1.000.000
+500.000
+
+18 Desember
+2025
+Tanggal
+
+19 Desember
+2025
+
+20 Desember
+2025
+
+21 Desember
+2025
+
+22 Desember
+2025
+
+23 Desember
+2025
+
+24 Desember
+2025
+
+25 Desember
+2025
+
+26 Desember
+2025
+
+27 Desember
+2025
+
+28 Desember
+2025
+
+29 Desember
+2025
+
+30 Desember
+2025
+
+31 Desember
+2025
+
+1 Januari 2026 2 Januari 2026 3 Januari 2026 4 Januari 2026 5 Januari 2026
+
+H-7
+
+H-6
+
+H-5
+
+H-4
+
+H-3
+
+H-2
+
+H-1
+
+H
+
+H+1
+
+H+2
+
+H+3
+
+H+4
+
+H+5
+
+H+6
+
+H+7
+
+H+8
+
+H+9
+
+H+10
+
+H+11
+
+18 Des 25
+
+19 Des 25
+
+20 Des 25
+
+21 Des 25
+
+22 Des 25
+
+23 Des 25
+
+24 Des 25
+
+25 Des 25
+
+26 Des 25
+
+27 Des 25
+
+28 Des 25
+
+29 Des 25
+
+30 Des 25
+
+31 Des 25
+
+01-Jan-26
+
+02-Jan-26
+
+03-Jan-26
+
+04-Jan-26
+
+05-Jan-26
+
+2.673.894
+
+2.081.473
+
+2.264.585
+
+2.013.608
+
+2.634.886
+
+2.250.556
+
+2.076.367
+
+2.412.128
+
+2.147.829
+
+2.270.947
+
+2.052.349
+
+2.231.507
+
+2.319.010
+
+2.025.179
+
+Pergerakan
+
+2.237.261
+
+2.313.644
+
+2.031.379
+
+1.999.057
+
+Total
+
+2.122.403 42.158.062
+
+Total
+pergerakan
+realisasi
+berdasarkan ketiga opsel pada
+periode 18 Des – 5 Jan 2026
+mencapai
+
+42.158.062 Pergerakan
+
+ORANG PER HARI
+3.000.000
+
+6,36%
+
+2.500.000
+
+6,27%
+
+5,51%
+
+5,33%
+
+5,40%
+
+4,92%
+
+5,70%
+
+5,34%
+
+5,39%
+
+5,07%
+
+4,93%
+
+4,78%
+
+2.000.000
+
+5,48%
+
+5,29%
+
+4,87%
+
+4,81%
+
+4,79%
+
+4,72%
+
+5,04%
+
+1.500.000
+1.000.000
+500.000
+
+18 Desember
+2025
+
+Tanggal
+
+Orang
+
+19 Desember
+2025
+
+20 Desember
+2025
+
+21 Desember
+2025
+
+22 Desember
+2025
+
+23 Desember
+2025
+
+H-7
+
+H-6
+
+H-5
+
+H-4
+
+H-3
+
+H-2
+
+H-1
+
+18 Des 25
+
+19 Des 25
+
+20 Des 25
+
+21 Des 25
+
+22 Des 25
+
+23 Des 25
+
+24 Des 25
+
+2.169.452
+
+2.244.550
+
+2.590.256
+
+2.003.344
+
+2.195.922
+
+1.944.613
+
+24 Desember
+2025
+H
+
+25 Desember
+2025
+
+H+1
+
+25 Des 25
+
+2.550.512 2.173.572
+
+26 Desember
+2025
+
+H+2
+
+26 Des 25
+
+27 Desember
+2025
+
+28 Desember
+2025
+
+29 Desember
+2025
+
+H+3
+
+H+4
+
+H+5
+
+H+6
+
+27 Des 25 28 Des 25
+
+29 Des 25
+
+30 Des 25
+
+31 Des 25
+
+2.004.620
+
+2.320.079
+
+2.064.502
+
+2.192.378
+
+1.983.186 2.151.633
+
+30 Desember
+2025
+
+31 Desember
+2025
+
+1 Januari 2026 2 Januari 2026 3 Januari 2026 4 Januari 2026 5 Januari 2026
+
+H+7
+
+H+8
+
+H+9
+
+01-Jan-26
+
+02-Jan-26
+
+03-Jan-26
+
+04-Jan-26
+
+05-Jan-26
+
+1.948.694
+
+1.921.967
+
+2.052.252 40.700.591
+
+2.230.971 1.958.088
+
+H+10
+
+H+11
+
+Total
+
+Total realisasi pelaku perjalanan
+(orang) berdasarkan ketiga opsel
+pada periode 18 Des – 5 Jan 2026
+mencapai
+
+40.700.591 Orang
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+5,50%
+Total Pergerakan
+MPD XL
+
+Total Pergerakan
+MPD IOH
+
+5,14 Juta
+
+19,46 Juta
+
+4,05%
+
+4,93%
+
+4,74%
+
+6,04%
+
+6,82%
+
+6,70%
+
+4,68%
+
+4,99%
+
+7,85%
+
+6,89%
+
+5,59%
+
+4,78%
+
+4,09%
+
+5,04%
+
+5,72%
+
+600.000
+
+200.000
+
+6,61%
+
+800.000
+
+400.000
+
+4,79%
+4,65%
+
+5,13%
+4,53%
+
+4,07%
+
+4,97%
+5,18%
+
+5,17%
+
+PERGERAKAN PER HARI
+
+4,94%
+5,69%
+
+5,70%
+5,29%
+
+4,78%
+4,92%
+
+5,07%
+5,74%
+
+IOH
+
+4,62%
+5,05%
+
+5,43%
+4,92%
+
+Tsel
+4,76%
+4,89%
+
+6,07%
+5,17%
+
+XL
+
+5,02%
+
+1.000.000
+
+4,55%
+5,16%
+
+7,10%
+5,82%
+
+4,97%
+4,88%
+
+1.200.000
+
+7,75%
+
+AKUMULASI PERGERAKAN HARIAN TOTAL BERDASARKAN OPSEL (INTRA JABODETABEK)
+6,10%
+5,16%
+
+opsel (Intra Jabodetabek)
+
+04
+1.600.000
+1.400.000
+
+6,43%
+5,14%
+
+total berdasarkan masing-masing
+
+3,57%
+
+Akumulasi pergerakan harian
+
+3,13%
+
+25
+
+38
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+Total Pergerakan
+MPD TSEL
+
+17,56 Juta
+
+18 Desember 19 Desember 20 Desember 21 Desember 22 Desember 23 Desember 24 Desember 25 Desember 26 Desember 27 Desember 28 Desember 29 Desember 30 Desember 31 Desember 1 Januari 2026 2 Januari 2026 3 Januari 2026 4 Januari 2026 5 Januari 2026
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+
+H-1
+24 Des 25
+245.747
+1.508.323
+880.816
+2.634.886,0
+
+H+1
+26 Des 25
+287.464
+952.407
+836.496
+2.076.367,0
+
+H+2
+H+3
+27 Des 25
+28 Des 25
+403.275
+354.239
+1.117.795
+983.000
+891.058
+810.590
+2.412.128,0 2.147.829,0
+
+H+4
+29 Des 25
+240.671
+1.028.656
+1.001.620
+2.270.947,0
+
+H+5
+30 Des 25
+256.405
+957.373
+838.571
+2.052.349,0
+
+200.000
+
+H+9
+03-Jan-26
+310.422
+1.006.858
+714.099
+2.031.379,0
+
+H+10
+04-Jan-26
+253.559
+905.096
+840.402
+1.999.057,0
+
+H+11
+05-Jan-26
+207.913
+948.721
+965.769
+2.122.403,0
+
+Total
+5.138.058,0
+19.461.702,0
+17.558.302,0
+42.158.062,0
+
+5,50%
+4,87%
+
+4,78%
+4,60%
+
+5,13%
+4,52%
+
+4,07%
+5,14%
+6,04%
+
+4,74%
+
+6,68%
+
+6,82%
+
+5,00%
+
+4,70%
+
+7,82%
+
+6,87%
+
+4,95%
+
+4,97%
+5,17%
+
+4,94%
+5,67%
+
+5,71%
+5,27%
+
+4,78%
+4,93%
+
+4,76%
+4,90%
+5,59%
+
+6,57%
+
+4,79%
+
+4,10%
+
+3,78%
+
+5,72%
+
+5,03%
+
+3,58%
+
+3,14%
+
+400.000
+
+H+8
+02-Jan-26
+243.616
+880.797
+900.766
+2.025.179,0
+
+ORANG PER HARI
+
+800.000
+600.000
+
+H+6
+H+7
+31 Des 25
+01-Jan-26
+350.245
+344.364
+1.008.922
+1.107.076
+872.340
+867.570
+2.231.507,0 2.319.010,0
+
+IOH
+5,08%
+5,71%
+
+Tsel
+
+5,43%
+4,91%
+
+XL
+
+H
+25 Des 25
+339.533
+958.336
+952.687
+2.250.556,0
+
+4,62%
+5,01%
+
+H-2
+23 Des 25
+209.933
+1.004.256
+799.419
+2.013.608,0
+
+7,89%
+
+H-3
+22 Des 25
+193.753
+1.005.463
+1.065.369
+2.264.585,0
+
+5,01%
+
+1.000.000
+
+H-4
+21 Des 25
+258.917
+949.292
+873.264
+2.081.473,0
+
+6,07%
+5,19%
+
+6,10%
+5,19%
+
+6,43%
+5,17%
+
+1.200.000
+
+7,10%
+5,83%
+
+1.600.000
+1.400.000
+
+H-5
+20 Des 25
+294.082
+1.133.227
+1.246.585
+2.673.894,0
+
+4,97%
+4,84%
+
+XL
+IOH
+TSEL
+TOTAL
+
+H-6
+19 Des 25
+183.286
+1.001.063
+1.129.295
+2.313.644,0
+
+4,55%
+5,18%
+
+H-7
+18 Des 25
+160.634
+1.005.041
+1.071.586
+2.237.261,0
+
+Tanggal
+
+Total Pergerakan
+MPD XL
+
+Total Pergerakan
+MPD IOH
+
+5,04 Juta
+
+18,13 Juta
+
+Total Pergerakan
+MPD TSEL
+
+17,52 Juta
+
+18 Desember 19 Desember 20 Desember 21 Desember 22 Desember 23 Desember 24 Desember 25 Desember 26 Desember 27 Desember 28 Desember 29 Desember 30 Desember 31 Desember 1 Januari 2026 2 Januari 2026 3 Januari 2026 4 Januari 2026 5 Januari 2026
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+
+H-7
+18 Des 25
+158.286
+941.481
+1.069.685
+2.169.452
+
+Tanggal
+XL
+IOH
+TSEL
+TOTAL
+
+H-6
+19 Des 25
+180.398
+937.535
+1.126.617
+2.244.550
+
+H-5
+20 Des 25
+288.261
+1.057.874
+1.244.121
+2.590.256
+
+H-4
+21 Des 25
+253.779
+878.165
+871.400
+2.003.344
+
+H-3
+22 Des 25
+190.823
+941.335
+1.063.764
+2.195.922
+
+H-2
+23 Des 25
+206.758
+939.792
+798.063
+1.944.613
+
+H-1
+24 Des 25
+241.674
+1.430.281
+878.557
+2.550.512
+
+H
+25 Des 25
+331.516
+891.205
+950.851
+2.173.572
+
+H+1
+26 Des 25
+281.764
+888.002
+834.854
+2.004.620
+
+H+2
+27 Des 25
+394.419
+1.036.082
+889.578
+2.320.079
+
+H+3
+28 Des 25
+346.253
+909.051
+809.198
+2.064.502
+
+H+4
+29 Des 25
+237.090
+955.148
+1.000.140
+2.192.378
+
+H+5
+30 Des 25
+252.285
+893.906
+836.995
+1.983.186
+
+H+6
+31 Des 25
+343.724
+937.264
+870.645
+2.151.633
+
+H+7
+01-Jan-26
+336.967
+1.027.943
+866.061
+2.230.971
+
+H+8
+02-Jan-26
+239.014
+819.831
+899.243
+1.958.088
+
+H+9
+03-Jan-26
+304.721
+931.323
+712.650
+1.948.694
+
+H+10
+04-Jan-26
+249.498
+834.170
+838.299
+1.921.967
+
+H+11
+05-Jan-26
+205.519
+882.391
+964.342
+2.052.252
+
+Total
+5.042.749
+18.132.779
+17.525.063
+40.700.591
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+26
+
+Persandingan pergerakan harian
+total berdasarkan masing-masing
+opsel (Inter Jabodetabek)
+
+05
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+PERSANDINGAN PERGERAKAN HARIAN TOTAL (INTER JABODETABEK)
+REAL
+Waktu
+
+XL
+Jumlah Pergerakan
+
+TSEL
+Jumlah Orang
+
+(%)
+
+(%)
+
+Jumlah Orang
+
+(%)
+
+194.305
+
+3,14%
+
+191.406
+
+3,15%
+
+1.218.346
+
+5,91%
+
+1.216.349
+
+5,93%
+
+19 Desember 2025
+
+223.190
+
+3,60%
+
+219.470
+
+3,61%
+
+1.310.938
+
+6,36%
+
+1.309.351
+
+6,38%
+
+20 Desember 2025
+
+357.878
+
+5,77%
+
+350.628
+
+5,77%
+
+1.495.447
+
+7,25%
+
+1.494.010
+
+7,28%
+
+Jumlah Pergerakan
+
+(%)
+
+816.266
+
+3,27%
+
+811.018
+
+3,25%
+
+1.476.318
+
+5,91%
+
+21 Desember 2025
+
+305.915
+
+4,94%
+
+299.712
+
+4,93%
+
+1.023.712
+
+4,97%
+
+1.022.661
+
+4,98%
+
+22 Desember 2025
+
+233.439
+
+3,77%
+
+229.693
+
+3,78%
+
+1.206.597
+
+5,85%
+
+1.204.939
+
+5,87%
+
+23 Desember 2025
+
+251.090
+
+4,05%
+
+247.041
+
+4,06%
+
+912.736
+
+4,43%
+
+911.319
+
+4,44%
+
+24 Desember 2025
+
+304.060
+
+4,91%
+
+298.751
+
+4,91%
+
+1.055.664
+
+5,12%
+
+1.053.333
+
+5,13%
+
+1.286.889
+
+5,15%
+
+1.183.636
+
+5,13%
+
+1.285.795
+
+5,15%
+
+1.194.976
+
+5,18%
+
+1.291.493
+
+5,17%
+
+1.199.581
+
+5,20%
+
+1.346.131
+
+5,39%
+
+1.250.663
+
+25 Desember 2025
+
+420.612
+
+6,79%
+
+410.370
+
+6,75%
+
+1.232.866
+
+5,98%
+
+1.230.904
+
+5,42%
+
+6,00%
+
+1.427.649
+
+5,71%
+
+1.317.152
+
+26 Desember 2025
+
+346.101
+
+5,58%
+
+338.845
+
+5,57%
+
+1.026.682
+
+4,98%
+
+5,71%
+
+1.024.953
+
+4,99%
+
+1.416.512
+
+5,67%
+
+1.305.068
+
+27 Desember 2025
+
+511.172
+
+8,25%
+
+499.653
+
+8,22%
+
+1.071.773
+
+5,66%
+
+5,20%
+
+1.070.213
+
+5,21%
+
+1.647.741
+
+6,60%
+
+1.513.018
+
+28 Desember 2025
+
+447.314
+
+7,22%
+
+437.241
+
+7,19%
+
+6,56%
+
+970.388
+
+4,71%
+
+968.922
+
+4,72%
+
+1.479.542
+
+5,92%
+
+1.356.366
+
+29 Desember 2025
+
+282.745
+
+4,56%
+
+278.319
+
+5,88%
+
+4,58%
+
+1.140.555
+
+5,53%
+
+1.139.008
+
+5,55%
+
+1.365.251
+
+5,46%
+
+1.258.442
+
+30 Desember 2025
+
+306.922
+
+4,95%
+
+5,46%
+
+301.803
+
+4,96%
+
+972.033
+
+4,71%
+
+970.397
+
+4,73%
+
+1.336.314
+
+5,35%
+
+1.233.378
+
+31 Desember 2025
+
+423.287
+
+5,35%
+
+6,83%
+
+415.426
+
+6,83%
+
+1.029.750
+
+4,99%
+
+1.027.979
+
+5,01%
+
+1.346.970
+
+5,39%
+
+1.241.492
+
+1 Januari 2026
+
+5,38%
+
+403.942
+
+6,52%
+
+395.156
+
+6,50%
+
+1.035.708
+
+5,02%
+
+1.034.124
+
+5,04%
+
+1.478.203
+
+5,92%
+
+1.361.734
+
+5,90%
+
+2 Januari 2026
+
+285.011
+
+4,60%
+
+279.948
+
+4,61%
+
+1.029.884
+
+5,00%
+
+1.028.289
+
+5,01%
+
+1.268.842
+
+5,08%
+
+1.167.355
+
+5,06%
+
+3 Januari 2026
+
+361.628
+
+5,84%
+
+354.965
+
+5,84%
+
+835.180
+
+4,05%
+
+773.846
+
+3,77%
+
+1.424.322
+
+5,70%
+
+1.308.036
+
+4 Januari 2026
+
+290.657
+
+4,69%
+
+285.977
+
+4,70%
+
+989.935
+
+4,80%
+
+987.744
+
+4,81%
+
+1.264.396
+
+5,06%
+
+1.159.027
+
+5 Januari 2026
+
+247.764
+
+4,00%
+
+244.761
+
+4,03%
+
+1.059.520
+
+5,14%
+
+1.058.015
+
+5,15%
+
+1.212.805
+
+4,85%
+
+1.119.690
+
+4,85%
+
+6.197.032
+
+100,00%
+
+6.079.165
+
+100,00%
+
+20.617.714
+
+100,00%
+
+20.526.356
+
+100,00%
+
+24.982.457
+
+100,00%
+
+23.066.399
+
+100,00%
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Jumlah Pergerakan
+
+IOH
+
+(%)
+
+18 Desember 2025
+
+Total
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+39
+
+Jumlah Orang
+
+(%)
+
+765.603
+
+3,32%
+
+759.916
+
+3,29%
+
+1.371.266
+
+5,94%
+
+5,67%
+5,02%
+
+40
+
+7
+
+No
+
+Konten/Substansi
+
+Slide
+27
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Akumulasi pergerakan harian
+dari seluruh opsel dan
+
+Jabodetabek)
+
+PERSANDINGAN PERGERAKAN UNIQUE SUBS HARIAN TOTAL (INTER JABODETABEK)
+Waktu
+
+keterangan singkat terkait jumlah
+unique subscribernya (Inter
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+06
+
+Pergerakan
+Jabodetabek
+
+DATA REAL
+
+Jumlah
+Pergerakan
+
+18 Desember 2025
+
+2.228.917
+
+19 Desember 2025
+
+2.345.146
+
+20 Desember 2025
+
+3.329.643
+
+21 Desember 2025
+
+2.616.516
+
+22 Desember 2025
+
+2.725.831
+
+23 Desember 2025
+
+2.455.319
+
+24 Desember 2025
+
+2.705.855
+
+25 Desember 2025
+
+3.081.127
+
+26 Desember 2025
+
+2.789.295
+
+27 Desember 2025
+
+3.230.686
+
+28 Desember 2025
+
+2.897.244
+
+29 Desember 2025
+
+2.788.551
+
+30 Desember 2025
+
+2.615.269
+
+31 Desember 2025
+
+2.800.007
+
+1 Januari 2026
+
+2.917.853
+
+2 Januari 2026
+
+2.583.737
+
+3 Januari 2026
+
+2.621.130
+
+4 Januari 2026
+
+2.544.988
+
+(%)
+
+Jumlah Orang
+
+4,30%
+
+5,29%
+
+2.629.608
+
+4,74%
+
+4,91%
+
+2.436.847
+
+4,91%
+
+4,90%
+
+2.432.748
+
+4,87%
+
+4,88%
+
+2.422.466
+
+100,00%
+
+sekitar 2,543 kali perjalanan per orang
+
+4,98%
+
+2.475.592
+
+5,06%
+
+lebih dari satu perjalanan per individu selama periode pengamatan, dengan rasio
+
+5,62%
+
+2.791.014
+
+4,99%
+
+• Dari data akumulasi tersebut maka data ini menunjukkan bahwa terdapat rata-rata
+
+5,41%
+
+2.684.897
+
+5,63%
+
+pergerakan.
+
+5,04%
+
+2.505.578
+
+5,41%
+
+• Jumlah pergerakan/movement count di wilayah Jabodetabek sebesar 51.797.203
+
+5,39%
+
+2.675.769
+
+5,05%
+
+masyarakat
+
+Januari 2026 (realisasi) sebanyak 20.365.873 orang.
+
+5,56%
+
+2.762.529
+
+5,38%
+
+20,37 juta
+
+2026 dari wilayah Jabodetabek ke wilayah lain pada tanggal 18 Desember 2025 - 5
+
+6,21%
+
+3.082.884
+
+5,59%
+
+Jumlah Unik
+Subscriber:
+
+• Jumlah unique subscriber yang melakukan pergerakan pada Periode Nataru 2025 –
+
+5,37%
+
+2.668.866
+
+6,24%
+
+JUMLAH ORANG YANG MELAKUKAN
+PERJALANAN (INTER JABODETABEK)
+
+2,543
+
+pergerakan
+
+5,96%
+
+2.958.426
+
+5,39%
+
+RATA-RATA
+KOEFISIEN
+
+51,80 juta
+
+5,24%
+
+2.602.747
+
+5,95%
+
+JUMLAH PERGERAKAN
+INTER JABODETABEK
+
+4,75%
+
+2.357.941
+
+5,22%
+
+2.520.089
+
+5,05%
+
+2.506.009
+
+5,26%
+
+51.797.203
+
+6,47%
+
+3.215.904
+
+5,05%
+
+Total
+
+4,61%
+
+2.288.737
+
+6,43%
+
+5 Januari 2026
+
+(%)
+4,38%
+
+2.173.358
+
+4,53%
+
+100,00%
+
+49.671.920
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+28
+
+Pergerakan harian total
+(pergerakan per hari dan orang
+per hari) untuk Inter
+Jabodetabek
+
+41
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+07
+
+AKUMULASI PERGERAKAN HARIAN TOTAL (INTER JABODETABEK)
+6,43%
+
+3.500.000
+
+5,26%
+
+5,05%
+
+PERGERAKAN PER HARI
+5,59%
+
+5,39%
+
+5,22%
+
+4,74%
+
+4,53%
+
+4,30%
+
+2.500.000
+
+6,24%
+
+5,95%
+
+3.000.000
+
+5,38%
+
+5,63%
+
+5,41%
+
+5,05%
+
+5,06%
+
+4,99%
+
+4,91%
+
+4,87%
+
+2.000.000
+1.500.000
+1.000.000
+500.000
+18 Desember
+2025
+Tanggal
+Pergerakan
+
+20 Desember
+2025
+
+21 Desember
+2025
+
+H-7
+
+H-6
+
+H-5
+
+H-4
+
+H-3
+
+H-2
+
+H-1
+
+H
+
+H+1
+
+H+2
+
+H+3
+
+18 Des 25
+
+19 Des 25
+
+20 Des 25
+
+21 Des 25
+
+22 Des 25
+
+23 Des 25
+
+24 Des 25
+
+25 Des 25
+
+26 Des 25
+
+27 Des 25
+
+28 Des 25
+
+2.228.917
+
+19 Desember
+2025
+
+2.345.146
+
+3.329.643
+
+2.616.516
+
+2.725.831
+
+22 Desember
+2025
+
+2.455.319
+
+23 Desember
+2025
+
+2.705.855
+
+24 Desember
+2025
+
+3.081.127
+
+25 Desember
+2025
+
+2.789.295
+
+26 Desember
+2025
+
+3.230.686
+
+27 Desember
+2025
+
+2.897.244
+
+6,47%
+
+3.500.000
+
+2.500.000
+
+5,29%
+
+5,05%
+
+4,61%
+
+4,38%
+
+5,56%
+
+5,37%
+
+5,24%
+
+4,75%
+
+29 Desember
+2025
+
+30 Desember
+2025
+
+31 Desember
+2025
+
+1 Januari 2026 2 Januari 2026 3 Januari 2026 4 Januari 2026 5 Januari 2026
+
+H+4
+H+5
+H+6
+H+7
+H+8
+H+9
+H+10
+H+11
+29 Des
+30 Des 25 31 Des 25 01-Jan-26 02-Jan-26 03-Jan-26 04-Jan-26 05-Jan-26
+25
+
+Total
+
+6,21%
+
+5,96%
+3.000.000
+
+28 Desember
+2025
+
+2.788.551 2.615.269 2.800.007 2.917.853 2.583.737 2.621.130 2.544.988 2.520.089 51.797.203
+
+5,39%
+
+ORANG PER HARI
+
+5,62%
+
+5,41%
+
+5,04%
+
+Total
+pergerakan
+realisasi
+inter
+Jabodetabek berdasarkan ketiga opsel
+pada periode 18 Des – 5 Jan 2026
+mencapai
+51.797.203 Pergerakan
+
+4,98%
+
+4,91%
+
+4,90%
+
+4,88%
+
+2.000.000
+1.500.000
+1.000.000
+500.000
+18 Desember
+2025
+
+19 Desember
+2025
+
+H-7
+Tanggal
+
+Orang
+
+H-6
+
+18 Des 25
+2.173.358
+
+20 Desember
+2025
+
+21 Desember
+2025
+
+H-5
+
+19 Des 25
+2.288.737
+
+H-4
+
+20 Des 25
+3.215.904
+
+22 Desember
+2025
+
+H-3
+
+23 Desember
+2025
+
+H-2
+
+21 Des 25
+
+22 Des 25
+
+2.506.009
+
+2.629.608
+
+24 Desember
+2025
+
+H-1
+
+23 Des 25
+
+25 Desember
+2025
+
+H
+
+24 Des 25
+
+2.357.941
+
+2.958.426
+
+26 Desember
+2025
+
+H+1
+
+25 Des 25
+
+2.602.747
+
+27 Desember
+2025
+
+H+2
+
+26 Des 25
+
+H+3
+
+27 Des 25
+
+2.668.866
+
+28 Desember
+2025
+
+29 Desember
+2025
+
+30 Desember
+2025
+
+31 Desember
+2025
+
+1 Januari 2026 2 Januari 2026 3 Januari 2026 4 Januari 2026 5 Januari 2026
+
+H+4
+H+5
+H+6
+H+7
+H+8
+H+9
+H+10
+H+11
+29 Des
+30 Des 25 31 Des 25 01-Jan-26 02-Jan-26 03-Jan-26 04-Jan-26 05-Jan-26
+25
+
+28 Des 25
+
+3.082.884
+
+2.762.529
+
+Total
+
+2.675.769 2.505.578 2.684.897 2.791.014 2.475.592 2.436.847 2.432.748 2.422.466 49.671.920
+
+Total realisasi pelaku perjalanan
+(orang) berdasarkan ketiga opsel pada
+periode 18 Des – 5 Jan 2026
+mencapai 49.671.920 Orang
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+5,70%
+
+4,69%
+
+5,14%
+4,85%
+
+4,80%
+5,06%
+
+4,05%
+
+PERGERAKAN PER HARI
+
+4,00%
+
+5,92%
+
+5,00%
+5,08%
+
+5,84%
+
+4,60%
+
+5,35%
+
+5,39%
+
+5,02%
+
+4,99%
+
+4,71%
+
+6,83%
+
+6,52%
+
+5,92%
+
+4,56%
+
+4,95%
+
+6,60%
+
+5,53%
+5,46%
+
+5,67%
+
+5,20%
+
+4,71%
+
+4,98%
+
+8,25%
+
+7,22%
+
+5,39%
+
+6,79%
+
+4,91%
+
+4,05%
+
+4,94%
+
+3,77%
+
+600.000
+
+5,77%
+
+800.000
+
+400.000
+
+5,98%
+5,71%
+
+5,17%
+
+5,85%
+5,15%
+
+5,12%
+
+7,25%
+5,91%
+
+Indosat
+
+5,58%
+
+1.000.000
+
+TSEL
+
+4,43%
+
+1.200.000
+
+XL
+4,97%
+5,15%
+
+6,36%
+
+1.400.000
+
+5,91%
+
+1.600.000
+
+3,27%
+
+opsel (Inter Jabodetabek)
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+AKUMULASI PERGERAKAN HARIAN TOTAL BERDASARKAN OPSEL (INTER JABODETABEK)
+
+3,25%
+
+total berdasarkan masing-masing
+
+08
+1.800.000
+
+3,60%
+
+Akumulasi pergerakan harian
+
+3,14%
+
+29
+
+42
+
+Total Pergerakan
+MPD XL
+
+Total Pergerakan
+MPD IOH
+
+6,20 Juta
+
+24,98 Juta
+
+Total Pergerakan
+MPD TSEL
+
+20,61 Juta
+
+200.000
+18 Desember 19 Desember 20 Desember 21 Desember 22 Desember 23 Desember 24 Desember 25 Desember 26 Desember 27 Desember 28 Desember 29 Desember 30 Desember 31 Desember 1 Januari 20262 Januari 20263 Januari 20264 Januari 20265 Januari 2026
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+
+5,67%
+
+4,81%
+5,02%
+
+3,77%
+
+4,70%
+
+4,61%
+
+5,84%
+
+6,83%
+
+H+7
+01-Jan-26
+403.942
+1.478.203
+1.035.708
+2.917.853,0
+
+H+8
+02-Jan-26
+285.011
+1.268.842
+1.029.884
+2.583.737,0
+
+H+9
+03-Jan-26
+361.628
+1.424.322
+835.180
+2.621.130,0
+
+H+10
+04-Jan-26
+290.657
+1.264.396
+989.935
+2.544.988,0
+
+H+11
+05-Jan-26
+247.764
+1.212.805
+1.059.520
+2.520.089,0
+
+Total
+6.197.032,0
+24.982.457,0
+20.617.714,0
+51.797.203,0
+
+ORANG PER HARI
+
+5,15%
+4,85%
+
+H+6
+31 Des 25
+423.287
+1.346.970
+1.029.750
+2.800.007,0
+
+4,03%
+
+H+5
+30 Des 25
+306.922
+1.336.314
+972.033
+2.615.269,0
+
+5,01%
+5,06%
+
+5,90%
+
+H+4
+29 Des 25
+282.745
+1.365.251
+1.140.555
+2.788.551,0
+
+5,04%
+
+5,01%
+5,38%
+
+H+3
+28 Des 25
+447.314
+1.479.542
+970.388
+2.897.244,0
+
+6,50%
+
+4,73%
+4,96%
+
+4,58%
+
+5,35%
+
+H+2
+27 Des 25
+511.172
+1.647.741
+1.071.773
+3.230.686,0
+
+5,55%
+5,46%
+
+5,88%
+
+6,56%
+
+5,66%
+
+H+1
+26 Des 25
+346.101
+1.416.512
+1.026.682
+2.789.295,0
+
+4,72%
+
+5,21%
+8,22%
+
+4,99%
+
+H
+25 Des 25
+420.612
+1.427.649
+1.232.866
+3.081.127,0
+
+7,19%
+
+H-1
+24 Des 25
+304.060
+1.346.131
+1055664
+2.705.855,0
+
+5,57%
+
+5,13%
+5,42%
+
+6,75%
+
+5,20%
+
+5,87%
+5,18%
+
+4,44%
+
+4,91%
+
+6,00%
+5,71%
+
+H-2
+23 Des 25
+251.090
+1.291.493
+912.736
+2.455.319,0
+
+Indosat
+
+4,06%
+
+3,61%
+
+400.000
+
+3,15%
+
+600.000
+
+4,93%
+
+800.000
+
+5,77%
+
+1.000.000
+
+H-3
+22 Des 25
+233.439
+1.285.795
+1.206.597
+2.725.831,0
+
+TSEL
+
+3,29%
+
+3,32%
+
+1.200.000
+
+H-4
+21 Des 25
+305.915
+1.286.889
+1.023.712
+2.616.516,0
+
+XL
+4,98%
+5,13%
+
+6,38%
+
+5,93%
+
+1.400.000
+
+H-5
+20 Des 25
+357.878
+1.476.318
+1.495.447
+3.329.643,0
+
+3,78%
+
+XL
+IOH
+TSEL
+TOTAL
+1.600.000
+
+H-6
+19 Des 25
+223.190
+811.018
+1.310.938
+2.345.146,0
+
+7,28%
+5,94%
+
+Tanggal
+
+H-7
+18 Des 25
+194.305
+816.266
+1.218.346
+2.228.917,0
+
+Total Pergerakan
+MPD XL
+
+Total Pergerakan
+MPD IOH
+
+6,08 Juta
+
+23,06 Juta
+
+Total Pergerakan
+MPD TSEL
+
+20,52 Juta
+
+200.000
+18 Desember 19 Desember 20 Desember 21 Desember 22 Desember 23 Desember 24 Desember 25 Desember 26 Desember 27 Desember 28 Desember 29 Desember 30 Desember 31 Desember
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+2025
+
+Tanggal
+XL
+IOH
+TSEL
+TOTAL
+
+H-7
+18 Des 25
+191.406,0
+765.603
+1.216.349
+2.173.358,0
+
+H-6
+19 Des 25
+219.470,0
+759.916
+1.309.351
+2.288.737,0
+
+H-5
+20 Des 25
+350.628,0
+1.371.266
+1.494.010
+3.215.904,0
+
+H-4
+21 Des 25
+299.712,0
+1.183.636
+1.022.661
+2.506.009,0
+
+H-3
+22 Des 25
+229.693
+1.194.976
+1.204.939
+2.629.608,0
+
+H-2
+23 Des 25
+247.041
+1.199.581
+911.319
+2.357.941,0
+
+H-1
+24 Des 25
+298.751
+1.250.663
+1053333
+2.602.747,0
+
+H
+25 Des 25
+410.370
+1.317.152
+1.230.904
+2.958.426,0
+
+H+1
+26 Des 25
+338.845
+1.305.068
+1.024.953
+2.668.866,0
+
+H+2
+27 Des 25
+499.653
+1.513.018
+1.070.213
+3.082.884,0
+
+H+3
+28 Des 25
+437.241
+1.356.366
+968.922
+2.762.529,0
+
+1 Januari
+2026
+
+2 Januari
+2026
+
+H+4
+29 Des 25
+278.319
+1.258.442
+1.139.008
+2.675.769,0
+
+3 Januari
+2026
+
+H+5
+30 Des 25
+301.803
+1.233.378
+970.397
+2.505.578,0
+
+4 Januari
+2026
+
+H+6
+31 Des 25
+415.426
+1.241.492
+1.027.979
+2.684.897,0
+
+5 Januari
+2026
+
+H+7
+01-Jan-26
+395.156
+1.361.734
+1.034.124
+2.791.014,0
+
+H+8
+02-Jan-26
+279.948
+1.167.355
+1.028.289
+2.475.592,0
+
+H+9
+03-Jan-26
+354.965
+1.308.036
+773.846
+2.436.847,0
+
+H+10
+04-Jan-26
+285.977
+1.159.027
+987.744
+2.432.748,0
+
+H+11
+05-Jan-26
+244.761
+1.119.690
+1.058.015
+2.422.466,0
+
+Total
+6.079.165,0
+23.066.399,0
+20.526.356,0
+49.671.920,0
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+30
+
+O-D Intra Jabodetabek (Top 10
+
+43
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+09
+
+O – D JABODETABEK
+
+kota/kab asal favorit
+
+Kota/Kab Asal Favorit Jabodetabek
+
+Jabodetabek)
+
+KAB BOGOR
+
+4.855.839
+
+1
+
+KOTA JAKARTA TIMUR
+
+4.217.784
+
+2
+
+KOTA JAKARTA SELATAN
+
+3.909.307
+
+3
+
+KOTA JAKARTA BARAT
+
+3.849.103
+
+4
+
+KOTA BEKASI
+
+3.472.018
+
+5
+
+KAB TANGERANG
+
+3.150.003
+
+6
+
+KAB BEKASI
+
+3.135.355
+
+KOTA TANGERANG
+
+2.970.608
+
+KOTA DEPOK
+
+2.941.236
+
+9
+
+KOTA JAKARTA UTARA
+
+2.793.400
+
+10
+
+KOTA JAKARTA PUSAT
+
+2.711.377
+
+11
+
+KOTA TANGERANG SELATAN
+
+2.435.485
+
+12
+
+KOTA BOGOR
+
+1.652.041
+
+13
+
+44.686
+
+14
+
+Kota/Kabupaten Asal
+
+Jumlah Pergerakan
+
+KAB KEPULAUAN SERIBU
+
+Rank
+
+7
+8
+
+Kab/Kota asal yang menjadi favorit di Jabodetabek untuk melakukan
+perjalanan (Intra Jabodetabek) Adalah
+
+KABUPATEN BOGOR
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+31
+
+O-D Intra Jabodetabek (Top 10
+
+44
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+10
+
+O – D JABODETABEK
+
+kota/kab tujuan favorit
+
+Kota/Kab Tujuan Favorit Jabodetabek
+
+Jabodetabek)
+
+KAB BOGOR
+
+Kota/Kabupaten Tujuan
+
+Jumlah Pergerakan
+5.575.273
+
+Rank
+1
+
+KOTA JAKARTA SELATAN
+
+5.227.461
+
+2
+
+KOTA JAKARTA PUSAT
+
+4.180.991
+
+3
+
+KOTA JAKARTA UTARA
+
+3.507.029
+
+4
+
+KOTA JAKARTA BARAT
+
+3.316.242
+
+5
+
+KOTA BEKASI
+
+3.105.711
+
+6
+
+KOTA JAKARTA TIMUR
+
+2.997.132
+
+KOTA TANGERANG
+
+2.830.338
+
+KAB TANGERANG
+
+2.552.408
+
+9
+
+KAB BEKASI
+
+2.431.110
+
+10
+
+KOTA DEPOK
+
+2.275.648
+
+11
+
+KOTA TANGERANG SELATAN
+
+2.077.522
+
+12
+
+KOTA BOGOR
+
+2.010.578
+
+13
+
+50.799
+
+14
+
+KAB KEPULAUAN SERIBU
+
+7
+8
+
+Kab/Kota tujuan yang menjadi favorit di Jabodetabek untuk melakukan
+perjalanan (Intra Jabodetabek) Adalah
+
+KABUPATEN BOGOR
+Hal tersebut sejalan dengan hasil survei prakiraan yang dilakukan sebelumnya,
+Kab. Bogor menjadi kota/kab tujuan favorit di Jabodetabek. Kab. Bogor dapat
+dianggap sebagai destinasi wisata jarak dekat (misalnya Puncak), sekaligus
+menjadi wilayah hunian bagi komuter Jabodetabek
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+45
+
+8
+
+No
+
+Konten/Substansi
+
+Slide
+32
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+O-D Inter Jabodetabek (Top 10
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+11
+
+O – D JABODETABEK DAN PROVINSI NASIONAL
+
+Provinsi tujuan favorit dari
+
+Provinsi Tujuan Favorit dari Jabodetabek
+Provinsi Tujuan
+Jawa Barat
+DKI Jakarta
+Banten
+Jawa Tengah
+Jawa Timur
+DI Yogyakarta
+Lampung
+Bali
+Sumatera Utara
+Sumatera Selatan
+Sumatera Barat
+Sulawesi Selatan
+Nusa Tenggara Barat
+Kalimantan Barat
+Jambi
+Sulawesi Tengah
+Kalimantan Timur
+Aceh
+Kepulauan Riau
+Kepulauan Bangka Belitung
+
+Jabodetabek)
+
+Jumlah Pergerakan
+20.995.127
+19.994.356
+9.667.962
+2.306.044
+664.715
+493.062
+312.039
+211.133
+135.538
+89.809
+43.058
+32.674
+31.508
+31.180
+30.160
+28.602
+28.391
+26.951
+26.130
+25.918
+
+Rank
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+
+Provinsi tujuan yang menjadi favorit dari Jabodetabek untuk melakukan
+perjalanan adalah
+
+JAWA BARAT DAN DKI JAKARTA
+Hal tersebut dapat dipengaruhi oleh kedekatan geografis yang mendorong
+adanya pergerakan jarak pendek dengan waktu tempuh dan biaya yang relatif
+lebih rendah
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+33
+
+Kesimpulan Nasional
+
+01
+
+46
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+KESIMPULAN (1/3)
+
+Kesimpulan Nasional
+Pemantauan pergerakan masyarakat pada periode Natal dan Tahun Baru (Nataru) 2025–2026 dilakukan melalui pemanfaatan Mobile Positioning Data (MPD) yang diperoleh
+dari tiga operator seluler, yaitu Telkomsel, Indosat Ooredoo Hutchison (IOH), serta XL/Smartfren. Periode pengamatan yang telah terekam dalam dataset saat ini mencakup
+tanggal realisasi data tanggal 18 Desember 2025 hingga 5 Januari 2026
+Jumlah pergerakan Masyarakat pada periode Nataru 2025/2026 , dengan nilai realisasi per tanggal 18 Desember 2025 s.d. 5 Januari 2026 adalah sebanyak 245.370.093
+pergerakan dengan puncak pergerakan di hari Rabu, 24 Desember 2025 dan Sabtu, 3 Januari 2026 dengan jumlah pergerakan sebanyak 14.963.146 dan 14.984.975
+pergerakan atau sekitar 6,10% dan 6,11% terhadap akumulasi data realisasi yang diterima
+
+Jumlah orang/individu unique subscriber yang melakukan pergerakan pada Periode Nataru 2025/2026, dengan nilai realisasi hingga tanggal 5 Januari 2026 sebanyak
+115.197.227 orang yang bergerak selama periode Nataru. Data ini menunjukkan bahwa terdapat rata-rata lebih dari satu perjalanan per individu selama periode
+pengamatan, dengan rasio sekitar 2,13 kali perjalanan per orang
+
+Berdasarkan kontribusi operator, Telkomsel mendominasi perekaman mobilitas dengan menyumbang sekitar 53,56% dari total pergerakan dan 53,07% dari total
+jumlah orang, sementara IOH menyumbang 37,65% pergerakan dan 37,50% jumlah orang, serta XL/Smartfren sebesar 8,79% pergerakan dan 9,43% jumlah orang.
+Hal ini konsisten dengan pangsa pasar pelanggan masing-masing operator sehingga valid sebagai representasi kondisi mobilitas nasional.
+5 besar provinsi asal favorit Nasional berdasarkan data MPD, terdiri dari :
+1. Provinsi Jawa Barat dengan estimasi jumlah pergerakan sekitar 43,88 juta pergerakan
+2. Provinsi Jawa Timur dengan estimasi jumlah pergerakan sekitar 31,86 juta pergerakan
+3. Provinsi Jawa Tengah dengan estimasi jumlah pergerakan sekitar 25,97 juta pergerakan
+4. Daerah Khusus Ibukota Jakarta dengan estimasi jumlah pergerakan sekitar 21,42 juta pergerakan
+5. Provinsi Banten dengan estimasi jumlah pergerakan sekitar 14,49 juta pergerakan
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+01
+
+48
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+KESIMPULAN (2/3)
+
+Kesimpulan Nasional
+5 besar provinsi tujuan favorit Nasional berdasarkan data MPD, terdiri dari :
+1. Provinsi Jawa Barat dengan estimasi jumlah pergerakan sekitar 43,88 juta pergerakan
+2. Provinsi Jawa Timur dengan estimasi jumlah pergerakan sekitar 31,70 juta pergerakan
+3. Provinsi Jawa Tengah dengan estimasi jumlah pergerakan sekitar 26,68 juta pergerakan
+4. Daerah Khusus Ibukota Jakarta dengan estimasi jumlah pergerakan sekitar 22,12 juta pergerakan
+5. Provinsi Banten dengan estimasi jumlah pergerakan sekitar 12,95 juta pergerakan
+Dominasi pergerakan yang berasal maupun menuju Jawa Barat dapat disebabkan oleh beberapa faktor, seperti factor provinsi dengan jumlah penduduk terbesar di
+Indonesia, peran Jawa Barat sebagai wilayah penyangga bagi DKI Jakarta dan Jabodetabek menjadikan provinsi tersebut menjadi simpul utama pergerakan baik untuk
+perjalanan lokal, regional, maupun antar daerah, dan banyaknya destinasi wisata unggulan di Jawa Barat.
+Kabupaten Bogor, Kota Administrasi Jakarta Pusat, dan Kota Administrasi Jakarta Barat menempati peringkat teratas sebagai daerah asal pergerakan Masyarakat, hal ini
+menunjukkan karakteristik Kawasan metropolitan Jabodetabek sebagai pusat konsentrasi penduduk, aktivitas ekonomi, dan titik awal berbagai jenis mobilitas Masyarakat
+selama periode libur
+
+Pada sisi tujuan pergerakan, 5 besar kota/kabupaten tujuan favorit Nasional berdasarkan data MPD, terdiri dari:
+1. Kabupaten Bogor dengan estimasi jumlah pergerakan sekitar 6,06 juta pergerakan
+2. Kota Administrasi Jakarta Utara dengan estimasi jumlah pergerakan sekitar 5,13 juta pergerakan
+3. Kota Administrasi Jakarta Pusat dengan estimasi jumlah pergerakan sekitar 4,88 juta pergerakan
+4. Kabupaten Bekasi dengan estimasi jumlah pergerakan sekitar 4,81 juta pergerakan
+5. Kota Administrasi Jakarta Selatan jdengan estimasi jumlah pergerakan sekitar 4,67 juta pergerakan
+Sepeda motor menjadi moda transportasi yang paling mendominasi, dengan jumlah pergerakan mencapai 153.535.533 pergerakan atau sekitar 63,31% dari total
+pergerakan nasional. Disusul oleh mode transportasi mobil yang menempati peringkat kedua, dengan jumlah pergerakan sebesar 44.519.107 pergerakan atau 18,36%
+dari total pergerakan Nasional
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+34
+
+Kesimpulan Jabodetabek
+
+01
+
+49
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+KESIMPULAN (3/3)
+
+Kesimpulan Jabodetabek
+Pola pergerakan masyarakat Intra Jabodetabek secara keseluruhan relatif stabil dan menunjukkan fluktuasi yang cukup dinamis dengan kecenderungan sedikit
+peningkatan di hari-hari libur, khususnya Hari Natal. Pergerakan harian intra Jabodetabek mulai mengalami kenaikan menjelang hari libur Natal, yaitu pada tanggal 20
+Desember 2025, dengan pergerakan sebesar 2.673.894 pergerakan. Menariknya, puncak pergerakan intra Jabodetabek ini terjadi lebih awal dibandingkan dengan puncak
+pergerakan Nasional, hal tersebut dapat berkaitan dengan dominasi pergerakan jarak pendek dan aktivitas domestik perkotaan.
+
+Kesimpulan dan
+Rekomendasi
+
+Meskipun puncak utama pergerakan intra Jabodetabek terjadi pada tanggal 20 Desember, jumlah pergerakan pada tanggal 24 Desember tercatat tidak berbeda jauh
+dengan puncak tersebut, hanya berbeda 1,46% lebih rendah dari total pergerakan di tanggal 20 Desember. Hal ini menunjukkan bahwa 24 Desember juga dapat
+dikategorikan sebagai puncak kedua pergerakan intra Jabodetabek
+Puncak pergerakan tertinggi Masyarakat inter Jabodetabek (dari Jabodetabek ke wilayah Nasional) tercatat pada tanggal 20 Desember 2025 sebesar 3.329.643
+pergerakan. Pola ini menandai adanya kesamaan puncak pergerakan intra jabodetabek pada puncak pertama, dan keselarasan dengan puncak kedua pergerakan
+Nasional. Sedangkan puncak kedua tercatat pada tanggal 27 Desember yang menunjukkan adanya gelombang lanjutan pergerakan inter Jabodetabek setelah perayaan
+Natal.
+Kabupaten Bogor menjadi daerah asal pergerakan Masyarakat Jabodetabek yang paling dominan dengan jumlah pergerakan sebanyak 4.855.839 pergerakan, disusul
+oleh Kota Administrasi Jakarta Timur dan Kota Administrasi Jakarta Selatan.
+Sedangkan daerah tujuan pergerakan Masyarakat intra Jabodetabek yang paling banyak juga tercatat pada Kabupaten Bogor dengan total pergerakan sebanyak
+5.575.273 pergerakan, dan disusul oleh Kota Administrasi Jakarta Selatan, dan Kota Administrasi Jakarta Pusat . Kabupaten Bogor menjadi tujuan favorit bagi Masyarakat
+intra Jabodetabek, hal ini dipengaruhi oleh peran wilayah ini sebagai destinasi wisata jarak dekat bagi Masyarakat Jabodetabek, khususnya pada periode libur
+Untuk pergerakan inter Jabodetabek, Provinsi Jawa Barat menjadi provinsi tujuan utama yang mendominasi pergerakan Masyarakat Jabodetabek ke wilayah lain
+selama periode Nataru 2025/2026. hal ini ditunjukkan oleh peran Jawa barat yang menjadi wilayah penyangga sekaligus destinasi rekreasi jarak dekat, seperti Kawasan
+Puncak, bandung raya, dan wilayah pesisir.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+50
+
+9
+
+No
+
+Konten/Substansi
+
+Slide
+35
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Rekomendasi
+
+02
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+REKOMENDASI (1/2)
+
+1) Rekomendasi Teknis Penajaman Algoritma (Cleaning Rules)
+Untuk menghindari noise (seperti penduduk lokal yang hanya bergerak ke pasar atau kantor), aturan penyaringan data harus diperketat:
+Penerapan Minimum Stay Duration yang Dinamis: Alih-alih menggunakan satu angka standar, terapkan durasi tinggal di destinasi yang lebih spesifik untuk kategori
+"wisata" (misal: minimal 6 jam) dan "mudik" (minimal 24 jam) untuk membedakan dengan pergerakan komuter harian.
+Filter Kecepatan Berbasis Moda (Multimodal Speed Threshold): Menggunakan speed profiling yang lebih presisi.
+Identifikasi Home-Base (Normal Residency):Sistem harus menentukan lokasi "rumah" pengguna berdasarkan posisi di malam hari selama 1 bulan sebelum periode
+Nataru. Jika pergerakan keluar dari area home-base tersebut selama lebih dari 2 hari, barulah dikategorikan sebagai pergerakan Nataru.
+
+2) Integrasi dan Validasi Silang (Cross-Referencing)
+MPD direkomendasikan untuk tidak berdiri sendiri. Perlu ada pembanding untuk mengkalibrasi angka dengan pemanfaatan:
+Integrasi Data Transaksi Tol & Tiket (KAI/Tol/Pesawat/Kapal): Melakukan overlay antara lonjakan volume MPD dengan data tapping gerbang tol atau manifest penumpang
+untuk memvalidasi apakah "pergerakan" di MPD selaras dengan jumlah kendaraan/penumpang aktual.
+Pemanfaatan Data/API Google Maps sebagai Pembanding/Referensi: Pergerakan berbasis perangkat seperti yang direkam oleh Google Maps dapat menjadi
+pembanding/referensi yang juga memuat perilaku pengguna aplikasi secara real-time.
+Ground Check melalui Survei Sampling di Simpul: Melakukan survei wawancara singkat secara acak di rest area atau simpul transportasi (terminal, pelabuhan, dan/atau
+stasiun) untuk memverifikasi profil perjalanan yang terekam di MPD (tujuan, alasan perjalanan, dan jumlah anggota keluarga).
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+02
+
+51
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+REKOMENDASI (1/2)
+
+3) Pengembangan Metadata dan Analisis Konteks
+Pembedaan Through-Traffic dan Destination-Traffic: Data raw MPD mencatat seluruh pergerakan orang, termasuk yang hanya melintas melewati kabupaten/kota
+(wilayah) tertentu sebagai pergerakan di daerah tersebut. Perlu aturan geofencing yang lebih smart untuk mendeteksi apakah pengguna benar-benar berhenti untuk
+beraktivitas atau hanya melintas (transit).
+Analisis Tipologi Wilayah: Menerapkan aturan yang berbeda antara wilayah perkotaan (urban) dan perdesaan (rural). Di wilayah urban, kecepatan rata-rata cenderung
+lebih rendah karena macet, sehingga batas bawah kecepatan tidak boleh terlalu tinggi agar data tidak terbuang. Pergerakan kendaraan di tol dan jalan non-tol juga memiliki
+karakteristik pergerakan berbeda.
+
+4) Standarisasi Format Data dari Operator Seluler
+SLA (Service Level Agreement) atas Data Raw: BKT perlu memastikan operator seluler dapat memberikan data dengan granularity (tingkat detail) yang sama (misal: per
+level kecamatan atau koordinat BTS tertentu) agar proses agregasi antar-provider tidak bias.
+Skema Anonymized User ID: Memastikan pelacakan perjalanan (Trip Chain) dari titik asal ke tujuan akhir menggunakan ID yang konsisten namun anonim, sehingga pola
+Origin-Destination (O-D) tidak terputus di tengah jalan. Hal ini dapat mencegah pencatatan alur perjalanan berulang dan memudahkan pendefinisian/pengorelasian total
+pergerakan dengan unique subscriber.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+52
+
+10
+
+No
+
+Konten/Substansi
+
+Slide
+36
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Simpul transportasi terpadat :
+
+10
+
+1. Stasiun KA antar kota asal dan
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+SIMPUL TRANSPORTASI
+
+TERMINAL
+O – D SIMPUL TERMINAL
+
+10 BESAR TERMINAL ASAL
+
+tujuan terpadat
+2. Stasiun KA regional asal dan
+
+[PRB] Purabaya
+
+3,40%
+
+[KEF] Kota Kefamenanu
+
+2,61%
+
+[B648] Jombor
+
+2,04%
+
+[Terminal B Landungsari] Landungsari
+
+1,81%
+
+[AJS] Arjosari
+
+1,81%
+
+[BWN] Bawen
+
+1,75%
+
+tujuan terpadat
+
+[TWA] Tawangalun
+
+1,55%
+
+[Terminal B Batu] Batu
+
+1,36%
+
+[AAL] Alang-Alang Lebar
+
+1,30%
+
+[B310] Pasir Pangairan
+
+1,28%
+
+17.629
+13.552
+10.576
+9.383
+9.374
+9.057
+8.033
+
+tujuan terpadat
+4. Pelabuhan penyeberangan
+asal dan tujuan terpadat
+
+[PRB] Purabaya
+
+3,72%
+
+[TTN] Tirtonadi
+
+2,04%
+
+[Terminal B Batu] Batu
+
+2,03%
+
+[B648] Jombor
+
+2,03%
+
+[KEF] Kota Kefamenanu
+
+1,88%
+
+[AJS] Arjosari
+
+1,69%
+
+[TWA] Tawangalun
+
+1,51%
+
+[Terminal B Aceh Tamiang]Aceh Tamiang
+
+1,48%
+
+[Terminal B Landungsari] Landungsari
+
+1,44%
+
+[BWN] Bawen
+
+1,40%
+
+1,46%
+
+Landungsari - Batu
+
+1,28%
+
+Batu - Landungsari
+
+0,86%
+
+Arjosari - Purabaya
+
+0,86%
+
+Pasir Pangairan - Bangkinang
+
+0,84%
+
+Purabaya - Arjosari
+
+0,80%
+
+Tirtonadi - Kota Kefamenanu
+
+0,76%
+
+7.037
+6.727
+
+Terminal KM. 6 Banjarmasin - Banjarbaru
+
+0,73%
+
+6.623
+
+Alang-Alang Lebar - Betung
+
+0,72%
+
+Bangkinang - Pasir Pangairan
+
+0,64%
+
+10 BESAR TERMINAL TUJUAN
+
+3. Stasiun KA cepat asal dan
+
+Kota Kefamenanu - Tirtonadi
+
+7572
+6643
+4467
+4460
+4370
+4140
+
+3922
+3762
+3732
+3319
+
+19.299
+10.589
+10.550
+10.514
+
+Rute Kota Kefamenanu – Tirtonadi dan Landungsari – Batu
+
+9.733
+
+menjadi rute terminal yang paling banyak diminati
+
+8.749
+7.825
+7.684
+7.449
+7.253
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+5. Pelabuhan laut asal dan
+
+10
+
+57
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+SIMPUL TRANSPORTASI
+
+tujuan terpadat
+
+PELABUHAN LAUT & PENYEBERANGAN
+O – D SIMPUL PELABUHAN
+
+10 BESAR PELABUHAN LAUT ASAL
+
+6. Bandara asal dan tujuan
+terpadat
+7. Terminal asal dan tujuan
+
+[SKE] Sunda Kelapa
+
+6,42%
+
+[GMK] Gilimanuk
+
+5,47%
+
+[MKA] Muara Angke
+
+4,50%
+
+[JKT] Tanjung Priok
+
+3,39%
+
+[KTG] Ketapang
+
+2,79%
+
+[MRK] Merak
+
+2,69%
+
+[TKG] Bakauheni
+
+2,28%
+
+[SUB] Tanjung Perak
+
+1,79%
+
+[BTN] Banten
+
+1,67%
+
+[PRN] Panarukan
+
+1,58%
+
+59.914
+51.053
+42.025
+31.687
+
+8. O-D simpul pelabuhan
+
+4,52%
+
+Muara Angke - Sunda Kelapa
+
+3,88%
+
+Gilimanuk - Ketapang
+
+3,71%
+
+Ketapang - Gilimanuk
+
+2,25%
+
+Merak - Bakauheni
+
+1,65%
+
+26.017
+25.074
+
+Bakauheni - Merak
+
+1,39%
+
+Sunda Kelapa - Tanjung Priok
+
+1,26%
+
+15.549
+
+Tanjung Perak - Ujung
+
+1,23%
+
+14.724
+
+Tanjung Priok - Sunda Kelapa
+
+1,20%
+
+Gilimanuk - Tanjung Wangi
+
+1,05%
+
+21.311
+16.718
+
+10 BESAR PELABUHAN LAUT TUJUAN
+
+terpadat
+
+Sunda Kelapa - Muara Angke
+
+[SKE] Sunda Kelapa
+
+5,72%
+
+[MKA] Muara Angke
+
+5,09%
+
+[KTG] Ketapang
+
+4,28%
+
+[JKT] Tanjung Priok
+
+4,04%
+
+[GMK] Gilimanuk
+
+3,76%
+
+[TKG] Bakauheni
+
+2,38%
+
+[MRK] Merak
+
+2,14%
+
+[BJU] Tanjung Wangi
+
+1,89%
+
+[Pelabuhan Penyeberangan Ujung] Ujung
+
+1,83%
+
+[MDC] Manado
+
+1,55%
+
+42216
+36196
+34674
+21013
+15393
+13022
+11805
+11527
+11214
+9814
+
+53.403
+47.516
+39.968
+37719
+
+Rute Sunda Kelapa – Muara Angke dan Muara Angke – Sunda
+
+35.123
+
+Kelapa menjadi rute pelabuhan yang paling banyak diminati
+
+22.243
+19.948
+17.680
+17.113
+
+14.434
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Catatan: Data-data ini tidak
+ditampilkan karena output
+
+10
+
+58
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+SIMPUL TRANSPORTASI
+
+BANDARA
+
+datanya dianggap anomali. Jika
+
+O – D SIMPUL BANDARA
+
+10 BESAR BANDARA ASAL
+
+hasil olah data pada periode
+
+[HLP] Halim Perdana Kusuma
+
+angleb nanti masuk kategori
+normal, maka hasil analisis ini
+
+12,39%
+
+[CGK] Soekarno Hatta
+
+6,15%
+
+[CBN] Cakrabhuwana
+
+6,10%
+
+[BDO] Husein Sastranegara
+
+5,94%
+
+[SRG] Jenderal Ahmad Yani
+
+4,74%
+
+[SOC] Adi Soemarmo
+
+4,42%
+
+[KBU] Gusti Sjamsir Alam
+
+3,68%
+
+akan ditampilkan di dashboard
+
+[KJT] Kertajati
+
+3,46%
+
+[JOG] Adi Sutjipto
+
+3,26%
+
+[SIW] Sibisa
+
+2,05%
+
+297.738
+147.781
+
+106.336
+
+9,09%
+
+[CBN] Cakrabhuwana
+
+7,32%
+
+[JOG] Adi Sutjipto
+
+6,90%
+
+[CGK] Soekarno Hatta
+
+6,78%
+
+[SOC] Adi Soemarmo
+[SUB] Juanda
+
+2,20%
+
+[KJT] Kertajati
+
+2,15%
+
+[DPS] I Gusti Ngurah Rai
+
+1,84%
+
+1,81%
+
+Kertajati - Cakrabhuwana
+
+1,66%
+
+Halim Perdana Kusuma - Soekarno Hatta
+
+1,49%
+
+83.195
+
+Cakrabhuwana - Halim Perdana Kusuma
+
+1,42%
+
+Gusti Sjamsir Alam - Husein Sastranegara
+
+1,27%
+
+Soekarno Hatta - Halim Perdana Kusuma
+
+1,26%
+
+Cakrabhuwana - Jenderal Ahmad Yani
+
+1,17%
+
+88.355
+
+11,31%
+
+5,88%
+
+1,86%
+
+78.408
+49.234
+
+[BDO] Husein Sastranegara
+
+5,80%
+
+3,10%
+
+Adi Soemarmo - Adi Sutjipto
+Halim Perdana Kusuma - Cakrabhuwana
+
+146.586
+142.812
+
+[HLP] Halim Perdana Kusuma
+
+[SRG] Jenderal Ahmad Yani
+
+4,64%
+
+Husein Sastranegara - Halim Perdana Kusuma
+
+113.831
+
+10 BESAR BANDARA TUJUAN
+
+utama
+
+Halim Perdana Kusuma - Husein Sastranegara
+
+111.543
+74.489
+44.722
+43.586
+39.969
+35.841
+34.133
+30.531
+
+30.360
+28.068
+
+271.974
+218.504
+176.027
+
+Rute Halim Perdana Kusuma – Husein Sastranegara dan
+
+165.844
+162.894
+
+Husein Sastranegara – Halim Perdana Kusuma menjadi rute
+
+141.363
+
+bandara yang paling banyak diminati
+
+139.428
+52.912
+51.624
+44.297
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+10
+
+62
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+SIMPUL TRANSPORTASI
+
+STASIUN
+
+Substansi
+Tambahan yang
+Belum Ada di
+Paparan MPD
+Nataru
+2025-2026
+
+O – D SIMPUL STASIUN
+
+10 BESAR STASIUN ASAL
+[CIL] Ciliwung
+
+1,71%
+
+[CW] Cawang
+
+1,66%
+
+[HAR] Harjamukti
+
+1,59%
+
+[NS12 BNH] MRT - Bendungan Hilir
+
+1,58%
+
+[JNG] Jatinegara
+
+1,42%
+
+[KUA] Kuningan
+
+1,38%
+
+[CUK] Cakung
+
+1,36%
+
+[CRC] Ciracas
+
+1,34%
+
+[JTM] Jati Mulya
+
+1,34%
+
+[NS20 FTM] MRT - Fatmawati Indomart
+
+1,32%
+
+49.536
+48.228
+45.986
+45.695
+41.302
+39.947
+
+[HAR] Harjamukti
+
+3,12%
+1,85%
+
+[CIL] Ciliwung
+
+1,69%
+
+[NS13 IST] MRT Istora Mandiri
+
+1,63%
+
+[NS09 BHI] Bundaran HI
+
+1,54%
+
+[NS14 SNY] MRT Senayan
+
+1,46%
+
+[CW] Cawang
+
+1,43%
+
+[PAN] Pancoran
+
+1,37%
+
+[NS10 DKA] MRT Dukuh Atas
+
+1,36%
+
+[GRG] Grogol
+
+1,28%
+
+0,26%
+0,26%
+0,25%
+
+Bogor - Bogor Paledang
+
+0,24%
+
+Bogor Paledang - Bogor
+
+0,22%
+
+39.016
+
+MRT Fatmawati Indomaret - MRT Lebak Bulus Grab
+
+0,21%
+
+38.749
+
+MRT Istora Mandiri - MRT Senayan
+
+0,19%
+
+Gadobangkong - Cimindi
+
+0,19%
+
+Jati Mulya - Bekasi Barat
+
+0,18%
+
+39.419
+
+8.073
+7.643
+7.415
+7.268
+7.017
+6.298
+6.211
+5.619
+5.381
+5.146
+
+90.629
+53.739
+49.097
+47.369
+44.575
+
+42.254
+
+Rute Ciracas – Harjamukti dan Ciliwung – Cawang menjadi rute
+stasiun yang paling banyak diminati
+
+41.561
+39.732
+39.579
+37.207
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+0,28%
+
+Ciliwung - Cawang
+Cawang - Ciliwung
+
+Cimindi - Bandung
+
+38.192
+
+10 BESAR STASIUN TUJUAN
+[NS12 BNH] MRT - Bendungan Hilir
+
+Ciracas - Harjamukti
+
+66
+
+11
+
+No
+
+Konten/Substansi
+
+Slide
+37
+
+Kelompok
+
+Detail dan Referensi
+
+Bahasan
+Net ow Pergerakan
+Catatan: Perhitungan net ow ini
+digunakan sebagai alternatif
+untuk menentukan kabupaten/
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+08
+
+NETFLOW
+
+Untuk mengatasi anomali pola Origin – Destination (O-D) pada
+data MPD di level kabupaten/kota, analisis ini menggunakan
+pendekatan net flow, yaitu selisih antara jumlah pergerakan
+masuk (inflow) dan keluar (outflow) pada masing-masing
+wilayah.
+
+kota origin/asal dan destination/
+
+Asumsi :
+Pergerakan masuk ≈ tujuan
+Pergerakan keluar ≈ asal
+
+tujuan favorit masyarakat.
+
+Konsep dasar Netflow :
+Netflow = Total Tujuan (Inflow) − Total Asal (Outflow)
+Interpretasi:
+Netflow (+) → wilayah yang dominan berperan sebagai
+tujuan pergerakan
+Netflow (−) → wilayah yang dominan berperan sebagai
+asal pergerakan
+
+Perhitungan ini perlu dilakukan
+mengingat data MPD tidak
+
+Kabupaten/Kota
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+
+Kota Administrasi Jakarta Utara
+Kabupaten Bekasi
+Kabupaten Sidoarjo
+Kabupaten Tangerang
+Kota Depok
+Kota Administrasi Jakarta Selatan
+Kota Tangerang Selatan
+Kota Bekasi
+Kota Tangerang
+Kabupaten Bandung
+Kabupaten Toba
+Kota Surabaya
+Kabupaten Malang
+Kota Semarang
+Kabupaten Sleman
+Kota Cimahi
+Kabupaten Kediri
+Kabupaten Lamongan
+Kota Denpasar
+Kabupaten Cirebon
+
+Pergerakan Keluar Pergerakan Masuk
+Netflow
+(Outflow)
+(Inflow)
+5.365.066
+3.661.302
+- 1.703.764
+5.042.167
+3.696.106
+- 1.346.061
+3.547.724
+2.563.517
+984.207
+4.487.973
+3.540.977
+946.996
+3.659.332
+2.775.308
+884.024
+4.888.500
+4.111.207
+777.293
+3.160.865
+2.536.112
+624.753
+4.612.283
+4.011.575
+600.708
+3.847.340
+3.353.626
+493.714
+3.482.221
+3.078.871
+403.350
+2.949.913
+2.609.636
+340.277
+3.997.579
+3.750.531
+247.048
+2.430.003
+2.190.087
+239.916
+2.430.445
+2.219.840
+210.605
+2.406.515
+2.212.978
+193.537
+933.224
+740.929
+192.295
+1.536.769
+1.368.215
+168.554
+1.044.977
+885.181
+159.796
+2.070.366
+1.913.925
+156.441
+1.278.946
+1.124.808
+154.138
+
+Keterangan
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+
+Peringkat Kabupaten/kota asal ditentukan berdasarkan besarnya nilai net flow, yang menunjukkan
+kekuatan fungsi wilayah sebagai asal pergerakan. Sedangkan total pergerakan menunjukkan skala
+volume pergerakan
+
+Adapun dari hasil perhitungan netflow yang telah dilakukan,
+TOP 20 Kabupaten/Kota untuk Origin dan Destination dari
+pergerakan hasil MPD dapat dilihat pada tabel:
+
+mende nisikan secara jelas
+kabupaten/kota real masyarakat.
+
+20 Besar Kabupaten/Kota Asal Nasional berdasarkan kekuatan Netflow MPD
+Rank
+
+Perhitungan netflow bertujuan untuk: Mengidentifikasi wilayah
+yang berperan sebagai penarik (destination/tujuan) atau wilayah
+pelepas (origin/asal) pergerakan orang berdasarkan selisih total
+pergerakan masuk dan keluar pada masing-masing
+kabupaten/kota.
+
+Catatan : Angka selisih (net flow) sebaiknya tidak ditambahkan ke angka pergerakan kota tujuan maupun asal, karena net flow diposisikan sebagai
+indikator, bukan sebagai komponen volume pergerakan
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+54
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+08
+
+NETFLOW
+20 Besar Kabupaten/Kota Tujuan Nasional berdasarkan kekuatan Netflow MPD
+Rank
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+
+Kabupaten/Kota
+Kota Administrasi Jakarta Barat
+Kota Administrasi Jakarta Pusat
+Kota Yogyakarta
+Kota Administrasi Jakarta Timur
+Kabupaten Bogor
+Kota Surakarta
+Kabupaten Banjar
+Kota Batu
+Kabupaten Gunungkidul
+Kabupaten Bandung Barat
+Kota Malang
+Kota Bogor
+Kota Bandung
+Kota Binjai
+Kota Banjarbaru
+Kabupaten Serang
+Kota Kediri
+Kabupaten Badung
+Kota Madiun
+Kabupaten Subang
+
+Pergerakan
+Keluar (Outflow)
+3.306.905
+5.088.185
+1.238.654
+3.694.442
+6.372.659
+1.268.607
+1.017.654
+500.800
+477.620
+1.697.237
+1.791.434
+1.911.226
+3.937.663
+2.822.583
+690.785
+1.269.196
+572.384
+1.855.522
+360.431
+776.110
+
+Pergerakan
+Masuk (Inflow)
+4.863.304
+6.323.749
+2.037.285
+4.438.976
+6.870.749
+1.748.767
+1.479.049
+938.887
+895.187
+2.087.066
+2.162.162
+2.273.405
+4.290.531
+3.080.166
+946.318
+1.502.875
+799.147
+2.061.637
+565.270
+974.556
+
+Netflow
+
+Keterangan
+
+1.556.399
+1.235.564
+798.631
+744.534
+498.090
+480.160
+461.395
+438.087
+417.567
+389.829
+370.728
+362.179
+352.868
+257.583
+255.533
+233.679
+226.763
+206.115
+204.839
+198.446
+
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+
+Sebagai validasi tambahan terhadap fungsi wilayah, diperlukan
+analisis Net Flow Ratio (NFR), yaitu perbandingan antara selisih
+pergerakan masuk dan keluar terhadap total pergerakan. Namun
+hasil tersebut digunakan sebagai indikator pendukung, bukan
+pengganti net flow absolut.
+
+NFR =
+
+𝑰𝒏𝒇𝒍𝒐𝒘 − 𝑶𝒖𝒕𝒇𝒍𝒐𝒘
+𝑰𝒏𝒇𝒍𝒐𝒘 + 𝑶𝒖𝒕𝒇𝒍𝒐𝒘
+
+Interpretasi :
+Mendekati +1 → Tujuan sangat dominan
+Mendekati 0 → Seimbang/transit
+Mendekati -1 → Asal sangat dominan
+Sehingga, terdapat 3 indikator dalam analisis Net Flow, dengan
+peran berbeda:
+
+Indikator
+Net Flow Absolut
+Total Inflow
+Net Flow Ratio (NFR)
+
+Peringkat Kabupaten/kota tujuan ditentukan berdasarkan besarnya nilai net flow, yang menunjukkan
+kekuatan fungsi wilayah sebagai tujuan pergerakan. Sedangkan total pergerakan menunjukkan skala
+volume pergerakan, dan tidak digunakan sebagai dasar penentuan peringkat.
+
+Peran
+Penentu peringkat utama
+Skala pergerakan
+Validasi fungsi wilayah
+
+Disclaimer :
+NFR tidak dipakai untuk penentuan ranking utama
+
+Kabupaten Bogor memiliki total pergerakan masuk yang lebih besar, namun nilai netflow yang lebih
+rendah dibandingkan dengan kota lain, hal ini menunjukkan bahwa arus masuk dan keluar di wilayah
+tersebut cenderung lebih seimbang.
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+55
+
+KEMENTERIAN
+PERHUBUNGAN
+REPUBLIK INDONESIA
+
+08
+
+NETFLOW
+20 Besar Kabupaten/Kota Tujuan Nasional berdasarkan kekuatan NFR
+
+20 Besar Kabupaten/Kota Asal Nasional berdasarkan kekuatan NFR
+Rank
+
+Kabupaten/Kota
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+
+Kota Administrasi Jakarta Utara
+Kabupaten Sidoarjo
+Kabupaten Bekasi
+Kota Depok
+Kabupaten Tangerang
+Kota Cimahi
+Kota Tangerang Selatan
+Kota Administrasi Jakarta Selatan
+Kabupaten Lamongan
+Kota Bekasi
+Kota Tangerang
+Kabupaten Cirebon
+Kabupaten Bandung
+Kabupaten Toba
+Kabupaten Kediri
+Kabupaten Malang
+Kota Semarang
+Kabupaten Sleman
+Kota Denpasar
+Kota Surabaya
+
+Pergerakan
+Keluar (Outflow)
+5.365.066
+3.547.724
+5.042.167
+3.659.332
+4.487.973
+933.224
+3.160.865
+4.888.500
+1.044.977
+4.612.283
+3.847.340
+1.278.946
+3.482.221
+2.949.913
+1.536.769
+2.430.003
+2.430.445
+2.406.515
+2.070.366
+3.997.579
+
+Pergerakan
+Netflow
+Masuk (Inflow)
+3.661.302 - 1.703.764 2.563.517 984.207 3.696.106 - 1.346.061 2.775.308 884.024 3.540.977 946.996 740.929 192.295 2.536.112 624.753 4.111.207 777.293 885.181 159.796 4.011.575 600.708 3.353.626 493.714 1.124.808 154.138 3.078.871 403.350 2.609.636 340.277 1.368.215 168.554 2.190.087 239.916 2.219.840 210.605 2.212.978 193.537 1.913.925 156.441 3.750.531 247.048 -
+
+NFR
+0,19
+0,16
+0,15
+0,14
+0,12
+0,11
+0,11
+0,09
+0,08
+0,07
+0,07
+0,06
+0,06
+0,06
+0,06
+0,05
+0,05
+0,04
+0,04
+0,03
+
+Keterangan
+
+Rank
+
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+ASAL
+
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+
+Hasil perhitungan NFR menunjukkan bahwa wilayah dengan nilai netflow negatif
+juga memiliki nilai NFR negatif, yang mengonfirmasi perannya sebagai daerah asal
+pergerakan.
+Dapat dilihat bahwa Kota Administrasi Jakarta Utara mencatat nilai NFR paling
+rendah, yaitu sebesar 0,19. nilai ini mengindikasikan bahwa arus pergerakan
+keluar dari wilayah ini secara relatif lebih dominan dibandingkan arus
+pergerakan masuk, sehingga cenderung berperan sebagain daerah asal
+pergerakan
+
+Kabupaten/Kota
+Kota Batu
+Kabupaten Gunungkidul
+Kota Yogyakarta
+Kota Madiun
+Kota Administrasi Jakarta Barat
+Kabupaten Banjar
+Kota Kediri
+Kota Surakarta
+Kota Banjarbaru
+Kabupaten Subang
+Kota Administrasi Jakarta Pusat
+Kabupaten Bandung Barat
+Kota Malang
+Kota Administrasi Jakarta Timur
+Kota Bogor
+Kabupaten Serang
+Kabupaten Badung
+Kota Binjai
+Kota Bandung
+Kabupaten Bogor
+
+Pergerakan Keluar
+(Outflow)
+500.800
+477.620
+1.238.654
+360.431
+3.306.905
+1.017.654
+572.384
+1.268.607
+690.785
+776.110
+5.088.185
+1.697.237
+1.791.434
+3.694.442
+1.911.226
+1.269.196
+1.855.522
+2.822.583
+3.937.663
+6.372.659
+
+Pergerakan
+Masuk (Inflow)
+938.887
+895.187
+2.037.285
+565.270
+4.863.304
+1.479.049
+799.147
+1.748.767
+946.318
+974.556
+6.323.749
+2.087.066
+2.162.162
+4.438.976
+2.273.405
+1.502.875
+2.061.637
+3.080.166
+4.290.531
+6.870.749
+
+Netflow
+438.087
+417.567
+798.631
+204.839
+1.556.399
+461.395
+226.763
+480.160
+255.533
+198.446
+1.235.564
+389.829
+370.728
+744.534
+362.179
+233.679
+206.115
+257.583
+352.868
+498.090
+
+NFR
+
+Keterangan
+0,30
+0,30
+0,24
+0,22
+0,19
+0,18
+0,17
+0,16
+0,16
+0,11
+0,11
+0,10
+0,09
+0,09
+0,09
+0,08
+0,05
+0,04
+0,04
+0,04
+
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+TUJUAN
+
+Hasil perhitungan NFR menunjukkan bahwa Kota Batu mencatat nilai NFR tertinggi, yaitu
+sebesar 0,30. nilai ini mengindikasilan bahwa arus pergerakan masuk ke Kota Batu lebih
+dominan dibandingkan arus keluar, hal ini menunjukkan Kota Batu sebagai daerah tujuan
+pergerakan yang relative sangat kuat.
+Nilai NFR yang relatif tinggi dan positif pada Kota Batu, Kab.Gunungkidul, dan Kota
+Yogyakarta sejalan dengan karakteristik ketiga wilayah tersebut sebagai daerah
+tujuan wisata selama periode libur Panjang.
+Disclaimer : Keterkaitan antara nilai NFR dan karakteristik wilayah sebagai destinasi wisata dalam analisis ini bersifat indikatif
+dan tidak dimaksudkan untuk menunjukkan hubungan sebab-akibat secara langsung
+
+Data Pergerakan Angkutan Natal 2025 dan Tahun Baru 2026 Berdasarkan MPD
+
+fl
+
+fi
+
+fl
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+56
+
+12
+
+Rencana Kerja Tim
+Sebagai pendukung, kami telah menyusun rencana kerja tim yang secara umum dibagi ke dalam
+3 bagian pekerjaan. Di awal, pekerjaan persiapan akan dilaksanakan pada 23 Februari sampai 12
+Maret dan akan fokus pada persiapan sistem dengan target kesiapan sistem 100% pada 6 Maret
+2026. Tahap kedua dari pekerjaan adalah tahapan pengolahan data dari Opsel yang akan
+dilaksanakan pada 13 sampai 30 Maret 2026 (sesuai dengan periode posko). Lalu tahap ketiga
+adalah tahap penulisan/penyusunan laporan hasil olah data yang akan dilaksanakan setelah
+tanggal 31 Maret 2026.
+Senin
+
+Selasa
+
+Rabu
+
+Kamis
+
+Jumat
+
+Sabtu
+
+Minggu
+
+19 Februari
+
+20 Februari
+
+21 Februari
+
+22 Februari
+
+28 Februari
+
+1 Maret
+
+1. Tahap persiapan dan
+koordinasi
+2. Meeting dengan tim IT
+3. Penyampaian timeline,
+target, dan deliverables
+
+23 Februari
+
+24 Februari
+
+1. Penyusunan daftar
+kebutuhan analisis dan
+output
+
+25 Februari
+
+26 Februari
+
+27 Februari
+
+1. Sinkronisasi substansi
+2. Review keynote material yang akan
+ditampilkan di dalam dashboard
+
+2. Persiapan pengembangan
+sistem oleh tim IT
+2 Maret
+
+3 Maret
+
+4 Maret
+
+5 Maret
+
+1. Uji coba dan nalisasi sistem
+2. Pengolahan data dummy yang diterima dari Opsel
+3. Validasi kesesuaian data yang ada di sistem dengan kebutuhan
+analisis dan output yang diharapkan
+9 Maret
+
+10 Maret
+
+11 Maret
+
+12 Maret
+
+1. Uji coba (beta testing) dan nal cross-check data
+2. Cross-check kesesuaian data dan output-nya (tabel, gra k,
+desire line, dll)
+
+fi
+
+fi
+
+fi
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+6 Maret
+
+Review progres pengembangan
+sistem dan validasi kesesuaian
+data yang ada di sistem dengan
+kebutuhan analisis
+
+7 Maret
+
+8 Maret
+
+13 Maret
+
+14 Maret
+
+15 Maret
+
+1. Penarikan
+data MPD
+Hari-1 (H-8
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-2 (H-7
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-3 (H-6
+Lebaran)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+Target sistem
+sudah siap
+100% (Beta
+Version)
+
+13
+
+Senin
+
+Selasa
+
+Rabu
+
+Kamis
+
+Jumat
+
+Sabtu
+
+Minggu
+
+16 Maret
+
+17 Maret
+
+18 Maret
+
+19 Maret
+
+20 Maret
+
+21 Maret
+
+22 Maret
+
+1. Penarikan
+data MPD
+Hari-4 (H-5
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-5 (H-4
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-6 (H-3
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-7 (H-2
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-8 (H-1
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-10 (H+1
+Lebaran)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+1. Penarikan
+data MPD
+Hari-9 (Hari
+Pertama
+Lebaran)
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+23 Maret
+
+24 Maret
+
+25 Maret
+
+26 Maret
+
+27 Maret
+
+28 Maret
+
+29 Maret
+
+1. Penarikan
+data MPD
+Hari-11 (H+2
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-12 (H+3
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-13 (H+4
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-14 (H+5
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-15 (H+6
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-16 (H+7
+Lebaran)
+
+1. Penarikan
+data MPD
+Hari-17 (H+8
+Lebaran)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+30 Maret
+
+31 Maret
+
+1 April
+
+2 April
+
+3 April
+
+4 April
+
+5 April
+
+1. Penarikan
+data MPD
+Hari-18 (H+9
+Lebaran)
+
+Finalisasi
+laporan hasil
+olah data MPD
+Angleb 2026
+
+Finalisasi
+laporan hasil
+olah data MPD
+Angleb 2026
+
+Penyusunan
+Dokumen
+Policy Paper
+dan Policy
+Brief
+
+Penyusunan
+Dokumen
+Policy Paper
+dan Policy
+Brief
+
+6 April
+
+7 April
+
+8 April
+
+9 April
+
+10 April
+
+11 April
+
+12 April
+
+Penyusunan
+Dokumen
+Policy Paper
+dan Policy
+Brief
+
+Penyusunan
+Dokumen
+Policy Paper
+dan Policy
+Brief
+
+Penyusunan
+Dokumen
+Policy Paper
+dan Policy
+Brief
+
+Penyusunan
+Dokumen
+Policy Paper
+dan Policy
+Brief
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+3. Monitoring
+kestabilan
+sistem
+
+2. QC data
+harian (data
+anomali, data
+tidak
+lengkap, dan
+lainnya)
+3. Monitoring
+kestabilan
+sistem
+
+3. Monitoring
+kestabilan
+sistem
+
+Daftar Kebutuhan Analisis dan Output
+serta Rencana Kerja Tim
+
+Penyampaian
+Seluruh
+Deliverables
+ke BKT
+
+14
+
+
