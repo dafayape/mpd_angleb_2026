@@ -279,7 +279,6 @@
                                 <li><a href="{{ route('master.referensi.kabkota') }}">Kabupaten Kota</a></li>
                                 <li><a href="{{ route('master.referensi.simpul') }}">Simpul</a></li>
                                 <li><a href="{{ route('master.referensi.moda') }}">Moda</a></li>
-                                <li><a href="{{ route('master.referensi.rules') }}">Rules</a></li>
                             </ul>
                         </li>
 
