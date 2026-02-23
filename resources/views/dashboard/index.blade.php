@@ -156,7 +156,7 @@
                                         style="border-top: 1.5px solid #8e959c; border-left: 1.5px solid #8e959c; border-right: 1.5px solid #8e959c; height: 6px;">
                                     </div>
                                     <div class="text-center fw-bold rounded hover-libur shadow-sm px-2 text-white"
-                                        style="background-color: #8e959c; font-size: 8px; padding: 2px 0; margin-top: -1px; border: 1px solid #2563eb; white-space: nowrap;">
+                                        style="background-color: #8e959c; font-size: 8px; padding: 2px 0; margin-top: -1px; border: 1px solid #8e959c; white-space: nowrap;">
                                         LIBUR SEKOLAH JABODETABEK
                                     </div>
                                 </div>
@@ -168,7 +168,7 @@
                                     </div>
                                     <div class="text-center text-white fw-bold shadow-sm"
                                         style="background: #2389f4; padding: 5px 0; font-size: 10px; width: 100%; border-radius: 4px; border: 1px solid #0d6efd; margin-top: -1px;">
-                                        PENARIKAN MOBILE POSITIONING DATA (MPD) DAN PELAKSANAAN POSKO ANGLEB 2026
+                                        PENARIKAN MOBILE POSITIONING DATA DAN PELAKSANAAN POSKO ANGLEB 2026
                                     </div>
                                 </div>
                             </div>
