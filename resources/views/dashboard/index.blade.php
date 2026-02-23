@@ -70,99 +70,19 @@
                         </div>
 
                         {{-- Event Annotations --}}
-                        <div class="position-relative mt-2" style="height: 125px;">
-                            <!-- Row 1: Top Annotations -->
-                            <div class="position-relative w-100" style="height: 35px; margin-top: 10px;">
-                                <!-- Potensi WFA 1 -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (3 / 18) * 100 }}%; width: {{ (2 / 18) * 100 }}%; top: 0; padding: 0 2px;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
-                                    </div>
-                                    <div class="text-center rounded mt-1 shadow-sm w-100 px-1 text-nowrap d-flex align-items-center justify-content-center"
-                                        style="background-color: #fef4e4; min-height: 20px; font-size: 8px; font-weight: bold; border: 1px solid #f1b44c; color: #495057;">
-                                        POTENSI PENERAPAN WFA</div>
-                                </div>
-
-                                <!-- Nyepi -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (6 / 18) * 100 }}%; width: {{ (1 / 18) * 100 }}%; top: 0; padding: 0 2px;">
-                                    <div class="text-center w-100 text-white rounded shadow-sm px-1 text-nowrap d-flex align-items-center justify-content-center"
-                                        style="background-color: #34c38f; min-height: 20px; font-size: 8px; font-weight: bold; margin-top: 7px;">
-                                        HARI RAYA NYEPI</div>
-                                </div>
-
-                                <!-- Hari Raya Lebaran -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (8 / 18) * 100 }}%; width: {{ (2 / 18) * 100 }}%; top: 0; padding: 0 2px;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #34c38f; border-left: 1.5px solid #34c38f; border-right: 1.5px solid #34c38f; height: 6px;">
-                                    </div>
-                                    <div class="text-center w-100 text-white rounded mt-1 shadow-sm px-1 text-nowrap d-flex align-items-center justify-content-center"
-                                        style="background-color: #34c38f; min-height: 20px; font-size: 8px; font-weight: bold;">
-                                        HARI RAYA LEBARAN</div>
-                                </div>
-
-                                <!-- Potensi WFA 2 -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (12 / 18) * 100 }}%; width: {{ (3 / 18) * 100 }}%; top: 0; padding: 0 2px;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
-                                    </div>
-                                    <div class="text-center rounded mt-1 w-100 shadow-sm px-1 text-nowrap d-flex align-items-center justify-content-center"
-                                        style="background-color: #fef4e4; min-height: 20px; font-size: 8px; font-weight: bold; border: 1px solid #f1b44c; color: #495057;">
-                                        POTENSI PENERAPAN WFA</div>
-                                </div>
-                            </div>
-
-                            <!-- Row 2: Middle Annotations -->
-                            <div class="position-relative w-100" style="height: 35px;">
-                                <!-- Cuti Nyepi -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (5 / 18) * 100 }}%; width: {{ (2 / 18) * 100 }}%; top: 0; padding: 0 2px;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
-                                    </div>
-                                    <div class="text-center w-100 text-dark rounded shadow-sm mt-1 px-1 text-nowrap d-flex align-items-center justify-content-center"
-                                        style="background-color: #f1b44c; min-height: 20px; font-size: 8px; font-weight: bold; color:white !important;">
-                                        CUTI BERSAMA NYEPI</div>
-                                </div>
-
-                                <!-- Cuti Lebaran -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (7 / 18) * 100 }}%; width: {{ (5 / 18) * 100 }}%; top: 0; padding: 0 2px;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
-                                    </div>
-                                    <div class="text-center w-100 rounded shadow-sm mt-1 px-1 text-nowrap d-flex align-items-center justify-content-center"
-                                        style="background-color: #f1b44c; min-height: 20px; font-size: 8px; font-weight: bold; color:white !important;">
-                                        CUTI BERSAMA LEBARAN</div>
-                                </div>
-                            </div>
-
-                            <!-- Row 3: Libur Sekolah & Posko -->
+                        <div class="position-relative mt-2" style="height: 40px;">
+                            <!-- Row 3: Posko Bar -->
                             <div class="position-relative w-100" style="height: 45px; margin-top: 5px;">
-                                <!-- Libur Sekolah JABODETABEK -->
-                                <div class="position-absolute d-flex flex-column"
-                                    style="left: {{ (3 / 18) * 100 }}%; width: {{ (15 / 18) * 100 }}%; top: 0; padding: 0 2px;">
-                                    <div class="w-100"
-                                        style="border-top: 2px solid #ced4da; border-left: 2px solid #ced4da; border-right: 2px solid #ced4da; height: 8px;">
-                                    </div>
-                                    <div class="text-center w-100 fw-bold border"
-                                        style="background-color: #e9ecef; color: #495057; font-size: 10px; padding: 5px 0; margin-top: -1px; border-color: #ced4da !important;">
-                                        LIBUR SEKOLAH JABODETABEK
-                                    </div>
-                                </div>
 
                                 <!-- Posko Bar -->
                                 <div class="position-absolute d-flex flex-column"
-                                    style="left: 0; width: 100%; top: 30px; padding: 0 2px;">
+                                    style="left: 0; width: 100%; top: 0px; padding: 0 2px;">
                                     <div class="w-100"
                                         style="border-left: 2px solid #1c68c6; border-right: 2px solid #1c68c6; height: 8px;">
                                     </div>
                                     <div class="text-center text-white fw-bold shadow-sm"
                                         style="background: #2581f1; padding: 6px 0; font-size: 11px; width: 100%; border-radius: 4px; border: 1px solid #1c68c6; margin-top: -1px;">
-                                        PELAKSANAAN POSKO ANGLEB 2026
+                                        PENARIKAN DATA MOBILE POSITIONING DATA ANGKUTAN LEBARAN 2026
                                     </div>
                                 </div>
                             </div>
@@ -171,6 +91,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     {{-- Highlight Alert --}}
