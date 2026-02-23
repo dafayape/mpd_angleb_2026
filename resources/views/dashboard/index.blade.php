@@ -8,12 +8,226 @@
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
                 <h4 class="mb-sm-0 font-size-18">Dashboard Utama</h4>
                 <div class="page-title-right">
-                    <button type="button"
-                        class="btn btn-primary btn-sm waves-effect waves-light shadow-sm d-flex align-items-center gap-1"
-                        data-bs-toggle="modal" data-bs-target="#timelineModal">
-                        <i class="bx bx-calendar-event fs-5"></i>
-                        <span>Lihat Jadwal / Timeline</span>
-                    </button>
+                    {{-- Button removed as requested --}}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Timeline Card Overlay --}}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 text-center">
+                    <h5 class="fw-bold text-primary mb-0">Overlay Kalender Angkutan Lebaran 2026</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline-calendar">
+                        <div class="timeline-wrapper">
+
+                            <div class="text-center mb-3">
+                                <h6 class="fw-bold mb-0 text-muted">MARET 2026</h6>
+                            </div>
+
+                            <!-- Grid Kalender -->
+                            <div class="timeline-grid">
+                                <!-- Header Hari -->
+                                <div class="timeline-day-header">Jumat</div>
+                                <div class="timeline-day-header">Sabtu</div>
+                                <div class="timeline-day-header">Minggu</div>
+                                <div class="timeline-day-header">Senin</div>
+                                <div class="timeline-day-header">Selasa</div>
+                                <div class="timeline-day-header">Rabu</div>
+                                <div class="timeline-day-header">Kamis</div>
+                                <div class="timeline-day-header">Jumat</div>
+                                <div class="timeline-day-header">Sabtu</div>
+                                <div class="timeline-day-header">Minggu</div>
+                                <div class="timeline-day-header">Senin</div>
+                                <div class="timeline-day-header">Selasa</div>
+                                <div class="timeline-day-header">Rabu</div>
+                                <div class="timeline-day-header">Kamis</div>
+                                <div class="timeline-day-header">Jumat</div>
+                                <div class="timeline-day-header">Sabtu</div>
+                                <div class="timeline-day-header">Minggu</div>
+                                <div class="timeline-day-header">Senin</div>
+
+                                <!-- Tanggal -->
+                                <div class="timeline-date-box date-bg-gray">13</div>
+                                <div class="timeline-date-box date-bg-red">14</div>
+                                <div class="timeline-date-box date-bg-red">15</div>
+                                <div class="timeline-date-box date-bg-gray" style="background-color: #f1f5f7;">16</div>
+                                <div class="timeline-date-box date-bg-gray" style="background-color: #f1f5f7;">17</div>
+                                <div class="timeline-date-box date-bg-yellow">18</div>
+                                <div class="timeline-date-box date-bg-green">19</div>
+                                <div class="timeline-date-box date-bg-yellow">20</div>
+                                <div class="timeline-date-box date-bg-green">21</div>
+                                <div class="timeline-date-box date-bg-green">22</div>
+                                <div class="timeline-date-box date-bg-yellow">23</div>
+                                <div class="timeline-date-box date-bg-yellow">24</div>
+                                <div class="timeline-date-box date-bg-gray">25</div>
+                                <div class="timeline-date-box date-bg-gray">26</div>
+                                <div class="timeline-date-box date-bg-gray">27</div>
+                                <div class="timeline-date-box date-bg-red">28</div>
+                                <div class="timeline-date-box date-bg-red">29</div>
+                                <div class="timeline-date-box date-bg-gray">30</div>
+
+                                <!-- Label H- -->
+                                <div class="timeline-h-label">H-8</div>
+                                <div class="timeline-h-label">H-7</div>
+                                <div class="timeline-h-label">H-6</div>
+                                <div class="timeline-h-label">H-5</div>
+                                <div class="timeline-h-label">H-4</div>
+                                <div class="timeline-h-label">H-3</div>
+                                <div class="timeline-h-label">H-2</div>
+                                <div class="timeline-h-label">H-1</div>
+                                <div class="timeline-h-label">H</div>
+                                <div class="timeline-h-label">H+1</div>
+                                <div class="timeline-h-label">H+2</div>
+                                <div class="timeline-h-label">H+3</div>
+                                <div class="timeline-h-label">H+4</div>
+                                <div class="timeline-h-label">H+5</div>
+                                <div class="timeline-h-label">H+6</div>
+                                <div class="timeline-h-label">H+7</div>
+                                <div class="timeline-h-label">H+8</div>
+                                <div class="timeline-h-label">H+9</div>
+                            </div>
+
+                            <!-- Baris Event (Berlapis) -->
+                            <!-- Baris 1: WFA & Hari Raya -->
+                            <div class="event-bars-container mt-3" style="height: 24px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div class="event-bar event-wfa start-col-4 col-span-3">Potensi Penerapan WFA</div>
+                                <div class="event-bar event-nyepi-hari start-col-7 col-span-1 border-0 rounded"
+                                    style="margin-top: 4px;">Hari Raya Nyepi <i class="mdi mdi-arrow-down position-absolute"
+                                        style="top:-15px;"></i></div>
+                                <div
+                                    class="event-bar event-lebaran-hari start-col-9 col-span-2 border-0 rounded bg-success">
+                                    Hari Raya Lebaran</div>
+                                <div class="event-bar event-wfa start-col-13 col-span-3">Potensi Penerapan WFA</div>
+                            </div>
+
+                            <!-- Baris 2: Cuti Bersama -->
+                            <div class="event-bars-container" style="height: 24px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div class="event-bar event-nyepi-cuti start-col-6 col-span-3">Cuti Bersama Nyepi</div>
+                                <div class="event-bar event-lebaran-cuti start-col-8 col-span-5 border-0">Cuti Bersama
+                                    Lebaran</div>
+                            </div>
+
+                            <!-- Baris 3: Kosong untuk spacing -->
+                            <div class="event-bars-container mt-0 mb-1" style="height: 15px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                            </div>
+
+                            <!-- Baris 4: Libur Sekolah -->
+                            <div class="event-bars-container" style="height: 24px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div class="event-bar event-sekolah start-col-4 col-span-15">Libur Sekolah Jabodetabek</div>
+                            </div>
+
+                            <!-- Baris 5: Posko Angleb -->
+                            <div class="event-bars-container" style="height: 24px;">
+                                <div class="timeline-grid-lines">
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                    <div></div>
+                                </div>
+                                <div class="event-bar event-posko col-span-18">Pelaksanaan Posko Angleb 2026</div>
+                            </div>
+
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -23,7 +237,8 @@
     <div class="alert alert-info border-0 bg-info-subtle text-info" role="alert">
         <div class="d-flex align-items-start">
             <div class="flex-grow-1">
-                <h5 class="alert-heading font-size-14 text-info"><i class="mdi mdi-information-outline me-1"></i> Highlight
+                <h5 class="alert-heading font-size-14 text-info"><i class="mdi mdi-information-outline me-1"></i>
+                    Highlight
                     Survei Angkutan Lebaran 2026</h5>
                 <p class="mb-0 font-size-13">Dalam rangka persiapan dan pelaksanaan layanan Angkutan Lebaran (Angleb) tahun
                     2026, Badan Kebijakan Transportasi melaksanakan survei online pada periode <strong>15 - 30 Januari
@@ -75,7 +290,8 @@
                     <div class="mb-3">
                         <h2 class="mb-0 fw-bold text-primary display-6">{{ number_format($total_real, 0, ',', '.') }} <span
                                 class="fs-6 text-muted fw-normal">Pergerakan</span></h2>
-                        <small class="text-muted">Target Forecast: {{ number_format($total_forecast, 0, ',', '.') }}</small>
+                        <small class="text-muted">Target Forecast:
+                            {{ number_format($total_forecast, 0, ',', '.') }}</small>
                     </div>
                     <div class="alert alert-success bg-success-subtle text-success border-0 mb-0 py-2 px-3">
                         <div class="d-flex align-items-center">
@@ -403,233 +619,7 @@
 @endpush
 
 @section('content')
-    <!-- Timeline Modal -->
-    <div class="modal fade" id="timelineModal" tabindex="-1" aria-labelledby="timelineModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title text-white" id="timelineModalLabel">
-                        <i class="bx bx-calendar-event me-2"></i> Jadwal & Rincian Pengolahan Data
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="timeline-calendar">
-                        <div class="timeline-wrapper">
 
-                            <div class="text-center mb-3">
-                                <h5 class="fw-bold mb-0">MARET 2026</h5>
-                            </div>
-
-                            <!-- Grid Kalender -->
-                            <div class="timeline-grid">
-                                <!-- Header Hari -->
-                                <div class="timeline-day-header">Jumat</div>
-                                <div class="timeline-day-header">Sabtu</div>
-                                <div class="timeline-day-header">Minggu</div>
-                                <div class="timeline-day-header">Senin</div>
-                                <div class="timeline-day-header">Selasa</div>
-                                <div class="timeline-day-header">Rabu</div>
-                                <div class="timeline-day-header">Kamis</div>
-                                <div class="timeline-day-header">Jumat</div>
-                                <div class="timeline-day-header">Sabtu</div>
-                                <div class="timeline-day-header">Minggu</div>
-                                <div class="timeline-day-header">Senin</div>
-                                <div class="timeline-day-header">Selasa</div>
-                                <div class="timeline-day-header">Rabu</div>
-                                <div class="timeline-day-header">Kamis</div>
-                                <div class="timeline-day-header">Jumat</div>
-                                <div class="timeline-day-header">Sabtu</div>
-                                <div class="timeline-day-header">Minggu</div>
-                                <div class="timeline-day-header">Senin</div>
-
-                                <!-- Tanggal -->
-                                <div class="timeline-date-box date-bg-gray">13</div>
-                                <div class="timeline-date-box date-bg-red">14</div>
-                                <div class="timeline-date-box date-bg-red">15</div>
-                                <div class="timeline-date-box date-bg-gray" style="background-color: #f1f5f7;">16</div>
-                                <div class="timeline-date-box date-bg-gray" style="background-color: #f1f5f7;">17</div>
-                                <div class="timeline-date-box date-bg-yellow">18</div>
-                                <div class="timeline-date-box date-bg-green">19</div>
-                                <div class="timeline-date-box date-bg-yellow">20</div>
-                                <div class="timeline-date-box date-bg-green">21</div>
-                                <div class="timeline-date-box date-bg-green">22</div>
-                                <div class="timeline-date-box date-bg-yellow">23</div>
-                                <div class="timeline-date-box date-bg-yellow">24</div>
-                                <div class="timeline-date-box date-bg-gray">25</div>
-                                <div class="timeline-date-box date-bg-gray">26</div>
-                                <div class="timeline-date-box date-bg-gray">27</div>
-                                <div class="timeline-date-box date-bg-red">28</div>
-                                <div class="timeline-date-box date-bg-red">29</div>
-                                <div class="timeline-date-box date-bg-gray">30</div>
-
-                                <!-- Label H- -->
-                                <div class="timeline-h-label">H-8</div>
-                                <div class="timeline-h-label">H-7</div>
-                                <div class="timeline-h-label">H-6</div>
-                                <div class="timeline-h-label">H-5</div>
-                                <div class="timeline-h-label">H-4</div>
-                                <div class="timeline-h-label">H-3</div>
-                                <div class="timeline-h-label">H-2</div>
-                                <div class="timeline-h-label">H-1</div>
-                                <div class="timeline-h-label">H</div>
-                                <div class="timeline-h-label">H+1</div>
-                                <div class="timeline-h-label">H+2</div>
-                                <div class="timeline-h-label">H+3</div>
-                                <div class="timeline-h-label">H+4</div>
-                                <div class="timeline-h-label">H+5</div>
-                                <div class="timeline-h-label">H+6</div>
-                                <div class="timeline-h-label">H+7</div>
-                                <div class="timeline-h-label">H+8</div>
-                                <div class="timeline-h-label">H+9</div>
-                            </div>
-
-                            <!-- Baris Event (Berlapis) -->
-                            <!-- Baris 1: WFA & Hari Raya -->
-                            <div class="event-bars-container mt-3" style="height: 24px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div class="event-bar event-wfa start-col-4 col-span-3">Potensi Penerapan WFA</div>
-                                <div class="event-bar event-nyepi-hari start-col-7 col-span-1 border-0 rounded"
-                                    style="margin-top: 4px;">Hari Raya Nyepi <i
-                                        class="mdi mdi-arrow-down position-absolute" style="top:-15px;"></i></div>
-                                <div
-                                    class="event-bar event-lebaran-hari start-col-9 col-span-2 border-0 rounded bg-success">
-                                    Hari Raya Lebaran</div>
-                                <div class="event-bar event-wfa start-col-13 col-span-3">Potensi Penerapan WFA</div>
-                            </div>
-
-                            <!-- Baris 2: Cuti Bersama -->
-                            <div class="event-bars-container" style="height: 24px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div class="event-bar event-nyepi-cuti start-col-6 col-span-3">Cuti Bersama Nyepi</div>
-                                <div class="event-bar event-lebaran-cuti start-col-8 col-span-5 border-0">Cuti Bersama
-                                    Lebaran</div>
-                            </div>
-
-                            <!-- Baris 3: Kosong untuk spacing -->
-                            <div class="event-bars-container mt-0 mb-1" style="height: 15px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                            </div>
-
-                            <!-- Baris 4: Libur Sekolah -->
-                            <div class="event-bars-container" style="height: 24px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div class="event-bar event-sekolah start-col-4 col-span-15">Libur Sekolah Jabodetabek
-                                </div>
-                            </div>
-
-                            <!-- Baris 5: Posko Angleb -->
-                            <div class="event-bars-container" style="height: 24px;">
-                                <div class="timeline-grid-lines">
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                    <div></div>
-                                </div>
-                                <div class="event-bar event-posko col-span-18">Pelaksanaan Posko Angleb 2026</div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- End Timeline Modal -->
 @endsection
 
 @push('js')
