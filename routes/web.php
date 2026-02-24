@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/map-monitor', [\App\Http\Controllers\MapMonitorController::class, 'index'])->name('map-monitor');
     Route::get('/map-monitor/data', [\App\Http\Controllers\MapMonitorController::class, 'getData'])->name('map-monitor.data');
     Route::get('/map-monitor/search-simpul', [\App\Http\Controllers\MapMonitorController::class, 'searchSimpul'])->name('map-monitor.search-simpul');
+    Route::get('/map-monitor/netflow', [\App\Http\Controllers\MapMonitorController::class, 'getNetflow'])->name('map-monitor.netflow');
 
     // Executive Summary
     Route::prefix('executive-summary')->name('executive.')->group(function () {

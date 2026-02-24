@@ -207,4 +207,89 @@ class MapMonitorController extends Controller
             return response()->json(['results' => []]);
         }
     }
+
+    /**
+     * Netflow Pergerakan (P2.2)
+     * Calculates inflow - outflow per kabupaten/kota
+     * Positive = net inflow, Negative = net outflow
+     */
+    public function getNetflow(Request $request)
+    {
+        try {
+            $startDate = $request->input('start_date', '2026-03-13');
+            $endDate = $request->input('end_date', '2026-03-29');
+
+            try {
+                $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
+                $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
+            } catch (\Throwable $e) {
+                $startDate = '2026-03-13';
+                $endDate = '2026-03-29';
+            }
+
+            $cacheKey = "netflow:{$startDate}:{$endDate}";
+
+            $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                // Inflow: sum(total) grouped by dest kab/kota
+                $inflow = DB::table('spatial_movements')
+                    ->select('kode_dest_kabupaten_kota as code', DB::raw('SUM(total) as total'))
+                    ->whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('is_forecast', false)
+                    ->where('kategori', 'PERGERAKAN')
+                    ->groupBy('kode_dest_kabupaten_kota')
+                    ->pluck('total', 'code');
+
+                // Outflow: sum(total) grouped by origin kab/kota
+                $outflow = DB::table('spatial_movements')
+                    ->select('kode_origin_kabupaten_kota as code', DB::raw('SUM(total) as total'))
+                    ->whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('is_forecast', false)
+                    ->where('kategori', 'PERGERAKAN')
+                    ->groupBy('kode_origin_kabupaten_kota')
+                    ->pluck('total', 'code');
+
+                // Merge all codes
+                $allCodes = $inflow->keys()->merge($outflow->keys())->unique();
+
+                // Get city names
+                $cities = DB::table('ref_cities as c')
+                    ->join('ref_provinces as p', 'c.province_code', '=', 'p.code')
+                    ->select('c.code', 'c.name as city_name', 'p.name as prov_name')
+                    ->whereIn('c.code', $allCodes)
+                    ->get()
+                    ->keyBy('code');
+
+                $result = [];
+                foreach ($allCodes as $code) {
+                    $inf = $inflow[$code] ?? 0;
+                    $outf = $outflow[$code] ?? 0;
+                    $net = $inf - $outf;
+                    $city = $cities[$code] ?? null;
+
+                    $result[] = [
+                        'code' => $code,
+                        'name' => $city ? $city->city_name . ' (' . $city->prov_name . ')' : $code,
+                        'inflow' => (int) $inf,
+                        'outflow' => (int) $outf,
+                        'netflow' => (int) $net,
+                    ];
+                }
+
+                // Sort by absolute netflow desc
+                usort($result, fn($a, $b) => abs($b['netflow']) <=> abs($a['netflow']));
+
+                return $result;
+            });
+
+            return response()->json([
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'data' => $data,
+            ]);
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Netflow Error: ' . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

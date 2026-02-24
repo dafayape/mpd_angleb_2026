@@ -37,7 +37,6 @@ class GrafikMpdController extends Controller
 
     private function getChartData($startDate, $endDate)
     {
-        // Init Daily Dates
         $dates = [];
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
@@ -45,76 +44,113 @@ class GrafikMpdController extends Controller
             $curr->addDay();
         }
 
-        // 1. Fetch Daily Trend (Real vs Forecast)
-        // Query
-        $daily = DB::table('spatial_movements')
+        // 1. Daily Trend — PERGERAKAN (Real vs Forecast)
+        $dailyPergerakan = DB::table('spatial_movements')
             ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('kategori', 'PERGERAKAN')
             ->groupBy('tanggal', 'is_forecast')
             ->orderBy('tanggal')
             ->get();
 
-        // 2. Fetch Daily Operator Breakdown (Real Only usually)
+        // 2. Daily Trend — ORANG (Real vs Forecast)
+        $dailyOrang = DB::table('spatial_movements')
+            ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('kategori', 'ORANG')
+            ->groupBy('tanggal', 'is_forecast')
+            ->orderBy('tanggal')
+            ->get();
+
+        // 3. Daily Operator Breakdown (PERGERAKAN, Real Only)
         $opselDaily = DB::table('spatial_movements')
             ->select('tanggal', 'opsel', DB::raw('SUM(total) as total'))
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->where('is_forecast', false)
+            ->where('kategori', 'PERGERAKAN')
             ->groupBy('tanggal', 'opsel')
             ->get();
 
-        $dailySeries = [
-            'REAL' => array_fill_keys($dates, 0),
-            'FORECAST' => array_fill_keys($dates, 0)
-        ];
+        // 4. Daily Operator Breakdown (ORANG, Real Only)
+        $opselDailyOrang = DB::table('spatial_movements')
+            ->select('tanggal', 'opsel', DB::raw('SUM(total) as total'))
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('is_forecast', false)
+            ->where('kategori', 'ORANG')
+            ->groupBy('tanggal', 'opsel')
+            ->get();
 
-        foreach ($daily as $row) {
+        // Build PERGERAKAN series
+        $movSeries = ['REAL' => array_fill_keys($dates, 0), 'FORECAST' => array_fill_keys($dates, 0)];
+        foreach ($dailyPergerakan as $row) {
             $type = $row->is_forecast ? 'FORECAST' : 'REAL';
-            $dailySeries[$type][$row->tanggal] = (int) $row->total;
+            $movSeries[$type][$row->tanggal] = (int) $row->total;
         }
 
-        $opselSeries = [
-            'XL' => array_fill_keys($dates, 0),
-            'IOH' => array_fill_keys($dates, 0),
-            'TSEL' => array_fill_keys($dates, 0)
-        ];
+        // Build ORANG series
+        $pplSeries = ['REAL' => array_fill_keys($dates, 0), 'FORECAST' => array_fill_keys($dates, 0)];
+        foreach ($dailyOrang as $row) {
+            $type = $row->is_forecast ? 'FORECAST' : 'REAL';
+            $pplSeries[$type][$row->tanggal] = (int) $row->total;
+        }
 
+        // Build Opsel series (PERGERAKAN)
+        $opselMov = ['XL' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
         foreach ($opselDaily as $row) {
-             // Normalize
-            $raw = strtoupper($row->opsel);
-            $name = 'OTHER';
-            if (str_contains($raw, 'XL') || str_contains($raw, 'AXIS')) $name = 'XL';
-            elseif (str_contains($raw, 'INDOSAT') || str_contains($raw, 'IOH') || str_contains($raw, 'TRI')) $name = 'IOH';
-            elseif (str_contains($raw, 'TELKOMSEL') || str_contains($raw, 'TSEL')) $name = 'TSEL';
-
+            $name = $this->normalizeOpsel($row->opsel);
             if ($name === 'OTHER') continue;
-            
-            $opselSeries[$name][$row->tanggal] += (int) $row->total;
+            $opselMov[$name][$row->tanggal] += (int) $row->total;
         }
 
-        // 3. Calculate Totals for Summary
-        $totalReal = array_sum($dailySeries['REAL']);
-        $totalForecast = array_sum($dailySeries['FORECAST']);
-        $totalPpl = $totalReal; 
+        // Build Opsel series (ORANG)
+        $opselPpl = ['XL' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
+        foreach ($opselDailyOrang as $row) {
+            $name = $this->normalizeOpsel($row->opsel);
+            if ($name === 'OTHER') continue;
+            $opselPpl[$name][$row->tanggal] += (int) $row->total;
+        }
+
+        $totalMovReal = array_sum($movSeries['REAL']);
+        $totalMovFc = array_sum($movSeries['FORECAST']);
+        $totalPplReal = array_sum($pplSeries['REAL']);
+        $totalPplFc = array_sum($pplSeries['FORECAST']);
 
         return [
             'dates' => $dates,
             'summary' => [
-                'real' => $totalReal,
-                'forecast' => $totalForecast,
-                'people' => $totalPpl
+                'real' => $totalMovReal,
+                'forecast' => $totalMovFc,
+                'people' => $totalPplReal,
+                'people_forecast' => $totalPplFc,
             ],
-            // Chart 1 & 2 Data (Pergerakan & Orang) - Real vs Forecast
             'series_trend' => [
-                ['name' => 'REAL', 'data' => array_values($dailySeries['REAL']), 'color' => '#2caffe'], // Light Blue
-                ['name' => 'FORECAST', 'data' => array_values($dailySeries['FORECAST']), 'color' => '#fec107'] // Yellow
+                ['name' => 'REAL', 'data' => array_values($movSeries['REAL']), 'color' => '#2caffe'],
+                ['name' => 'FORECAST', 'data' => array_values($movSeries['FORECAST']), 'color' => '#fec107']
             ],
-            // Chart 3 & 4 Data (Opsel) - Stacked or Grouped? Image 2 shows Grouped.
+            'series_trend_orang' => [
+                ['name' => 'REAL', 'data' => array_values($pplSeries['REAL']), 'color' => '#2caffe'],
+                ['name' => 'FORECAST', 'data' => array_values($pplSeries['FORECAST']), 'color' => '#fec107']
+            ],
             'series_opsel' => [
-                ['name' => 'XL', 'data' => array_values($opselSeries['XL']), 'color' => '#2caffe'], // Blue
-                ['name' => 'IOH', 'data' => array_values($opselSeries['IOH']), 'color' => '#fec107'], // Yellow
-                ['name' => 'TSEL', 'data' => array_values($opselSeries['TSEL']), 'color' => '#ff3d60'] // Red
+                ['name' => 'XL', 'data' => array_values($opselMov['XL']), 'color' => '#2caffe'],
+                ['name' => 'IOH', 'data' => array_values($opselMov['IOH']), 'color' => '#fec107'],
+                ['name' => 'TSEL', 'data' => array_values($opselMov['TSEL']), 'color' => '#ff3d60']
+            ],
+            'series_opsel_orang' => [
+                ['name' => 'XL', 'data' => array_values($opselPpl['XL']), 'color' => '#2caffe'],
+                ['name' => 'IOH', 'data' => array_values($opselPpl['IOH']), 'color' => '#fec107'],
+                ['name' => 'TSEL', 'data' => array_values($opselPpl['TSEL']), 'color' => '#ff3d60']
             ]
         ];
+    }
+
+    private function normalizeOpsel(string $opsel): string
+    {
+        $raw = strtoupper($opsel);
+        if (str_contains($raw, 'XL') || str_contains($raw, 'AXIS')) return 'XL';
+        if (str_contains($raw, 'INDOSAT') || str_contains($raw, 'IOH') || str_contains($raw, 'TRI')) return 'IOH';
+        if (str_contains($raw, 'TELKOMSEL') || str_contains($raw, 'TSEL')) return 'TSEL';
+        return 'OTHER';
     }
     
     // Placeholder methods for other routes to prevent errors
@@ -743,21 +779,13 @@ class GrafikMpdController extends Controller
 
     private function getJabodetabekChartData($startDate, $endDate)
     {
-        // Jabodetabek City Codes
-        // DKI: 3171, 3172, 3173, 3174, 3175, 3101
-        // Bogor: 3201 (Kab), 3271 (Kota)
-        // Depok: 3276
-        // Tangerang: 3603 (Kab), 3671 (Kota), 3674 (Tangsel)
-        // Bekasi: 3216 (Kab), 3275 (Kota)
         $jabodetabekCodes = [
             '3171', '3172', '3173', '3174', '3175', '3101',
-            '3201', '3271',
-            '3276',
+            '3201', '3271', '3276',
             '3603', '3671', '3674',
             '3216', '3275'
         ];
 
-        // Init Daily Dates
         $dates = [];
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
@@ -765,73 +793,72 @@ class GrafikMpdController extends Controller
             $curr->addDay();
         }
 
-        // Query: Sum Total by Date & Forecast, Filter by Jabodetabek
+        // Query all Jabo-related movements (origin OR dest in Jabo)
         $daily = DB::table('spatial_movements')
-            ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+            ->select('tanggal', 'kategori', 'is_forecast',
+                'kode_origin_kabupaten_kota as origin',
+                'kode_dest_kabupaten_kota as dest',
+                DB::raw('SUM(total) as total'))
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->where(function($q) use ($jabodetabekCodes) {
-                // Origin OR Dest must be in Jabodetabek
                 $q->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                   ->orWhereIn('kode_dest_kabupaten_kota', $jabodetabekCodes);
             })
-            ->groupBy('tanggal', 'is_forecast')
-            ->orderBy('tanggal')
+            ->groupBy('tanggal', 'kategori', 'is_forecast', 'origin', 'dest')
             ->get();
 
-        // Separate Series
-        $movementSeries = [
-            'REAL' => array_fill_keys($dates, 0),
-            'FORECAST' => array_fill_keys($dates, 0)
-        ];
-        // People Series (Assuming Factor 1.5 for agg check, or simpler: just use same Total as 'Pergerakan' if user means 'Orang' as in 'Trips'??)
-        // Usually MPD distinguishes "Movement" (Trips) vs "People" (Unique Devices).
-        // BUT `spatial_movements` table usually stores "Trips" (Movement).
-        // If we don't have separate People column, we might estimate or user might mean the same thing in different charts.
-        // Let's assume Total = Movement.
-        // And People = Total / 1.5 (Avg Occupancy/Activity Factor) or just displayed separately?
-        // Let's apply a factor to simulate "People" vs "Movement" difference if needed.
-        // Or if data is "People", then Movement = People * TripRate.
-        // Standard MPD: "Total" is usually "Pergerakan". "Orang" is usually lower.
-        // Let's assume People = Pergerakan / 2.5 (avg trips per day).
-        
-        $peopleSeries = [
-            'REAL' => array_fill_keys($dates, 0),
-            'FORECAST' => array_fill_keys($dates, 0)
-        ];
+        // Init series: Intra/Inter × PERGERAKAN/ORANG × Real/Forecast
+        $init = fn() => ['REAL' => array_fill_keys($dates, 0), 'FORECAST' => array_fill_keys($dates, 0)];
+        $intraMov = $init(); $intraPpl = $init();
+        $interMov = $init(); $interPpl = $init();
 
         foreach ($daily as $row) {
+            $originInJabo = in_array($row->origin, $jabodetabekCodes);
+            $destInJabo = in_array($row->dest, $jabodetabekCodes);
             $type = $row->is_forecast ? 'FORECAST' : 'REAL';
             $val = (int) $row->total;
-            
-            $movementSeries[$type][$row->tanggal] = $val;
-            
-            // Simulation for People Count (Unique)
-            $peopleSeries[$type][$row->tanggal] = (int) ($val / 2.2); 
+
+            $isIntra = $originInJabo && $destInJabo;
+
+            if ($row->kategori === 'PERGERAKAN') {
+                if ($isIntra) $intraMov[$type][$row->tanggal] += $val;
+                else $interMov[$type][$row->tanggal] += $val;
+            } elseif ($row->kategori === 'ORANG') {
+                if ($isIntra) $intraPpl[$type][$row->tanggal] += $val;
+                else $interPpl[$type][$row->tanggal] += $val;
+            }
         }
 
-        // Summary Totals
-        $totalMovReal = array_sum($movementSeries['REAL']);
-        $totalMovFc = array_sum($movementSeries['FORECAST']);
-        $totalPplReal = array_sum($peopleSeries['REAL']);
-        
         return [
             'dates' => $dates,
             'summary' => [
-                'movement_real' => $totalMovReal,
-                'movement_forecast' => $totalMovFc,
-                'people_real' => $totalPplReal,
-                'people_forecast' => array_sum($peopleSeries['FORECAST'])
+                'intra_mov_real' => array_sum($intraMov['REAL']),
+                'intra_mov_fc' => array_sum($intraMov['FORECAST']),
+                'intra_ppl_real' => array_sum($intraPpl['REAL']),
+                'inter_mov_real' => array_sum($interMov['REAL']),
+                'inter_mov_fc' => array_sum($interMov['FORECAST']),
+                'inter_ppl_real' => array_sum($interPpl['REAL']),
             ],
-            'chart_movement' => [
-                ['name' => 'REAL', 'data' => array_values($movementSeries['REAL']), 'color' => '#2caffe'],
-                ['name' => 'FORECAST', 'data' => array_values($movementSeries['FORECAST']), 'color' => '#fec107']
+            'chart_intra_mov' => [
+                ['name' => 'REAL', 'data' => array_values($intraMov['REAL']), 'color' => '#2caffe'],
+                ['name' => 'FORECAST', 'data' => array_values($intraMov['FORECAST']), 'color' => '#fec107']
             ],
-            'chart_people' => [
-                ['name' => 'REAL', 'data' => array_values($peopleSeries['REAL']), 'color' => '#2caffe'],
-                ['name' => 'FORECAST', 'data' => array_values($peopleSeries['FORECAST']), 'color' => '#fec107']
-            ]
+            'chart_intra_ppl' => [
+                ['name' => 'REAL', 'data' => array_values($intraPpl['REAL']), 'color' => '#2caffe'],
+                ['name' => 'FORECAST', 'data' => array_values($intraPpl['FORECAST']), 'color' => '#fec107']
+            ],
+            'chart_inter_mov' => [
+                ['name' => 'REAL', 'data' => array_values($interMov['REAL']), 'color' => '#2caffe'],
+                ['name' => 'FORECAST', 'data' => array_values($interMov['FORECAST']), 'color' => '#fec107']
+            ],
+            'chart_inter_ppl' => [
+                ['name' => 'REAL', 'data' => array_values($interPpl['REAL']), 'color' => '#2caffe'],
+                ['name' => 'FORECAST', 'data' => array_values($interPpl['FORECAST']), 'color' => '#fec107']
+            ],
         ];
     }
+
+
     public function jabodetabekPergerakanOrangOpsel(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
@@ -860,13 +887,11 @@ class GrafikMpdController extends Controller
     {
         $jabodetabekCodes = [
             '3171', '3172', '3173', '3174', '3175', '3101',
-            '3201', '3271',
-            '3276',
+            '3201', '3271', '3276',
             '3603', '3671', '3674',
             '3216', '3275'
         ];
 
-        // Init Daily Dates
         $dates = [];
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
@@ -874,59 +899,55 @@ class GrafikMpdController extends Controller
             $curr->addDay();
         }
 
-        // Query: Sum Total by Date & Opsel, Filter by Jabodetabek
-        // Real Data Only usually for Opsel breakdown
+        // Query with kategori + origin/dest for Intra/Inter classification
         $query = DB::table('spatial_movements')
-            ->select('tanggal', 'opsel', DB::raw('SUM(total) as total'))
+            ->select('tanggal', 'opsel', 'kategori',
+                'kode_origin_kabupaten_kota as origin',
+                'kode_dest_kabupaten_kota as dest',
+                DB::raw('SUM(total) as total'))
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->where('is_forecast', false) 
+            ->where('is_forecast', false)
             ->where(function($q) use ($jabodetabekCodes) {
                 $q->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                   ->orWhereIn('kode_dest_kabupaten_kota', $jabodetabekCodes);
             })
-            ->groupBy('tanggal', 'opsel')
+            ->groupBy('tanggal', 'opsel', 'kategori', 'origin', 'dest')
             ->orderBy('tanggal')
             ->get();
 
-        // Structure Series
-        $seriesMov = [
-            'XL' => array_fill_keys($dates, 0),
-            'IOH' => array_fill_keys($dates, 0),
-            'TSEL' => array_fill_keys($dates, 0)
-        ];
-        $seriesPpl = [
-            'XL' => array_fill_keys($dates, 0),
-            'IOH' => array_fill_keys($dates, 0),
-            'TSEL' => array_fill_keys($dates, 0)
-        ];
+        // Init: Intra/Inter × Pergerakan/Orang × Opsel
+        $initOpsel = fn() => ['XL' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
+        $intraMovOpsel = $initOpsel(); $intraPplOpsel = $initOpsel();
+        $interMovOpsel = $initOpsel(); $interPplOpsel = $initOpsel();
 
         foreach ($query as $row) {
-            // Normalize Opsel Name
-            $raw = strtoupper($row->opsel);
-            $name = 'OTHER';
-            if (str_contains($raw, 'XL') || str_contains($raw, 'AXIS')) $name = 'XL';
-            elseif (str_contains($raw, 'INDOSAT') || str_contains($raw, 'IOH') || str_contains($raw, 'TRI')) $name = 'IOH';
-            elseif (str_contains($raw, 'TELKOMSEL') || str_contains($raw, 'TSEL')) $name = 'TSEL';
-
+            $name = $this->normalizeOpsel($row->opsel);
             if ($name === 'OTHER') continue;
 
+            $isIntra = in_array($row->origin, $jabodetabekCodes) && in_array($row->dest, $jabodetabekCodes);
             $val = (int) $row->total;
-            $seriesMov[$name][$row->tanggal] += $val;
-            $seriesPpl[$name][$row->tanggal] += (int) ($val / 2.2); // Sim Ppl
+
+            if ($row->kategori === 'PERGERAKAN') {
+                if ($isIntra) $intraMovOpsel[$name][$row->tanggal] += $val;
+                else $interMovOpsel[$name][$row->tanggal] += $val;
+            } elseif ($row->kategori === 'ORANG') {
+                if ($isIntra) $intraPplOpsel[$name][$row->tanggal] += $val;
+                else $interPplOpsel[$name][$row->tanggal] += $val;
+            }
         }
+
+        $formatSeries = fn($data) => [
+            ['name' => 'XL', 'data' => array_values($data['XL']), 'color' => '#2caffe'],
+            ['name' => 'IOH', 'data' => array_values($data['IOH']), 'color' => '#fec107'],
+            ['name' => 'TSEL', 'data' => array_values($data['TSEL']), 'color' => '#ff3d60']
+        ];
 
         return [
             'dates' => $dates,
-            'chart_movement' => [
-                ['name' => 'XL', 'data' => array_values($seriesMov['XL']), 'color' => '#2caffe'],
-                ['name' => 'IOH', 'data' => array_values($seriesMov['IOH']), 'color' => '#fec107'],
-                ['name' => 'TSEL', 'data' => array_values($seriesMov['TSEL']), 'color' => '#ff3d60']
-            ],
-            'chart_people' => [
-                ['name' => 'XL', 'data' => array_values($seriesPpl['XL']), 'color' => '#2caffe'],
-                ['name' => 'IOH', 'data' => array_values($seriesPpl['IOH']), 'color' => '#fec107'],
-                ['name' => 'TSEL', 'data' => array_values($seriesPpl['TSEL']), 'color' => '#ff3d60']
-            ]
+            'chart_intra_mov' => $formatSeries($intraMovOpsel),
+            'chart_intra_ppl' => $formatSeries($intraPplOpsel),
+            'chart_inter_mov' => $formatSeries($interMovOpsel),
+            'chart_inter_ppl' => $formatSeries($interPplOpsel),
         ];
     }
     public function jabodetabekOdKabkota(Request $request)
@@ -1032,60 +1053,33 @@ class GrafikMpdController extends Controller
             ];
         })->values();
 
-        // 3. DAILY CHARTS (Internal & Outbound)
-        // We need 4 Charts:
-        // 1. Internal Jabodetabek Movement (Real)
-        // 2. Internal Jabodetabek People (Real)
-        // 3. Outbound Jabodetabek Movement (Real) (Origin Jabo, Dest Outside)
-        // 4. Outbound Jabodetabek People (Real)
-        
-        $dates = [];
-        $curr = $startDate->copy();
-        while ($curr->lte($endDate)) {
-            $dates[] = $curr->format('Y-m-d');
-            $curr->addDay();
+        // 3. Inter Jabodetabek — Top 10 Provinsi Tujuan (Slide 32)
+        // Origin in Jabo, Dest OUTSIDE Jabo, grouped by Provinsi Tujuan
+        try {
+            $interProvinsi = DB::table('spatial_movements as sm')
+                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+                ->join('ref_provinces as dp', 'dc.province_code', '=', 'dp.code')
+                ->select('dp.code as prov_code', 'dp.name as prov_name', DB::raw('SUM(sm.total) as total_volume'))
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.is_forecast', false)
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('dp.code', 'dp.name')
+                ->orderByDesc('total_volume')
+                ->limit(10)
+                ->get();
+        } catch (\Throwable $e) {
+            $interProvinsi = collect();
         }
-
-        // Query Daily
-        $daily = DB::table('spatial_movements')
-            ->select('tanggal', 'kode_origin_kabupaten_kota as origin', 'kode_dest_kabupaten_kota as dest', DB::raw('SUM(total) as total'))
-            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->where('is_forecast', false)
-            ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes) // Always Origin Jabo for this context
-            ->groupBy('tanggal', 'origin', 'dest')
-            ->get();
-
-        $internalMov = array_fill_keys($dates, 0);
-        $outboundMov = array_fill_keys($dates, 0);
-
-        foreach ($daily as $row) {
-            $isDestJabo = in_array($row->dest, $jabodetabekCodes);
-            $val = (int) $row->total;
-            
-            if ($isDestJabo) {
-                // Internal
-                $internalMov[$row->tanggal] += $val;
-            } else {
-                // Outbound
-                $outboundMov[$row->tanggal] += $val;
-            }
-        }
-
-        // People Simulation (Factor 2.2)
-        $internalPpl = array_map(fn($v) => (int)($v / 2.2), $internalMov);
-        $outboundPpl = array_map(fn($v) => (int)($v / 2.2), $outboundMov);
 
         return [
-            'dates' => $dates,
+            'dates' => [],
             'top_origin' => $topOrigin,
             'top_dest' => $topDest,
             'sankey' => $sankeyData,
             'total_volume' => $totalVol,
-            // Chart Data
-            'chart_internal_mov' => array_values($internalMov),
-            'chart_internal_ppl' => array_values($internalPpl),
-            'chart_outbound_mov' => array_values($outboundMov),
-            'chart_outbound_ppl' => array_values($outboundPpl)
+            'top_inter_provinsi' => $interProvinsi,
         ];
     }
     public function jabodetabekModeShare(Request $request)

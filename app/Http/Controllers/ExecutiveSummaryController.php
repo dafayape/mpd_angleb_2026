@@ -47,8 +47,9 @@ class ExecutiveSummaryController extends Controller
                 // Fetch Simpuls for names
                 $simpuls = Simpul::select('code', 'name')->get()->keyBy('code');
 
-                // Get Aggregated Data per Simpul
+                // Get Aggregated Data per Simpul (PERGERAKAN only)
                 $raw = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('kategori', 'PERGERAKAN')
                     ->select(
                         'kode_origin_simpul',
                         'is_forecast',
@@ -57,8 +58,16 @@ class ExecutiveSummaryController extends Controller
                     ->groupBy('kode_origin_simpul', 'is_forecast')
                     ->get();
 
+                // Get Unique Subscriber (ORANG) totals
+                $orangTotals = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('kategori', 'ORANG')
+                    ->selectRaw("
+                        SUM(CASE WHEN is_forecast = false THEN total ELSE 0 END) as orang_real,
+                        SUM(CASE WHEN is_forecast = true THEN total ELSE 0 END) as orang_forecast
+                    ")
+                    ->first();
+
                 $tableData = [];
-                // Process Raw Data
                 foreach ($raw as $row) {
                     $code = $row->kode_origin_simpul;
                     if (! isset($tableData[$code])) {
@@ -82,59 +91,89 @@ class ExecutiveSummaryController extends Controller
                 $totalPaparan = array_sum(array_column($tableData, 'paparan'));
                 $totalAktual = array_sum(array_column($tableData, 'aktual'));
 
-                // --- AI Analysis Logic ---
+                // --- Jabodetabek Totals (P2.5) ---
+                $jabodetabekCodes = [
+                    '3171', '3172', '3173', '3174', '3175', '3101',
+                    '3201', '3271', '3276',
+                    '3603', '3671', '3674',
+                    '3216', '3275'
+                ];
+
+                $jaboTotals = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('kategori', 'PERGERAKAN')
+                    ->where(function($q) use ($jabodetabekCodes) {
+                        $q->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                          ->orWhereIn('kode_dest_kabupaten_kota', $jabodetabekCodes);
+                    })
+                    ->selectRaw("
+                        SUM(CASE WHEN is_forecast = false THEN total ELSE 0 END) as jabo_real,
+                        SUM(CASE WHEN is_forecast = true THEN total ELSE 0 END) as jabo_forecast
+                    ")
+                    ->first();
+
+                $jaboReal = (int) ($jaboTotals->jabo_real ?? 0);
+                $jaboForecast = (int) ($jaboTotals->jabo_forecast ?? 0);
+
+                // --- Analysis ---
                 $analysis = [];
 
-                // 1. Volume Analysis
+                // 1. Volume Analysis (Nasional)
                 if ($totalPaparan > 0) {
                     $diff = $totalAktual - $totalPaparan;
                     $percentDiff = round((abs($diff) / $totalPaparan) * 100, 1);
                     $trend = $diff >= 0 ? 'melampaui' : 'berada di bawah';
-                    $analysis[] = 'Total pergerakan aktual pada periode ini tercatat sebesar **'.number_format($totalAktual, 0, ',', '.')."** orang. Angka ini **{$percentDiff}%** {$trend} target paparan yang telah diprediksi sebesar ".number_format($totalPaparan, 0, ',', '.').'.';
+                    $analysis[] = 'Total pergerakan aktual Nasional pada periode ini tercatat sebesar **'.number_format($totalAktual, 0, ',', '.')."**. Angka ini **{$percentDiff}%** {$trend} target paparan (".number_format($totalPaparan, 0, ',', '.').').';
                 } else {
-                    $analysis[] = 'Total pergerakan aktual tercatat sebesar **'.number_format($totalAktual, 0, ',', '.').'** orang.';
+                    $analysis[] = 'Total pergerakan aktual Nasional tercatat sebesar **'.number_format($totalAktual, 0, ',', '.').'**.';
                 }
 
-                // 2. Top Simpul Analysis
+                // 1b. Unique Subscriber
+                $orangRealVal = (int) ($orangTotals->orang_real ?? 0);
+                if ($orangRealVal > 0) {
+                    $analysis[] = 'Jumlah unique subscriber (individu) yang melakukan perjalanan tercatat sebesar **'.number_format($orangRealVal, 0, ',', '.').'** orang.';
+                }
+
+                // 2. Top Simpul
                 if (! empty($tableData)) {
                     $top1 = $tableData[0];
-                    $analysis[] = "Titik kepadatan (simpul) tertinggi secara nasional terpantau di **{$top1['name']}** dengan total volume pergerakan mencapai **".number_format($top1['aktual'], 0, ',', '.').'** orang.';
+                    $analysis[] = "Simpul transportasi terpadat secara nasional terpantau di **{$top1['name']}** dengan total pergerakan **".number_format($top1['aktual'], 0, ',', '.').'**.';
 
                     if (count($tableData) > 1) {
                         $top2 = $tableData[1];
                         $top3 = $tableData[2] ?? null;
                         $otherTops = $top3 ? "**{$top2['name']}** dan **{$top3['name']}**" : "**{$top2['name']}**";
-                        $analysis[] = 'Simpul utama lainnya yang menyumbang volume pergerakan terbesar adalah '.$otherTops.'.';
+                        $analysis[] = 'Simpul utama lainnya: '.$otherTops.'.';
                     }
                 }
 
-                // 3. Achievement Analysis
-                $lowPerformers = array_filter($tableData, function ($row) {
-                    return $row['paparan'] > 0 && ($row['aktual'] / $row['paparan']) < 0.8;
-                });
-                $highPerformers = array_filter($tableData, function ($row) {
-                    return $row['paparan'] > 0 && ($row['aktual'] / $row['paparan']) > 1.2;
-                });
+                // 3. Performance
+                $lowPerformers = array_filter($tableData, fn($r) => $r['paparan'] > 0 && ($r['aktual'] / $r['paparan']) < 0.8);
+                $highPerformers = array_filter($tableData, fn($r) => $r['paparan'] > 0 && ($r['aktual'] / $r['paparan']) > 1.2);
 
                 if (count($lowPerformers) > 0) {
                     $names = array_slice(array_column($lowPerformers, 'name'), 0, 3);
-                    $analysis[] = 'Perlu diperhatikan bahwa terdapat **'.count($lowPerformers).' simpul** yang realisasinya berada secara signifikan di bawah target (<80%), di antaranya: '.implode(', ', $names).'.';
+                    $analysis[] = 'Terdapat **'.count($lowPerformers).' simpul** di bawah target (<80%), antara lain: '.implode(', ', $names).'.';
                 }
-
                 if (count($highPerformers) > 0) {
                     $namesHigh = array_slice(array_column($highPerformers, 'name'), 0, 3);
-                    $analysis[] = 'Sebaliknya, **'.count($highPerformers).' simpul** mengalami lonjakan penumpang yang jauh melebihi proyeksi (>120%), seperti pada '.implode(', ', $namesHigh).'.';
+                    $analysis[] = 'Sebanyak **'.count($highPerformers).' simpul** melebihi proyeksi (>120%): '.implode(', ', $namesHigh).'.';
                 }
 
-                if (count($lowPerformers) == 0 && count($highPerformers) == 0) {
-                    $analysis[] = 'Secara umum, mayoritas simpul menunjukkan performa pergerakan yang stabil dan sangat mendekati angka prediksi paparan.';
+                // 4. Kesimpulan Jabodetabek (P2.5 — Slide 34)
+                $jaboAnalysis = [];
+                if ($jaboReal > 0) {
+                    $jaboPercent = $jaboForecast > 0 ? round(($jaboReal / $jaboForecast) * 100, 1) : 0;
+                    $jaboTrend = $jaboReal >= $jaboForecast ? 'melampaui' : 'di bawah';
+                    $jaboAnalysis[] = 'Pergerakan wilayah Jabodetabek tercatat **'.number_format($jaboReal, 0, ',', '.').'** ('.($jaboPercent).'% dari forecast), '.$jaboTrend.' target.';
+                    $jaboContrib = $totalAktual > 0 ? round(($jaboReal / $totalAktual) * 100, 1) : 0;
+                    $jaboAnalysis[] = 'Kontribusi Jabodetabek terhadap pergerakan nasional sebesar **'.$jaboContrib.'%**.';
                 }
 
-                // 4. Recommendation
+                // 5. Rekomendasi
                 if ($totalAktual > $totalPaparan) {
-                    $analysis[] = 'Rekomendasi: Fokuskan penambahan kapasitas layanan dan personel keamanan pada simpul-simpul utama yang mengalami lonjakan (peringkat 3 teratas) untuk meminimalisir penumpukan penumpang.';
+                    $analysis[] = '**Rekomendasi**: Tambah kapasitas layanan pada simpul-simpul utama yang mengalami lonjakan.';
                 } else {
-                    $analysis[] = 'Rekomendasi: Lakukan evaluasi mendalam terhadap simpul-simpul yang performanya di bawah target. Kemungkinan adanya peralihan moda atau preferensi jalur alternatif perlu dikaji lebih lanjut.';
+                    $analysis[] = '**Rekomendasi**: Evaluasi simpul dengan performa di bawah target untuk identifikasi peralihan moda atau jalur alternatif.';
                 }
 
                 Carbon::setLocale('id');
@@ -148,11 +187,15 @@ class ExecutiveSummaryController extends Controller
                     'end_date' => $endDate,
                     'period_label' => $periodLabel,
                     'analysis' => $analysis,
+                    'analysis_jabodetabek' => $jaboAnalysis,
                     'summary' => [
                         'total_paparan' => $totalPaparan,
                         'total_aktual' => $totalAktual,
+                        'total_orang' => $orangRealVal,
                         'selisih' => $totalAktual - $totalPaparan,
                         'persen' => $totalPaparan > 0 ? round(($totalAktual / $totalPaparan) * 100, 1) : 0,
+                        'jabo_real' => $jaboReal,
+                        'jabo_forecast' => $jaboForecast,
                     ],
                 ]);
             });

@@ -203,6 +203,14 @@ class DatasourceController extends Controller
                 'error_message' => ! empty($errors) ? implode(' | ', array_slice($errors, 0, 5)) : null,
             ]);
 
+            // Auto-trigger ETL: Transform raw_mpd_data → spatial_movements
+            try {
+                \App\Jobs\Mpd\TransformRawToSpatialJob::dispatch($job->id);
+                Log::info("[Import] ETL job dispatched for import_job_id={$job->id}");
+            } catch (\Throwable $etlError) {
+                Log::error('[Import] Failed to dispatch ETL job: '.$etlError->getMessage());
+            }
+
             return response()->json([
                 'status' => 'completed',
                 'offset' => $newOffset,
@@ -210,6 +218,7 @@ class DatasourceController extends Controller
                 'rows_skipped' => $rowsSkipped,
                 'percent' => 100,
                 'errors' => $errors,
+                'etl_dispatched' => true,
             ]);
         }
 
