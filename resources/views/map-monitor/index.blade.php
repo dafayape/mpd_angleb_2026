@@ -9,9 +9,11 @@
     <style>
         #map {
             width: 100%;
-            height: 600px;
-            border-radius: 4px;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+            border-radius: 8px;
             z-index: 1;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
         .legend-control {
@@ -175,7 +177,7 @@
 
                     <!-- Loading Indicator -->
                     <div id="loadingOverlay"
-                        style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 600px; background: rgba(255,255,255,0.7); z-index: 1000; align-items: center; justify-content: center;">
+                        style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; min-height: 500px; background: rgba(255,255,255,0.7); z-index: 1000; align-items: center; justify-content: center; border-radius: 8px;">
                         <div class="spinner-border text-primary" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
@@ -276,17 +278,18 @@
                         <span>Terminal</span>
                     </div>
                     <div class="legend-item">
-                        <span class="legend-icon-box"><i class="mdi mdi-ship"></i></span>
+                        <span class="legend-icon-box"><i class="mdi mdi-ferry"></i></span>
                         <span>Pelabuhan</span>
                     </div>
                 </div>
 
                 <div class="legend-section">
                     <span class="legend-title">REFERENSI RADIUS</span>
-                    <div class="radius-scale-bar" style="width: 100px;"></div>
-                    <div class="radius-scale-label" style="width: 100px;">
+                    <div class="radius-scale-bar" style="width: 150px;"></div>
+                    <div class="radius-scale-label" style="width: 150px;">
                         <span>0m</span>
-                        <span>500m</span>
+                        <span>1000m</span>
+                        <span>2000m</span>
                     </div>
                     <small class="text-muted d-block mt-1" style="font-size: 9px; line-height: 1.2;">
                         * Ukuran lingkaran absolut sesuai database.
