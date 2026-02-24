@@ -11,13 +11,13 @@ class DailyReportController extends Controller
     public function index(Request $request)
     {
         $startDate = $request->input('start_date', '2026-03-13');
-        $endDate = $request->input('end_date', '2026-03-29');
+        $endDate = $request->input('end_date', '2026-03-30');
 
         // Enforce Date Limits Server-Side (13 Mar 2026 - 29 Mar 2026)
         if ($startDate < '2026-03-13') $startDate = '2026-03-13';
-        if ($startDate > '2026-03-29') $startDate = '2026-03-29';
+        if ($startDate > '2026-03-30') $startDate = '2026-03-30';
         if ($endDate < '2026-03-13') $endDate = '2026-03-13';
-        if ($endDate > '2026-03-29') $endDate = '2026-03-29';
+        if ($endDate > '2026-03-30') $endDate = '2026-03-30';
         
         // Cache data for report
         $cacheKey = "dailyreport:text:v1:{$startDate}:{$endDate}";
@@ -33,29 +33,46 @@ class DailyReportController extends Controller
             ];
 
             // --- A. NASIONAL ---
-            // 1. Total Nasional
+            // 1. Total Nasional (PERGERAKAN)
             $nasionalTotal = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', false)
+                ->where('kategori', 'PERGERAKAN')
+                ->sum('total');
+
+            // 1b. Total ORANG (Unique Subscriber)
+            $nasionalOrang = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                ->where('is_forecast', false)
+                ->where('kategori', 'ORANG')
                 ->sum('total');
 
             // 2. Highest Day Nasional
             $nasionalHighest = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', false)
+                ->where('kategori', 'PERGERAKAN')
                 ->select('tanggal', DB::raw('SUM(total) as daily_total'))
                 ->groupBy('tanggal')
                 ->orderByDesc('daily_total')
                 ->first();
 
             // --- B. JABODETABEK ---
-            // 1. Total Jabodetabek
+            // 1. Total Jabodetabek (PERGERAKAN)
             $jaboTotal = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', false)
+                ->where('kategori', 'PERGERAKAN')
+                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->sum('total');
+
+            // 1b. Total ORANG Jabo
+            $jaboOrang = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                ->where('is_forecast', false)
+                ->where('kategori', 'ORANG')
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->sum('total');
 
             // 2. Highest Day Jabodetabek
             $jaboHighest = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', false)
+                ->where('kategori', 'PERGERAKAN')
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->select('tanggal', DB::raw('SUM(total) as daily_total'))
                 ->groupBy('tanggal')
@@ -63,7 +80,7 @@ class DailyReportController extends Controller
                 ->first();
 
             // Formatted Dates
-            \Carbon\Carbon::setLocale('id'); // Ensure Indonesian dates
+            \Carbon\Carbon::setLocale('id');
             $formattedStart = \Carbon\Carbon::parse($startDate)->isoFormat('D MMM YYYY');
             $formattedEnd = \Carbon\Carbon::parse($endDate)->isoFormat('D MMM YYYY');
             
@@ -75,9 +92,11 @@ class DailyReportController extends Controller
                 'end_date' => $endDate,
                 'period_string' => "tgl {$formattedStart} s.d. {$formattedEnd}",
                 'nasional_total' => $nasionalTotal,
+                'nasional_orang' => $nasionalOrang,
                 'nasional_highest_date' => $nasionalHighestDate,
                 'nasional_highest_total' => $nasionalHighest ? $nasionalHighest->daily_total : 0,
                 'jabo_total' => $jaboTotal,
+                'jabo_orang' => $jaboOrang,
                 'jabo_highest_date' => $jaboHighestDate,
                 'jabo_highest_total' => $jaboHighest ? $jaboHighest->daily_total : 0,
             ];
@@ -86,3 +105,4 @@ class DailyReportController extends Controller
         return view('executive.daily-report', $data);
     }
 }
+

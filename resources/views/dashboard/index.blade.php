@@ -198,6 +198,13 @@
         </div>
     </div>
 
+    {{-- Disclaimer / Data Freshness --}}
+    @if (isset($disclaimer) && $disclaimer)
+        <div class="alert alert-light border-0 text-muted py-2 px-3 mb-3" style="font-size: 11px;">
+            <i class="mdi mdi-information-outline me-1"></i> Data terakhir diperbarui: <strong>{{ $disclaimer }}</strong>
+        </div>
+    @endif
+
     {{-- Info Cards --}}
     <div class="row g-4">
         <div class="col-md-6">
@@ -241,7 +248,7 @@
                     <h5 class="card-title mb-0 text-primary fw-bold">Total Pergerakan (Aktual)</h5>
                 </div>
                 <div class="card-body pb-4">
-                    <p class="mb-2 text-muted fw-medium small">Total Akumulasi (13-29 Mar)</p>
+                    <p class="mb-2 text-muted fw-medium small">Total Akumulasi (13-30 Mar)</p>
                     <div class="mb-3">
                         <h2 class="mb-0 fw-bold text-primary display-6">
                             {{ number_format($total_real, 0, ',', '.') }} <span
@@ -249,6 +256,15 @@
                         <small class="text-muted">Target Forecast:
                             {{ number_format($total_forecast, 0, ',', '.') }}</small>
                     </div>
+                    @if (isset($total_orang_real) && $total_orang_real > 0)
+                        <div class="mb-3 pt-2 border-top">
+                            <h4 class="mb-0 fw-bold text-info">
+                                {{ number_format($total_orang_real, 0, ',', '.') }} <span
+                                    class="fs-6 text-muted fw-normal">Unique Subscriber</span></h4>
+                            <small class="text-muted">Forecast:
+                                {{ number_format($total_orang_forecast ?? 0, 0, ',', '.') }}</small>
+                        </div>
+                    @endif
                     <div class="alert alert-success bg-success-subtle text-success border-0 mb-0 py-2 px-3">
                         <div class="d-flex align-items-center">
                             <i class="mdi mdi-check-circle-outline me-2 fs-5"></i>
@@ -355,7 +371,7 @@
                     <div id="chart-moda" class="w-100" style="height: 400px;"></div>
                     <p class="text-center fw-bold mt-2 text-muted small fst-italic">Grafik menunjukkan
                         tren pergerakan
-                        harian untuk setiap moda transportasi (13 Mar - 29 Mar 2026)</p>
+                        harian untuk setiap moda transportasi (13 Mar - 30 Mar 2026)</p>
 
 
                     <div

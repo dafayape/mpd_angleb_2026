@@ -12,7 +12,7 @@ class DashboardController extends Controller
 
         $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () {
             $startDate = '2026-03-13';
-            $endDate = '2026-03-29';
+            $endDate = '2026-03-30';
 
             // 1. Totals — PERGERAKAN (Real & Forecast)
             $totals = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
@@ -44,8 +44,9 @@ class DashboardController extends Controller
             // 2. Chart Opsel: Real Volume per Opsel (Matching Reference Style)
             // Colors: IOH (Yellow/Orange), TSEL (Red), XL (Blue)
             $opselData = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', false) // Use Real Data
-                ->selectRaw('opsel, SUM(total) as total')
+                ->where('is_forecast', false)
+                ->where('kategori', 'PERGERAKAN')
+                ->selectRaw("opsel, SUM(total) as total")
                 ->groupBy('opsel')
                 ->get();
 
@@ -79,8 +80,9 @@ class DashboardController extends Controller
             // 3. Chart Moda: Daily Trend
             $modaData = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 // ->where('is_forecast', false) // Show Real Only? Or Total? Let's show Real.
-                ->selectRaw('tanggal, kode_moda, SUM(total) as total') // Aggregating both usually doubles, but here likely we want Real.
                 ->where('is_forecast', false)
+                ->where('kategori', 'PERGERAKAN')
+                ->selectRaw("tanggal, kode_moda, SUM(total) as total")
                 ->groupBy('tanggal', 'kode_moda')
                 ->orderBy('tanggal')
                 ->get();

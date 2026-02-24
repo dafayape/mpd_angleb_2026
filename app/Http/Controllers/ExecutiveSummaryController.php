@@ -20,20 +20,20 @@ class ExecutiveSummaryController extends Controller
     {
         try {
             $startDate = $request->input('start_date', '2026-03-13');
-            $endDate = $request->input('end_date', '2026-03-29');
+            $endDate = $request->input('end_date', '2026-03-30');
 
             // Enforce Date Limits Server-Side (13 Mar 2026 - 29 Mar 2026)
             if ($startDate < '2026-03-13') {
                 $startDate = '2026-03-13';
             }
-            if ($startDate > '2026-03-29') {
-                $startDate = '2026-03-29';
+            if ($startDate > '2026-03-30') {
+                $startDate = '2026-03-30';
             }
             if ($endDate < '2026-03-13') {
                 $endDate = '2026-03-13';
             }
-            if ($endDate > '2026-03-29') {
-                $endDate = '2026-03-29';
+            if ($endDate > '2026-03-30') {
+                $endDate = '2026-03-30';
             }
 
             if ($startDate > $endDate) {
@@ -66,6 +66,15 @@ class ExecutiveSummaryController extends Controller
                         SUM(CASE WHEN is_forecast = true THEN total ELSE 0 END) as orang_forecast
                     ")
                     ->first();
+
+                // Per-Opsel ORANG breakdown (Slide 3, 6)
+                $orangPerOpsel = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('kategori', 'ORANG')
+                    ->where('is_forecast', false)
+                    ->selectRaw("opsel, SUM(total) as total")
+                    ->groupBy('opsel')
+                    ->get()
+                    ->keyBy('opsel');
 
                 $tableData = [];
                 foreach ($raw as $row) {
@@ -192,6 +201,7 @@ class ExecutiveSummaryController extends Controller
                         'total_paparan' => $totalPaparan,
                         'total_aktual' => $totalAktual,
                         'total_orang' => $orangRealVal,
+                        'orang_per_opsel' => $orangPerOpsel,
                         'selisih' => $totalAktual - $totalPaparan,
                         'persen' => $totalPaparan > 0 ? round(($totalAktual / $totalPaparan) * 100, 1) : 0,
                         'jabo_real' => $jaboReal,

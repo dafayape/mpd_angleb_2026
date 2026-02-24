@@ -7,10 +7,10 @@
             <div class="d-flex flex-column flex-md-row gap-2">
                 <form class="d-flex align-items-center gap-2" id="filterForm">
                     <input type="date" id="startDate" class="form-control" value="2026-03-13" min="2026-03-13"
-                        max="2026-03-29">
+                        max="2026-03-30">
                     <span class="text-muted fw-bold">&mdash;</span>
-                    <input type="date" id="endDate" class="form-control" value="2026-03-29" min="2026-03-13"
-                        max="2026-03-29">
+                    <input type="date" id="endDate" class="form-control" value="2026-03-30" min="2026-03-13"
+                        max="2026-03-30">
                     <button type="submit" class="btn btn-primary d-none d-md-block">Terapkan</button>
                     <button type="submit" class="btn btn-primary d-block d-md-none"><i
                             class="mdi mdi-magnify"></i></button>
@@ -53,14 +53,22 @@
                     <!-- Content State -->
                     <div id="content-state" class="d-none">
                         <div class="row text-center mb-4 pb-4 border-bottom">
-                            <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="col-md-3 mb-3 mb-md-0">
                                 <h6 class="text-muted mb-1 text-uppercase small fw-bold">Total Target Paparan</h6>
                                 <h3 class="mb-0 text-primary fw-bold" id="sum-paparan">0</h3>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-3 mb-3 mb-md-0">
                                 <h6 class="text-muted mb-1 text-uppercase small fw-bold">Total Realisasi Aktual</h6>
                                 <h3 class="mb-0 text-success fw-bold" id="sum-aktual">0</h3>
                                 <span id="sum-badge" class="badge bg-success mt-2 font-size-13 py-1 px-3"></span>
+                            </div>
+                            <div class="col-md-3 mb-3 mb-md-0">
+                                <h6 class="text-muted mb-1 text-uppercase small fw-bold">Unique Subscriber</h6>
+                                <h3 class="mb-0 text-info fw-bold" id="sum-orang">0</h3>
+                            </div>
+                            <div class="col-md-3">
+                                <h6 class="text-muted mb-1 text-uppercase small fw-bold">Jabodetabek (Real)</h6>
+                                <h3 class="mb-0 text-warning fw-bold" id="sum-jabo">0</h3>
                             </div>
                         </div>
 
@@ -109,6 +117,10 @@
                         .toLocaleString('id-ID');
                     document.getElementById('sum-aktual').textContent = (sum.total_aktual || 0).toLocaleString(
                         'id-ID');
+                    document.getElementById('sum-orang').textContent = (sum.total_orang || 0).toLocaleString(
+                        'id-ID');
+                    document.getElementById('sum-jabo').textContent = (sum.jabo_real || 0).toLocaleString(
+                        'id-ID');
 
                     const badge = document.getElementById('sum-badge');
                     if (sum.persen >= 100) {
@@ -121,12 +133,30 @@
 
                     // Update AI Text content
                     const aiContainer = document.getElementById('ai-analysis-content');
+                    let html = '';
+
+                    // Nasional Analysis
                     if (data.analysis && data.analysis.length > 0) {
-                        let html = '';
-                        data.analysis.forEach((point, index) => {
+                        html +=
+                            '<h6 class="fw-bold text-primary mb-3"><i class="mdi mdi-chart-line me-1"></i> Kesimpulan Nasional</h6>';
+                        data.analysis.forEach((point) => {
                             const formatted = point.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                            html += `<p class="text-justify mb-3">${formatted}</p>`;
+                            html += `<p class="text-justify mb-2">${formatted}</p>`;
                         });
+                    }
+
+                    // Jabodetabek Analysis
+                    if (data.analysis_jabodetabek && data.analysis_jabodetabek.length > 0) {
+                        html += '<hr class="my-4">';
+                        html +=
+                            '<h6 class="fw-bold text-warning mb-3"><i class="mdi mdi-map-marker-radius me-1"></i> Kesimpulan Jabodetabek</h6>';
+                        data.analysis_jabodetabek.forEach((point) => {
+                            const formatted = point.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                            html += `<p class="text-justify mb-2">${formatted}</p>`;
+                        });
+                    }
+
+                    if (html) {
                         aiContainer.innerHTML = html;
                         btnCopy.classList.remove('d-none');
                     } else {

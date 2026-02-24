@@ -76,7 +76,7 @@ class KeynoteController extends Controller
         try {
             // Periode (date range) support
             $startDate = $request->input('start_date', '2026-03-13');
-            $endDate = $request->input('end_date', '2026-03-29');
+            $endDate = $request->input('end_date', '2026-03-30');
             $opselFilter = $request->input('opsel', ''); // '', 'TSEL', 'IOH', 'XL'
 
             // Validate dates
@@ -85,7 +85,7 @@ class KeynoteController extends Controller
                 $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
             } catch (\Throwable $e) {
                 $startDate = '2026-03-13';
-                $endDate = '2026-03-29';
+                $endDate = '2026-03-30';
             }
 
             // Ensure start <= end
@@ -108,7 +108,8 @@ class KeynoteController extends Controller
                 $simpuls = Simpul::select('code', 'name')->get()->keyBy('code');
 
                 // Query Data
-                $query = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate]);
+                $query = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('kategori', 'PERGERAKAN');
                 if ($opselFilter) {
                     $query->where('opsel', $opselFilter);
                 }

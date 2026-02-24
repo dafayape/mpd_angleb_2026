@@ -34,7 +34,7 @@ class DataMpdController extends Controller
     {
         // 1. Date Range: 13 March 2026 - 29 March 2026
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
         
         $dates = collect();
         $curr = $startDate->copy();
@@ -69,7 +69,7 @@ class DataMpdController extends Controller
     {
         // 1. Date Range: 13 March 2026 - 29 March 2026
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
         
         $dates = collect();
         $curr = $startDate->copy();
@@ -106,7 +106,7 @@ class DataMpdController extends Controller
     public function nasionalOdSimpul(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
         $cacheKey = 'mpd:nasional:od-simpul:split:v1';
@@ -192,6 +192,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.kategori', 'PERGERAKAN')
                 ->groupBy('simpul.category', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
                 ->get();
 
@@ -230,7 +231,7 @@ class DataMpdController extends Controller
     public function nasionalModeShare(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
         $cacheKey = 'mpd:nasional:mode-share:tables:v1';
@@ -332,6 +333,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.kategori', 'PERGERAKAN')
                 ->groupBy('moda.name', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
                 ->get();
 
@@ -378,7 +380,7 @@ class DataMpdController extends Controller
     public function nasionalPergerakan(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
         $cacheKey = 'mpd:nasional:pergerakan:tables:v2';
@@ -434,7 +436,8 @@ class DataMpdController extends Controller
                     'is_forecast',
                     DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('kategori', 'PERGERAKAN');
 
             // Apply Filters if provided (e.g. Jabodetabek)
             if (!empty($filterCodes)) {
@@ -610,7 +613,8 @@ class DataMpdController extends Controller
                     'sm.tanggal',
                     DB::raw('SUM(sm.total) as total_volume')
                 )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.kategori', 'PERGERAKAN');
 
             if (!empty($filterCodes)) {
                 $query->whereIn('sm.kode_origin_kabupaten_kota', $filterCodes);
@@ -676,7 +680,8 @@ class DataMpdController extends Controller
                     'sm.tanggal',
                     DB::raw('SUM(sm.total) as total_volume')
                 )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.kategori', 'PERGERAKAN');
 
             if (!empty($filterCodes)) {
                 $query->whereIn('sm.kode_origin_kabupaten_kota', $filterCodes);
@@ -713,7 +718,7 @@ class DataMpdController extends Controller
     {
         // 1. Date Range: 13 March 2026 - 29 March 2026
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
         
         $dates = $this->getDatesCollection($startDate, $endDate);
 
@@ -764,7 +769,8 @@ class DataMpdController extends Controller
                     'opsel',
                     DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('kategori', 'PERGERAKAN');
 
             if (!empty($filterCodes)) {
                 $query->whereIn('kode_origin_kabupaten_kota', $filterCodes);
@@ -804,7 +810,7 @@ class DataMpdController extends Controller
     {
         // 1. Date Range: 13 March 2026 - 29 March 2026
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
         
         $dates = collect();
         $curr = $startDate->copy();
@@ -840,18 +846,38 @@ class DataMpdController extends Controller
         $dailyData = [];
         
         try {
-            $results = DB::table('spatial_movements')
+            // Query PERGERAKAN
+            $movements = DB::table('spatial_movements')
                 ->select('tanggal', DB::raw('SUM(total) as total_volume'))
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('kategori', 'PERGERAKAN')
+                ->where('is_forecast', false)
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('tanggal')
                 ->get();
 
-            foreach ($results as $row) {
+            foreach ($movements as $row) {
                 $dailyData[$row->tanggal] = [
-                    'movement' => $row->total_volume,
-                    'people' => $row->total_volume // 1:1 for now
+                    'movement' => (int) $row->total_volume,
+                    'people' => 0
                 ];
+            }
+
+            // Query ORANG
+            $people = DB::table('spatial_movements')
+                ->select('tanggal', DB::raw('SUM(total) as total_volume'))
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('kategori', 'ORANG')
+                ->where('is_forecast', false)
+                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('tanggal')
+                ->get();
+
+            foreach ($people as $row) {
+                if (!isset($dailyData[$row->tanggal])) {
+                    $dailyData[$row->tanggal] = ['movement' => 0, 'people' => 0];
+                }
+                $dailyData[$row->tanggal]['people'] = (int) $row->total_volume;
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Pergerakan Orang DB Error: ' . $e->getMessage());

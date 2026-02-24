@@ -217,14 +217,14 @@ class MapMonitorController extends Controller
     {
         try {
             $startDate = $request->input('start_date', '2026-03-13');
-            $endDate = $request->input('end_date', '2026-03-29');
+            $endDate = $request->input('end_date', '2026-03-30');
 
             try {
                 $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
                 $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
             } catch (\Throwable $e) {
                 $startDate = '2026-03-13';
-                $endDate = '2026-03-29';
+                $endDate = '2026-03-30';
             }
 
             $cacheKey = "netflow:{$startDate}:{$endDate}";

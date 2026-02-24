@@ -15,7 +15,7 @@ class GrafikMpdController extends Controller
     public function nasionalPergerakan(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
         
         // Cache Key
         $cacheKey = 'grafik:nasional:pergerakan:v1';
@@ -157,7 +157,7 @@ class GrafikMpdController extends Controller
     public function nasionalOdProvinsi(Request $request) 
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
 
         $cacheKey = 'grafik:nasional:od-provinsi:v1';
 
@@ -198,7 +198,8 @@ class GrafikMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.is_forecast', false) // Real Only as per request? "O-D Provinsi Real"
+                ->where('sm.is_forecast', false)
+                ->where('sm.kategori', 'PERGERAKAN')
                 ->groupBy('op.code', 'op.name', 'dp.code', 'dp.name')
                 ->get();
 
@@ -266,7 +267,7 @@ class GrafikMpdController extends Controller
     public function nasionalTopKabkota(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
         $cacheKey = 'grafik:nasional:top-kabkota:v1';
@@ -313,6 +314,7 @@ class GrafikMpdController extends Controller
                 // ->where('sm.is_forecast', false) // Use Real + Forecast? Or just Real? Usually Real for Rankings.
                 // Let's stick to Real for consistency with other ranking pages unless requested otherwise.
                 ->where('sm.is_forecast', false) 
+                ->where('sm.kategori', 'PERGERAKAN')
                 ->groupBy('oc.code', 'oc.name', 'op.name', 'dc.code', 'dc.name', 'dp.name')
                 ->get();
 
@@ -365,7 +367,7 @@ class GrafikMpdController extends Controller
     public function nasionalModeShare(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
 
         $cacheKey = 'grafik:nasional:mode-share:v6';
 
@@ -410,6 +412,7 @@ class GrafikMpdController extends Controller
                 DB::raw('SUM(sm.total) as total')
             )
             ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('sm.kategori', 'PERGERAKAN')
             ->groupBy('m.code', 'm.name', 'sm.tanggal', 'sm.is_forecast')
             ->get();
 
@@ -539,7 +542,7 @@ class GrafikMpdController extends Controller
     public function nasionalSimpul(Request $request)
     {
         $startDate = \Carbon\Carbon::create(2026, 3, 13);
-        $endDate = \Carbon\Carbon::create(2026, 3, 29);
+        $endDate = \Carbon\Carbon::create(2026, 3, 30);
 
         // Cache Key v6: Connected to Real Data Source (PostGIS/Spatial)
         $cacheKey = 'grafik:nasional:simpul:v6';
@@ -670,6 +673,7 @@ class GrafikMpdController extends Controller
                     $daily = DB::table('spatial_movements')
                         ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
                         ->where('kode_moda', $code)
+                        ->where('kategori', 'PERGERAKAN')
                         ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                         ->groupBy('tanggal', 'is_forecast')
                         ->get();
@@ -707,6 +711,7 @@ class GrafikMpdController extends Controller
                         ->join('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
                         ->select('n.name', DB::raw('SUM(sm.total) as total'))
                         ->whereIn('sm.kode_moda', $modeCodes)
+                        ->where('sm.kategori', 'PERGERAKAN')
                         ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                         ->groupBy('n.name')
                         ->orderByDesc('total')
@@ -717,6 +722,7 @@ class GrafikMpdController extends Controller
                         ->join('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
                         ->select('n.name', DB::raw('SUM(sm.total) as total'))
                         ->whereIn('sm.kode_moda', $modeCodes)
+                        ->where('sm.kategori', 'PERGERAKAN')
                         ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                         ->groupBy('n.name')
                         ->orderByDesc('total')
@@ -732,6 +738,7 @@ class GrafikMpdController extends Controller
                         ->join('ref_transport_nodes as nd', 'sm.kode_dest_simpul', '=', 'nd.code')
                         ->select('no.name as origin', 'nd.name as dest', DB::raw('SUM(sm.total) as total'))
                         ->whereIn('sm.kode_moda', $modeCodes)
+                        ->where('sm.kategori', 'PERGERAKAN')
                         ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                         ->groupBy('no.name', 'nd.name')
                         ->orderByDesc('total')
@@ -756,7 +763,7 @@ class GrafikMpdController extends Controller
     public function jabodetabekPergerakanOrang(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
         $cacheKey = 'grafik:jabodetabek:pergerakan-orang:v1';
@@ -829,6 +836,16 @@ class GrafikMpdController extends Controller
             }
         }
 
+        // Combine Intra + Inter for Total charts (backward compat)
+        $totalMov = ['REAL' => [], 'FORECAST' => []];
+        $totalPpl = ['REAL' => [], 'FORECAST' => []];
+        foreach ($dates as $d) {
+            $totalMov['REAL'][$d] = ($intraMov['REAL'][$d] ?? 0) + ($interMov['REAL'][$d] ?? 0);
+            $totalMov['FORECAST'][$d] = ($intraMov['FORECAST'][$d] ?? 0) + ($interMov['FORECAST'][$d] ?? 0);
+            $totalPpl['REAL'][$d] = ($intraPpl['REAL'][$d] ?? 0) + ($interPpl['REAL'][$d] ?? 0);
+            $totalPpl['FORECAST'][$d] = ($intraPpl['FORECAST'][$d] ?? 0) + ($interPpl['FORECAST'][$d] ?? 0);
+        }
+
         return [
             'dates' => $dates,
             'summary' => [
@@ -839,6 +856,16 @@ class GrafikMpdController extends Controller
                 'inter_mov_fc' => array_sum($interMov['FORECAST']),
                 'inter_ppl_real' => array_sum($interPpl['REAL']),
             ],
+            // Total (backward compat for existing view)
+            'chart_movement' => [
+                ['name' => 'REAL', 'data' => array_values($totalMov['REAL']), 'color' => '#2caffe'],
+                ['name' => 'FORECAST', 'data' => array_values($totalMov['FORECAST']), 'color' => '#fec107']
+            ],
+            'chart_people' => [
+                ['name' => 'REAL', 'data' => array_values($totalPpl['REAL']), 'color' => '#2caffe'],
+                ['name' => 'FORECAST', 'data' => array_values($totalPpl['FORECAST']), 'color' => '#fec107']
+            ],
+            // Intra/Inter breakdown
             'chart_intra_mov' => [
                 ['name' => 'REAL', 'data' => array_values($intraMov['REAL']), 'color' => '#2caffe'],
                 ['name' => 'FORECAST', 'data' => array_values($intraMov['FORECAST']), 'color' => '#fec107']
@@ -862,7 +889,7 @@ class GrafikMpdController extends Controller
     public function jabodetabekPergerakanOrangOpsel(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
         $cacheKey = 'grafik:jabodetabek:pergerakan-orang-opsel:v1';
@@ -953,7 +980,7 @@ class GrafikMpdController extends Controller
     public function jabodetabekOdKabkota(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
         $cacheKey = 'grafik:jabodetabek:od-kabkota:v2';
@@ -1085,7 +1112,7 @@ class GrafikMpdController extends Controller
     public function jabodetabekModeShare(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
         $cacheKey = 'grafik:jabodetabek:mode-share:v2';
@@ -1154,6 +1181,7 @@ class GrafikMpdController extends Controller
             ->select('kode_moda', DB::raw('SUM(total) as total_people'))
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->where('is_forecast', false)
+            ->where('sm.kategori', 'PERGERAKAN')
             ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
             ->groupBy('kode_moda')
             ->get()
@@ -1191,7 +1219,7 @@ class GrafikMpdController extends Controller
     public function jabodetabekSimpul(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 29);
+        $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
         $cacheKey = 'grafik:jabodetabek:simpul:v1';
@@ -1246,6 +1274,7 @@ class GrafikMpdController extends Controller
             // Daily Chart Data
             $dailyQuery = DB::table('spatial_movements')
                 ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+                ->where('kategori', 'PERGERAKAN')
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('kode_moda', $modes)
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes) // Filter Jabo Origin
@@ -1275,6 +1304,7 @@ class GrafikMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('sm.kode_moda', $modes)
                 ->where('sm.is_forecast', false)
+                ->where('sm.kategori', 'PERGERAKAN')
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('sm.kode_origin_simpul', 'n.name')
                 ->orderByDesc('total')
@@ -1288,6 +1318,7 @@ class GrafikMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('sm.kode_moda', $modes)
                 ->where('sm.is_forecast', false)
+                ->where('sm.kategori', 'PERGERAKAN')
                 // Filter Dest Jabo? Probably yes for consistency "Simpul Jabo"
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('sm.kode_dest_simpul', 'n.name')
@@ -1306,6 +1337,7 @@ class GrafikMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('sm.kode_moda', $modes)
                 ->where('sm.is_forecast', false)
+                ->where('sm.kategori', 'PERGERAKAN')
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
                 ->orderByDesc('total')
