@@ -3,6 +3,16 @@
 @section('title', 'Rule Document')
 @section('subtitle', '| Master Referensi')
 
+@push('styles')
+    <style>
+        .progress {
+            height: 20px;
+            margin-bottom: 0;
+            display: none;
+        }
+    </style>
+@endpush
+
 @section('content')
     <div class="row">
         <div class="col-12">
@@ -89,16 +99,12 @@
                                                     <i class="bx bx-download"></i>
                                                 </a>
                                                 @if (Auth::user()->role === 'admin')
-                                                    <form action="{{ route('master.rule-document.destroy', $doc->id) }}"
-                                                        method="POST"
-                                                        onsubmit="return confirm('Yakin ingin menghapus dokumen ini?')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-soft-danger btn-sm"
-                                                            title="Hapus">
-                                                            <i class="bx bx-trash"></i>
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" class="btn btn-soft-danger btn-sm btn-delete"
+                                                        data-id="{{ $doc->id }}"
+                                                        data-url="{{ route('master.rule-document.destroy', $doc->id) }}"
+                                                        title="Hapus">
+                                                        <i class="bx bx-trash"></i>
+                                                    </button>
                                                 @endif
                                             </div>
                                         </td>
@@ -128,7 +134,8 @@
                         <h5 class="modal-title" id="uploadModalLabel">Upload Rule Document</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form action="{{ route('master.rule-document.store') }}" method="POST" enctype="multipart/form-data">
+                    <form id="uploadForm" action="{{ route('master.rule-document.store') }}" method="POST"
+                        enctype="multipart/form-data">
                         @csrf
                         <div class="modal-body">
                             <div class="mb-3">
@@ -136,10 +143,19 @@
                                 <input class="form-control" type="file" id="document" name="document" required>
                                 <div class="form-text">Pastikan file tidak melebihi 100MB.</div>
                             </div>
+                            <div id="progressContainer" style="display: none;">
+                                <div class="progress mb-2">
+                                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                                        role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0"
+                                        aria-valuemax="100">0%</div>
+                                </div>
+                                <div id="progressStatus" class="text-muted small text-center">Mengunggah...</div>
+                            </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-primary">Unggah Sekarang</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                                id="btnCancel">Batal</button>
+                            <button type="submit" class="btn btn-primary" id="btnUpload">Unggah Sekarang</button>
                         </div>
                     </form>
                 </div>
@@ -148,3 +164,142 @@
     @endif
 
 @endsection
+
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            // Delete Logic
+            $('.btn-delete').on('click', function() {
+                const url = $(this).data('url');
+                const id = $(this).data('id');
+
+                Swal.fire({
+                    title: 'Yakin ingin menghapus?',
+                    text: "Data yang dihapus tidak bisa dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Mohon Tunggu',
+                            text: 'Sedang menghapus data...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
+
+                        $.ajax({
+                            url: url,
+                            type: 'DELETE',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Terhapus!',
+                                        text: response.message,
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Gagal!', response.message, 'error');
+                                }
+                            },
+                            error: function(xhr) {
+                                Swal.fire('Error!',
+                                    'Terjadi kesalahan saat menghapus data.',
+                                    'error');
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Upload Logic
+            $('#uploadForm').on('submit', function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                const action = $(this).attr('action');
+
+                $('#progressContainer').show();
+                $('.progress').show();
+                $('#btnUpload').prop('disabled', true);
+                $('#btnCancel').prop('disabled', true);
+
+                $.ajax({
+                    url: action,
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    xhr: function() {
+                        const xhr = new window.XMLHttpRequest();
+                        xhr.upload.addEventListener("progress", function(evt) {
+                            if (evt.lengthComputable) {
+                                const percentComplete = Math.round((evt.loaded / evt
+                                        .total) *
+                                    100);
+                                $('#progressBar').css('width', percentComplete + '%');
+                                $('#progressBar').attr('aria-valuenow',
+                                percentComplete);
+                                $('#progressBar').text(percentComplete + '%');
+
+                                if (percentComplete === 100) {
+                                    $('#progressStatus').text(
+                                        'Memproses file di server...');
+                                }
+                            }
+                        }, false);
+                        return xhr;
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Berhasil!',
+                                text: response.message,
+                                timer: 2000,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Gagal!', response.message, 'error');
+                            resetUploadUI();
+                        }
+                    },
+                    error: function(xhr) {
+                        let msg = 'Terjadi kesalahan saat mengunggah file.';
+                        if (xhr.status === 413) {
+                            msg = 'File terlalu besar (di luar kapasitas post server).';
+                        } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        Swal.fire('Error!', msg, 'error');
+                        resetUploadUI();
+                    }
+                });
+            });
+
+            function resetUploadUI() {
+                $('#progressContainer').hide();
+                $('.progress').hide();
+                $('#progressBar').css('width', '0%');
+                $('#progressBar').text('0%');
+                $('#btnUpload').prop('disabled', false);
+                $('#btnCancel').prop('disabled', false);
+                $('#progressStatus').text('Mengunggah...');
+            }
+        });
+    </script>
+@endpush

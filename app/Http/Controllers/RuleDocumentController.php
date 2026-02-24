@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\RuleDocument;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class RuleDocumentController extends Controller
@@ -15,7 +15,7 @@ class RuleDocumentController extends Controller
         $query = RuleDocument::with('uploader');
 
         if ($request->has('search') && $request->search != '') {
-            $query->where('original_name', 'ilike', '%' . $request->search . '%');
+            $query->where('original_name', 'ilike', '%'.$request->search.'%');
         }
 
         if ($request->has('start_date') && $request->start_date != '') {
@@ -34,6 +34,13 @@ class RuleDocumentController extends Controller
     public function store(Request $request)
     {
         if (Auth::user()->role !== 'admin') {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya admin yang dapat mengunggah dokumen.',
+                ], 403);
+            }
+
             return redirect()->back()->with('error', 'Hanya admin yang dapat mengunggah dokumen.');
         }
 
@@ -43,7 +50,7 @@ class RuleDocumentController extends Controller
 
         $file = $request->file('document');
         $originalName = $file->getClientOriginalName();
-        $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $fileName = Str::uuid().'.'.$file->getClientOriginalExtension();
         $filePath = $file->storeAs('rule-documents', $fileName, 'local');
 
         RuleDocument::create([
@@ -54,6 +61,13 @@ class RuleDocumentController extends Controller
             'uploaded_by' => Auth::id(),
         ]);
 
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen berhasil diunggah.',
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Dokumen berhasil diunggah.');
     }
 
@@ -62,7 +76,7 @@ class RuleDocumentController extends Controller
         $document = RuleDocument::findOrFail($id);
         $path = Storage::disk('local')->path($document->file_path);
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return redirect()->back()->with('error', 'File tidak ditemukan di server.');
         }
 
@@ -74,18 +88,25 @@ class RuleDocumentController extends Controller
         $document = RuleDocument::findOrFail($id);
         $path = Storage::disk('local')->path($document->file_path);
 
-        if (!file_exists($path)) {
+        if (! file_exists($path)) {
             return redirect()->back()->with('error', 'File tidak ditemukan di server.');
         }
 
         return response()->file($path, [
-            'Content-Disposition' => 'inline; filename="' . $document->original_name . '"'
+            'Content-Disposition' => 'inline; filename="'.$document->original_name.'"',
         ]);
     }
 
     public function destroy($id)
     {
         if (Auth::user()->role !== 'admin') {
+            if (request()->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya admin yang dapat menghapus dokumen.',
+                ], 403);
+            }
+
             return redirect()->back()->with('error', 'Hanya admin yang dapat menghapus dokumen.');
         }
 
@@ -96,6 +117,13 @@ class RuleDocumentController extends Controller
         }
 
         $document->delete();
+
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen berhasil dihapus.',
+            ]);
+        }
 
         return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
     }
