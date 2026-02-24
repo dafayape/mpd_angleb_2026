@@ -73,26 +73,26 @@ class MapMonitorController extends Controller
                     \Illuminate\Support\Facades\Log::info("MapMonitor: Seeding Simpuls...");
                     // Seed Simpuls (Real World Coordinates)
                     $realSimpuls = [
-                        ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306],
-                        ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456],
-                        ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537],
-                        ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542],
-                        ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502],
-                        ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906],
-                        ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833],
-                        ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115],
-                        ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822],
-                        ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972],
+                        ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306, 'radius' => 500],
+                        ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456, 'radius' => 500],
+                        ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537, 'radius' => 1000],
+                        ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542, 'radius' => 300],
+                        ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502, 'radius' => 500],
+                        ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906, 'radius' => 1000],
+                        ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833, 'radius' => 500],
+                        ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115, 'radius' => 500],
+                        ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822, 'radius' => 300],
+                        ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972, 'radius' => 500],
                     ];
 
                     foreach ($realSimpuls as $s) {
                         // Use raw SQL for PostGIS insertion to ensure correctness
                         // ON CONFLICT DO NOTHING ensures we don't duplicate or error out
                         DB::statement("
-                            INSERT INTO ref_transport_nodes (code, name, category, location, created_at, updated_at)
-                            VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), NOW(), NOW())
+                            INSERT INTO ref_transport_nodes (code, name, category, location, radius, created_at, updated_at)
+                            VALUES (?, ?, ?, ST_SetSRID(ST_MakePoint(?, ?), 4326), ?, NOW(), NOW())
                             ON CONFLICT (code) DO NOTHING
-                        ", [$s['code'], $s['name'], $s['category'], $s['lng'], $s['lat']]);
+                        ", [$s['code'], $s['name'], $s['category'], $s['lng'], $s['lat'], $s['radius']]);
                     }
                 }
 
@@ -132,6 +132,7 @@ class MapMonitorController extends Controller
                     'name', 
                     'category', 
                     'sub_category',
+                    'radius',
                     DB::raw('ST_Y(location::geometry) as lat'),
                     DB::raw('ST_X(location::geometry) as lng')
                 )->whereNotNull('location')->get();
@@ -153,16 +154,16 @@ class MapMonitorController extends Controller
                     
                     // Re-use the realSimpuls array for display
                      $realSimpuls = [
-                        ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306],
-                        ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456],
-                        ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537],
-                        ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542],
-                        ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502],
-                        ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906],
-                        ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833],
-                        ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115],
-                        ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822],
-                        ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972],
+                        ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306, 'radius' => 500],
+                        ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456, 'radius' => 500],
+                        ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537, 'radius' => 1000],
+                        ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542, 'radius' => 300],
+                        ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502, 'radius' => 500],
+                        ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906, 'radius' => 1000],
+                        ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833, 'radius' => 500],
+                        ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115, 'radius' => 500],
+                        ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822, 'radius' => 300],
+                        ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972, 'radius' => 500],
                     ];
                     
                     $simpuls = collect($realSimpuls)->map(function($item) {
@@ -188,13 +189,15 @@ class MapMonitorController extends Controller
                     if ($ratio > 0.33) $color = '#ffff00'; // Yellow
                     if ($ratio > 0.66) $color = '#ff0000'; // Red
 
-                    // LOGARITHMIC SCALING
-                    // Ensure visible radius even for small volumes, but scale up nicely.
+                    // RADIUS INTEGRATION: Use radius from DB + Volume Scaling
                     $radius = 0;
+                    $baseRadius = $simpul->radius ?: 200; // Fallback to 200m
                     if ($volume > 0) {
-                        $radius = 300 + (log($volume, 10) * 300); 
+                        // Blend base radius with volume scaling: base + (volume factor)
+                        // This ensures it grows from its natural size based on movement.
+                        $radius = $baseRadius + (log($volume, 10) * ($baseRadius / 2)); 
                     } else {
-                        $radius = 100;
+                        $radius = $baseRadius;
                     }
 
                     return [
