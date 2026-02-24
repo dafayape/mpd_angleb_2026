@@ -221,6 +221,7 @@
 
             // 6. Render Simpul
             function renderSimpul(features, maxVolume) {
+                console.log("MapMonitor: Rendering " + (features ? features.length : 0) + " features.");
                 circlesLayerGroup.clearLayers();
                 layersMap = {}; // Reset Map
 

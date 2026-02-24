@@ -59,8 +59,8 @@ class MapMonitorController extends Controller
                 $opselFilter = '';
             }
 
-            // Cache key based on period + opsel
-            $cacheKey = "map_monitor:data:v4:{$startDate}:{$endDate}:{$opselFilter}";
+            // Cache key based on period + opsel - Increment V to force refresh
+            $cacheKey = "map_monitor:data:v5:{$startDate}:{$endDate}:{$opselFilter}";
 
             // Cache for 1 hour (3600s)
             return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $opselFilter) {
@@ -79,6 +79,8 @@ class MapMonitorController extends Controller
                     DB::raw('ST_Y(location::geometry) as lat'),
                     DB::raw('ST_X(location::geometry) as lng')
                 )->whereNotNull('location')->get();
+                
+                \Illuminate\Support\Facades\Log::info("MapMonitor: Found " . $simpuls->count() . " nodes with location.");
 
                 // 2. Calculate Density (Volume) — aggregated across the period, filtered by opsel
                 $volumeQuery = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate]);
@@ -97,8 +99,8 @@ class MapMonitorController extends Controller
                     $volumes = [];
                 }
 
-                // 3. Max Volume for scaling
-                $maxVolume = max($volumes) ?: 1;
+                // 3. Max Volume for scaling (Safe handling for empty arrays)
+                $maxVolume = !empty($volumes) ? max($volumes) : 1;
 
                 // 4. Format Data
                 $features = $simpuls->map(function ($simpul) use ($volumes, $maxVolume) {
@@ -153,9 +155,14 @@ class MapMonitorController extends Controller
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('MapMonitor Error: ' . $e->getMessage());
+             // Format period label for fallback
+             $fallbackLabel = \Carbon\Carbon::parse($startDate)->format('d M Y');
+
              return response()->json([
                 'type' => 'FeatureCollection',
                 'start_date' => $startDate,
+                'end_date' => $endDate ?? $startDate,
+                'period_label' => $fallbackLabel,
                 'max_volume' => 1,
                 'features' => []
              ]);
