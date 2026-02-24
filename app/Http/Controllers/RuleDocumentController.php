@@ -60,13 +60,27 @@ class RuleDocumentController extends Controller
     public function download($id)
     {
         $document = RuleDocument::findOrFail($id);
-        
-        $fullPath = storage_path('app/' . $document->file_path);
-        if (!file_exists($fullPath)) {
+        $path = Storage::disk('local')->path($document->file_path);
+
+        if (!file_exists($path)) {
             return redirect()->back()->with('error', 'File tidak ditemukan di server.');
         }
 
-        return response()->download($fullPath, $document->original_name);
+        return response()->download($path, $document->original_name);
+    }
+
+    public function preview($id)
+    {
+        $document = RuleDocument::findOrFail($id);
+        $path = Storage::disk('local')->path($document->file_path);
+
+        if (!file_exists($path)) {
+            return redirect()->back()->with('error', 'File tidak ditemukan di server.');
+        }
+
+        return response()->file($path, [
+            'Content-Disposition' => 'inline; filename="' . $document->original_name . '"'
+        ]);
     }
 
     public function destroy($id)

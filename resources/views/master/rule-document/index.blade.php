@@ -80,6 +80,10 @@
                                         <td>{{ $doc->uploader->name ?? 'External User' }}</td>
                                         <td class="text-center">
                                             <div class="d-flex justify-content-center gap-2">
+                                                <a href="{{ route('master.rule-document.preview', $doc->id) }}"
+                                                    class="btn btn-soft-info btn-sm" title="Preview" target="_blank">
+                                                    <i class="bx bx-show"></i>
+                                                </a>
                                                 <a href="{{ route('master.rule-document.download', $doc->id) }}"
                                                     class="btn btn-soft-primary btn-sm" title="Download">
                                                     <i class="bx bx-download"></i>

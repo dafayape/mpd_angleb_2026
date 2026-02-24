@@ -29,10 +29,10 @@ Route::middleware(['auth'])->group(function () {
 
         // Jabodetabek
         Route::get('/grafik-mpd/jabodetabek/pergerakan-orang', 'jabodetabekPergerakanOrang')->name('grafik-mpd.jabodetabek.pergerakan-orang');
-        Route::get('/grafik-mpd/jabodetabek/pergerakan-orang-opsel', 'jabodetabekPergerakanOrangOpsel')->name('grafik-mpd.jabodetabek.pergerakan-orang-opsel');
-        Route::get('/grafik-mpd/jabodetabek/od-kabkota', 'jabodetabekOdKabkota')->name('grafik-mpd.jabodetabek.od-kabkota');
-        Route::get('/grafik-mpd/jabodetabek/mode-share', 'jabodetabekModeShare')->name('grafik-mpd.jabodetabek.mode-share');
-        Route::get('/grafik-mpd/jabodetabek/simpul', 'jabodetabekSimpul')->name('grafik-mpd.jabodetabek.simpul');
+        Route::get('/grafik-mpd/jabodetabek/pergerakan-orang-opsel', 'jabodetabekPergerakanOrangOpsel')->name('jabodetabekPergerakanOrangOpsel');
+        Route::get('/grafik-mpd/jabodetabek/od-kabkota', 'jabodetabekOdKabkota')->name('jabodetabekOdKabkota');
+        Route::get('/grafik-mpd/jabodetabek/mode-share', 'jabodetabekModeShare')->name('jabodetabekModeShare');
+        Route::get('/grafik-mpd/jabodetabek/simpul', 'jabodetabekSimpul')->name('jabodetabekSimpul');
     });
 
     Route::get('/data-mpd/nasional/pergerakan', [\App\Http\Controllers\DataMpdController::class, 'nasionalPergerakan'])->name('data-mpd.nasional.pergerakan');
@@ -74,6 +74,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [\App\Http\Controllers\RuleDocumentController::class, 'index'])->name('index');
         Route::post('/store', [\App\Http\Controllers\RuleDocumentController::class, 'store'])->name('store');
         Route::get('/download/{id}', [\App\Http\Controllers\RuleDocumentController::class, 'download'])->name('download');
+        Route::get('/preview/{id}', [\App\Http\Controllers\RuleDocumentController::class, 'preview'])->name('preview');
         Route::delete('/destroy/{id}', [\App\Http\Controllers\RuleDocumentController::class, 'destroy'])->name('destroy');
     });
 
