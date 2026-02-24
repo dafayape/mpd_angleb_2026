@@ -25,9 +25,15 @@
                 <div class="card-body p-4">
 
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="card-title mb-0 text-primary">
-                            <i class="bx bx-bot align-middle me-1"></i> AI-Generated Insights
-                        </h5>
+                        <div class="d-flex align-items-center">
+                            <h5 class="card-title mb-0 text-primary">
+                                <i class="bx bx-bot align-middle me-1"></i> AI-Generated Insights
+                            </h5>
+                            <button id="btnCopyAnalysis" class="btn btn-sm btn-outline-primary ms-3 rounded-pill d-none"
+                                title="Salin Ringkasan">
+                                <i class="mdi mdi-content-copy me-1"></i> Salin Teks
+                            </button>
+                        </div>
                         <div class="text-muted small">Periode: <strong id="periodLabel">-</strong></div>
                     </div>
 
@@ -81,10 +87,12 @@
                 const loading = document.getElementById('loading-state');
                 const content = document.getElementById('content-state');
                 const error = document.getElementById('error-state');
+                const btnCopy = document.getElementById('btnCopyAnalysis');
 
                 loading.classList.remove('d-none');
                 content.classList.add('d-none');
                 error.classList.add('d-none');
+                btnCopy.classList.add('d-none');
 
                 try {
                     const response = await fetch(url);
@@ -120,9 +128,11 @@
                             html += `<p class="text-justify mb-3">${formatted}</p>`;
                         });
                         aiContainer.innerHTML = html;
+                        btnCopy.classList.remove('d-none');
                     } else {
                         aiContainer.innerHTML =
                             '<p class="text-muted text-center italic">Sistem tidak memiliki data yang cukup untuk ditarik kesimpulannya pada rentang tanggal tersebut.</p>';
+                        btnCopy.classList.add('d-none');
                     }
 
                     loading.classList.add('d-none');
@@ -132,8 +142,27 @@
                     console.error(err);
                     loading.classList.add('d-none');
                     error.classList.remove('d-none');
+                    btnCopy.classList.add('d-none');
                 }
             }
+
+            // Copy Context logic
+            document.getElementById('btnCopyAnalysis').addEventListener('click', function() {
+                const text = document.getElementById('ai-analysis-content').innerText;
+                navigator.clipboard.writeText(text).then(() => {
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: 'Teks berhasil disalin!',
+                        showConfirmButton: false,
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                }).catch(err => {
+                    console.error('Gagal menyalin: ', err);
+                });
+            });
 
             document.getElementById('filterForm').addEventListener('submit', function(e) {
                 e.preventDefault();
