@@ -11,9 +11,9 @@ class MapMonitorController extends Controller
 {
     public function index()
     {
-        // Fixed Date Range: 13 March 2026 - 29 March 2026 (Angkutan Lebaran)
+        // Fixed Date Range: 13 March 2026 - 30 March 2026 (Angkutan Lebaran)
         $startDate = \Carbon\Carbon::create(2026, 3, 13);
-        $endDate = \Carbon\Carbon::create(2026, 3, 29);
+        $endDate = \Carbon\Carbon::create(2026, 3, 30);
         
         $dates = collect();
         while ($startDate->lte($endDate)) {
@@ -36,7 +36,7 @@ class MapMonitorController extends Controller
         try {
             // Periode (date range) support
             $startDate = $request->input('start_date', '2026-03-13');
-            $endDate = $request->input('end_date', '2026-03-29');
+            $endDate = $request->input('end_date', '2026-03-30');
             $opselFilter = $request->input('opsel', ''); // '', 'TSEL', 'IOH', 'XL'
 
             // Validate dates
@@ -45,7 +45,7 @@ class MapMonitorController extends Controller
                 $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
             } catch (\Throwable $e) {
                 $startDate = '2026-03-13';
-                $endDate = '2026-03-29';
+                $endDate = '2026-03-30';
             }
 
             // Ensure start <= end
@@ -60,7 +60,7 @@ class MapMonitorController extends Controller
             }
 
             // Cache key based on period + opsel - Increment V to force refresh
-            $cacheKey = "map_monitor:data:v5:{$startDate}:{$endDate}:{$opselFilter}";
+            $cacheKey = "map_monitor:data:v6:{$startDate}:{$endDate}:{$opselFilter}";
 
             // Cache for 1 hour (3600s)
             return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $opselFilter) {
