@@ -108,8 +108,12 @@ Route::get('/sso-login', function (Request $request) {
     Auth::loginUsingId($userId);
     $request->session()->regenerate();
 
-    // Catat login ke activity_logs
-    \App\Models\ActivityLog::log('Login SSO', Auth::user()?->name, 'Success');
+    // Catat login ke activity_logs (non-blocking: tabel mungkin belum di-migrate)
+    try {
+        \App\Models\ActivityLog::log('Login SSO', Auth::user()?->name, 'Success');
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::warning('ActivityLog gagal: ' . $e->getMessage());
+    }
 
     return redirect('/');
 })->name('sso.login');

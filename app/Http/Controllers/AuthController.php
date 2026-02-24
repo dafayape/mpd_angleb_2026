@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Routing\Controller;
 
 class AuthController extends Controller
 {
@@ -14,8 +14,12 @@ class AuthController extends Controller
     {
         $userId = Auth::id();
 
-        // Catat log SEBELUM session dihapus (karena auth()->id() masih tersedia)
-        ActivityLog::log('Logout', Auth::user()?->name, 'Success');
+        // Catat log SEBELUM session dihapus (non-blocking)
+        try {
+            ActivityLog::log('Logout', Auth::user()?->name, 'Success');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('ActivityLog gagal: '.$e->getMessage());
+        }
 
         if ($userId) {
             try {
@@ -24,7 +28,7 @@ class AuthController extends Controller
                     ->where('user_id', $userId)
                     ->delete();
             } catch (\Exception $e) {
-                Log::warning('Gagal hapus session Laravel 11: ' . $e->getMessage());
+                Log::warning('Gagal hapus session Laravel 11: '.$e->getMessage());
             }
         }
 

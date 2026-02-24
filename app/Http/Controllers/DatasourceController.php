@@ -53,8 +53,12 @@ class DatasourceController extends Controller
             'metadata'          => ['file_size' => $file->getSize()],
         ]);
 
-        // Catat log aktivitas
-        ActivityLog::log('Upload CSV', $originalFilename, 'Success', "Opsel: {$request->opsel}, Kategori: {$request->kategori}");
+        // Catat log aktivitas (non-blocking)
+        try {
+            ActivityLog::log('Upload CSV', $originalFilename, 'Success', "Opsel: {$request->opsel}, Kategori: {$request->kategori}");
+        } catch (\Throwable $e) {
+            Log::warning('ActivityLog gagal: ' . $e->getMessage());
+        }
 
         return response()->json([
             'status'     => 'success',
