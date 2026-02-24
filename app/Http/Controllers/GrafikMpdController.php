@@ -1363,7 +1363,7 @@ class GrafikMpdController extends Controller
                 'sections' => [
                     [
                         'title' => 'Simpul ' . $tabName, // e.g. "Simpul DARAT"
-                        'subtitle' => 'Periode 13-29 Maret 2026 (Jabodetabek)',
+                        'subtitle' => 'Periode 13-30 Maret 2026 (Jabodetabek)',
                         'daily_charts' => [
                             [
                                 'label' => 'Total Pergerakan ' . $tabName,

@@ -750,7 +750,7 @@
                 xAxis: {
                     categories: chartModa.categories,
                     accessibility: {
-                        rangeDescription: 'Range: 13 Mar to 29 Mar'
+                        rangeDescription: 'Range: 13 Mar to 30 Mar'
                     }
                 },
                 legend: {

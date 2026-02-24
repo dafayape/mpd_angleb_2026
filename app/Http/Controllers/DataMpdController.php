@@ -32,7 +32,7 @@ class DataMpdController extends Controller
 
     public function jabodetabekOdSimpul(Request $request)
     {
-        // 1. Date Range: 13 March 2026 - 29 March 2026
+        // 1. Date Range: 13 March 2026 - 30 March 2026
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         
@@ -67,7 +67,7 @@ class DataMpdController extends Controller
 
     public function jabodetabekModeShare(Request $request)
     {
-        // 1. Date Range: 13 March 2026 - 29 March 2026
+        // 1. Date Range: 13 March 2026 - 30 March 2026
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         
@@ -716,7 +716,7 @@ class DataMpdController extends Controller
 
     public function jabodetabekPergerakan(Request $request)
     {
-        // 1. Date Range: 13 March 2026 - 29 March 2026
+        // 1. Date Range: 13 March 2026 - 30 March 2026
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         
@@ -808,7 +808,7 @@ class DataMpdController extends Controller
 
     public function jabodetabekPergerakanOrang(Request $request)
     {
-        // 1. Date Range: 13 March 2026 - 29 March 2026
+        // 1. Date Range: 13 March 2026 - 30 March 2026
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         

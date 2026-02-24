@@ -17,7 +17,7 @@ echo "Running Manual Seeder...\n";
 try {
     $seeder = new SpatialMovements2026Seeder();
     $seeder->run();
-    echo "SUCCESS: Dummy data inserted for 13-29 Mar 2026.\n";
+    echo "SUCCESS: Dummy data inserted for 13-30 Mar 2026.\n";
 } catch (\Throwable $e) {
     echo "ERROR: " . $e->getMessage() . "\n";
     echo $e->getTraceAsString();

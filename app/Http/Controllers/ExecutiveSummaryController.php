@@ -22,7 +22,7 @@ class ExecutiveSummaryController extends Controller
             $startDate = $request->input('start_date', '2026-03-13');
             $endDate = $request->input('end_date', '2026-03-30');
 
-            // Enforce Date Limits Server-Side (13 Mar 2026 - 29 Mar 2026)
+            // Enforce Date Limits Server-Side (13 Mar 2026 - 30 Mar 2026)
             if ($startDate < '2026-03-13') {
                 $startDate = '2026-03-13';
             }

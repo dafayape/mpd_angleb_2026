@@ -10,7 +10,7 @@ preg_match('/DB_PASSWORD=(.*)/', $env, $pass);
 
 $host = trim($host[1] ?? '127.0.0.1');
 $port = trim($port[1] ?? '5432');
-$db   = trim($db[1] ?? 'mpd_angleb_2026');
+$db = trim($db[1] ?? 'mpd_angleb_2026');
 $user = trim($user[1] ?? 'postgres');
 $pass = trim($pass[1] ?? '');
 
@@ -18,11 +18,11 @@ $dsn = "pgsql:host=$host;port=$port;dbname=$db";
 
 try {
     $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-    
+
     // 2. Clear Data
     $startDate = '2026-03-13';
-    $endDate = '2026-03-29';
-    
+    $endDate = '2026-03-30';
+
     $pdo->exec("DELETE FROM spatial_movements WHERE tanggal BETWEEN '$startDate' AND '$endDate'");
 
     // 3. Insert Dummy Data
@@ -46,7 +46,7 @@ try {
 
     while ($current <= $end) {
         $dateStr = $current->format('Y-m-d');
-        
+
         foreach ($operators as $op) {
             // Real
             $totalReal = rand(500000, 2000000);
@@ -54,7 +54,7 @@ try {
                 ':tanggal' => $dateStr,
                 ':opsel' => $op,
                 ':is_forecast' => 'false',
-                ':total' => $totalReal
+                ':total' => $totalReal,
             ]);
 
             // Forecast
@@ -63,7 +63,7 @@ try {
                 ':tanggal' => $dateStr,
                 ':opsel' => $op,
                 ':is_forecast' => 'true',
-                ':total' => $totalForecast
+                ':total' => $totalForecast,
             ]);
         }
         $current->modify('+1 day');
@@ -72,5 +72,5 @@ try {
     file_put_contents('seed_result.txt', "SUCCESS: Inserted dummy data via PDO.\n");
 
 } catch (PDOException $e) {
-    file_put_contents('seed_result.txt', "ERROR: " . $e->getMessage() . "\n");
+    file_put_contents('seed_result.txt', 'ERROR: '.$e->getMessage()."\n");
 }
