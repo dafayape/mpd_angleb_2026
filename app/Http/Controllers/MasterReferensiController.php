@@ -90,7 +90,7 @@ class MasterReferensiController extends Controller
         }
 
         if ($request->filled('category')) {
-            $query->where('category', $request->category);
+            $query->where('category', 'ilike', $request->category);
         }
 
         $data = $query->paginate(50)->withQueryString();
