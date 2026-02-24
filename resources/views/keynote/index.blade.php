@@ -4,28 +4,12 @@
     <div class="row">
         <div class="col-12">
             <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Keynote Material - Data Aktual vs Paparan</h4>
+                <h4 class="mb-sm-0 font-size-18">Keynote Material</h4>
                 <div class="page-title-right">
-                    <form class="d-flex align-items-center gap-2" id="filterForm">
-                        <label class="mb-0 fw-bold text-nowrap">Periode:</label>
-                        <input type="date" id="startDate" class="form-control form-control-sm" value="2026-03-13"
-                            min="2026-03-13" max="2026-03-29" style="width: 140px;">
-                        <span class="text-muted fw-bold">&mdash;</span>
-                        <input type="date" id="endDate" class="form-control form-control-sm" value="2026-03-29"
-                            min="2026-03-13" max="2026-03-29" style="width: 140px;">
-
-                        <label class="mb-0 fw-bold text-nowrap ms-2">Opsel:</label>
-                        <select id="opselFilter" class="form-select form-select-sm" style="width: 100px;">
-                            <option value="">Semua</option>
-                            <option value="TSEL">Telkomsel</option>
-                            <option value="IOH">Indosat</option>
-                            <option value="XL">XL Axiata</option>
-                        </select>
-
-                        <button type="submit" class="btn btn-sm btn-primary text-nowrap ms-1">
-                            <i class="mdi mdi-magnify me-1"></i>Terapkan
-                        </button>
-                    </form>
+                    <ol class="breadcrumb m-0">
+                        <li class="breadcrumb-item"><a href="javascript: void(0);">MPD</a></li>
+                        <li class="breadcrumb-item active">Keynote Material</li>
+                    </ol>
                 </div>
             </div>
         </div>
@@ -33,168 +17,130 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="card">
+            <div class="card shadow-sm border-0">
                 <div class="card-body">
-                    <!-- Summary Cards -->
-                    <div class="row mb-3 text-center">
-                        <div class="col-md-3">
-                            <div class="p-3 border rounded bg-light shadow-sm">
-                                <h6 class="text-muted mb-1 text-uppercase small fw-bold">Target (Paparan)</h6>
-                                <h4 class="mb-0 text-primary fw-bold" id="sum-paparan">0</h4>
-                            </div>
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <div>
+                            <h5 class="card-title mb-1 fw-bold text-primary">Daftar Kebutuhan Analisis dan Output</h5>
+                            <p class="text-muted mb-0 small">Pengolahan dan Analisis Data Pergerakan Berdasarkan Mobile Positioning Data (MPD) - Periode Angkutan Lebaran 2026</p>
                         </div>
-                        <div class="col-md-3">
-                            <div class="p-3 border rounded bg-light shadow-sm">
-                                <h6 class="text-muted mb-1 text-uppercase small fw-bold">Realisasi (Aktual)</h6>
-                                <h4 class="mb-0 text-success fw-bold" id="sum-aktual">0</h4>
-                            </div>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-primary btn-sm dropdown-toggle shadow-sm" type="button" data-bs-toggle="dropdown">
+                                <i class="mdi mdi-download me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#"><i class="mdi mdi-file-pdf-outline me-1"></i> PDF</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="mdi mdi-file-excel-outline me-1"></i> Excel</a></li>
+                            </ul>
                         </div>
-                        <div class="col-md-3">
-                            <div class="p-3 border rounded bg-light shadow-sm">
-                                <h6 class="text-muted mb-1 text-uppercase small fw-bold">Selisih</h6>
-                                <h4 class="mb-0 fw-bold" id="sum-selisih">0</h4>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="p-3 border rounded bg-light shadow-sm">
-                                <h6 class="text-muted mb-1 text-uppercase small fw-bold">Capaian (%)</h6>
-                                <h4 class="mb-0 fw-bold" id="sum-persen">0%</h4>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0">Rincian Per Simpul</h5>
-                        <div class="text-muted small">Periode Data: <span id="periodLabel" class="fw-bold">-</span></div>
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped dt-responsive nowrap w-100" id="table-comparison">
-                            <thead class="table-light">
+                        <table class="table table-hover align-middle table-nowrap mb-0" id="table-requirements">
+                            <thead class="bg-light">
                                 <tr>
-                                    <th style="width: 20px;">#</th>
-                                    <th>Kode Simpul</th>
-                                    <th>Nama Simpul</th>
-                                    <th class="text-end">Paparan (Forecast)</th>
-                                    <th class="text-end">Aktual</th>
-                                    <th class="text-end">Selisih</th>
-                                    <th class="text-end">% Capaian</th>
+                                    <th class="text-center" style="width: 60px;">No. Slide</th>
+                                    <th>Konten / Substansi</th>
+                                    <th>Kelompok Bahasan</th>
+                                    <th class="text-center">Detail & Referensi</th>
                                 </tr>
                             </thead>
-                            <tbody id="table-body">
-                                <tr>
-                                    <td colspan="7" class="text-center py-5">
-                                        <div class="spinner-border text-primary" role="status">
-                                            <span class="visually-hidden">Loading...</span>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <tbody>
+                                @foreach($requirements as $req)
+                                    <tr>
+                                        <td class="text-center fw-bold text-muted">{{ $req['no'] }}</td>
+                                        <td style="white-space: normal; min-width: 300px;">
+                                            <div class="fw-semibold text-dark">{{ $req['content'] }}</div>
+                                        </td>
+                                        <td>
+                                            @php
+                                                $badgeClass = 'bg-soft-primary text-primary';
+                                                switch($req['group']) {
+                                                    case 'Executive Summary': $badgeClass = 'bg-soft-info text-info'; break;
+                                                    case 'Pergerakan Nasional': $badgeClass = 'bg-soft-success text-success'; break;
+                                                    case 'Pergerakan Jabodetabek': $badgeClass = 'bg-soft-warning text-warning'; break;
+                                                    case 'Kesimpulan dan Rekomendasi': $badgeClass = 'bg-soft-danger text-danger'; break;
+                                                    case 'Substansi Tambahan': $badgeClass = 'bg-soft-secondary text-secondary'; break;
+                                                }
+                                            @endphp
+                                            <span class="badge {{ $badgeClass }} px-3 py-2 font-size-11">{{ $req['group'] }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="{{ route($req['route']) }}" class="btn btn-primary btn-sm px-3 rounded-pill shadow-sm transition-all hover-scale">
+                                                <i class="mdi mdi-eye-outline me-1"></i> Lihat Analisis
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="alert alert-soft-info border-info d-flex align-items-start mb-0" role="alert">
+                            <i class="mdi mdi-information-outline font-size-24 me-3 text-info"></i>
+                            <div>
+                                <h6 class="alert-heading fw-bold text-info mb-1">Catatan Penting:</h6>
+                                <ul class="mb-0 small text-dark-50">
+                                    <li><strong>Slide 36:</strong> Data simpul transportasi tidak ditampilkan karena output datanya dianggap anomali. Jika hasil olah data pada periode Angleb nanti masuk kategori normal, maka hasil analisis ini akan ditampilkan di dashboard utama.</li>
+                                    <li><strong>Slide 37:</strong> Perhitungan netflow digunakan sebagai alternatif untuk menentukan kabupaten/kota origin/asal dan destination/tujuan favorit masyarakat.</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <style>
+        .table thead th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            border-top: none;
+            padding: 15px;
+        }
+        .table tbody td {
+            padding: 15px;
+        }
+        .bg-soft-primary { background-color: rgba(85, 110, 230, 0.1); }
+        .bg-soft-info { background-color: rgba(80, 165, 241, 0.1); }
+        .bg-soft-success { background-color: rgba(52, 195, 143, 0.1); }
+        .bg-soft-warning { background-color: rgba(241, 180, 76, 0.1); }
+        .bg-soft-danger { background-color: rgba(244, 106, 106, 0.1); }
+        .bg-soft-secondary { background-color: rgba(116, 120, 141, 0.1); }
+        
+        .alert-soft-info {
+            background-color: rgba(80, 165, 241, 0.05);
+        }
+        
+        .hover-scale:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(85, 110, 230, 0.3) !important;
+        }
+        
+        .transition-all {
+            transition: all 0.2s ease-in-out;
+        }
+    </style>
 @endsection
 
 @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            // Fetch Data
-            async function fetchData() {
-                const startDate = document.getElementById('startDate').value;
-                const endDate = document.getElementById('endDate').value;
-                const opsel = document.getElementById('opselFilter').value;
-                const url =
-                    `{{ route('keynote.data') }}?start_date=${startDate}&end_date=${endDate}&opsel=${opsel}`;
-
-                const tbody = document.getElementById('table-body');
-                tbody.innerHTML =
-                    '<tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
-
-                try {
-                    const response = await fetch(url);
-                    const data = await response.json();
-
-                    if (data.error) {
-                        alert('Error: ' + data.error);
-                        return;
-                    }
-
-                    // Update Label
-                    document.getElementById('periodLabel').textContent = data.period_label;
-
-                    // Render Table & Summary
-                    renderTable(data.table_data, data.summary);
-
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                    tbody.innerHTML =
-                        '<tr><td colspan="7" class="text-center text-danger py-3">Gagal memuat data.</td></tr>';
-                }
-            }
-
-            // Render Table
-            function renderTable(data, summary) {
-                // Update Summary
-                document.getElementById('sum-paparan').textContent = (summary.total_paparan || 0).toLocaleString(
-                    'id-ID');
-                document.getElementById('sum-aktual').textContent = (summary.total_aktual || 0).toLocaleString(
-                    'id-ID');
-                document.getElementById('sum-selisih').textContent = (summary.selisih || 0).toLocaleString('id-ID');
-
-                const persen = summary.persen || 0;
-                const persenElem = document.getElementById('sum-persen');
-                persenElem.textContent = persen + '%';
-                persenElem.className = 'mb-0 fw-bold ' + (persen >= 100 ? 'text-success' : (persen >= 80 ?
-                    'text-warning' : 'text-danger'));
-
-                // Update Table
-                const tbody = document.getElementById('table-body');
-                if (!data || data.length === 0) {
-                    tbody.innerHTML =
-                        '<tr><td colspan="7" class="text-center text-muted py-3">Tidak ada data.</td></tr>';
-                    return;
-                }
-
-                let html = '';
-                data.forEach((row, index) => {
-                    const selisih = row.aktual - row.paparan;
-                    const capain = row.paparan > 0 ? (row.aktual / row.paparan) * 100 : 0;
-                    const colorClass = selisih >= 0 ? 'text-success' : 'text-danger';
-
-                    html += `
-                <tr>
-                    <td class="text-center">${index + 1}</td>
-                    <td>${row.code}</td>
-                    <td class="fw-bold">${row.name}</td>
-                    <td class="text-end">${row.paparan.toLocaleString('id-ID')}</td>
-                    <td class="text-end fw-bold">${row.aktual.toLocaleString('id-ID')}</td>
-                    <td class="text-end ${colorClass}">${selisih.toLocaleString('id-ID')}</td>
-                    <td class="text-end">${capain.toFixed(1)}%</td>
-                </tr>
-            `;
-                });
-                tbody.innerHTML = html;
-            }
-
-            // Event Listeners
-            document.getElementById('filterForm').addEventListener('submit', function(e) {
-                e.preventDefault();
-                const s = document.getElementById('startDate');
-                const ed = document.getElementById('endDate');
-                if (s.value > ed.value) {
-                    [s.value, ed.value] = [ed.value, s.value];
-                }
-                fetchData();
-            });
-
-            document.getElementById('opselFilter').addEventListener('change', fetchData);
-
-            // Initial Load
-            fetchData();
-        });
-    </script>
+<script>
+    $(document).ready(function() {
+        // Initialize simple sorting if needed, or just let it be a clean list
+        // If DataTables is available and desired:
+        // $('#table-requirements').DataTable({
+        //     pageLength: 25,
+        //     responsive: true,
+        //     language: {
+        //         search: "Cari:",
+        //         lengthMenu: "Tampilkan _MENU_ data",
+        //         info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data"
+        //     }
+        // });
+    });
+</script>
 @endpush
