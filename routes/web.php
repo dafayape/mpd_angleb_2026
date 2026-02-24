@@ -27,6 +27,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/grafik-mpd/nasional/mode-share', 'nasionalModeShare')->name('grafik-mpd.nasional.mode-share');
         Route::get('/grafik-mpd/nasional/simpul', 'nasionalSimpul')->name('grafik-mpd.nasional.simpul');
 
+        // Jabodetabek
+        Route::get('/grafik-mpd/jabodetabek/pergerakan-orang', 'jabodetabekPergerakanOrang')->name('grafik-mpd.jabodetabek.pergerakan-orang');
+        Route::get('/grafik-mpd/jabodetabek/pergerakan-orang-opsel', 'jabodetabekPergerakanOrangOpsel')->name('grafik-mpd.jabodetabek.pergerakan-orang-opsel');
+        Route::get('/grafik-mpd/jabodetabek/od-kabkota', 'jabodetabekOdKabkota')->name('grafik-mpd.jabodetabek.od-kabkota');
+        Route::get('/grafik-mpd/jabodetabek/mode-share', 'jabodetabekModeShare')->name('grafik-mpd.jabodetabek.mode-share');
+        Route::get('/grafik-mpd/jabodetabek/simpul', 'jabodetabekSimpul')->name('grafik-mpd.jabodetabek.simpul');
     });
 
     Route::get('/data-mpd/nasional/pergerakan', [\App\Http\Controllers\DataMpdController::class, 'nasionalPergerakan'])->name('data-mpd.nasional.pergerakan');
@@ -116,7 +122,7 @@ Route::get('/sso-login', function (Request $request) {
     try {
         \App\Models\ActivityLog::log('Login SSO', Auth::user()?->name, 'Success');
     } catch (\Throwable $e) {
-        \Illuminate\Support\Facades\Log::warning('ActivityLog gagal: ' . $e->getMessage());
+        \Illuminate\Support\Facades\Log::warning('ActivityLog gagal: '.$e->getMessage());
     }
 
     return redirect('/');
