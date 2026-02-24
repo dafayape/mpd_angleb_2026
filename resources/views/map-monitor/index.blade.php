@@ -15,21 +15,98 @@
         }
 
         .legend-control {
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            max-width: 250px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            min-width: 220px;
             font-family: "Poppins", sans-serif;
             font-size: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .legend-control h6 {
-            margin: 0 0 5px;
-            font-weight: 600;
-            font-size: 14px;
-            border-bottom: 1px solid #eee;
+            margin: 0 0 10px;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #333;
+            border-bottom: 2px solid #3b5de7;
             padding-bottom: 5px;
+            display: block;
+        }
+
+        .legend-section {
+            margin-bottom: 12px;
+        }
+
+        .legend-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .legend-color-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            margin-right: 8px;
+            opacity: 0.8;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-icon-box {
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .radius-scale-bar {
+            height: 4px;
+            background: #ccc;
+            position: relative;
+            margin: 15px 0 5px;
+            border-radius: 2px;
+        }
+
+        .radius-scale-bar::before,
+        .radius-scale-bar::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            width: 1px;
+            height: 12px;
+            background: #999;
+        }
+
+        .radius-scale-bar::before {
+            left: 0;
+        }
+
+        .radius-scale-bar::after {
+            right: 0;
+        }
+
+        .radius-scale-label {
+            font-size: 10px;
+            color: #888;
+            display: flex;
+            justify-content: space-between;
         }
 
         /* Select2 Overlay */
@@ -162,26 +239,65 @@
             legend.onAdd = function(map) {
                 const div = L.DomUtil.create('div', 'legend-control');
                 div.innerHTML = `
-                <h6>Legenda Kepadatan</h6>
-                <div class="d-flex align-items-center mb-2">
-                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #808080; opacity: 0.6;"></span>
-                    <span>Radius Default (Tanpa Data)</span>
+                <h6>Pusat Kendali Map</h6>
+                
+                <div class="legend-section">
+                    <span class="legend-title">TINGKAT KEPADATAN</span>
+                    <div class="legend-item">
+                        <span class="legend-color-box" style="background-color: #ff0000;"></span>
+                        <span>Sangat Padat (> 66%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color-box" style="background-color: #ffff00;"></span>
+                        <span>Padat (33% - 66%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color-box" style="background-color: #00ff00;"></span>
+                        <span>Normal (< 33%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color-box" style="background-color: #808080;"></span>
+                        <span>Tanpa Data Pergerakan</span>
+                    </div>
                 </div>
-                <div class="d-flex align-items-center mb-2">
-                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #00ff00; opacity: 0.6;"></span>
-                    <span>Volume Rendah (< 33%)</span>
+
+                <div class="legend-section">
+                    <span class="legend-title">KLASIFIKASI SIMPUL</span>
+                    <div class="legend-item">
+                        <span class="legend-icon-box"><i class="mdi mdi-airplane"></i></span>
+                        <span>Bandara</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-icon-box"><i class="mdi mdi-train"></i></span>
+                        <span>Stasiun</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-icon-box"><i class="mdi mdi-bus"></i></span>
+                        <span>Terminal</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-icon-box"><i class="mdi mdi-ship"></i></span>
+                        <span>Pelabuhan</span>
+                    </div>
                 </div>
-                <div class="d-flex align-items-center mb-2">
-                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffff00; opacity: 0.6;"></span>
-                    <span>Volume Sedang (33% - 66%)</span>
+
+                <div class="legend-section">
+                    <span class="legend-title">REFERENSI RADIUS</span>
+                    <div class="radius-scale-bar" style="width: 100px;"></div>
+                    <div class="radius-scale-label" style="width: 100px;">
+                        <span>0m</span>
+                        <span>500m</span>
+                    </div>
+                    <small class="text-muted d-block mt-1" style="font-size: 9px; line-height: 1.2;">
+                        * Ukuran lingkaran absolut sesuai database.
+                    </small>
                 </div>
-                <div class="d-flex align-items-center mb-2">
-                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
-                    <span>Volume Tinggi (> 66%)</span>
-                </div>
-                <div class="mt-2 pt-2 border-top text-muted">
-                    <small><strong>Data:</strong> <span id="displayDate">-</span></small><br>
-                    <small style="font-size: 10px;">* Ukuran lingkaran patuh pada radius di Referensi Simpul.</small>
+
+                <div class="mt-2 pt-2 border-top">
+                    <small class="text-primary fw-bold" style="font-size: 10px;">
+                        <i class="mdi mdi-calendar-range me-1"></i>Periode:
+                    </small><br>
+                    <small id="displayDate" class="text-muted" style="font-size: 10px;">-</small>
                 </div>
             `;
                 return div;
