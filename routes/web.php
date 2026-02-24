@@ -27,12 +27,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/grafik-mpd/nasional/mode-share', 'nasionalModeShare')->name('grafik-mpd.nasional.mode-share');
         Route::get('/grafik-mpd/nasional/simpul', 'nasionalSimpul')->name('grafik-mpd.nasional.simpul');
 
-        // Jabodetabek
-        Route::get('/grafik-mpd/jabodetabek/pergerakan-orang', 'jabodetabekPergerakanOrang')->name('grafik-mpd.jabodetabek.pergerakan-orang');
-        Route::get('/grafik-mpd/jabodetabek/pergerakan-orang-opsel', 'jabodetabekPergerakanOrangOpsel')->name('jabodetabekPergerakanOrangOpsel');
-        Route::get('/grafik-mpd/jabodetabek/od-kabkota', 'jabodetabekOdKabkota')->name('jabodetabekOdKabkota');
-        Route::get('/grafik-mpd/jabodetabek/mode-share', 'jabodetabekModeShare')->name('jabodetabekModeShare');
-        Route::get('/grafik-mpd/jabodetabek/simpul', 'jabodetabekSimpul')->name('jabodetabekSimpul');
     });
 
     Route::get('/data-mpd/nasional/pergerakan', [\App\Http\Controllers\DataMpdController::class, 'nasionalPergerakan'])->name('data-mpd.nasional.pergerakan');
