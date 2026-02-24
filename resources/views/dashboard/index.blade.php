@@ -178,26 +178,6 @@
         </div>
     </div>
 
-    {{-- Highlight Alert --}}
-    <div class="alert alert-info border-0 bg-info-subtle text-info" role="alert">
-        <div class="d-flex align-items-start">
-            <div class="flex-grow-1">
-                <h5 class="alert-heading font-size-14 text-info"><i class="mdi mdi-information-outline me-1"></i>
-                    Highlight
-                    Survei Angkutan Lebaran 2026</h5>
-                <p class="mb-0 font-size-13">Dalam rangka persiapan dan pelaksanaan layanan Angkutan
-                    Lebaran (Angleb) tahun
-                    2026, Badan Kebijakan Transportasi melaksanakan survei online pada periode
-                    <strong>15 - 30 Januari
-                        2026</strong> untuk mengidentifikasi preferensi dan mengukur persepsi masyarakat
-                    yang akan melakukan
-                    perjalanan. Survei tersebut bekerja sama dengan <strong>LAPI ITB, BPS, dan
-                        Kementerian Komdigi.</strong>
-                </p>
-            </div>
-        </div>
-    </div>
-
     {{-- Disclaimer / Data Freshness --}}
     @if (isset($disclaimer) && $disclaimer)
         <div class="alert alert-light border-0 text-muted py-2 px-3 mb-3" style="font-size: 11px;">
