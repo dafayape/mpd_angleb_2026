@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Node;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class NodeSeeder extends Seeder
@@ -838,7 +838,7 @@ class NodeSeeder extends Seeder
             ['id' => 'LKK', 'name' => 'LABAKKANG', 'category' => 'Stasiun', 'sub_category' => 'Antar Kota', 'latitude' => -4.760005556, 'longitude' => 119.5620972, 'radius' => 150],
             ['id' => 'LMG', 'name' => 'LAMONGAN', 'category' => 'Stasiun', 'sub_category' => 'Antar Kota', 'latitude' => -7.112522222, 'longitude' => 112.4201639, 'radius' => 150],
             ['id' => 'LDT', 'name' => 'LIDAHTANAH', 'category' => 'Stasiun', 'sub_category' => 'Antar Kota', 'latitude' => 3.563019444, 'longitude' => 99.01435278, 'radius' => 150],
-            ['id' => 'MRG', 'name' => 'MA''RANG', 'category' => 'Stasiun', 'sub_category' => 'Antar Kota', 'latitude' => -4.664669444, 'longitude' => 119.5860222, 'radius' => 150],
+            ['id' => 'MRG', 'name' => 'MA\'RANG', 'category' => 'Stasiun', 'sub_category' => 'Antar Kota', 'latitude' => -4.664669444, 'longitude' => 119.5860222, 'radius' => 150],
             ['id' => 'ML', 'name' => 'MALANG', 'category' => 'Stasiun', 'sub_category' => 'Antar Kota', 'latitude' => -7.977511111, 'longitude' => 112.6370528, 'radius' => 150],
             ['id' => 'MLKAK', 'name' => 'MALANG KOTA LAMA', 'category' => 'Stasiun', 'sub_category' => 'Antar Kota', 'latitude' => -7.994897222, 'longitude' => 112.6325444, 'radius' => 150],
             ['id' => 'MBM', 'name' => 'MAMBANGMUDA', 'category' => 'Stasiun', 'sub_category' => 'Antar Kota', 'latitude' => 2.565211111, 'longitude' => 99.65101389, 'radius' => 150],
@@ -1281,7 +1281,7 @@ class NodeSeeder extends Seeder
             ['id' => 'PWJ', 'name' => 'Purworejo', 'category' => 'Terminal', 'sub_category' => 'A', 'latitude' => -7.728586, 'longitude' => 109.970386, 'radius' => 200],
             ['id' => 'TDR', 'name' => 'Tidar', 'category' => 'Terminal', 'sub_category' => 'A', 'latitude' => -7.4914, 'longitude' => 110.235856, 'radius' => 200],
             ['id' => 'GWN', 'name' => 'Giwangan', 'category' => 'Terminal', 'sub_category' => 'A', 'latitude' => -7.83493098997383, 'longitude' => 110.392375890995, 'radius' => 200],
-            ['id' => 'BWNA', 'name' => 'Bawen', 'category' => 'Terminal', 'sub_category' => 'A', 'latitude' => -7.245550482507276,, 'longitude' => 110.433643915773, 'radius' => 200],
+            ['id' => 'BWNA', 'name' => 'Bawen', 'category' => 'Terminal', 'sub_category' => 'A', 'latitude' => -7.245550482507276, 'longitude' => 110.433643915773, 'radius' => 200],
             ['id' => 'TGK', 'name' => 'Tingkir', 'category' => 'Terminal', 'sub_category' => 'A', 'latitude' => -7.3625, 'longitude' => 110.514447, 'radius' => 200],
             ['id' => 'SKN', 'name' => 'Ir. Soekarno', 'category' => 'Terminal', 'sub_category' => 'A', 'latitude' => -7.714582, 'longitude' => 110.603383, 'radius' => 200],
             ['id' => 'DSG', 'name' => 'Dhaksinarga', 'category' => 'Terminal', 'sub_category' => 'A', 'latitude' => -7.96679285621268, 'longitude' => 110.618462027685, 'radius' => 200],
@@ -1496,7 +1496,7 @@ class NodeSeeder extends Seeder
             ['id' => 'B810', 'name' => 'Pilangsari', 'category' => 'Terminal', 'sub_category' => 'B', 'latitude' => -7.410739, 'longitude' => 111.051692, 'radius' => 100],
             ['id' => 'B330', 'name' => 'Saketi', 'category' => 'Terminal', 'sub_category' => 'B', 'latitude' => -6.30972222237, 'longitude' => 106.106111111, 'radius' => 100],
             ['id' => 'B905', 'name' => 'Sukoharjo', 'category' => 'Terminal', 'sub_category' => 'B', 'latitude' => -7.69443955096293, 'longitude' => 110.848415764973, 'radius' => 100],
-            ['id' => 'B203', 'name' => 'Tanjung', 'category' => 'Terminal', 'sub_category' => 'B', 'latitude' => -6.87305555582, 'longitude' => 108.875277777, 'radius' => 100]
+            ['id' => 'B203', 'name' => 'Tanjung', 'category' => 'Terminal', 'sub_category' => 'B', 'latitude' => -6.87305555582, 'longitude' => 108.875277777, 'radius' => 100],
         ];
 
         $insertData = array_map(function ($node) {
