@@ -164,16 +164,20 @@
                 div.innerHTML = `
                 <h6>Legenda Kepadatan</h6>
                 <div class="d-flex align-items-center mb-2">
+                    <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #808080; opacity: 0.6;"></span>
+                    <span>Radius Default (Tanpa Data)</span>
+                </div>
+                <div class="d-flex align-items-center mb-2">
                     <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #00ff00; opacity: 0.6;"></span>
-                    <span>Rendah (< 33%)</span>
+                    <span>Volume Rendah (< 33%)</span>
                 </div>
                 <div class="d-flex align-items-center mb-2">
                     <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ffff00; opacity: 0.6;"></span>
-                    <span>Sedang (33% - 66%)</span>
+                    <span>Volume Sedang (33% - 66%)</span>
                 </div>
                 <div class="d-flex align-items-center mb-2">
                     <span class="rounded-circle d-inline-block me-2" style="width: 12px; height: 12px; background-color: #ff0000; opacity: 0.6;"></span>
-                    <span>Tinggi (> 66%)</span>
+                    <span>Volume Tinggi (> 66%)</span>
                 </div>
                 <div class="mt-2 pt-2 border-top text-muted">
                     <small><strong>Data:</strong> <span id="displayDate">-</span></small><br>

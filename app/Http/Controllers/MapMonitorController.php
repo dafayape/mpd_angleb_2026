@@ -91,32 +91,10 @@ class MapMonitorController extends Controller
                     ->pluck('total_volume', 'kode_origin_simpul')
                     ->toArray();
 
-                // --- ULTIMATE FALLBACK: If DB is empty or PostGIS fails, use Hardcoded Data ---
+                // --- ULTIMATE FALLBACK: Return empty if DB is empty ---
                 if ($simpuls->isEmpty()) {
-                    \Illuminate\Support\Facades\Log::warning("MapMonitor: DB Empty. Using Hardcoded Fallback.");
-                    
-                    // Re-use the realSimpuls array for display
-                     $realSimpuls = [
-                        ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306, 'radius' => 500],
-                        ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456, 'radius' => 500],
-                        ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537, 'radius' => 1000],
-                        ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542, 'radius' => 300],
-                        ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502, 'radius' => 500],
-                        ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906, 'radius' => 1000],
-                        ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833, 'radius' => 500],
-                        ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115, 'radius' => 500],
-                        ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822, 'radius' => 300],
-                        ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972, 'radius' => 500],
-                    ];
-                    
-                    $simpuls = collect($realSimpuls)->map(function($item) {
-                        return (object) $item;
-                    });
-                    
-                    // Generate Mock Volumes for Facade
-                    foreach($realSimpuls as $s) {
-                        $volumes[$s['code']] = rand(50000, 500000);
-                    }
+                    \Illuminate\Support\Facades\Log::warning("MapMonitor: DB Empty.");
+                    $volumes = [];
                 }
 
                 // 3. Max Volume for scaling
@@ -127,13 +105,16 @@ class MapMonitorController extends Controller
                     $volume = $volumes[$simpul->code] ?? 0;
                     
                     // Color Scaling
-                    $ratio = $volume / $maxVolume;
-                    $color = '#00ff00'; // Green
-                    if ($ratio > 0.33) $color = '#ffff00'; // Yellow
-                    if ($ratio > 0.66) $color = '#ff0000'; // Red
+                    $color = '#808080'; // Default: Gray
+                    if ($volume > 0) {
+                        $ratio = $volume / $maxVolume;
+                        $color = '#00ff00'; // Green
+                        if ($ratio > 0.33) $color = '#ffff00'; // Yellow
+                        if ($ratio > 0.66) $color = '#ff0000'; // Red
+                    }
 
                     // RADIUS INTEGRATION: Use radius from DB directly
-                    $radius = (float)($simpul->radius ?: 200);
+                    $radius = (float)($simpul->radius ?: 100);
 
                     return [
                         'type' => 'Feature',
@@ -172,18 +153,11 @@ class MapMonitorController extends Controller
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('MapMonitor Error: ' . $e->getMessage());
-             // Hardcoded Fallback even in Catch
-             $startDate = '2026-03-13';
-             $mockFeatures = [
-                ['type' => 'Feature', 'geometry' => ['type' => 'Point', 'coordinates' => [106.8306, -6.1767]], 'properties' => ['id' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'volume' => 85000, 'color' => '#ff0000', 'radius' => 1500]],
-                ['type' => 'Feature', 'geometry' => ['type' => 'Point', 'coordinates' => [106.8456, -6.1751]], 'properties' => ['id' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'volume' => 65000, 'color' => '#ffff00', 'radius' => 1200]],
-                ['type' => 'Feature', 'geometry' => ['type' => 'Point', 'coordinates' => [106.6537, -6.1275]], 'properties' => ['id' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'volume' => 95000, 'color' => '#ff0000', 'radius' => 1800]],
-             ];
              return response()->json([
                 'type' => 'FeatureCollection',
-                'selected_date' => $startDate,
-                'max_volume' => 100000,
-                'features' => $mockFeatures
+                'start_date' => $startDate,
+                'max_volume' => 1,
+                'features' => []
              ]);
         }
     }
@@ -205,33 +179,9 @@ class MapMonitorController extends Controller
 
             $simpuls = $query->orderBy('name', 'asc')->limit(100)->get();
 
-            // FALLBACK if DB Empty/Fail
+            // Return empty results if DB is empty
             if ($simpuls->isEmpty()) {
-                 $realSimpuls = [
-                    ['code' => 'S001', 'name' => 'Stasiun Gambir', 'category' => 'Stasiun', 'lat' => -6.1767, 'lng' => 106.8306],
-                    ['code' => 'S002', 'name' => 'Stasiun Pasar Senen', 'category' => 'Stasiun', 'lat' => -6.1751, 'lng' => 106.8456],
-                    ['code' => 'S003', 'name' => 'Bandara Soekarno-Hatta', 'category' => 'Bandara', 'lat' => -6.1275, 'lng' => 106.6537],
-                    ['code' => 'S004', 'name' => 'Terminal Pulo Gebang', 'category' => 'Terminal', 'lat' => -6.2126, 'lng' => 106.9542],
-                    ['code' => 'S005', 'name' => 'Stasiun Manggarai', 'category' => 'Stasiun', 'lat' => -6.2099, 'lng' => 106.8502],
-                    ['code' => 'S006', 'name' => 'Bandara Halim PK', 'category' => 'Bandara', 'lat' => -6.2655, 'lng' => 106.8906],
-                    ['code' => 'S007', 'name' => 'Pelabuhan Tanjung Priok', 'category' => 'Pelabuhan', 'lat' => -6.1082, 'lng' => 106.8833],
-                    ['code' => 'S008', 'name' => 'Stasiun Tanah Abang', 'category' => 'Stasiun', 'lat' => -6.1863, 'lng' => 106.8115],
-                    ['code' => 'S009', 'name' => 'Terminal Kampung Rambutan', 'category' => 'Terminal', 'lat' => -6.3096, 'lng' => 106.8822],
-                    ['code' => 'S010', 'name' => 'Stasiun Bogor', 'category' => 'Stasiun', 'lat' => -6.5963, 'lng' => 106.7972],
-                ];
-                
-                // Filter Hardcoded
-                $simpuls = collect($realSimpuls);
-                if ($search) {
-                    $simpuls = $simpuls->filter(function($item) use ($search) {
-                        return stripos($item['name'], $search) !== false;
-                    });
-                }
-                
-                // Convert arrays to objects for consistent mapping below
-                $simpuls = $simpuls->map(function($item) {
-                     return (object) $item;
-                });
+                return response()->json(['results' => []]);
             }
 
             $results = $simpuls->map(function($item) {
