@@ -969,8 +969,22 @@ class GrafikMpdController extends Controller
             ['name' => 'TSEL', 'data' => array_values($data['TSEL']), 'color' => '#ff3d60']
         ];
 
+        // Combine Intra + Inter per opsel for backward-compat
+        $totalMovOpsel = ['XL' => [], 'IOH' => [], 'TSEL' => []];
+        $totalPplOpsel = ['XL' => [], 'IOH' => [], 'TSEL' => []];
+        foreach (['XL', 'IOH', 'TSEL'] as $op) {
+            foreach ($dates as $d) {
+                $totalMovOpsel[$op][$d] = ($intraMovOpsel[$op][$d] ?? 0) + ($interMovOpsel[$op][$d] ?? 0);
+                $totalPplOpsel[$op][$d] = ($intraPplOpsel[$op][$d] ?? 0) + ($interPplOpsel[$op][$d] ?? 0);
+            }
+        }
+
         return [
             'dates' => $dates,
+            // Total (backward compat)
+            'chart_movement' => $formatSeries($totalMovOpsel),
+            'chart_people' => $formatSeries($totalPplOpsel),
+            // Intra/Inter breakdown
             'chart_intra_mov' => $formatSeries($intraMovOpsel),
             'chart_intra_ppl' => $formatSeries($intraPplOpsel),
             'chart_inter_mov' => $formatSeries($interMovOpsel),

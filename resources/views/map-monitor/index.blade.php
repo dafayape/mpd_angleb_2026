@@ -186,6 +186,45 @@
             </div>
         </div>
     </div>
+
+    {{-- NETFLOW SECTION (F10) --}}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="mdi mdi-swap-vertical-bold me-1 text-primary"></i> Netflow Pergerakan per
+                        Kabupaten/Kota</h5>
+                    <button class="btn btn-sm btn-outline-primary" id="btnLoadNetflow" onclick="loadNetflow()">
+                        <i class="mdi mdi-refresh me-1"></i> Muat Data Netflow
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="netflow-loading" class="text-center py-4 d-none">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Memuat data netflow...</p>
+                    </div>
+                    <div id="netflow-error" class="alert alert-danger d-none"></div>
+                    <div id="netflow-content" class="d-none">
+                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                            <table class="table table-sm table-striped table-hover mb-0" style="font-size: 12px;">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Kab/Kota</th>
+                                        <th class="text-end text-success">Inflow</th>
+                                        <th class="text-end text-danger">Outflow</th>
+                                        <th class="text-end fw-bold">Netflow</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="netflow-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -444,6 +483,55 @@
 
             // Initial Load
             fetchData();
+
+            // === NETFLOW (F10) ===
+            window.loadNetflow = async function() {
+                const loading = document.getElementById('netflow-loading');
+                const content = document.getElementById('netflow-content');
+                const error = document.getElementById('netflow-error');
+                const btn = document.getElementById('btnLoadNetflow');
+
+                loading.classList.remove('d-none');
+                content.classList.add('d-none');
+                error.classList.add('d-none');
+                btn.disabled = true;
+
+                try {
+                    const sd = document.getElementById('startDate').value;
+                    const ed = document.getElementById('endDate').value;
+                    const res = await fetch(
+                        `{{ route('map-monitor.netflow') }}?start_date=${sd}&end_date=${ed}`);
+                    const json = await res.json();
+
+                    if (!json.data || json.data.length === 0) {
+                        error.textContent = 'Tidak ada data netflow untuk periode ini.';
+                        error.classList.remove('d-none');
+                    } else {
+                        const body = document.getElementById('netflow-body');
+                        body.innerHTML = json.data.map((row, i) => {
+                            const nf = row.netflow;
+                            const statusClass = nf > 0 ? 'bg-success' : (nf < 0 ? 'bg-danger' :
+                                'bg-secondary');
+                            const statusText = nf > 0 ? 'Surplus' : (nf < 0 ? 'Defisit' : 'Netral');
+                            return `<tr>
+                                <td>${i + 1}</td>
+                                <td>${row.name}</td>
+                                <td class="text-end text-success">${row.inflow.toLocaleString('id-ID')}</td>
+                                <td class="text-end text-danger">${row.outflow.toLocaleString('id-ID')}</td>
+                                <td class="text-end fw-bold ${nf >= 0 ? 'text-success' : 'text-danger'}">${nf.toLocaleString('id-ID')}</td>
+                                <td class="text-center"><span class="badge ${statusClass}">${statusText}</span></td>
+                            </tr>`;
+                        }).join('');
+                        content.classList.remove('d-none');
+                    }
+                } catch (err) {
+                    error.textContent = 'Gagal memuat data netflow: ' + err.message;
+                    error.classList.remove('d-none');
+                } finally {
+                    loading.classList.add('d-none');
+                    btn.disabled = false;
+                }
+            };
         });
     </script>
 @endpush
