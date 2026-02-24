@@ -267,6 +267,9 @@
                 maxZoom: 19
             }).addTo(map);
 
+            // Force tile render after layout completes
+            setTimeout(() => map.invalidateSize(), 300);
+
             // 3. Variables
             let circlesLayerGroup = L.layerGroup().addTo(map);
             let layersMap = {}; // Map ID -> Layer

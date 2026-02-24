@@ -158,48 +158,50 @@
         </div>
     </div>
 
-    <!-- DAILY CHARTS (New Requirement) -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <h4 class="card-title mb-4">AKUMULASI PERGERAKAN HARIAN TOTAL (INTER JABODETABEK & OUTBOUND)</h4>
-        </div>
+    <!-- DAILY CHARTS — only if data available -->
+    @if (!empty($data['chart_internal_mov']))
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4 class="card-title mb-4">AKUMULASI PERGERAKAN HARIAN TOTAL (INTER JABODETABEK & OUTBOUND)</h4>
+            </div>
 
-        <!-- INTERNAL FLOW -->
-        <div class="col-xl-6">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title mb-3">Internal Jabodetabek - Pergerakan Harian</h4>
-                    <div id="chart-internal-mov" style="height: 350px;"></div>
+            <!-- INTERNAL FLOW -->
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">Internal Jabodetabek - Pergerakan Harian</h4>
+                        <div id="chart-internal-mov" style="height: 350px;"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-xl-6">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title mb-3">Internal Jabodetabek - Orang Harian</h4>
-                    <div id="chart-internal-ppl" style="height: 350px;"></div>
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">Internal Jabodetabek - Orang Harian</h4>
+                        <div id="chart-internal-ppl" style="height: 350px;"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- OUTBOUND FLOW -->
-        <div class="col-xl-6">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title mb-3">Keluar Jabodetabek - Pergerakan Harian</h4>
-                    <div id="chart-outbound-mov" style="height: 350px;"></div>
+            <!-- OUTBOUND FLOW -->
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">Keluar Jabodetabek - Pergerakan Harian</h4>
+                        <div id="chart-outbound-mov" style="height: 350px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title mb-3">Keluar Jabodetabek - Orang Harian</h4>
+                        <div id="chart-outbound-ppl" style="height: 350px;"></div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-6">
-            <div class="card">
-                <div class="card-body">
-                    <h4 class="card-title mb-3">Keluar Jabodetabek - Orang Harian</h4>
-                    <div id="chart-outbound-ppl" style="height: 350px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @endif
 @endsection
 
 @push('scripts')
@@ -210,42 +212,45 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const sankeyData = @json($data['sankey']);
-            const dates = @json($data['dates']);
+            const data = @json($data);
+            const sankeyData = data.sankey || [];
+            const dates = data.dates || [];
 
             // 1. Sankey Chart
-            Highcharts.chart('sankey-container', {
-                title: {
-                    text: ''
-                },
-                accessibility: {
-                    point: {
-                        valueDescriptionFormat: '{point.from} to {point.to}, {point.weight}.'
-                    }
-                },
-                series: [{
-                    keys: ['from', 'to', 'weight'],
-                    data: sankeyData,
-                    type: 'sankey',
-                    name: 'Pergerakan O-D',
-                    dataLabels: {
-                        style: {
-                            color: '#1a1a1a',
-                            textOutline: 'none',
-                            fontSize: '10px'
+            if (sankeyData.length > 0) {
+                Highcharts.chart('sankey-container', {
+                    title: {
+                        text: ''
+                    },
+                    accessibility: {
+                        point: {
+                            valueDescriptionFormat: '{point.from} to {point.to}, {point.weight}.'
                         }
+                    },
+                    series: [{
+                        keys: ['from', 'to', 'weight'],
+                        data: sankeyData,
+                        type: 'sankey',
+                        name: 'Pergerakan O-D',
+                        dataLabels: {
+                            style: {
+                                color: '#1a1a1a',
+                                textOutline: 'none',
+                                fontSize: '10px'
+                            }
+                        }
+                    }],
+                    tooltip: {
+                        headerFormat: '',
+                        pointFormat: '<b>{point.from}</b> &rarr; <b>{point.to}</b><br/>Total: <b>{point.weight:,.0f}</b>'
+                    },
+                    credits: {
+                        enabled: false
                     }
-                }],
-                tooltip: {
-                    headerFormat: '',
-                    pointFormat: '<b>{point.from}</b> &rarr; <b>{point.to}</b><br/>Total: <b>{point.weight:,.0f}</b>'
-                },
-                credits: {
-                    enabled: false
-                }
-            });
+                });
+            }
 
-            // 2. Common Options for Bar/Line Charts
+            // 2. Common Options for Daily Charts
             const commonOptions = {
                 chart: {
                     type: 'column'
@@ -297,28 +302,36 @@
                 }
             };
 
-            // 3. Render 4 Charts
-            const chartData = {
-                'chart-internal-mov': @json($data['chart_internal_mov']),
-                'chart-internal-ppl': @json($data['chart_internal_ppl']),
-                'chart-outbound-mov': @json($data['chart_outbound_mov']),
-                'chart-outbound-ppl': @json($data['chart_outbound_ppl'])
-            };
-            const colors = {
-                'chart-internal-mov': '#2caffe', // Blue
-                'chart-internal-ppl': '#6610f2', // Purple
-                'chart-outbound-mov': '#fec107', // Yellow
-                'chart-outbound-ppl': '#ff3d60' // Red
+            // 3. Render Daily Charts (only if data exists)
+            const chartConfigs = {
+                'chart-internal-mov': {
+                    key: 'chart_internal_mov',
+                    color: '#2caffe'
+                },
+                'chart-internal-ppl': {
+                    key: 'chart_internal_ppl',
+                    color: '#6610f2'
+                },
+                'chart-outbound-mov': {
+                    key: 'chart_outbound_mov',
+                    color: '#fec107'
+                },
+                'chart-outbound-ppl': {
+                    key: 'chart_outbound_ppl',
+                    color: '#ff3d60'
+                }
             };
 
-            for (const [id, seriesData] of Object.entries(chartData)) {
-                Highcharts.chart(id, Highcharts.merge(commonOptions, {
-                    series: [{
-                        name: 'Total',
-                        data: seriesData,
-                        color: colors[id]
-                    }]
-                }));
+            for (const [id, cfg] of Object.entries(chartConfigs)) {
+                if (data[cfg.key] && document.getElementById(id)) {
+                    Highcharts.chart(id, Highcharts.merge(commonOptions, {
+                        series: [{
+                            name: 'Total',
+                            data: data[cfg.key],
+                            color: cfg.color
+                        }]
+                    }));
+                }
             }
         });
     </script>
