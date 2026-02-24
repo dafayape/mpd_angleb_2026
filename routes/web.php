@@ -68,6 +68,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/simpul', [MasterReferensiController::class, 'simpul'])->name('simpul');
         Route::get('/moda', [MasterReferensiController::class, 'moda'])->name('moda');
     });
+
+    // Rule Document Management
+    Route::prefix('master/rule-document')->name('master.rule-document.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\RuleDocumentController::class, 'index'])->name('index');
+        Route::post('/store', [\App\Http\Controllers\RuleDocumentController::class, 'store'])->name('store');
+        Route::get('/download/{id}', [\App\Http\Controllers\RuleDocumentController::class, 'download'])->name('download');
+        Route::delete('/destroy/{id}', [\App\Http\Controllers\RuleDocumentController::class, 'destroy'])->name('destroy');
+    });
+
     Route::resource('users', UserController::class);
     Route::get('/pengguna', fn () => redirect()->route('users.index'))->name('pengguna');
 
