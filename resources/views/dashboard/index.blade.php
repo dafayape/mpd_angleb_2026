@@ -178,13 +178,6 @@
         </div>
     </div>
 
-    {{-- Disclaimer / Data Freshness --}}
-    @if (isset($disclaimer) && $disclaimer)
-        <div class="alert alert-light border-0 text-muted py-2 px-3 mb-3" style="font-size: 11px;">
-            <i class="mdi mdi-information-outline me-1"></i> Data terakhir diperbarui: <strong>{{ $disclaimer }}</strong>
-        </div>
-    @endif
-
     {{-- Info Cards --}}
     <div class="row g-4">
         <div class="col-md-6">
