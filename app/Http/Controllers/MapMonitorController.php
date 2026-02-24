@@ -194,7 +194,7 @@ class MapMonitorController extends Controller
             $results = $simpuls->map(function($item) {
                 return [
                     'id' => $item->code,
-                    'text' => $item->name . ' (' . $item->category . ')',
+                    'text' => '[' . $item->code . '] ' . $item->name . ' (' . $item->category . ')',
                     'lat' => (float)$item->lat,
                     'lng' => (float)$item->lng
                 ];
