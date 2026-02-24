@@ -35,6 +35,7 @@ return new class extends Migration {
             $table->string('category', 50)->index();
             $table->string('sub_category', 50)->nullable();
             $table->geography('location', 'POINT', 4326)->nullable();
+            $table->integer('radius')->nullable()->comment('Radius visualisasi dalam meter (LTS)');
             $table->timestamps();
 
             $table->spatialIndex('location');

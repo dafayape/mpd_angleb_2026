@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
 use App\Models\ImportJob;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -27,43 +26,43 @@ class DatasourceController extends Controller
     public function storeUpload(Request $request)
     {
         $request->validate([
-            'opsel'        => 'required|string|in:TSEL,IOH,XL',
-            'kategori'     => 'required|string|in:REAL,FORECAST',
+            'opsel' => 'required|string|in:TSEL,IOH,XL',
+            'kategori' => 'required|string|in:REAL,FORECAST',
             'tanggal_data' => 'required|date',
-            'file'         => 'required|file|mimes:csv,txt|max:1048576',
+            'file' => 'required|file|mimes:csv,txt|max:1048576',
         ]);
 
-        $file             = $request->file('file');
+        $file = $request->file('file');
         $originalFilename = $file->getClientOriginalName();
-        $filename         = time() . '_' . $originalFilename;
+        $filename = time().'_'.$originalFilename;
 
         $file->storeAs('mpd_uploads', $filename, 'local');
 
         $job = ImportJob::create([
-            'filename'          => $filename,
+            'filename' => $filename,
             'original_filename' => $originalFilename,
-            'opsel'             => $request->opsel,
-            'kategori'          => $request->kategori,
-            'tanggal_data'      => $request->tanggal_data,
-            'user_id'           => Auth::id(),
-            'status'            => 'uploaded',
-            'progress'          => 0,
-            'total_rows'        => 0,
-            'processed_rows'    => 0,
-            'metadata'          => ['file_size' => $file->getSize()],
+            'opsel' => $request->opsel,
+            'kategori' => $request->kategori,
+            'tanggal_data' => $request->tanggal_data,
+            'user_id' => Auth::id(),
+            'status' => 'uploaded',
+            'progress' => 0,
+            'total_rows' => 0,
+            'processed_rows' => 0,
+            'metadata' => ['file_size' => $file->getSize()],
         ]);
 
         // Catat log aktivitas (non-blocking)
         try {
             ActivityLog::log('Upload CSV', $originalFilename, 'Success', "Opsel: {$request->opsel}, Kategori: {$request->kategori}");
         } catch (\Throwable $e) {
-            Log::warning('ActivityLog gagal: ' . $e->getMessage());
+            Log::warning('ActivityLog gagal: '.$e->getMessage());
         }
 
         return response()->json([
-            'status'     => 'success',
+            'status' => 'success',
             'history_id' => $job->id,
-            'message'    => 'File berhasil diupload.',
+            'message' => 'File berhasil diupload.',
         ]);
     }
 
@@ -80,23 +79,24 @@ class DatasourceController extends Controller
         DB::disableQueryLog();
 
         $historyId = $request->input('history_id');
-        $offset    = (int) $request->input('offset', 0);
+        $offset = (int) $request->input('offset', 0);
         $chunkSize = 5000;
 
         $job = ImportJob::find($historyId);
-        if (!$job) {
+        if (! $job) {
             return response()->json(['status' => 'error', 'message' => 'Import job tidak ditemukan.'], 404);
         }
 
         // Resolve file path
-        $path = $this->resolveFilePath('mpd_uploads/' . $job->filename);
-        if (!$path) {
+        $path = $this->resolveFilePath('mpd_uploads/'.$job->filename);
+        if (! $path) {
             $job->update(['status' => 'failed', 'error_message' => 'File tidak ditemukan di storage.']);
+
             return response()->json(['status' => 'error', 'message' => 'File tidak ditemukan di storage.'], 404);
         }
 
         $handle = fopen($path, 'r');
-        if (!$handle) {
+        if (! $handle) {
             return response()->json(['status' => 'error', 'message' => 'Gagal membuka file.'], 500);
         }
 
@@ -112,13 +112,13 @@ class DatasourceController extends Controller
         }
 
         // is_forecast: REAL = false, FORECAST = true
-        $isForecast   = ($job->kategori === 'FORECAST');
-        $now          = now()->toDateTimeString();
-        $batch        = [];
-        $rowsInChunk  = 0;
-        $rowsSkipped  = 0;
-        $isEof        = false;
-        $errors       = [];
+        $isForecast = ($job->kategori === 'FORECAST');
+        $now = now()->toDateTimeString();
+        $batch = [];
+        $rowsInChunk = 0;
+        $rowsSkipped = 0;
+        $isEof = false;
+        $errors = [];
 
         while ($rowsInChunk < $chunkSize) {
             $line = fgets($handle);
@@ -135,38 +135,40 @@ class DatasourceController extends Controller
             $cols = str_getcsv($line, ';');
             if (count($cols) < 18) {
                 $rowsSkipped++;
+
                 continue;
             }
 
             $tanggal = trim($cols[0]);
-            if (!$tanggal || !strtotime($tanggal)) {
+            if (! $tanggal || ! strtotime($tanggal)) {
                 $rowsSkipped++;
+
                 continue;
             }
 
             $batch[] = [
-                'import_job_id'              => $job->id,
-                'tanggal'                    => $tanggal,
-                'opsel'                      => trim($cols[1]),
-                'kategori'                   => trim($cols[2]),
-                'kode_origin_provinsi'       => trim($cols[3]),
-                'origin_provinsi'            => trim($cols[4]),
+                'import_job_id' => $job->id,
+                'tanggal' => $tanggal,
+                'opsel' => trim($cols[1]),
+                'kategori' => trim($cols[2]),
+                'kode_origin_provinsi' => trim($cols[3]),
+                'origin_provinsi' => trim($cols[4]),
                 'kode_origin_kabupaten_kota' => trim($cols[5]),
-                'origin_kabupaten_kota'      => trim($cols[6]),
-                'kode_dest_provinsi'         => trim($cols[7]),
-                'dest_provinsi'              => trim($cols[8]),
-                'kode_dest_kabupaten_kota'   => trim($cols[9]),
-                'dest_kabupaten_kota'        => trim($cols[10]),
-                'kode_origin_simpul'         => trim($cols[11] ?? ''),
-                'origin_simpul'              => trim($cols[12] ?? ''),
-                'kode_dest_simpul'           => trim($cols[13] ?? ''),
-                'dest_simpul'                => trim($cols[14] ?? ''),
-                'kode_moda'                  => trim($cols[15] ?? ''),
-                'moda'                       => trim($cols[16] ?? ''),
-                'total'                      => (int) trim($cols[17] ?? '0'),
-                'is_forecast'                => $isForecast,
-                'created_at'                 => $now,
-                'updated_at'                 => $now,
+                'origin_kabupaten_kota' => trim($cols[6]),
+                'kode_dest_provinsi' => trim($cols[7]),
+                'dest_provinsi' => trim($cols[8]),
+                'kode_dest_kabupaten_kota' => trim($cols[9]),
+                'dest_kabupaten_kota' => trim($cols[10]),
+                'kode_origin_simpul' => trim($cols[11] ?? ''),
+                'origin_simpul' => trim($cols[12] ?? ''),
+                'kode_dest_simpul' => trim($cols[13] ?? ''),
+                'dest_simpul' => trim($cols[14] ?? ''),
+                'kode_moda' => trim($cols[15] ?? ''),
+                'moda' => trim($cols[16] ?? ''),
+                'total' => (int) trim($cols[17] ?? '0'),
+                'is_forecast' => $isForecast,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
 
             // Flush batch setiap 1000 baris
@@ -182,11 +184,11 @@ class DatasourceController extends Controller
         fclose($handle);
 
         // Insert sisa batch
-        if (!empty($batch)) {
+        if (! empty($batch)) {
             $this->insertBatch($batch, $job, $errors);
         }
 
-        $fileSize   = filesize($path);
+        $fileSize = filesize($path);
         $percentage = $fileSize > 0 ? min(round(($newOffset / $fileSize) * 100), 99) : 100;
 
         $job->refresh();
@@ -195,19 +197,19 @@ class DatasourceController extends Controller
         if ($isEof) {
             $finalStatus = empty($errors) ? 'completed' : 'completed_with_errors';
             $job->update([
-                'status'        => $finalStatus,
-                'progress'      => 100,
-                'total_rows'    => $job->processed_rows,
-                'error_message' => !empty($errors) ? implode(' | ', array_slice($errors, 0, 5)) : null,
+                'status' => $finalStatus,
+                'progress' => 100,
+                'total_rows' => $job->processed_rows,
+                'error_message' => ! empty($errors) ? implode(' | ', array_slice($errors, 0, 5)) : null,
             ]);
 
             return response()->json([
-                'status'         => 'completed',
-                'offset'         => $newOffset,
+                'status' => 'completed',
+                'offset' => $newOffset,
                 'rows_processed' => $job->processed_rows,
-                'rows_skipped'   => $rowsSkipped,
-                'percent'        => 100,
-                'errors'         => $errors,
+                'rows_skipped' => $rowsSkipped,
+                'percent' => 100,
+                'errors' => $errors,
             ]);
         }
 
@@ -215,12 +217,12 @@ class DatasourceController extends Controller
         $job->update(['status' => 'processing', 'progress' => $percentage]);
 
         return response()->json([
-            'status'         => 'progress',
-            'offset'         => $newOffset,
+            'status' => 'progress',
+            'offset' => $newOffset,
             'rows_processed' => $rowsInChunk,
-            'rows_skipped'   => $rowsSkipped,
-            'percent'        => $percentage,
-            'errors'         => $errors,
+            'rows_skipped' => $rowsSkipped,
+            'percent' => $percentage,
+            'errors' => $errors,
         ]);
     }
 
@@ -234,7 +236,7 @@ class DatasourceController extends Controller
             $job->increment('processed_rows', count($batch));
         } catch (\Exception $e) {
             $errors[] = $e->getMessage();
-            Log::error("Batch insert failed: " . $e->getMessage());
+            Log::error('Batch insert failed: '.$e->getMessage());
 
             // Fallback: insert satu per satu
             $saved = 0;
@@ -243,7 +245,7 @@ class DatasourceController extends Controller
                     DB::table('raw_mpd_data')->insert($row);
                     $saved++;
                 } catch (\Exception $rowErr) {
-                    Log::warning("Row failed: " . $rowErr->getMessage());
+                    Log::warning('Row failed: '.$rowErr->getMessage());
                 }
             }
             if ($saved > 0) {
@@ -273,7 +275,7 @@ class DatasourceController extends Controller
         }
 
         $histories = $query->paginate(10)->withQueryString();
-        $summary   = $this->getSummary();
+        $summary = $this->getSummary();
 
         return view('datasource.history', compact('histories', 'summary'));
     }
@@ -316,7 +318,7 @@ class DatasourceController extends Controller
 
         try {
             $job = ImportJob::find($id);
-            if (!$job) {
+            if (! $job) {
                 return response()->json(['status' => 'completed', 'deleted' => 0]);
             }
 
@@ -329,14 +331,14 @@ class DatasourceController extends Controller
             // Masih ada baris yang perlu dihapus
             if ($deleted > 0) {
                 return response()->json([
-                    'status'  => 'progress',
+                    'status' => 'progress',
                     'deleted' => $deleted,
                 ]);
             }
 
             // Semua data terhapus → hapus file CSV dan record ImportJob
             $originalName = $job->original_filename ?? $job->filename;
-            $filePath = 'mpd_uploads/' . $job->filename;
+            $filePath = 'mpd_uploads/'.$job->filename;
             if (Storage::disk('local')->exists($filePath)) {
                 Storage::disk('local')->delete($filePath);
             }
@@ -348,7 +350,8 @@ class DatasourceController extends Controller
 
             return response()->json(['status' => 'completed', 'deleted' => 0]);
         } catch (\Exception $e) {
-            Log::error("Delete error: " . $e->getMessage());
+            Log::error('Delete error: '.$e->getMessage());
+
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
     }
@@ -368,14 +371,14 @@ class DatasourceController extends Controller
     {
         try {
             return [
-                'total_rows'    => (int) DB::table('raw_mpd_data')->count(),
+                'total_rows' => (int) DB::table('raw_mpd_data')->count(),
                 'total_uploads' => ImportJob::whereIn('status', ['completed', 'completed_with_errors'])->count(),
-                'by_opsel'      => DB::table('raw_mpd_data')
+                'by_opsel' => DB::table('raw_mpd_data')
                     ->select('opsel', DB::raw('COUNT(*) as total'))
                     ->groupBy('opsel')
                     ->pluck('total', 'opsel')
                     ->toArray(),
-                'latest_date'   => DB::table('raw_mpd_data')->max('tanggal'),
+                'latest_date' => DB::table('raw_mpd_data')->max('tanggal'),
             ];
         } catch (\Exception $e) {
             return ['total_rows' => 0, 'total_uploads' => 0, 'by_opsel' => [], 'latest_date' => null];
@@ -389,8 +392,8 @@ class DatasourceController extends Controller
     {
         $paths = [
             Storage::disk('local')->path($storagePath),
-            storage_path('app/private/' . $storagePath),
-            storage_path('app/' . $storagePath),
+            storage_path('app/private/'.$storagePath),
+            storage_path('app/'.$storagePath),
         ];
 
         foreach ($paths as $path) {
@@ -399,7 +402,8 @@ class DatasourceController extends Controller
             }
         }
 
-        Log::error("File not found. Tried: " . implode(', ', $paths));
+        Log::error('File not found. Tried: '.implode(', ', $paths));
+
         return null;
     }
 }
