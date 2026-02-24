@@ -32,21 +32,28 @@
                     <form action="{{ route('master.referensi.simpul') }}" method="GET" class="mb-3">
                         <div class="row g-2 align-items-end">
                             <div class="col-md-4">
-                                <input type="text" class="form-control form-control-sm" name="search" placeholder="Cari kode / nama simpul..." value="{{ request('search') }}">
+                                <input type="text" class="form-control form-control-sm" name="search"
+                                    placeholder="Cari kode / nama simpul..." value="{{ request('search') }}">
                             </div>
                             <div class="col-md-3">
                                 <select class="form-select form-select-sm" name="category" onchange="this.form.submit()">
                                     <option value="">— Semua Kategori —</option>
-                                    <option value="BANDARA" {{ request('category') == 'BANDARA' ? 'selected' : '' }}>Bandara</option>
-                                    <option value="PELABUHAN" {{ request('category') == 'PELABUHAN' ? 'selected' : '' }}>Pelabuhan</option>
-                                    <option value="STASIUN" {{ request('category') == 'STASIUN' ? 'selected' : '' }}>Stasiun</option>
-                                    <option value="TERMINAL" {{ request('category') == 'TERMINAL' ? 'selected' : '' }}>Terminal</option>
+                                    <option value="BANDARA" {{ request('category') == 'BANDARA' ? 'selected' : '' }}>Bandara
+                                    </option>
+                                    <option value="PELABUHAN" {{ request('category') == 'PELABUHAN' ? 'selected' : '' }}>
+                                        Pelabuhan</option>
+                                    <option value="STASIUN" {{ request('category') == 'STASIUN' ? 'selected' : '' }}>Stasiun
+                                    </option>
+                                    <option value="TERMINAL" {{ request('category') == 'TERMINAL' ? 'selected' : '' }}>
+                                        Terminal</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <button class="btn btn-sm btn-primary" type="submit"><i class="bx bx-search"></i> Cari</button>
-                                @if(request('search') || request('category'))
-                                    <a href="{{ route('master.referensi.simpul') }}" class="btn btn-sm btn-outline-secondary"><i class="bx bx-x"></i></a>
+                                <button class="btn btn-sm btn-primary" type="submit"><i class="bx bx-search"></i>
+                                    Cari</button>
+                                @if (request('search') || request('category'))
+                                    <a href="{{ route('master.referensi.simpul') }}"
+                                        class="btn btn-sm btn-outline-secondary"><i class="bx bx-x"></i></a>
                                 @endif
                             </div>
                         </div>
@@ -67,11 +74,14 @@
                             <tbody>
                                 @forelse($data as $item)
                                     <tr>
-                                        <td class="text-center">{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
-                                        <td class="text-center"><span class="badge bg-warning text-dark">{{ $item->code }}</span></td>
+                                        <td class="text-center">
+                                            {{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
+                                        <td class="text-center"><span
+                                                class="badge bg-warning text-dark">{{ $item->code }}</span></td>
                                         <td>{{ $item->name }}</td>
                                         <td>{{ $item->category }}</td>
                                         <td>{{ $item->sub_category ?? '-' }}</td>
+                                        <td>{{ $item->radius ? number_format($item->radius) . ' m' : '-' }}</td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -85,9 +95,10 @@
                         </table>
                     </div>
 
-                    @if($data->hasPages())
+                    @if ($data->hasPages())
                         <div class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="text-muted">Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari {{ $data->total() }}</small>
+                            <small class="text-muted">Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari
+                                {{ $data->total() }}</small>
                             {{ $data->links() }}
                         </div>
                     @endif

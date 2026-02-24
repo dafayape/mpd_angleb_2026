@@ -77,7 +77,7 @@ class MasterReferensiController extends Controller
     public function simpul(Request $request)
     {
         $query = DB::table('ref_transport_nodes')
-            ->select('code', 'name', 'category', 'sub_category')
+            ->select('code', 'name', 'category', 'sub_category', 'radius')
             ->orderBy('code');
 
         if ($request->filled('search')) {
