@@ -258,7 +258,21 @@
             });
 
             // 1. Initialize Map (Center Indonesia)
-            const map = L.map('map').setView([-2.5489, 118.0149], 5);
+            const indonesiaBounds = [
+                [-11.5, 94.5],
+                [6.5, 141.5]
+            ];
+            const map = L.map('map', {
+                center: [-2.5, 118.0],
+                zoom: 5,
+                minZoom: 4,
+                maxZoom: 18,
+                maxBounds: [
+                    [-15, 90],
+                    [10, 145]
+                ],
+                maxBoundsViscosity: 0.8
+            });
 
             // 2. Add Tile Layer (CartoDB Positron for clean look)
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -388,8 +402,6 @@
 
                 if (!features || features.length === 0) return;
 
-                const bounds = L.latLngBounds();
-
                 features.forEach(f => {
                     if (!f.geometry || !f.geometry.coordinates) return;
 
@@ -420,18 +432,10 @@
             `;
 
                     circle.bindPopup(popupContent);
-                    bounds.extend([lat, lng]);
 
                     // Store for Search Lookup
                     layersMap[props.id] = circle;
                 });
-
-                // Fit Bounds if valid
-                if (bounds.isValid()) {
-                    map.fitBounds(bounds, {
-                        padding: [50, 50]
-                    });
-                }
             }
 
             // 7. Handle Search Selection (From Server-Side Integration)
