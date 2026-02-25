@@ -6,8 +6,10 @@ use App\Models\ActivityLog;
 use App\Models\ImportJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 
 class DatasourceController extends Controller
@@ -339,7 +341,11 @@ class DatasourceController extends Controller
                 return response()->json(['status' => 'completed', 'deleted' => 0]);
             }
 
-            // Hapus data dari raw_mpd_data berdasarkan import_job_id
+            // STEP 1: Hapus spatial_movements yang terkait (idempotent, aman dipanggil tiap chunk)
+            // Harus dilakukan SEBELUM raw_mpd_data dihapus, karena butuh JOIN ke raw data
+            $this->deleteSpatialMovements($job->id);
+
+            // STEP 2: Hapus data dari raw_mpd_data berdasarkan import_job_id (chunked)
             $deleted = DB::table('raw_mpd_data')
                 ->where('import_job_id', $job->id)
                 ->take(25000)
@@ -362,8 +368,11 @@ class DatasourceController extends Controller
 
             $job->delete();
 
+            // STEP 3: Refresh materialized views & invalidate cache
+            $this->refreshAfterDelete();
+
             // Catat log aktivitas
-            ActivityLog::log('Delete Import', $originalName, 'Success', "Import job #{$id} berhasil dihapus");
+            ActivityLog::log('Delete Import', $originalName, 'Success', "Import job #{$id} berhasil dihapus (raw + spatial)");
 
             return response()->json(['status' => 'completed', 'deleted' => 0]);
         } catch (\Exception $e) {
@@ -399,6 +408,82 @@ class DatasourceController extends Controller
             ];
         } catch (\Exception $e) {
             return ['total_rows' => 0, 'total_uploads' => 0, 'by_opsel' => [], 'latest_date' => null];
+        }
+    }
+
+    /**
+     * Hapus spatial_movements yang terkait dengan import_job_id.
+     * Menggunakan PostgreSQL DELETE...USING untuk JOIN ke raw_mpd_data
+     * sebelum raw data dihapus.
+     *
+     * Idempotent: aman dipanggil berulang (no-op jika sudah kosong).
+     */
+    private function deleteSpatialMovements(int $importJobId): void
+    {
+        try {
+            $deleted = DB::affectingStatement('
+                DELETE FROM spatial_movements sm
+                USING (
+                    SELECT DISTINCT
+                        tanggal, opsel, kategori,
+                        kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
+                        kode_origin_simpul, kode_dest_simpul,
+                        kode_moda, is_forecast
+                    FROM raw_mpd_data
+                    WHERE import_job_id = ?
+                ) r
+                WHERE sm.tanggal = r.tanggal
+                  AND sm.opsel = r.opsel
+                  AND sm.kategori = r.kategori
+                  AND sm.kode_origin_kabupaten_kota = r.kode_origin_kabupaten_kota
+                  AND sm.kode_dest_kabupaten_kota = r.kode_dest_kabupaten_kota
+                  AND sm.kode_origin_simpul = r.kode_origin_simpul
+                  AND sm.kode_dest_simpul = r.kode_dest_simpul
+                  AND sm.kode_moda = r.kode_moda
+                  AND sm.is_forecast = r.is_forecast
+            ', [$importJobId]);
+
+            if ($deleted > 0) {
+                Log::info("[Delete] Removed {$deleted} spatial_movements rows for import_job_id={$importJobId}");
+            }
+        } catch (\Throwable $e) {
+            Log::error("[Delete] Failed to delete spatial_movements for import_job_id={$importJobId}: ".$e->getMessage());
+        }
+    }
+
+    /**
+     * Refresh materialized views dan invalidate cache setelah delete.
+     * Mirror logic dari TransformRawToSpatialJob.
+     */
+    private function refreshAfterDelete(): void
+    {
+        // Refresh materialized views
+        try {
+            DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_summary;');
+            DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_jabodetabek_daily;');
+            Log::info('[Delete] Materialized views refreshed.');
+        } catch (\Throwable $e) {
+            Log::warning('[Delete] Materialized view refresh skipped: '.$e->getMessage());
+        }
+
+        // Invalidate cache
+        try {
+            $prefix = config('cache.prefix', 'mpd_angleb_');
+            $redis = Redis::connection();
+            $patterns = ['dashboard:*', 'keynote:*', 'executive:*', 'dailyreport:*'];
+
+            foreach ($patterns as $pattern) {
+                $keys = $redis->keys($prefix.$pattern);
+                if (! empty($keys)) {
+                    foreach ($keys as $key) {
+                        $redis->del($key);
+                    }
+                }
+            }
+            Log::info('[Delete] Cache invalidated.');
+        } catch (\Throwable $e) {
+            Log::warning('[Delete] Cache invalidation fallback: '.$e->getMessage());
+            Cache::flush();
         }
     }
 
