@@ -255,7 +255,7 @@
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
-                                <span>Simpul Transportasi Terpadat</span>
+                                <span>Simpul Transportasi</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
                                 <li><a href="{{ route('pages.substansi.stasiun-ka-antar-kota') }}">Stasiun KA Antar
@@ -282,13 +282,17 @@
                                 <span>Kesimpulan</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li class="menu-title" style="padding-left:0;">Kesimpulan</li>
                                 <li><a href="{{ route('pages.kesimpulan.nasional') }}">Nasional</a></li>
                                 <li><a href="{{ route('pages.kesimpulan.jabodetabek') }}">Jabodetabek</a></li>
 
                             </ul>
-                        <li><a href="{{ route('pages.kesimpulan.rekomendasi') }}">Rekomendasi</a></li>
+                        </li>
 
+                        <li>
+                            <a href="{{ route('pages.kesimpulan.rekomendasi') }}" class="waves-effect">
+                                <i class="bx bx-file"></i>
+                                <span>Rekomendasi</span>
+                            </a>
                         </li>
 
                         <li class="menu-title">Geofencing</li>
