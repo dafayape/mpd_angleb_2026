@@ -222,17 +222,26 @@
                             </ul>
                         </li>
 
+                        <li class="menu-title">Jabodetabek</li>
+
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
                                 <span>Pergerakan Jabodetabek</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li class="menu-title" style="padding-left:0;">Intra</li>
-                                <li><a href="{{ route('pages.jabodetabek.intra-pergerakan') }}">Pergerakan Harian</a>
-                                </li>
-                                <li><a href="{{ route('pages.jabodetabek.intra-od') }}">Origin-Destination (OD)</a>
-                                </li>
+                                <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                    <i class="bx bx-bar-chart-alt-2"></i>
+                                    <span>Intra</span>
+                                </a>
+                                <ul class="sub-menu" aria-expanded="false">
+                                    <li><a href="{{ route('pages.jabodetabek.intra-pergerakan') }}">Pergerakan
+                                            Harian</a>
+                                    </li>
+                                    <li><a href="{{ route('pages.jabodetabek.intra-od') }}">Origin-Destination
+                                            (OD)</a>
+                                    </li>
+                                </ul>
                             </ul>
                             <ul class="sub-menu" aria-expanded="false">
                                 <li class="menu-title" style="padding-left:0;">Inter</li>
