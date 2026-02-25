@@ -206,13 +206,14 @@
                             </a>
                         </li>
 
+                        <li class="menu-title">Nasional</li>
+
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
-                                <span>Nasional</span>
+                                <span>Pergerakan Nasional</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li class="menu-title" style="padding-left:0;">Pergerakan Nasional</li>
                                 <li><a href="{{ route('pages.nasional.data-dasar') }}">Data Dasar</a></li>
                                 <li><a href="{{ route('pages.nasional.pergerakan-harian') }}">Pergerakan Harian</a>
                                 </li>
