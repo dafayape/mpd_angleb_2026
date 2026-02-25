@@ -14,17 +14,17 @@ class KeynoteController extends Controller
     {
         $requirements = [
             // Executive Summary
-            ['no' => 1, 'content' => 'Latar belakang kegiatan MPD', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 2, 'content' => 'Pendefinisian jumlah pergerakan dan jumlah unique subscriber pada MPD', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 3, 'content' => 'Hasil pengolahan data dari ketiga opsel untuk unique subscriber (Nasional)', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 4, 'content' => 'Puncak pergerakan berdasarkan MPD', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 5, 'content' => 'Jumlah orang/individu unique subscriber yang melakukan perjalanan', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 6, 'content' => 'Kontribusi setiap opsel terhadap total pergerakan MPD', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 7, 'content' => 'Kesimpulan sementara hasil pengumpulan dan pengolahan data MPD', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 8, 'content' => 'Perbandingan hasil pergerakan realisasi MPD dan hasil survei prakiraan', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 9, 'content' => 'Perbandingan hasil MPD tahun ini dengan tahun-tahun sebelumnya', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 10, 'content' => 'Hasil pengolahan data dari ketiga opsel untuk unique subscriber (Intra Jabodetabek dan Inter Jabodetabek)', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
-            ['no' => 11, 'content' => 'Jumlah orang/individu unique subscriber yang melakukan perjalanan (Intra Jabodetabek dan Inter Jabodetabek)', 'group' => 'Executive Summary', 'route' => 'pages.executive.daily-report'],
+            ['no' => 1, 'content' => 'Latar belakang kegiatan MPD', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 2, 'content' => 'Pendefinisian jumlah pergerakan dan jumlah unique subscriber pada MPD', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 3, 'content' => 'Hasil pengolahan data dari ketiga opsel untuk unique subscriber (Nasional)', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 4, 'content' => 'Puncak pergerakan berdasarkan MPD', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 5, 'content' => 'Jumlah orang/individu unique subscriber yang melakukan perjalanan', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 6, 'content' => 'Kontribusi setiap opsel terhadap total pergerakan MPD', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 7, 'content' => 'Kesimpulan sementara hasil pengumpulan dan pengolahan data MPD', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 8, 'content' => 'Perbandingan hasil pergerakan realisasi MPD dan hasil survei prakiraan', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 9, 'content' => 'Perbandingan hasil MPD tahun ini dengan tahun-tahun sebelumnya', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 10, 'content' => 'Hasil pengolahan data dari ketiga opsel untuk unique subscriber (Intra Jabodetabek dan Inter Jabodetabek)', 'group' => 'Executive Summary', 'route' => 'dashboard'],
+            ['no' => 11, 'content' => 'Jumlah orang/individu unique subscriber yang melakukan perjalanan (Intra Jabodetabek dan Inter Jabodetabek)', 'group' => 'Executive Summary', 'route' => 'dashboard'],
 
             // Pergerakan Nasional
             ['no' => 12, 'content' => 'Latar belakang dan metodologi MPD', 'group' => 'Pergerakan Nasional', 'route' => 'pages.nasional.data-dasar'],
