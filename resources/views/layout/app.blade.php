@@ -190,14 +190,7 @@
                 <div id="sidebar-menu">
                     <ul class="metismenu list-unstyled" id="side-menu">
 
-
                         <li class="menu-title">MPD</li>
-                        <li>
-                            <a href="{{ route('dashboard') }}" class="waves-effect">
-                                <i class="bx bx-home-circle"></i>
-                                <span>Dashboard</span>
-                            </a>
-                        </li>
 
                         <li>
                             <a href="{{ route('keynote') }}" class="waves-effect">
@@ -207,46 +200,85 @@
                         </li>
 
                         <li>
+                            <a href="{{ route('dashboard') }}" class="waves-effect">
+                                <i class="bx bx-home-circle"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
-                                <span>Grafik MPD</span>
+                                <span>Nasional</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li class="menu-title" style="padding-left:0;">Nasional</li>
-                                <li><a href="{{ route('grafik-mpd.nasional.pergerakan') }}">Pergerakan</a></li>
-                                <li><a href="{{ route('grafik-mpd.nasional.od-provinsi') }}">O-D Provinsi</a></li>
-                                <li><a href="{{ route('grafik-mpd.nasional.top-kabkota') }}">Top Kabupaten/Kota</a>
+                                <li class="menu-title" style="padding-left:0;">Pergerakan Nasional</li>
+                                <li><a href="{{ route('pages.nasional.data-dasar') }}">Data Dasar</a></li>
+                                <li><a href="{{ route('pages.nasional.pergerakan-harian') }}">Pergerakan Harian</a>
                                 </li>
-                                <li><a href="{{ route('grafik-mpd.nasional.mode-share') }}">Mode Share</a></li>
-                                <li><a href="{{ route('grafik-mpd.nasional.simpul') }}">Simpul</a></li>
-                                <li class="menu-title" style="padding-left:0;">Jabodetabek</li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang') }}">Pergerakan &
-                                        Orang</a></li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.pergerakan-orang-opsel') }}">Pergerakan
-                                        & Orang (Opsel)</a></li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.od-kabkota') }}">O-D Kabupaten Kota</a>
-                                </li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.mode-share') }}">Mode Share</a></li>
-                                <li><a href="{{ route('grafik-mpd.jabodetabek.simpul') }}">Simpul</a></li>
+                                <li><a href="{{ route('pages.nasional.od') }}">Origin-Destination (OD)</a></li>
+                                <li><a href="{{ route('pages.nasional.mode-share') }}">Mode Share</a></li>
                             </ul>
                         </li>
 
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                <i class="bx bx-detail"></i>
-                                <span>Data MPD Opsel</span>
+                                <i class="bx bx-bar-chart-alt-2"></i>
+                                <span>Pergerakan Jabodetabek</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li class="menu-title" style="padding-left:0;">Nasional</li>
-                                <li><a href="{{ route('data-mpd.nasional.pergerakan') }}">Pergerakan</a></li>
-                                <li><a href="{{ route('data-mpd.nasional.mode-share') }}">Mode Share</a></li>
-                                <li><a href="{{ route('data-mpd.nasional.od-simpul') }}">O-D Simpul</a></li>
-                                <li class="menu-title" style="padding-left:0;">Jabodetabek</li>
-                                <li><a href="{{ route('data-mpd.jabodetabek.pergerakan') }}">Pergerakan</a></li>
-                                <li><a href="{{ route('data-mpd.jabodetabek.mode-share') }}">Mode Share</a></li>
-                                <li><a href="{{ route('data-mpd.jabodetabek.od-simpul') }}">O-D Simpul</a></li>
+                                <li class="menu-title" style="padding-left:0;">Intra</li>
+                                <li><a href="{{ route('pages.jabodetabek.intra-pergerakan') }}">Pergerakan Harian</a>
+                                </li>
+                                <li><a href="{{ route('pages.jabodetabek.intra-od') }}">Origin-Destination (OD)</a>
+                                </li>
+                            </ul>
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li class="menu-title" style="padding-left:0;">Inter</li>
+                                <li><a href="{{ route('pages.jabodetabek.inter-pergerakan') }}">Pergerakan Harian</a>
+                                </li>
+                                <li><a href="{{ route('pages.jabodetabek.inter-od') }}">Origin-Destination (OD)</a>
+                                </li>
                             </ul>
                         </li>
+
+                        <li>
+                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                <i class="bx bx-bar-chart-alt-2"></i>
+                                <span>Substansi Tambahan</span>
+                            </a>
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li class="menu-title" style="padding-left:0;">Simpul Transportasi Terpadat</li>
+                                <li><a href="{{ route('pages.substansi.stasiun-ka-antar-kota') }}">Stasiun KA Antar
+                                        Kota</a></li>
+                                <li><a href="{{ route('pages.substansi.stasiun-ka-regional') }}">Stasiun KA
+                                        Regional</a></li>
+                                <li><a href="{{ route('pages.substansi.stasiun-ka-cepat') }}">Stasiun KA Cepat
+                                        (Whoosh)</a></li>
+                                <li><a href="{{ route('pages.substansi.pelabuhan-penyeberangan') }}">Pelabuhan
+                                        Penyeberangan</a></li>
+                                <li><a href="{{ route('pages.substansi.pelabuhan-laut') }}">Pelabuhan Laut</a></li>
+                                <li><a href="{{ route('pages.substansi.bandara') }}">Bandara</a></li>
+                                <li><a href="{{ route('pages.substansi.terminal') }}">Terminal</a></li>
+                                <li><a href="{{ route('pages.substansi.od-simpul-pelabuhan') }}">Origin-Destination
+                                        (OD) Simpul Pelabuhan</a></li>
+                            </ul>
+                        </li>
+
+                        <li>
+                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                <i class="bx bx-bar-chart-alt-2"></i>
+                                <span>Kesimpulan dan Rekomendasi</span>
+                            </a>
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li class="menu-title" style="padding-left:0;">Kesimpulan</li>
+                                <li><a href="{{ route('pages.kesimpulan.nasional') }}">Nasional</a></li>
+                                <li><a href="{{ route('pages.kesimpulan.jabodetabek') }}">Jabodetabek</a></li>
+                                <li><a href="{{ route('pages.kesimpulan.rekomendasi') }}">Rekomendasi</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="menu-title">Geofencing</li>
 
                         <li>
                             <a href="{{ route('map-monitor') }}" class="waves-effect">
@@ -254,17 +286,14 @@
                                 <span>Map Monitor</span>
                             </a>
                         </li>
-                        <li class="menu-title">EXECUTIVE SUMMARY</li>
+
+                        <li class="menu-title">Executive Summary</li>
 
                         <li>
-                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                            <a href="{{ route('pages.executive.daily-report') }}" class="waves-effect">
                                 <i class="bx bx-file"></i>
-                                <span>Laporan</span>
+                                <span>Daily Report</span>
                             </a>
-                            <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="{{ route('executive.daily-report') }}">Daily Report</a></li>
-                                <li><a href="{{ route('executive.summary') }}">Summary</a></li>
-                            </ul>
                         </li>
 
                         <li class="menu-title">Master</li>
@@ -272,22 +301,15 @@
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-file"></i>
-                                <span>Referensi</span>
+                                <span>Tabel Referensi</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
                                 <li><a href="{{ route('master.referensi.provinsi') }}">Provinsi</a></li>
                                 <li><a href="{{ route('master.referensi.kabkota') }}">Kabupaten Kota</a></li>
                                 <li><a href="{{ route('master.referensi.simpul') }}">Simpul</a></li>
                                 <li><a href="{{ route('master.referensi.moda') }}">Moda</a></li>
-                                <li><a href="{{ route('master.rule-document.index') }}">Rule Document</a></li>
+                                <li><a href="{{ route('master.rule-document.index') }}">Dokumentasi Teknis</a></li>
                             </ul>
-                        </li>
-
-                        <li>
-                            <a href="{{ route('pengguna') }}" class="waves-effect">
-                                <i class="bx bx-user"></i>
-                                <span>Pengguna</span>
-                            </a>
                         </li>
 
                         <li class="menu-title">Datasource</li>
@@ -298,12 +320,14 @@
                                 <span>Upload File (CSV)</span>
                             </a>
                         </li>
+
                         <li>
                             <a href="{{ route('datasource.history') }}" class="waves-effect">
                                 <i class="bx bx-history"></i>
                                 <span>History File Upload</span>
                             </a>
                         </li>
+
                         <li>
                             <a href="{{ route('datasource.raw-data') }}" class="waves-effect">
                                 <i class="bx bx-table"></i>
@@ -311,7 +335,14 @@
                             </a>
                         </li>
 
-                        <li class="menu-title">System & Monitoring</li>
+                        <li class="menu-title">Sistem Monitoring</li>
+
+                        <li>
+                            <a href="{{ route('pengguna') }}" class="waves-effect">
+                                <i class="bx bx-user"></i>
+                                <span>Pengguna</span>
+                            </a>
+                        </li>
 
                         <li>
                             <a href="{{ route('log-aktivitas') }}" class="waves-effect">
@@ -319,6 +350,14 @@
                                 <span>Log Aktivitas</span>
                             </a>
                         </li>
+
+                        <li>
+                            <a href="{{ route('devlog') }}" class="waves-effect">
+                                <i class="bx bx-code-alt"></i>
+                                <span>Log Developer</span>
+                            </a>
+                        </li>
+
                     </ul>
                 </div>
             </div>
@@ -337,11 +376,11 @@
                         <div class="col-sm-6">
                             <script>
                                 document.write(new Date().getFullYear())
-                            </script> &copy; BKT-KEMENHUB (V-1.5)
+                            </script> &copy; BKT-KEMENHUB (v1.5.2)
                         </div>
                         <div class="col-sm-6">
                             <div class="text-sm-end d-none d-sm-block">
-                                Kementerian Perhubungan Republik Indonesia
+                                Badan Kebijakan Transportasi - Kementerian Perhubungan Republik Indonesia
                             </div>
                         </div>
                     </div>

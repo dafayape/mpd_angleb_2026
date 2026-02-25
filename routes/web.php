@@ -18,6 +18,44 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 
+    // Nasional
+    Route::prefix('nasional')->name('pages.nasional.')->group(function () {
+        Route::view('/data-dasar', 'pages.nasional.data-dasar')->name('data-dasar');
+        Route::view('/pergerakan-harian', 'pages.nasional.pergerakan-harian')->name('pergerakan-harian');
+        Route::view('/od', 'pages.nasional.od')->name('od');
+        Route::view('/mode-share', 'pages.nasional.mode-share')->name('mode-share');
+    });
+
+    // Jabodetabek
+    Route::prefix('jabodetabek')->name('pages.jabodetabek.')->group(function () {
+        Route::view('/intra-pergerakan', 'pages.jabodetabek.intra-pergerakan')->name('intra-pergerakan');
+        Route::view('/intra-od', 'pages.jabodetabek.intra-od')->name('intra-od');
+        Route::view('/inter-pergerakan', 'pages.jabodetabek.inter-pergerakan')->name('inter-pergerakan');
+        Route::view('/inter-od', 'pages.jabodetabek.inter-od')->name('inter-od');
+    });
+
+    // Substansi Tambahan
+    Route::prefix('substansi')->name('pages.substansi.')->group(function () {
+        Route::view('/stasiun-ka-antar-kota', 'pages.substansi.stasiun-ka-antar-kota')->name('stasiun-ka-antar-kota');
+        Route::view('/stasiun-ka-regional', 'pages.substansi.stasiun-ka-regional')->name('stasiun-ka-regional');
+        Route::view('/stasiun-ka-cepat', 'pages.substansi.stasiun-ka-cepat')->name('stasiun-ka-cepat');
+        Route::view('/pelabuhan-penyeberangan', 'pages.substansi.pelabuhan-penyeberangan')->name('pelabuhan-penyeberangan');
+        Route::view('/pelabuhan-laut', 'pages.substansi.pelabuhan-laut')->name('pelabuhan-laut');
+        Route::view('/bandara', 'pages.substansi.bandara')->name('bandara');
+        Route::view('/terminal', 'pages.substansi.terminal')->name('terminal');
+        Route::view('/od-simpul-pelabuhan', 'pages.substansi.od-simpul-pelabuhan')->name('od-simpul-pelabuhan');
+    });
+
+    // Kesimpulan & Rekomendasi
+    Route::prefix('kesimpulan')->name('pages.kesimpulan.')->group(function () {
+        Route::view('/nasional', 'pages.kesimpulan.nasional')->name('nasional');
+        Route::view('/jabodetabek', 'pages.kesimpulan.jabodetabek')->name('jabodetabek');
+        Route::view('/rekomendasi', 'pages.kesimpulan.rekomendasi')->name('rekomendasi');
+    });
+
+    // Executive Summary (New Pages)
+    Route::view('/executive/daily-report-page', 'pages.executive.daily-report')->name('pages.executive.daily-report');
+
     // Grafik MPD Routes
     Route::controller(\App\Http\Controllers\GrafikMpdController::class)->group(function () {
         // Nasional
@@ -95,6 +133,9 @@ Route::middleware(['auth'])->group(function () {
     // Log Aktivitas
     Route::get('/log-aktivitas', [ActivityLogController::class, 'index'])->name('log-aktivitas');
     Route::get('/log-aktivitas/export', [ActivityLogController::class, 'export'])->name('log-aktivitas.export');
+
+    // Log Developer
+    Route::get('/devlog', [\App\Http\Controllers\DevLogController::class, 'index'])->name('devlog');
 });
 
 Route::get('/sso-login', function (Request $request) {
