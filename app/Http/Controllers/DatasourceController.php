@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 
 class DatasourceController extends Controller
@@ -466,24 +465,12 @@ class DatasourceController extends Controller
             Log::warning('[Delete] Materialized view refresh skipped: '.$e->getMessage());
         }
 
-        // Invalidate cache
+        // Flush seluruh cache (setara php artisan cache:clear)
         try {
-            $prefix = config('cache.prefix', 'mpd_angleb_');
-            $redis = Redis::connection();
-            $patterns = ['dashboard:*', 'keynote:*', 'executive:*', 'dailyreport:*'];
-
-            foreach ($patterns as $pattern) {
-                $keys = $redis->keys($prefix.$pattern);
-                if (! empty($keys)) {
-                    foreach ($keys as $key) {
-                        $redis->del($key);
-                    }
-                }
-            }
-            Log::info('[Delete] Cache invalidated.');
-        } catch (\Throwable $e) {
-            Log::warning('[Delete] Cache invalidation fallback: '.$e->getMessage());
             Cache::flush();
+            Log::info('[Delete] Cache flushed (all keys cleared).');
+        } catch (\Throwable $e) {
+            Log::warning('[Delete] Cache flush failed: '.$e->getMessage());
         }
     }
 

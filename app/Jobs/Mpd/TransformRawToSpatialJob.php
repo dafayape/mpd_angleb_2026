@@ -147,28 +147,11 @@ class TransformRawToSpatialJob implements ShouldQueue
      */
     private function invalidateCache(): void
     {
-        $patterns = [
-            'dashboard:*',
-            'keynote:*',
-            'executive:*',
-            'dailyreport:*',
-        ];
-
         try {
-            $prefix = config('cache.prefix', 'mpd_angleb_');
-            $redis = \Illuminate\Support\Facades\Redis::connection();
-            foreach ($patterns as $pattern) {
-                $keys = $redis->keys($prefix.$pattern);
-                if (! empty($keys)) {
-                    foreach ($keys as $key) {
-                        $redis->del($key);
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            // Fallback: flush entire cache if Redis pattern delete fails
-            Log::warning('[ETL] Cache invalidation fallback: '.$e->getMessage());
             Cache::flush();
+            Log::info('[ETL] Cache flushed (all keys cleared).');
+        } catch (\Throwable $e) {
+            Log::warning('[ETL] Cache flush failed: '.$e->getMessage());
         }
     }
 }
