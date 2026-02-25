@@ -383,6 +383,13 @@
                             </a>
                         </li>
 
+                        <li>
+                            <a href="{{ route('pengaturan') }}" class="waves-effect">
+                                <i class="bx bx-cog"></i>
+                                <span>Pengaturan</span>
+                            </a>
+                        </li>
+
                     </ul>
                 </div>
             </div>

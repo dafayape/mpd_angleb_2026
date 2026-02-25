@@ -57,6 +57,9 @@ Route::middleware(['auth'])->group(function () {
     // Executive Summary (New Pages)
     Route::view('/executive/daily-report-page', 'pages.executive.daily-report')->name('pages.executive.daily-report');
 
+    // Pengaturan
+    Route::view('/pengaturan', 'pages.pengaturan.pengaturan')->name('pengaturan');
+
     // Grafik MPD Routes
     Route::controller(\App\Http\Controllers\GrafikMpdController::class)->group(function () {
         // Nasional
