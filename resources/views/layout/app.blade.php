@@ -274,6 +274,14 @@
                             </ul>
                         </li>
 
+                        <li>
+                            <a href="{{ route('pages.kesimpulan.rekomendasi') }}" class="waves-effect">
+                                <i class="bx bx-map"></i>
+                                <span>Netflow</span>
+                            </a>
+                        </li>
+
+
                         <li class="menu-title">Kesimpulan dan Rekomendasi</li>
 
                         <li>
@@ -313,7 +321,7 @@
                             </a>
                         </li>
 
-                        <li class="menu-title">Master</li>
+                        <li class="menu-title">Master Data</li>
 
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
