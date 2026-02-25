@@ -204,11 +204,17 @@ class DatasourceController extends Controller
             ]);
 
             // Auto-trigger ETL: Transform raw_mpd_data → spatial_movements
+            // Using dispatchSync (inline, synchronous) — guaranteed to run without queue:work
+            $etlRows = 0;
+            $etlError = null;
             try {
-                \App\Jobs\Mpd\TransformRawToSpatialJob::dispatch($job->id);
-                Log::info("[Import] ETL job dispatched for import_job_id={$job->id}");
-            } catch (\Throwable $etlError) {
-                Log::error('[Import] Failed to dispatch ETL job: '.$etlError->getMessage());
+                $etlJob = new \App\Jobs\Mpd\TransformRawToSpatialJob($job->id);
+                $etlJob->handle();
+                $etlRows = \Illuminate\Support\Facades\DB::table('spatial_movements')->count();
+                Log::info("[Import] ETL completed synchronously. spatial_movements rows: {$etlRows}");
+            } catch (\Throwable $etlErr) {
+                Log::error('[Import] ETL failed: '.$etlErr->getMessage());
+                $etlError = $etlErr->getMessage();
             }
 
             return response()->json([
@@ -219,6 +225,8 @@ class DatasourceController extends Controller
                 'percent' => 100,
                 'errors' => $errors,
                 'etl_dispatched' => true,
+                'etl_rows' => $etlRows,
+                'etl_error' => $etlError,
             ]);
         }
 
