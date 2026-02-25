@@ -275,8 +275,8 @@
                         </li>
 
                         <li>
-                            <a href="{{ route('pages.kesimpulan.rekomendasi') }}" class="waves-effect">
-                                <i class="bx bx-map"></i>
+                            <a href="{{ route('pages.substansi.netflow') }}" class="waves-effect">
+                                <i class="bx bx-transfer"></i>
                                 <span>Netflow</span>
                             </a>
                         </li>
