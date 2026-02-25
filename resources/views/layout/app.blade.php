@@ -227,27 +227,12 @@
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
-                                <span>Pergerakan Jabodetabek</span>
+                                <span>Intra</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                    <i class="bx bx-bar-chart-alt-2"></i>
-                                    <span>Intra</span>
-                                </a>
-                                <ul class="sub-menu" aria-expanded="false">
-                                    <li><a href="{{ route('pages.jabodetabek.intra-pergerakan') }}">Pergerakan
-                                            Harian</a>
-                                    </li>
-                                    <li><a href="{{ route('pages.jabodetabek.intra-od') }}">Origin-Destination
-                                            (OD)</a>
-                                    </li>
-                                </ul>
-                            </ul>
-                            <ul class="sub-menu" aria-expanded="false">
-                                <li class="menu-title" style="padding-left:0;">Inter</li>
-                                <li><a href="{{ route('pages.jabodetabek.inter-pergerakan') }}">Pergerakan Harian</a>
+                                <li><a href="{{ route('pages.jabodetabek.intra-pergerakan') }}">Pergerakan Harian</a>
                                 </li>
-                                <li><a href="{{ route('pages.jabodetabek.inter-od') }}">Origin-Destination (OD)</a>
+                                <li><a href="{{ route('pages.jabodetabek.intra-od') }}">Origin-Destination (OD)</a>
                                 </li>
                             </ul>
                         </li>
@@ -255,10 +240,24 @@
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
-                                <span>Substansi Tambahan</span>
+                                <span>Inter</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li class="menu-title" style="padding-left:0;">Simpul Transportasi Terpadat</li>
+                                <li><a href="{{ route('pages.jabodetabek.inter-pergerakan') }}">Pergerakan Harian</a>
+                                </li>
+                                <li><a href="{{ route('pages.jabodetabek.inter-od') }}">Origin-Destination (OD)</a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <li class="menu-title">Substansi Tambahan</li>
+
+                        <li>
+                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                <i class="bx bx-bar-chart-alt-2"></i>
+                                <span>Simpul Transportasi Terpadat</span>
+                            </a>
+                            <ul class="sub-menu" aria-expanded="false">
                                 <li><a href="{{ route('pages.substansi.stasiun-ka-antar-kota') }}">Stasiun KA Antar
                                         Kota</a></li>
                                 <li><a href="{{ route('pages.substansi.stasiun-ka-regional') }}">Stasiun KA
@@ -275,17 +274,21 @@
                             </ul>
                         </li>
 
+                        <li class="menu-title">Kesimpulan dan Rekomendasi</li>
+
                         <li>
                             <a href="javascript: void(0);" class="has-arrow waves-effect">
                                 <i class="bx bx-bar-chart-alt-2"></i>
-                                <span>Kesimpulan dan Rekomendasi</span>
+                                <span>Kesimpulan</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
                                 <li class="menu-title" style="padding-left:0;">Kesimpulan</li>
                                 <li><a href="{{ route('pages.kesimpulan.nasional') }}">Nasional</a></li>
                                 <li><a href="{{ route('pages.kesimpulan.jabodetabek') }}">Jabodetabek</a></li>
-                                <li><a href="{{ route('pages.kesimpulan.rekomendasi') }}">Rekomendasi</a></li>
+
                             </ul>
+                        <li><a href="{{ route('pages.kesimpulan.rekomendasi') }}">Rekomendasi</a></li>
+
                         </li>
 
                         <li class="menu-title">Geofencing</li>
