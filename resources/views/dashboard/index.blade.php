@@ -109,26 +109,51 @@
             justify-content: center;
         }
 
+        .custom-toggle-group {
+            border-radius: 6px;
+            overflow: hidden;
+            display: inline-flex;
+            box-shadow: none !important;
+        }
+
         .custom-toggle-group .btn {
-            border-color: #5a67d8;
-            /* Indigo matches reference image */
-            color: #5a67d8;
-            border-radius: 4px;
+            border: 1px solid #5d6bc1;
+            /* Royal Blue */
+            color: #5d6bc1;
+            font-weight: 700;
+            padding: 8px 30px;
+            border-radius: 0;
+            background-color: white;
+            transition: all 0.2s ease;
+        }
+
+        .custom-toggle-group .btn:first-child,
+        .custom-toggle-group .btn:first-of-type {
+            border-top-left-radius: 6px;
+            border-bottom-left-radius: 6px;
+            border-right: none;
+        }
+
+        .custom-toggle-group .btn:last-child,
+        .custom-toggle-group .btn:last-of-type {
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
         }
 
         .custom-toggle-group .btn-check:checked+.btn {
-            background-color: #5a67d8;
+            background-color: #5d6bc1;
             color: white;
-            border-color: #5a67d8;
+            border-color: #5d6bc1;
+            box-shadow: none;
         }
 
         .custom-toggle-group .btn:hover {
-            background-color: rgba(90, 103, 216, 0.1);
-            color: #5a67d8;
+            background-color: rgba(93, 107, 193, 0.05);
+            color: #5d6bc1;
         }
 
         .custom-toggle-group .btn-check:checked+.btn:hover {
-            background-color: #4c51bf;
+            background-color: #505cba;
             color: white;
         }
 
@@ -192,15 +217,13 @@
                 <div class="d-flex flex-column">
                     <label class="small fw-bold text-muted mb-2 text-uppercase" style="letter-spacing: 0.5px;">Tipe
                         Data</label>
-                    <div class="btn-group custom-toggle-group shadow-sm" role="group" style="height: 38px;">
+                    <div class="custom-toggle-group" role="group">
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_real" value="real"
                             autocomplete="off" checked>
-                        <label class="btn btn-sm px-4 d-flex align-items-center fw-bold" for="dt_real"
-                            style="font-size: 0.9rem;">Realisasi</label>
+                        <label class="btn" for="dt_real" style="font-size: 0.95rem;">Realisasi</label>
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_fore"
                             value="forecast" autocomplete="off">
-                        <label class="btn btn-sm px-4 d-flex align-items-center fw-bold" for="dt_fore"
-                            style="font-size: 0.9rem;">Prakiraan</label>
+                        <label class="btn" for="dt_fore" style="font-size: 0.95rem;">Prakiraan</label>
                     </div>
                 </div>
                 <div class="d-flex flex-column">
