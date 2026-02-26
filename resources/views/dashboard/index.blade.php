@@ -97,12 +97,39 @@
         .section-badge {
             background-color: #2a3042;
             color: white;
-            border-radius: 6px;
-            padding: 6px 12px;
-            font-size: 1.1rem;
-            font-weight: 800;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
             margin-right: 16px;
-            box-shadow: 0 2px 6px rgba(30, 45, 74, 0.3);
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(42, 48, 66, 0.15);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-toggle-group .btn {
+            border-color: #5a67d8;
+            /* Indigo matches reference image */
+            color: #5a67d8;
+            border-radius: 4px;
+        }
+
+        .custom-toggle-group .btn-check:checked+.btn {
+            background-color: #5a67d8;
+            color: white;
+            border-color: #5a67d8;
+        }
+
+        .custom-toggle-group .btn:hover {
+            background-color: rgba(90, 103, 216, 0.1);
+            color: #5a67d8;
+        }
+
+        .custom-toggle-group .btn-check:checked+.btn:hover {
+            background-color: #4c51bf;
+            color: white;
         }
 
         .content-card {
@@ -165,15 +192,15 @@
                 <div class="d-flex flex-column">
                     <label class="small fw-bold text-muted mb-2 text-uppercase" style="letter-spacing: 0.5px;">Tipe
                         Data</label>
-                    <div class="btn-group shadow-sm" role="group" style="height: 38px;">
+                    <div class="btn-group custom-toggle-group shadow-sm" role="group" style="height: 38px;">
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_real" value="real"
                             autocomplete="off" checked>
-                        <label class="btn btn-outline-primary btn-sm px-4 fw-medium d-flex align-items-center"
-                            for="dt_real">Realisasi</label>
+                        <label class="btn btn-sm px-4 d-flex align-items-center fw-bold" for="dt_real"
+                            style="font-size: 0.9rem;">Realisasi</label>
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_fore"
                             value="forecast" autocomplete="off">
-                        <label class="btn btn-outline-primary btn-sm px-4 fw-medium d-flex align-items-center"
-                            for="dt_fore">Prakiraan</label>
+                        <label class="btn btn-sm px-4 d-flex align-items-center fw-bold" for="dt_fore"
+                            style="font-size: 0.9rem;">Prakiraan</label>
                     </div>
                 </div>
                 <div class="d-flex flex-column">
@@ -711,7 +738,7 @@
             });
         }
 
-        function renderAllBlocks(data) {
+        function renderAllBlocks(data, satuan) {
             // Block 03: Nasional KPIs
             $('#val_nas_pergerakan').text(formatJuta(data.nasional.pergerakan));
             $('#val_nas_orang').text(formatJuta(data.nasional.orang));
