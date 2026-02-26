@@ -15,11 +15,13 @@ class ExecutiveSummaryService
 
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v2";
         return Cache::remember($key, 1800, fn() => [
             'nasional' => $this->getNasionalMetrics($dataType, $opsel),
             'peak' => $this->getPeakDay($dataType, $opsel),
             'opsel' => $this->getOpselContribution($dataType),
+            'opsel_intra' => $this->getOpselContribution($dataType, 'intra'),
+            'opsel_inter' => $this->getOpselContribution($dataType, 'inter'),
             'forecast' => $this->getForecastComparison(),
             'yoy' => $this->getYoyComparison(),
             'intra' => $this->getIntraJabodetabek($dataType, $opsel),
@@ -28,7 +30,7 @@ class ExecutiveSummaryService
             'trend_orang' => $this->getDailyTrend('ORANG', $dataType, $opsel),
             'trend_intra' => $this->getDailyTrend('ORANG', $dataType, $opsel, 'intra'),
             'trend_inter' => $this->getDailyTrend('ORANG', $dataType, $opsel, 'inter'),
-            'kstmp' => $this->generateNarrative([], 'kesimpulan'),
+            'kesimpulan' => $this->generateNarrative([], 'kesimpulan'),
         ]);
     }
 
@@ -57,14 +59,17 @@ class ExecutiveSummaryService
         });
     }
 
-    public function getOpselContribution(string $dataType): array
+    public function getOpselContribution(string $dataType, ?string $region = null): array
     {
-        $key = "executive_summary:getOpselContribution:{$dataType}:all:nasional";
-        return Cache::remember($key, 1800, function() use ($dataType) {
+        $key = "executive_summary:getOpselContribution:{$dataType}:all:" . ($region ?? 'nasional');
+        return Cache::remember($key, 1800, function() use ($dataType, $region) {
             $data = [];
             foreach (['PERGERAKAN', 'ORANG'] as $kat) {
-                $sums = $this->baseQuery($kat, $dataType, null)
-                    ->select('opsel', DB::raw('SUM(total) as t'))->groupBy('opsel')->get()->pluck('t', 'opsel');
+                $q = $this->baseQuery($kat, $dataType, null);
+                if ($region) {
+                    $this->applyJaboFilter($q, $region);
+                }
+                $sums = $q->select('opsel', DB::raw('SUM(total) as t'))->groupBy('opsel')->get()->pluck('t', 'opsel');
                 $total = $sums->sum();
                 foreach (['TSEL', 'IOH', 'XL'] as $op) {
                     $val = $sums[$op] ?? 0;
