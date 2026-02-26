@@ -154,35 +154,47 @@
 
 @section('content')
 
-    @component('layout.partials.page-header', ['number' => '02', 'title' => 'Executive Summary Nasional'])
+    @component('layout.partials.page-header', ['number' => '02', 'title' => 'Dashboard Nasional'])
     @endcomponent
 
     <div class="container-fluid py-2">
         <!-- Sticky Filter Bar -->
         <div class="sticky-filter d-flex align-items-center justify-content-between flex-wrap gap-3" data-aos="fade-down"
             data-aos-duration="600">
-            <div class="d-flex align-items-center gap-4 flex-wrap">
+            <div class="d-flex align-items-end gap-4 flex-wrap">
                 <div class="d-flex flex-column">
                     <label class="small fw-bold text-muted mb-2 text-uppercase" style="letter-spacing: 0.5px;">Tipe
                         Data</label>
-                    <div class="btn-group shadow-sm" role="group">
+                    <div class="btn-group shadow-sm" role="group" style="height: 38px;">
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_real" value="real"
                             autocomplete="off" checked>
-                        <label class="btn btn-outline-primary btn-sm px-4 py-2 fw-medium" for="dt_real">Realisasi</label>
+                        <label class="btn btn-outline-primary btn-sm px-4 fw-medium d-flex align-items-center"
+                            for="dt_real">Realisasi</label>
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_fore"
                             value="forecast" autocomplete="off">
-                        <label class="btn btn-outline-primary btn-sm px-4 py-2 fw-medium" for="dt_fore">Prakiraan</label>
+                        <label class="btn btn-outline-primary btn-sm px-4 fw-medium d-flex align-items-center"
+                            for="dt_fore">Prakiraan</label>
                     </div>
                 </div>
                 <div class="d-flex flex-column">
                     <label class="small fw-bold text-muted mb-2 text-uppercase" style="letter-spacing: 0.5px;">Operator
                         Seluler</label>
-                    <select class="form-select form-select-sm shadow-sm py-2 fw-medium" id="opselSelect"
-                        style="width: auto; min-width: 200px; cursor: pointer;">
+                    <select class="form-select form-select-sm shadow-sm fw-medium" id="opselSelect"
+                        style="width: auto; min-width: 200px; cursor: pointer; height: 38px;">
                         <option value="">Semua Operator (Agregat)</option>
                         <option value="TSEL">Telkomsel</option>
                         <option value="IOH">Indosat Ooredoo</option>
                         <option value="XL">XL Axiata</option>
+                    </select>
+                </div>
+                <div class="d-flex flex-column">
+                    <label class="small fw-bold text-muted mb-2 text-uppercase" style="letter-spacing: 0.5px;">Satuan
+                        Data</label>
+                    <select class="form-select form-select-sm shadow-sm fw-medium" id="satuanSelect"
+                        style="width: auto; min-width: 150px; cursor: pointer; height: 38px;">
+                        <option value="auto">Auto (Angka & %)</option>
+                        <option value="angka">Angka Penuh</option>
+                        <option value="persen">Persentase (%)</option>
                     </select>
                 </div>
             </div>
@@ -610,16 +622,17 @@
         };
 
         $(document).ready(function() {
-            $('.filter-toggle, #opselSelect').on('change', fetchSummaryData);
-            fetchSummaryData(); // initial load
+            $('.filter-toggle, #opselSelect, #satuanSelect').on('change', fetchExecutiveSummary);
+            fetchExecutiveSummary(); // initial load
         });
 
-        function fetchSummaryData() {
+        function fetchExecutiveSummary() {
             $('#contentData').hide();
             $('#contentSkeletons').fadeIn(200);
 
             const dataType = $('input[name="data_type"]:checked').val();
             const opsel = $('#opselSelect').val();
+            const satuan = $('#satuanSelect').val();
 
             $.ajax({
                 url: '{{ route('executive.summary.data') }}',
@@ -631,7 +644,7 @@
                     $('#contentSkeletons').hide();
                     $('#contentData').fadeIn(300);
                     AOS.refresh();
-                    renderAllBlocks(res);
+                    renderAllBlocks(res, satuan);
                 },
                 error: function(err) {
                     console.error("Failed to load Executive Summary data.");
@@ -640,11 +653,20 @@
             });
         }
 
-        function createPieChart(containerId, titleText, dataRawObj, opselFocusColors) {
+        function createPieChart(containerId, titleText, dataRawObj, opselFocusColors, satuan = 'auto') {
             const dataPts = Object.keys(dataRawObj || {}).map(k => ({
                 name: k,
-                y: dataRawObj[k].pct
+                y: dataRawObj[k].pct,
+                vol: dataRawObj[k].total
             }));
+
+            let labelFormat = '<b>{point.name}</b><br>{point.y}%';
+            if (satuan === 'angka') {
+                labelFormat = '<b>{point.name}</b><br>{point.vol:,.0f}';
+            } else if (satuan === 'persen') {
+                labelFormat = '<b>{point.name}</b><br>{point.y}%';
+            }
+
             Highcharts.chart(containerId, {
                 chart: {
                     type: 'pie',
@@ -665,7 +687,7 @@
                         innerSize: '70%',
                         dataLabels: {
                             enabled: true,
-                            format: '<b>{point.name}</b><br>{point.y}%',
+                            format: labelFormat,
                             distance: 15,
                             style: {
                                 fontSize: '11px',
@@ -842,12 +864,12 @@
             const opselRaw = data.opsel;
             $('#nar_nas_opsel').html(opselRaw.narrative);
             const masterColors = ['#e11d48', '#f59e0b', '#2563eb']; // Red(TSEL), Yellow(IOH), Blue(XL) - approximations
-            createPieChart('chart_opsel_orang', 'Orang (Sub)', opselRaw.orang, masterColors);
-            createPieChart('chart_opsel_pergerakan', 'Pergerakan', opselRaw.pergerakan, masterColors);
+            createPieChart('chart_opsel_orang', 'Orang (Sub)', opselRaw.orang, masterColors, satuan);
+            createPieChart('chart_opsel_pergerakan', 'Pergerakan', opselRaw.pergerakan, masterColors, satuan);
 
             // Block 10: Opsel Donut (Jabo)
-            createPieChart('chart_opsel_intra', 'Intra Jabo (Sub)', data.opsel_intra.orang || {}, masterColors);
-            createPieChart('chart_opsel_inter', 'Inter Jabo (Sub)', data.opsel_inter.orang || {}, masterColors);
+            createPieChart('chart_opsel_intra', 'Intra Jabo (Sub)', data.opsel_intra.orang || {}, masterColors, satuan);
+            createPieChart('chart_opsel_inter', 'Inter Jabo (Sub)', data.opsel_inter.orang || {}, masterColors, satuan);
 
             // Block 08: Forecast vs Real
             const fc = data.forecast || {};
