@@ -433,13 +433,10 @@
                         <li class="menu-title">Executive Summary</li>
 
                         <li>
-                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                            <a href="{{ route('pages.kesimpulan.rekomendasi') }}" class="waves-effect">
                                 <i class="bx bx-file"></i>
-                                <span>Laporan Eksekutif</span>
+                                <span>Daily Report</span>
                             </a>
-                            <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="{{ route('pages.executive.daily-report') }}">Daily Report</a></li>
-                            </ul>
                         </li>
 
                         <li class="menu-title">Master Data</li>
