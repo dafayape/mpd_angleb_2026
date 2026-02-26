@@ -438,12 +438,6 @@
                                 <span>Daily Report</span>
                             </a>
                         </li>
-                        <li>
-                            <a href="{{ route('pages.kesimpulan.rekomendasi') }}" class="waves-effect">
-                                <i class="bx bx-file"></i>
-                                <span>Rekomendasi</span>
-                            </a>
-                        </li>
 
                         <li class="menu-title">Master Data</li>
 
