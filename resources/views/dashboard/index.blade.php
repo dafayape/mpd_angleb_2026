@@ -127,11 +127,12 @@
             border-radius: 0;
             background-color: white;
             transition: all 0.2s ease;
-            display: d-flex;
+            display: flex;
             align-items: center;
             justify-content: center;
-            line-height: 36px;
-            /* 38px - 2px borders */
+            line-height: 1;
+            margin: 0;
+            height: 100%;
         }
 
         .custom-toggle-group .btn:first-child,
