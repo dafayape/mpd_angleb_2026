@@ -3,7 +3,7 @@
 @section('title', 'Upload Data Opsel')
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '30', 'title' => 'Upload Data Opsel'])
+    @component('layout.partials.page-header', ['number' => '29', 'title' => 'Upload Data Opsel'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="{{ route('datasource.history') }}">Datasource</a></li>

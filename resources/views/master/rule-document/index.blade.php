@@ -14,7 +14,7 @@
 @endpush
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '29', 'title' => 'Dokumentasi Teknis'])
+    @component('layout.partials.page-header', ['number' => '28', 'title' => 'Dokumentasi Teknis'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="javascript: void(0);">Master</a></li>
             <li class="breadcrumb-item"><a href="javascript: void(0);">Referensi</a></li>

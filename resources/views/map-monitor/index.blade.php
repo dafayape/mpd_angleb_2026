@@ -132,7 +132,7 @@
 @endpush
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '23', 'title' => 'Map Monitor - Kepadatan Simpul'])
+    @component('layout.partials.page-header', ['number' => '22', 'title' => 'Map Monitor - Kepadatan Simpul'])
         <form class="d-flex align-items-center gap-2 m-0" id="periodForm">
             <label class="mb-0 fw-bold text-nowrap text-white">Periode:</label>
             <input type="date" id="startDate" class="form-control form-control-sm" value="2026-03-13" min="2026-03-13"

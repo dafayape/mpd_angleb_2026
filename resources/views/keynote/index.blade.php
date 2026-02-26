@@ -1,7 +1,7 @@
 @extends('layout.app')
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '01', 'title' => 'Keynote Material'])
+    @component('layout.partials.page-header', ['number' => '00', 'title' => 'Keynote Material'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="javascript: void(0);">MPD</a></li>
             <li class="breadcrumb-item active">Keynote Material</li>

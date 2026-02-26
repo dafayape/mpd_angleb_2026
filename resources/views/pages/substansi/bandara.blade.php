@@ -3,7 +3,7 @@
 @section('title', 'Bandara')
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '16', 'title' => 'Bandara'])
+    @component('layout.partials.page-header', ['number' => '18', 'title' => 'Bandara'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="#">Substansi Tambahan</a></li>

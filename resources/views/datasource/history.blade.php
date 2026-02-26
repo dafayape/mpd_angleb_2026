@@ -3,7 +3,7 @@
 @section('title', 'History File Upload')
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '31', 'title' => 'History File Upload'])
+    @component('layout.partials.page-header', ['number' => '30', 'title' => 'History File Upload'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item active">History Upload</li>

@@ -433,7 +433,7 @@
                         <li class="menu-title">Executive Summary</li>
 
                         <li>
-                            <a href="{{ route('executive.summary') }}" class="waves-effect">
+                            <a href="{{ route('executive.daily-report') }}" class="waves-effect">
                                 <i class="bx bx-file"></i>
                                 <span>Daily Report</span>
                             </a>

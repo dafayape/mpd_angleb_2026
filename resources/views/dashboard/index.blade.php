@@ -214,7 +214,7 @@
 
 @section('content')
 
-    @component('layout.partials.page-header', ['number' => '02', 'title' => 'Dashboard Nasional'])
+    @component('layout.partials.page-header', ['number' => '01', 'title' => 'Dashboard Nasional'])
     @endcomponent
 
     <div class="container-fluid py-2">

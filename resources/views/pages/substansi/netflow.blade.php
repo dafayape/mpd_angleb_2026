@@ -3,7 +3,7 @@
 @section('title', 'Netflow Pergerakan')
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '19', 'title' => 'Netflow Pergerakan'])
+    @component('layout.partials.page-header', ['number' => '10', 'title' => 'Netflow Pergerakan'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="#">Substansi Tambahan</a></li>

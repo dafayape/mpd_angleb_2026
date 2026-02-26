@@ -3,7 +3,7 @@
 @section('title', 'View Raw Data')
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '32', 'title' => 'View Raw Data'])
+    @component('layout.partials.page-header', ['number' => '31', 'title' => 'View Raw Data'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="{{ route('datasource.history') }}">Datasource</a></li>

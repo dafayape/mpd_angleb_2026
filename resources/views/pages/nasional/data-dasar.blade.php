@@ -3,7 +3,7 @@
 @section('title', 'Data Dasar Pergerakan Nasional')
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '03', 'title' => 'Data Dasar Pergerakan Nasional'])
+    @component('layout.partials.page-header', ['number' => '02', 'title' => 'Data Dasar Pergerakan Nasional'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="#">Nasional</a></li>

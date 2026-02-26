@@ -4,7 +4,7 @@
 
 @section('content')
     @component('layout.partials.page-header', [
-        'number' => '08',
+        'number' => '07',
         'title' => 'Origin-Destination (OD) Intra Jabodetabek',
     ])
         <ol class="breadcrumb m-0 mb-0">
