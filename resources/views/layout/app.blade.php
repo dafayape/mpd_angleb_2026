@@ -250,6 +250,28 @@
                             </ul>
                         </li>
 
+                        <li>
+                            <a href="{{ route('pages.substansi.netflow') }}" class="waves-effect">
+                                <i class="bx bx-transfer"></i>
+                                <span>Netflow</span>
+                            </a>
+                        </li>
+
+
+                        <li class="menu-title">Kesimpulan dan Rekomendasi</li>
+
+                        <li>
+                            <a href="javascript: void(0);" class="has-arrow waves-effect">
+                                <i class="bx bx-bar-chart-alt-2"></i>
+                                <span>Kesimpulan</span>
+                            </a>
+                            <ul class="sub-menu" aria-expanded="false">
+                                <li><a href="{{ route('pages.kesimpulan.nasional') }}">Nasional</a></li>
+                                <li><a href="{{ route('pages.kesimpulan.jabodetabek') }}">Jabodetabek</a></li>
+
+                            </ul>
+                        </li>
+
                         <li class="menu-title">Substansi Tambahan</li>
 
                         <li>
@@ -271,28 +293,6 @@
                                 <li><a href="{{ route('pages.substansi.terminal') }}">Terminal</a></li>
                                 <li><a href="{{ route('pages.substansi.od-simpul-pelabuhan') }}">Origin-Destination
                                         (OD) Simpul Pelabuhan</a></li>
-                            </ul>
-                        </li>
-
-                        <li>
-                            <a href="{{ route('pages.substansi.netflow') }}" class="waves-effect">
-                                <i class="bx bx-transfer"></i>
-                                <span>Netflow</span>
-                            </a>
-                        </li>
-
-
-                        <li class="menu-title">Kesimpulan dan Rekomendasi</li>
-
-                        <li>
-                            <a href="javascript: void(0);" class="has-arrow waves-effect">
-                                <i class="bx bx-bar-chart-alt-2"></i>
-                                <span>Kesimpulan</span>
-                            </a>
-                            <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="{{ route('pages.kesimpulan.nasional') }}">Nasional</a></li>
-                                <li><a href="{{ route('pages.kesimpulan.jabodetabek') }}">Jabodetabek</a></li>
-
                             </ul>
                         </li>
 
