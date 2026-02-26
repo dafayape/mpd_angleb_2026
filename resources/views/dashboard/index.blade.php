@@ -692,6 +692,10 @@
                 labelFormat = '<b>{point.name}</b><br>{point.vol:,.0f}';
             } else if (satuan === 'persen') {
                 labelFormat = '<b>{point.name}</b><br>{point.y}%';
+            } else {
+                // Auto mode -> show both
+                labelFormat =
+                    '<b>{point.name}</b><br>{point.vol:,.0f} <span style="opacity:0.6;font-size:10px;">({point.y}%)</span>';
             }
 
             Highcharts.chart(containerId, {
