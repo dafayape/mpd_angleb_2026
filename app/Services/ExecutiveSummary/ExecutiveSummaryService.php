@@ -211,8 +211,17 @@ class ExecutiveSummaryService
     public function generateNarrative(array $metrics, string $type): string
     {
         if ($type === 'opsel') {
-            $tsel = $metrics['pergerakan']['TSEL']['pct'] ?? 0;
-            return "Telkomsel mendominasi perekaman mobilitas dengan menyumbang sekitar {$tsel}% dari total pergerakan.";
+            $opselData = $metrics['pergerakan'] ?? [];
+            $maxOpsel = '';
+            $maxPct = -1;
+            foreach ($opselData as $name => $data) {
+                if (($data['pct'] ?? 0) > $maxPct) {
+                    $maxPct = $data['pct'] ?? 0;
+                    $maxOpsel = $name;
+                }
+            }
+            $maxOpselName = $maxOpsel ?: 'Satu operator';
+            return "{$maxOpselName} mendominasi perekaman mobilitas dengan menyumbang sekitar {$maxPct}% dari total pergerakan.";
         }
         $val = number_format($metrics['pergerakan'] ?? 0, 0, ',', '.');
         if ($type === 'intra') return "Jumlah pergerakan Masyarakat Intra Jabodetabek pada periode ini adalah {$val} pergerakan.";

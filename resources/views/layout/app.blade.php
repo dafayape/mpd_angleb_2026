@@ -438,9 +438,7 @@
                                 <span>Laporan Eksekutif</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="{{ route('keynote') }}">Keynote Material</a></li>
-                                <li><a href="{{ route('pages.executive.daily-report') }}">Summary (AI)</a></li>
-                                <li><a href="{{ route('executive.summary') }}">Index / Nasional</a></li>
+                                <li><a href="{{ route('pages.executive.daily-report') }}">Daily Report</a></li>
                             </ul>
                         </li>
 
