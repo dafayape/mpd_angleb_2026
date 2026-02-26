@@ -1,19 +1,12 @@
 @extends('layout.app')
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Keynote Material</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="javascript: void(0);">MPD</a></li>
-                        <li class="breadcrumb-item active">Keynote Material</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @component('layout.partials.page-header', ['number' => '01', 'title' => 'Keynote Material'])
+        <ol class="breadcrumb m-0 mb-0">
+            <li class="breadcrumb-item"><a href="javascript: void(0);">MPD</a></li>
+            <li class="breadcrumb-item active">Keynote Material</li>
+        </ol>
+    @endcomponent
 
     <div class="row">
         <div class="col-12">

@@ -3,20 +3,13 @@
 @section('title', 'Referensi Provinsi')
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Referensi Provinsi</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item">Master</li>
-                        <li class="breadcrumb-item active">Provinsi</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @component('layout.partials.page-header', ['number' => '25', 'title' => 'Referensi Provinsi'])
+        <ol class="breadcrumb m-0 mb-0">
+            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item">Master</li>
+            <li class="breadcrumb-item active">Provinsi</li>
+        </ol>
+    @endcomponent
 
     <div class="row">
         <div class="col-12">
@@ -29,10 +22,12 @@
                         </div>
                         <form action="{{ route('master.referensi.provinsi') }}" method="GET">
                             <div class="input-group" style="width: 300px;">
-                                <input type="text" class="form-control form-control-sm" name="search" placeholder="Cari kode / nama..." value="{{ request('search') }}">
+                                <input type="text" class="form-control form-control-sm" name="search"
+                                    placeholder="Cari kode / nama..." value="{{ request('search') }}">
                                 <button class="btn btn-sm btn-primary" type="submit"><i class="bx bx-search"></i></button>
-                                @if(request('search'))
-                                    <a href="{{ route('master.referensi.provinsi') }}" class="btn btn-sm btn-outline-secondary"><i class="bx bx-x"></i></a>
+                                @if (request('search'))
+                                    <a href="{{ route('master.referensi.provinsi') }}"
+                                        class="btn btn-sm btn-outline-secondary"><i class="bx bx-x"></i></a>
                                 @endif
                             </div>
                         </form>
@@ -50,8 +45,10 @@
                             <tbody>
                                 @forelse($data as $item)
                                     <tr>
-                                        <td class="text-center">{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
-                                        <td class="text-center"><span class="badge bg-primary">{{ $item->code }}</span></td>
+                                        <td class="text-center">
+                                            {{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
+                                        <td class="text-center"><span class="badge bg-primary">{{ $item->code }}</span>
+                                        </td>
                                         <td>{{ $item->name }}</td>
                                     </tr>
                                 @empty
@@ -66,9 +63,10 @@
                         </table>
                     </div>
 
-                    @if($data->hasPages())
+                    @if ($data->hasPages())
                         <div class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="text-muted">Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari {{ $data->total() }}</small>
+                            <small class="text-muted">Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari
+                                {{ $data->total() }}</small>
                             {{ $data->links() }}
                         </div>
                     @endif

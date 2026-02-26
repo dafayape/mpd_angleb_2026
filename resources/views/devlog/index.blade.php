@@ -3,19 +3,12 @@
 @section('title', 'Log Developer')
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Log Developer</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Log Developer</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @component('layout.partials.page-header', ['number' => '35', 'title' => 'Log Developer'])
+        <ol class="breadcrumb m-0 mb-0">
+            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Log Developer</li>
+        </ol>
+    @endcomponent
 
     <div class="row mb-3">
         <div class="col-md-4">

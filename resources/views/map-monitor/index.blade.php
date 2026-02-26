@@ -132,35 +132,28 @@
 @endpush
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Map Monitor - Kepadatan Simpul</h4>
-                <div class="page-title-right">
-                    <form class="d-flex align-items-center gap-2" id="periodForm">
-                        <label class="mb-0 fw-bold text-nowrap">Periode:</label>
-                        <input type="date" id="startDate" class="form-control form-control-sm" value="2026-03-13"
-                            min="2026-03-13" max="2026-03-30" style="width: 140px;">
-                        <span class="text-muted fw-bold">&mdash;</span>
-                        <input type="date" id="endDate" class="form-control form-control-sm" value="2026-03-30"
-                            min="2026-03-13" max="2026-03-30" style="width: 140px;">
+    @component('layout.partials.page-header', ['number' => '23', 'title' => 'Map Monitor - Kepadatan Simpul'])
+        <form class="d-flex align-items-center gap-2 m-0" id="periodForm">
+            <label class="mb-0 fw-bold text-nowrap text-white">Periode:</label>
+            <input type="date" id="startDate" class="form-control form-control-sm" value="2026-03-13" min="2026-03-13"
+                max="2026-03-30" style="width: 140px;">
+            <span class="text-white fw-bold">&mdash;</span>
+            <input type="date" id="endDate" class="form-control form-control-sm" value="2026-03-30" min="2026-03-13"
+                max="2026-03-30" style="width: 140px;">
 
-                        <label class="mb-0 fw-bold text-nowrap ms-2">Opsel:</label>
-                        <select id="opselFilter" class="form-select form-select-sm" style="width: 100px;">
-                            <option value="">Semua</option>
-                            <option value="TSEL">Telkomsel</option>
-                            <option value="IOH">Indosat</option>
-                            <option value="XL">XL Axiata</option>
-                        </select>
+            <label class="mb-0 fw-bold text-nowrap ms-2 text-white">Opsel:</label>
+            <select id="opselFilter" class="form-select form-select-sm" style="width: 100px;">
+                <option value="">Semua</option>
+                <option value="TSEL">Telkomsel</option>
+                <option value="IOH">Indosat</option>
+                <option value="XL">XL Axiata</option>
+            </select>
 
-                        <button type="submit" class="btn btn-sm btn-primary text-nowrap ms-1">
-                            <i class="mdi mdi-magnify me-1"></i>Terapkan
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+            <button type="submit" class="btn btn-sm btn-light text-primary text-nowrap fw-bold ms-1">
+                <i class="mdi mdi-magnify me-1"></i>Terapkan
+            </button>
+        </form>
+    @endcomponent
 
     <div class="row">
         <div class="col-12">

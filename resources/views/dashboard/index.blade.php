@@ -3,16 +3,9 @@
 @section('title', 'Dashboard Utama')
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Dashboard Utama</h4>
-                <div class="page-title-right">
-                    {{-- Button removed as requested --}}
-                </div>
-            </div>
-        </div>
-    </div>
+    @component('layout.partials.page-header', ['number' => '02', 'title' => 'Dashboard Utama'])
+        {{-- Button removed as requested --}}
+    @endcomponent
 
     <!-- Overlay Kalender -->
     <div class="row mb-4">

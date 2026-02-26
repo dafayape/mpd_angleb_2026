@@ -107,6 +107,50 @@
             background-color: rgba(255, 255, 255, 0.2);
             border-radius: 4px;
         }
+
+        /* Global Utilities */
+        .bg-navy {
+            background-color: #1a3353 !important;
+        }
+
+        .text-navy {
+            color: #1a3353 !important;
+        }
+
+        .page-header-number {
+            font-size: 24px;
+            font-weight: 700;
+            background-color: #e8ecf1;
+            color: #495057;
+            border: 2px solid #1a3353;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-header-title-bar {
+            background-color: #1a3353;
+            color: #ffffff;
+            border-radius: 0 4px 4px 0;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .placeholder-page-card {
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px dashed #ced4da;
+            box-shadow: none !important;
+        }
     </style>
 </head>
 

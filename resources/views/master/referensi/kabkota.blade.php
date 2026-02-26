@@ -3,20 +3,13 @@
 @section('title', 'Referensi Kabupaten / Kota')
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Referensi Kabupaten / Kota</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item">Master</li>
-                        <li class="breadcrumb-item active">Kabupaten / Kota</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @component('layout.partials.page-header', ['number' => '26', 'title' => 'Referensi Kabupaten / Kota'])
+        <ol class="breadcrumb m-0 mb-0">
+            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item">Master</li>
+            <li class="breadcrumb-item active">Kabupaten / Kota</li>
+        </ol>
+    @endcomponent
 
     <div class="row">
         <div class="col-12">
@@ -32,20 +25,26 @@
                     <form action="{{ route('master.referensi.kabkota') }}" method="GET" class="mb-3">
                         <div class="row g-2 align-items-end">
                             <div class="col-md-4">
-                                <input type="text" class="form-control form-control-sm" name="search" placeholder="Cari kode / nama..." value="{{ request('search') }}">
+                                <input type="text" class="form-control form-control-sm" name="search"
+                                    placeholder="Cari kode / nama..." value="{{ request('search') }}">
                             </div>
                             <div class="col-md-3">
-                                <select class="form-select form-select-sm" name="province_code" onchange="this.form.submit()">
+                                <select class="form-select form-select-sm" name="province_code"
+                                    onchange="this.form.submit()">
                                     <option value="">— Semua Provinsi —</option>
-                                    @foreach($provinces as $prov)
-                                        <option value="{{ $prov->code }}" {{ request('province_code') == $prov->code ? 'selected' : '' }}>{{ $prov->name }}</option>
+                                    @foreach ($provinces as $prov)
+                                        <option value="{{ $prov->code }}"
+                                            {{ request('province_code') == $prov->code ? 'selected' : '' }}>
+                                            {{ $prov->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <button class="btn btn-sm btn-primary" type="submit"><i class="bx bx-search"></i> Cari</button>
-                                @if(request('search') || request('province_code'))
-                                    <a href="{{ route('master.referensi.kabkota') }}" class="btn btn-sm btn-outline-secondary"><i class="bx bx-x"></i></a>
+                                <button class="btn btn-sm btn-primary" type="submit"><i class="bx bx-search"></i>
+                                    Cari</button>
+                                @if (request('search') || request('province_code'))
+                                    <a href="{{ route('master.referensi.kabkota') }}"
+                                        class="btn btn-sm btn-outline-secondary"><i class="bx bx-x"></i></a>
                                 @endif
                             </div>
                         </div>
@@ -64,7 +63,8 @@
                             <tbody>
                                 @forelse($data as $item)
                                     <tr>
-                                        <td class="text-center">{{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
+                                        <td class="text-center">
+                                            {{ $loop->iteration + ($data->currentPage() - 1) * $data->perPage() }}</td>
                                         <td class="text-center"><span class="badge bg-info">{{ $item->code }}</span></td>
                                         <td>{{ $item->name }}</td>
                                         <td>{{ $item->province_name ?? $item->province_code }}</td>
@@ -81,9 +81,10 @@
                         </table>
                     </div>
 
-                    @if($data->hasPages())
+                    @if ($data->hasPages())
                         <div class="d-flex justify-content-between align-items-center mt-3">
-                            <small class="text-muted">Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari {{ $data->total() }}</small>
+                            <small class="text-muted">Menampilkan {{ $data->firstItem() }}–{{ $data->lastItem() }} dari
+                                {{ $data->total() }}</small>
                             {{ $data->links() }}
                         </div>
                     @endif

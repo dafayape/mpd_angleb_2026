@@ -3,19 +3,12 @@
 @section('title', 'Manajemen Pengguna')
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">Manajemen Akun Pengguna</h4>
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Pengguna</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @component('layout.partials.page-header', ['number' => '33', 'title' => 'Manajemen Akun Pengguna'])
+        <ol class="breadcrumb m-0 mb-0">
+            <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Pengguna</li>
+        </ol>
+    @endcomponent
 
     @include('users.alert')
 
@@ -42,9 +35,11 @@
                                 <td>
                                     <div class="avatar-xs">
                                         @if ($user->photo)
-                                            <img class="rounded-circle avatar-xs" src="{{ asset('storage/photos/' . $user->photo) }}" alt="">
+                                            <img class="rounded-circle avatar-xs"
+                                                src="{{ asset('storage/photos/' . $user->photo) }}" alt="">
                                         @else
-                                            <span class="avatar-title rounded-circle">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                                            <span
+                                                class="avatar-title rounded-circle">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
                                         @endif
                                     </div>
                                 </td>
@@ -57,7 +52,8 @@
                                     <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button onclick="return confirm('Yakin hapus pengguna ini?')" class="btn btn-danger btn-sm">Hapus</button>
+                                        <button onclick="return confirm('Yakin hapus pengguna ini?')"
+                                            class="btn btn-danger btn-sm">Hapus</button>
                                     </form>
                                 </td>
                             </tr>
