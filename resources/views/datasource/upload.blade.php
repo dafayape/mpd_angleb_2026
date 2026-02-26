@@ -261,14 +261,15 @@
                     },
                     success: function(result) {
                         if (result.is_valid) {
-                            // ✅ CSV Valid → lanjut import
-                            statusTitle.innerText = 'Memproses Data CSV...';
-                            statusText.innerText = 'CSV valid. Memulai import data...';
-                            progressBar.classList.remove('bg-warning');
-                            progressBar.classList.add('bg-info');
-                            progressBar.style.width = '0%';
-                            progressBar.innerHTML = '0%';
-                            processChunk(historyId, 0);
+                            if (result.opsel_mismatch) {
+                                // ⚠️ OPSEL Mismatch Warning
+                                modal.hide();
+                                showValidationErrors(result);
+                                btn.disabled = false;
+                            } else {
+                                // ✅ CSV Valid → lanjut import
+                                proceedToImport(historyId, modal, progressBar, statusTitle, statusText);
+                            }
                         } else {
                             // ❌ CSV Invalid → tampilkan detail error
                             modal.hide();
@@ -285,6 +286,38 @@
                     }
                 });
             }
+
+            // ═══════════════════════════════════════════════════════
+            // STEP 2b: Proceed to Import
+            // ═══════════════════════════════════════════════════════
+            function proceedToImport(historyId, modal, progressBar, statusTitle, statusText) {
+                modal.show();
+                statusTitle.innerText = 'Memproses Data CSV...';
+                statusText.innerText = 'CSV valid. Memulai import data...';
+                progressBar.classList.remove('bg-warning');
+                progressBar.classList.add('bg-info');
+                progressBar.style.width = '0%';
+                progressBar.innerHTML = '0%';
+                processChunk(historyId, 0);
+            }
+
+            // Expose proceedToImport to global scope so modal button can call it
+            window.forceProcessChunk = function(historyId) {
+                var modal = new bootstrap.Modal(document.getElementById('uploadProgressModal'));
+                var progressBar = document.getElementById('uploadProgressBar');
+                var statusTitle = document.getElementById('uploadStatusTitle');
+                var statusText = document.getElementById('uploadStatusText');
+
+                document.getElementById('btnSubmit').disabled = true;
+
+                // Hide validation modal first
+                var errorModal = bootstrap.Modal.getInstance(document.getElementById('validationErrorModal'));
+                if (errorModal) {
+                    errorModal.hide();
+                }
+
+                proceedToImport(historyId, modal, progressBar, statusTitle, statusText);
+            };
 
             // ═══════════════════════════════════════════════════════
             // STEP 3: Process chunks (sama seperti sebelumnya)
@@ -365,11 +398,54 @@
 
             // Summary
             var s = result.summary || {};
-            summary.innerHTML = '<strong>Hasil Validasi:</strong> ' +
-                '<span class="text-danger fw-bold">TIDAK VALID</span><br>' +
+            var isValidObj = result.is_valid;
+
+            summary.className = isValidObj ? 'alert alert-warning mb-3' : 'alert alert-danger mb-3';
+
+            var summaryHtml = '<strong>Hasil Validasi:</strong> ' +
+                (isValidObj ? '<span class="text-warning fw-bold">PERINGATAN</span><br>' :
+                    '<span class="text-danger fw-bold">TIDAK VALID</span><br>') +
                 'Total baris data: ' + new Intl.NumberFormat('id-ID').format(s.total_data_rows || 0) + '<br>' +
-                'Baris dicek (sample): ' + (s.rows_checked || 0) + '<br>' +
-                'Baris bermasalah: <span class="text-danger fw-bold">' + (s.rows_with_errors || 0) + '</span>';
+                'Baris bermasalah: ' + (isValidObj ? '<span class="text-success fw-bold">0</span>' :
+                    '<span class="text-danger fw-bold">' + (s.rows_with_errors || 0) + '</span>');
+
+            if (s.errors_truncated) {
+                summaryHtml += '<br><span class="text-muted fst-italic">*Hanya menampilkan 50 error pertama*</span>';
+            }
+            summary.innerHTML = summaryHtml;
+
+            // Opsel Mismatch Warning
+            var mismatchSection = document.getElementById('opselMismatchSection');
+            if (!mismatchSection) {
+                // Create it if it doesn't exist
+                mismatchSection = document.createElement('div');
+                mismatchSection.id = 'opselMismatchSection';
+                mismatchSection.className = 'd-none mb-3 alert alert-warning';
+                summary.parentNode.insertBefore(mismatchSection, summary.nextSibling);
+            }
+
+            mismatchSection.classList.add('d-none');
+            var footerHtml =
+                '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bx bx-arrow-back me-1"></i> Kembali ke Form</button>';
+
+            if (result.opsel_mismatch) {
+                mismatchSection.classList.remove('d-none');
+                mismatchSection.innerHTML =
+                    '<h6 class="fw-bold text-dark"><i class="bx bx-error text-warning me-1"></i> Peringatan OPSEL Tidak Sesuai</h6>' +
+                    '<div style="font-size: 13px;">Anda memilih OPSEL <span class="badge bg-primary">' + result
+                    .opsel_mismatch.selected + '</span> di form, ' +
+                    'namun di dalam file CSV ditemukan OPSEL <span class="badge bg-danger">' + result.opsel_mismatch
+                    .mismatched.join(', ') + '</span>.</div>' +
+                    '<div class="mt-2 fw-bold text-dark" style="font-size: 12px;">Apakah Anda yakin ingin tetap melanjutkan import data ini?</div>';
+
+                if (isValidObj) {
+                    footerHtml += '<button type="button" class="btn btn-warning" onclick="window.forceProcessChunk(' +
+                        document.querySelector('input[name="history_id"]').value +
+                        ')"><i class="bx bx-check-circle me-1"></i> Ya, Lanjutkan Import</button>';
+                }
+            }
+
+            document.querySelector('#validationErrorModal .modal-footer').innerHTML = footerHtml;
 
             // Header errors
             headerSection.classList.add('d-none');

@@ -6,7 +6,11 @@ use Illuminate\Support\Facades\DB;
 
 class ValidateCsvAction
 {
-    private array $expectedHeaders = [
+    private const DELIMITER = ';';
+    private const MAX_ERRORS_DISPLAYED = 50;
+    private const VALID_OPSEL = ['TSEL', 'IOH', 'XL'];
+
+    private const EXPECTED_HEADERS = [
         'TANGGAL', 'OPSEL', 'KATEGORI',
         'KODE_ORIGIN_PROVINSI', 'ORIGIN_PROVINSI',
         'KODE_ORIGIN_KABUPATEN_KOTA', 'ORIGIN_KABUPATEN_KOTA',
@@ -17,66 +21,70 @@ class ValidateCsvAction
         'KODE_MODA', 'MODA', 'TOTAL',
     ];
 
-    private const DELIMITER = ';';
+    private const EXPECTED_COUNT = 18;
 
-    private const MAX_ERRORS_DISPLAYED = 50;
-
-    private const VALID_OPSEL = ['TSEL', 'IOH', 'XL'];
-
-    private const VALID_KATEGORI = ['REAL', 'FORECAST'];
-
-    // Cached reference data (loaded once from DB)
-    private array $validProvinces = [];
-
-    private array $validCities = [];
-
-    private array $validNodes = [];
-
-    private array $validModes = [];
+    // In-memory reference lookup (O(1) per check)
+    private array $refProvinces = [];
+    private array $refCities = [];
+    private array $refNodes = [];
+    private array $refModes = [];
 
     /**
      * Validate a CSV file against the MPD schema and database reference tables.
-     * Validates ALL rows, not just a sample.
      *
-     * @param  string  $filePath  Absolute path to the CSV file
-     * @return array Validation result with is_valid, header, rows, summary
+     * @param  string       $filePath      Absolute path to the CSV file
+     * @param  string|null  $selectedOpsel OPSEL yang dipilih di dropdown form (TSEL/IOH/XL)
+     * @return array        Validation result
      */
-    public function execute(string $filePath): array
+    public function execute(string $filePath, ?string $selectedOpsel = null): array
     {
         $handle = @fopen($filePath, 'r');
         if ($handle === false) {
-            return [
-                'is_valid' => false,
-                'error' => 'Gagal membuka file CSV.',
-            ];
+            return ['is_valid' => false, 'error' => 'Gagal membuka file CSV.'];
         }
 
-        // Skip BOM if present
+        // Skip BOM (UTF-8 Byte Order Mark)
         $bom = fread($handle, 3);
         if ($bom !== "\xEF\xBB\xBF") {
             fseek($handle, 0);
         }
 
-        // --- 1. Header Validation ---
+        // ─── 1. HEADER VALIDATION ───
         $headerLine = fgets($handle);
         if ($headerLine === false) {
             fclose($handle);
-
-            return [
-                'is_valid' => false,
-                'error' => 'File CSV kosong.',
-            ];
+            return ['is_valid' => false, 'error' => 'File CSV kosong.'];
         }
 
         $headerResult = $this->validateHeader(trim(str_replace("\r", '', $headerLine)));
 
-        // --- 2. Load reference data from DB (single query per table) ---
+        // Jika header tidak valid, tidak perlu lanjut cek baris
+        if (! $headerResult['valid']) {
+            fclose($handle);
+            return [
+                'is_valid' => false,
+                'file' => ['name' => basename($filePath), 'total_data_rows' => 0, 'rows_checked' => 0],
+                'header' => $headerResult,
+                'row_errors' => [],
+                'opsel_mismatch' => null,
+                'summary' => [
+                    'header_ok' => false,
+                    'rows_checked' => 0,
+                    'rows_with_errors' => 0,
+                    'total_data_rows' => 0,
+                    'errors_truncated' => false,
+                ],
+            ];
+        }
+
+        // ─── 2. LOAD REFERENCE DATA (sekali query, O(1) lookup) ───
         $this->loadReferenceData();
 
-        // --- 3. Validate ALL rows ---
+        // ─── 3. VALIDATE ALL ROWS ───
         $rowErrors = [];
         $rowsChecked = 0;
         $totalErrorRows = 0;
+        $csvOpselValues = []; // Collect unique OPSEL values found in CSV
 
         while (($line = fgets($handle)) !== false) {
             $line = trim(str_replace("\r", '', $line));
@@ -84,18 +92,22 @@ class ValidateCsvAction
                 continue;
             }
 
-            $rowNum = $rowsChecked + 2; // +2: 1-based, skip header
+            $rowNum = $rowsChecked + 2;
             $cols = str_getcsv($line, self::DELIMITER);
             $issues = $this->validateRow($cols, $rowNum);
 
+            // Track unique OPSEL values efficiently
+            if (count($cols) >= 2) {
+                $opselVal = trim($cols[1]);
+                if ($opselVal !== '' && ! isset($csvOpselValues[$opselVal])) {
+                    $csvOpselValues[$opselVal] = true;
+                }
+            }
+
             if (! empty($issues)) {
                 $totalErrorRows++;
-                // Simpan detail error sampai batas MAX untuk UI
                 if (count($rowErrors) < self::MAX_ERRORS_DISPLAYED) {
-                    $rowErrors[] = [
-                        'row' => $rowNum,
-                        'issues' => $issues,
-                    ];
+                    $rowErrors[] = ['row' => $rowNum, 'issues' => $issues];
                 }
             }
 
@@ -104,8 +116,22 @@ class ValidateCsvAction
 
         fclose($handle);
 
-        // --- 4. Compile result ---
-        $isValid = $headerResult['valid'] && $totalErrorRows === 0;
+        // ─── 4. OPSEL MISMATCH CHECK ───
+        $opselMismatch = null;
+        if ($selectedOpsel && ! empty($csvOpselValues)) {
+            $csvOpsels = array_keys($csvOpselValues);
+            $mismatched = array_filter($csvOpsels, fn ($o) => $o !== $selectedOpsel);
+            if (! empty($mismatched)) {
+                $opselMismatch = [
+                    'selected' => $selectedOpsel,
+                    'found_in_csv' => $csvOpsels,
+                    'mismatched' => array_values($mismatched),
+                ];
+            }
+        }
+
+        // ─── 5. COMPILE RESULT ───
+        $isValid = $totalErrorRows === 0 && $opselMismatch === null;
 
         return [
             'is_valid' => $isValid,
@@ -116,8 +142,9 @@ class ValidateCsvAction
             ],
             'header' => $headerResult,
             'row_errors' => $rowErrors,
+            'opsel_mismatch' => $opselMismatch,
             'summary' => [
-                'header_ok' => $headerResult['valid'],
+                'header_ok' => true,
                 'rows_checked' => $rowsChecked,
                 'rows_with_errors' => $totalErrorRows,
                 'total_data_rows' => $rowsChecked,
@@ -127,22 +154,20 @@ class ValidateCsvAction
     }
 
     /**
-     * Validate the header line against expected columns.
+     * Validate header: exact 18 columns, exact names, exact order.
      */
     private function validateHeader(string $headerLine): array
     {
         $actualCols = array_map('trim', explode(self::DELIMITER, $headerLine));
 
-        $missing = array_values(array_diff($this->expectedHeaders, $actualCols));
-        $extra = array_values(array_diff($actualCols, $this->expectedHeaders));
+        $missing = array_values(array_diff(self::EXPECTED_HEADERS, $actualCols));
+        $extra = array_values(array_diff($actualCols, self::EXPECTED_HEADERS));
+        $valid = empty($missing) && empty($extra) && count($actualCols) === self::EXPECTED_COUNT;
 
-        $valid = empty($missing) && empty($extra) && count($actualCols) === count($this->expectedHeaders);
-
-        // Check column order
         $orderCorrect = $valid;
         if ($valid) {
-            foreach ($this->expectedHeaders as $i => $expected) {
-                if ($actualCols[$i] !== $expected) {
+            for ($i = 0; $i < self::EXPECTED_COUNT; $i++) {
+                if ($actualCols[$i] !== self::EXPECTED_HEADERS[$i]) {
                     $orderCorrect = false;
                     break;
                 }
@@ -151,7 +176,7 @@ class ValidateCsvAction
 
         return [
             'valid' => $valid && $orderCorrect,
-            'expected_count' => count($this->expectedHeaders),
+            'expected_count' => self::EXPECTED_COUNT,
             'actual_count' => count($actualCols),
             'missing' => $missing,
             'extra' => $extra,
@@ -160,148 +185,85 @@ class ValidateCsvAction
     }
 
     /**
-     * Validate a single data row.
+     * Validate a single data row against schema + database references.
      */
     private function validateRow(array $cols, int $rowNum): array
     {
         $issues = [];
 
-        // Column count check
-        if (count($cols) !== count($this->expectedHeaders)) {
-            $issues[] = [
-                'field' => null,
-                'type' => 'COLUMN_COUNT',
-                'detail' => 'Diharapkan '.count($this->expectedHeaders).' kolom, ditemukan '.count($cols),
-            ];
-
-            return $issues; // Can't validate further if column count is wrong
+        // ─── Column count ───
+        if (count($cols) !== self::EXPECTED_COUNT) {
+            return [['field' => null, 'type' => 'COLUMN_COUNT', 'detail' => 'Diharapkan ' . self::EXPECTED_COUNT . ' kolom, ditemukan ' . count($cols)]];
         }
 
-        $data = array_combine($this->expectedHeaders, $cols);
-
-        // TANGGAL: format YYYY-MM-DD dan valid date
-        $tanggal = trim($data['TANGGAL']);
+        // ─── TANGGAL (index 0): YYYY-MM-DD ───
+        $tanggal = trim($cols[0]);
         if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal) || ! strtotime($tanggal)) {
-            $issues[] = [
-                'field' => 'TANGGAL',
-                'type' => 'INVALID_DATE',
-                'detail' => "Format harus YYYY-MM-DD, ditemukan: \"{$tanggal}\"",
-            ];
+            $issues[] = ['field' => 'TANGGAL', 'type' => 'INVALID_DATE', 'detail' => "Format harus YYYY-MM-DD, ditemukan: \"{$tanggal}\""];
         }
 
-        // OPSEL: wajib dan harus salah satu dari TSEL/IOH/XL
-        $opsel = trim($data['OPSEL']);
+        // ─── OPSEL (index 1): wajib, harus TSEL/IOH/XL ───
+        $opsel = trim($cols[1]);
         if ($opsel === '') {
-            $issues[] = [
-                'field' => 'OPSEL',
-                'type' => 'EMPTY_REQUIRED',
-                'detail' => 'OPSEL tidak boleh kosong',
-            ];
+            $issues[] = ['field' => 'OPSEL', 'type' => 'EMPTY_REQUIRED', 'detail' => 'OPSEL tidak boleh kosong'];
         } elseif (! in_array($opsel, self::VALID_OPSEL, true)) {
-            $issues[] = [
-                'field' => 'OPSEL',
-                'type' => 'INVALID_VALUE',
-                'detail' => "Harus salah satu: TSEL, IOH, XL. Ditemukan: \"{$opsel}\"",
-            ];
+            $issues[] = ['field' => 'OPSEL', 'type' => 'INVALID_VALUE', 'detail' => "Harus TSEL/IOH/XL, ditemukan: \"{$opsel}\""];
         }
 
-        // KATEGORI: wajib dan harus REAL/FORECAST
-        $kategori = trim($data['KATEGORI']);
-        if ($kategori === '') {
-            $issues[] = [
-                'field' => 'KATEGORI',
-                'type' => 'EMPTY_REQUIRED',
-                'detail' => 'KATEGORI tidak boleh kosong',
-            ];
-        } elseif (! in_array($kategori, self::VALID_KATEGORI, true)) {
-            $issues[] = [
-                'field' => 'KATEGORI',
-                'type' => 'INVALID_VALUE',
-                'detail' => "Harus salah satu: REAL, FORECAST. Ditemukan: \"{$kategori}\"",
-            ];
+        // ─── KATEGORI (index 2): wajib terisi (nilainya bebas, misal PERGERAKAN) ───
+        if (trim($cols[2]) === '') {
+            $issues[] = ['field' => 'KATEGORI', 'type' => 'EMPTY_REQUIRED', 'detail' => 'KATEGORI tidak boleh kosong'];
         }
 
-        // TOTAL: harus numerik >= 0
-        $total = trim($data['TOTAL']);
+        // ─── TOTAL (index 17): numerik >= 0 ───
+        $total = trim($cols[17]);
         if (! is_numeric($total) || (int) $total < 0) {
-            $issues[] = [
-                'field' => 'TOTAL',
-                'type' => 'INVALID_NUMERIC',
-                'detail' => "TOTAL harus angka >= 0, ditemukan: \"{$total}\"",
-            ];
+            $issues[] = ['field' => 'TOTAL', 'type' => 'INVALID_NUMERIC', 'detail' => "TOTAL harus angka >= 0, ditemukan: \"{$total}\""];
         }
 
-        // --- Database Reference Checks ---
+        // ─── DATABASE REFERENCE CHECKS (by column index for speed) ───
 
-        // KODE_ORIGIN_PROVINSI & KODE_DEST_PROVINSI → ref_provinces
-        foreach (['KODE_ORIGIN_PROVINSI', 'KODE_DEST_PROVINSI'] as $field) {
-            $val = trim($data[$field]);
-            if ($val !== '' && ! isset($this->validProvinces[$val])) {
-                $issues[] = [
-                    'field' => $field,
-                    'type' => 'REF_NOT_FOUND',
-                    'detail' => "Kode provinsi \"{$val}\" tidak terdaftar di ref_provinces",
-                ];
+        // KODE_ORIGIN_PROVINSI (3) & KODE_DEST_PROVINSI (7) → ref_provinces
+        foreach ([3 => 'KODE_ORIGIN_PROVINSI', 7 => 'KODE_DEST_PROVINSI'] as $idx => $field) {
+            $val = trim($cols[$idx]);
+            if ($val !== '' && ! isset($this->refProvinces[$val])) {
+                $issues[] = ['field' => $field, 'type' => 'REF_NOT_FOUND', 'detail' => "Kode provinsi \"{$val}\" tidak terdaftar di database"];
             }
         }
 
-        // KODE_ORIGIN_KABUPATEN_KOTA & KODE_DEST_KABUPATEN_KOTA → ref_cities
-        foreach (['KODE_ORIGIN_KABUPATEN_KOTA', 'KODE_DEST_KABUPATEN_KOTA'] as $field) {
-            $val = trim($data[$field]);
-            if ($val !== '' && ! isset($this->validCities[$val])) {
-                $issues[] = [
-                    'field' => $field,
-                    'type' => 'REF_NOT_FOUND',
-                    'detail' => "Kode kabupaten/kota \"{$val}\" tidak terdaftar di ref_cities",
-                ];
+        // KODE_ORIGIN_KABUPATEN_KOTA (5) & KODE_DEST_KABUPATEN_KOTA (9) → ref_cities
+        foreach ([5 => 'KODE_ORIGIN_KABUPATEN_KOTA', 9 => 'KODE_DEST_KABUPATEN_KOTA'] as $idx => $field) {
+            $val = trim($cols[$idx]);
+            if ($val !== '' && ! isset($this->refCities[$val])) {
+                $issues[] = ['field' => $field, 'type' => 'REF_NOT_FOUND', 'detail' => "Kode kab/kota \"{$val}\" tidak terdaftar di database"];
             }
         }
 
-        // KODE_ORIGIN_SIMPUL & KODE_DEST_SIMPUL → ref_transport_nodes
-        foreach (['KODE_ORIGIN_SIMPUL', 'KODE_DEST_SIMPUL'] as $field) {
-            $val = trim($data[$field]);
-            if ($val !== '' && ! isset($this->validNodes[$val])) {
-                $issues[] = [
-                    'field' => $field,
-                    'type' => 'REF_NOT_FOUND',
-                    'detail' => "Kode simpul \"{$val}\" tidak terdaftar di ref_transport_nodes",
-                ];
+        // KODE_ORIGIN_SIMPUL (11) & KODE_DEST_SIMPUL (13) → ref_transport_nodes
+        foreach ([11 => 'KODE_ORIGIN_SIMPUL', 13 => 'KODE_DEST_SIMPUL'] as $idx => $field) {
+            $val = trim($cols[$idx]);
+            if ($val !== '' && ! isset($this->refNodes[$val])) {
+                $issues[] = ['field' => $field, 'type' => 'REF_NOT_FOUND', 'detail' => "Kode simpul \"{$val}\" tidak terdaftar di database"];
             }
         }
 
-        // KODE_MODA → ref_transport_modes
-        $modaVal = trim($data['KODE_MODA']);
-        if ($modaVal !== '' && ! isset($this->validModes[$modaVal])) {
-            $issues[] = [
-                'field' => 'KODE_MODA',
-                'type' => 'REF_NOT_FOUND',
-                'detail' => "Kode moda \"{$modaVal}\" tidak terdaftar di ref_transport_modes",
-            ];
+        // KODE_MODA (15) → ref_transport_modes
+        $modaVal = trim($cols[15]);
+        if ($modaVal !== '' && ! isset($this->refModes[$modaVal])) {
+            $issues[] = ['field' => 'KODE_MODA', 'type' => 'REF_NOT_FOUND', 'detail' => "Kode moda \"{$modaVal}\" tidak terdaftar di database"];
         }
 
         return $issues;
     }
 
     /**
-     * Load all reference codes from database into memory for fast lookup.
-     * Uses flip for O(1) isset() checks instead of in_array().
+     * Load all reference codes into flipped arrays for O(1) isset() lookups.
      */
     private function loadReferenceData(): void
     {
-        $this->validProvinces = array_flip(
-            DB::table('ref_provinces')->pluck('code')->toArray()
-        );
-
-        $this->validCities = array_flip(
-            DB::table('ref_cities')->pluck('code')->toArray()
-        );
-
-        $this->validNodes = array_flip(
-            DB::table('ref_transport_nodes')->pluck('code')->toArray()
-        );
-
-        $this->validModes = array_flip(
-            DB::table('ref_transport_modes')->pluck('code')->toArray()
-        );
+        $this->refProvinces = array_flip(DB::table('ref_provinces')->pluck('code')->toArray());
+        $this->refCities = array_flip(DB::table('ref_cities')->pluck('code')->toArray());
+        $this->refNodes = array_flip(DB::table('ref_transport_nodes')->pluck('code')->toArray());
+        $this->refModes = array_flip(DB::table('ref_transport_modes')->pluck('code')->toArray());
     }
 }

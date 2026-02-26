@@ -85,7 +85,7 @@ class DatasourceController extends Controller
             return response()->json(['is_valid' => false, 'error' => 'File tidak ditemukan di storage.'], 404);
         }
 
-        $result = (new ValidateCsvAction())->execute($path);
+        $result = (new ValidateCsvAction())->execute($path, $job->opsel);
 
         // Update job status based on validation result
         if (! $result['is_valid']) {
