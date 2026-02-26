@@ -1,751 +1,827 @@
 @extends('layout.app')
 
-@section('title', 'Dashboard Utama')
+@section('title', 'Executive Summary')
 
-@section('content')
-    @component('layout.partials.page-header', ['number' => '02', 'title' => 'Dashboard Utama'])
-        {{-- Button removed as requested --}}
-    @endcomponent
-
-    <!-- Overlay Kalender -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white">
-                    <h6 class="card-title mb-0 text-primary">Overlay Kalender Angkutan Lebaran 2026</h6>
-                </div>
-                <div class="card-body overflow-auto">
-                    {{-- Simple Custom Calendar Visualization --}}
-                    <div style="min-width: 800px;">
-                        <h6 class="text-center fw-bold mb-3">MARET 2026</h6>
-                        <div class="d-flex border text-center font-size-12">
-                            <!-- Header Days -->
-                            @php
-                                $days = [
-                                    ['tgl' => 13, 'hari' => 'Jumat', 'h' => 'H-8', 'bg' => ''],
-                                    ['tgl' => 14, 'hari' => 'Sabtu', 'h' => 'H-7', 'bg' => 'bg-danger text-white'],
-                                    ['tgl' => 15, 'hari' => 'Minggu', 'h' => 'H-6', 'bg' => 'bg-danger text-white'],
-                                    ['tgl' => 16, 'hari' => 'Senin', 'h' => 'H-5', 'bg' => 'bg-warning bg-soft'],
-                                    ['tgl' => 17, 'hari' => 'Selasa', 'h' => 'H-4', 'bg' => 'bg-warning bg-soft'],
-                                    [
-                                        'tgl' => 18,
-                                        'hari' => 'Rabu',
-                                        'h' => 'H-3',
-                                        'bg' => 'bg-warning',
-                                    ],
-                                    ['tgl' => 19, 'hari' => 'Kamis', 'h' => 'H-2', 'bg' => 'bg-success text-white'],
-                                    ['tgl' => 20, 'hari' => 'Jumat', 'h' => 'H-1', 'bg' => 'bg-warning'],
-                                    ['tgl' => 21, 'hari' => 'Sabtu', 'h' => 'H', 'bg' => 'bg-success text-white'],
-                                    ['tgl' => 22, 'hari' => 'Minggu', 'h' => 'H+1', 'bg' => 'bg-success text-white'],
-                                    ['tgl' => 23, 'hari' => 'Senin', 'h' => 'H+2', 'bg' => 'bg-warning'],
-                                    ['tgl' => 24, 'hari' => 'Selasa', 'h' => 'H+3', 'bg' => 'bg-warning'],
-                                    ['tgl' => 25, 'hari' => 'Rabu', 'h' => 'H+4', 'bg' => 'bg-warning bg-soft'],
-                                    ['tgl' => 26, 'hari' => 'Kamis', 'h' => 'H+5', 'bg' => 'bg-warning bg-soft'],
-                                    ['tgl' => 27, 'hari' => 'Jumat', 'h' => 'H+6', 'bg' => 'bg-warning bg-soft'],
-                                    ['tgl' => 28, 'hari' => 'Sabtu', 'h' => 'H+7', 'bg' => 'bg-danger text-white'],
-                                    ['tgl' => 29, 'hari' => 'Minggu', 'h' => 'H+8', 'bg' => 'bg-danger text-white'],
-                                    ['tgl' => 30, 'hari' => 'Senin', 'h' => 'H+9', 'bg' => ''],
-                                ];
-                            @endphp
-
-                            @foreach ($days as $d)
-                                <div class="flex-fill border-end" style="width: {{ 100 / 18 }}%;">
-                                    <div class="p-1 bg-light fw-bold text-uppercase" style="font-size: 10px;">
-                                        {{ $d['hari'] }}</div>
-                                    <div class="p-2 fw-bold fs-5 {{ $d['bg'] }} position-relative">
-                                        {{ $d['tgl'] }}
-                                    </div>
-                                    <div class="p-1 small border-top bg-light"
-                                        style="font-size: 10px; {{ isset($d['active']) && $d['active'] ? 'border-bottom: 2px solid #0d6efd !important;' : '' }}">
-                                        {{ $d['h'] }}
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        {{-- Annotations --}}
-                        <div class="position-relative mt-2" style="height: 125px;">
-                            <!-- Row 1: Top Annotations -->
-                            <div class="position-relative w-100" style="height: 35px; margin-top: 10px;">
-                                <!-- Potensi WFA 1 -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (3 / 18) * 100 }}%; width: {{ (2 / 18) * 100 }}%; top: 0;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
-                                    </div>
-                                    <div class="text-center rounded mt-1 shadow-sm text-dark px-2 text-nowrap"
-                                        style="background-color: #fef4e4; padding: 3px 0; font-size: 8px; font-weight: bold; border: 1px solid #f1b44c;">
-                                        POTENSI PENERAPAN WFA</div>
-                                </div>
-
-                                <!-- Nyepi -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (6 / 18) * 100 }}%; width: {{ (1 / 18) * 100 }}%; top: 0;">
-                                    <div style="color: #34c38f; font-size: 10px; line-height: 0.8; margin-top: -2px;">
-                                        &#8595;</div>
-                                    <div class="text-center bg-success text-white rounded shadow-sm px-2 text-nowrap"
-                                        style="padding: 3px 0; font-size: 8px; font-weight: bold;">HARI RAYA NYEPI</div>
-                                </div>
-
-                                <!-- Hari Raya Lebaran -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (8 / 18) * 100 }}%; width: {{ (2 / 18) * 100 }}%; top: 0;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #34c38f; border-left: 1.5px solid #34c38f; border-right: 1.5px solid #34c38f; height: 6px;">
-                                    </div>
-                                    <div class="text-center bg-success text-white rounded mt-1 shadow-sm px-2 text-nowrap"
-                                        style="padding: 3px 0; font-size: 8px; font-weight: bold;">HARI RAYA LEBARAN</div>
-                                </div>
-
-                                <!-- Potensi WFA 2 -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (12 / 18) * 100 }}%; width: {{ (3 / 18) * 100 }}%; top: 0;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
-                                    </div>
-                                    <div class="text-center rounded mt-1 shadow-sm text-dark px-2 text-nowrap"
-                                        style="background-color: #fef4e4; padding: 3px 0; font-size: 8px; font-weight: bold; border: 1px solid #f1b44c;">
-                                        POTENSI PENERAPAN WFA</div>
-                                </div>
-                            </div>
-
-                            <!-- Row 2: Middle Annotations -->
-                            <div class="position-relative w-100" style="height: 35px;">
-                                <!-- Cuti Nyepi -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (5 / 18) * 100 }}%; width: {{ (1 / 18) * 100 }}%; top: 0;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
-                                    </div>
-                                    <div class="text-center bg-warning text-dark rounded shadow-sm mt-1 px-3 text-nowrap"
-                                        style="padding: 3px 0; font-size: 8px; font-weight: bold;">CUTI BERSAMA NYEPI</div>
-                                </div>
-
-                                <!-- Cuti Lebaran -->
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (7 / 18) * 100 }}%; width: {{ (5 / 18) * 100 }}%; top: 0;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #f1b44c; border-left: 1.5px solid #f1b44c; border-right: 1.5px solid #f1b44c; height: 6px;">
-                                    </div>
-                                    <div class="text-center bg-warning text-dark rounded shadow-sm mt-1 px-4 text-nowrap"
-                                        style="padding: 3px 0; font-size: 8px; font-weight: bold;">CUTI BERSAMA LEBARAN
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Row 3: Libur Sekolah & Posko -->
-                            <div class="position-relative w-100" style="height: 45px; margin-top: 5px;">
-                                <!-- Libur Sekolah JABODETABEK -->
-                                <style>
-                                    .hover-libur:hover {
-                                        filter: brightness(0.9);
-                                        cursor: pointer;
-                                    }
-                                </style>
-                                <div class="position-absolute d-flex flex-column align-items-center"
-                                    style="left: {{ (3 / 18) * 100 }}%; width: {{ (12 / 18) * 100 }}%; top: 0;">
-                                    <div class="w-100"
-                                        style="border-top: 1.5px solid #8e959c; border-left: 1.5px solid #8e959c; border-right: 1.5px solid #8e959c; height: 6px;">
-                                    </div>
-                                    <div class="text-center fw-bold rounded hover-libur shadow-sm px-2 text-white"
-                                        style="background-color: #8e959c; font-size: 8px; padding: 2px 0; margin-top: -1px; border: 1px solid #8e959c; white-space: nowrap;">
-                                        LIBUR SEKOLAH JABODETABEK
-                                    </div>
-                                </div>
-
-                                <!-- Posko Bar -->
-                                <div class="position-absolute d-flex flex-column" style="left: 0; width: 100%; top: 25px;">
-                                    <div class="w-100"
-                                        style="border-left: 1.5px solid #0d6efd; border-right: 1.5px solid #0d6efd; height: 6px;">
-                                    </div>
-                                    <div class="text-center text-white fw-bold shadow-sm"
-                                        style="background: #2389f4; padding: 5px 0; font-size: 10px; width: 100%; border-radius: 4px; border: 1px solid #0d6efd; margin-top: -1px;">
-                                        PENARIKAN MOBILE POSITIONING DATA DAN PELAKSANAAN POSKO ANGLEB 2026
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Info Cards --}}
-    <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title text-primary mb-3">Latar Belakang MPD</h5>
-                    <hr class="mt-0 mb-3 opacity-25">
-                    <p class="text-muted mb-0 small" style="text-align: justify;">Periode Lebaran
-                        menjadi salah satu momen
-                        dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan
-                        signifikan pergerakan
-                        antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada
-                        tanggal 21 dan 22 Maret
-                        2026 sehingga berhimpitan dengan Hari Raya Nyepi pada tanggal 19 Maret 2026.</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title text-primary mb-3">Metodelogi MPD</h5>
-                    <hr class="mt-0 mb-3 opacity-25">
-                    <p class="text-muted mb-0 small" style="text-align: justify;">Periode Lebaran
-                        menjadi salah satu momen
-                        dengan tingkat mobilitas tinggi di Indonesia, biasanya terjadi lonjakan
-                        signifikan pergerakan
-                        antarkota maupun lokal perkotaan. Lebaran tahun 2026 diperkirakan jatuh pada
-                        tanggal 21 dan 22 Maret
-                        2026 sehingga berhimpitan dengan Hari Raya Nyepi pada tanggal 19 Maret 2026.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4 mt-2">
-        {{-- Left Column: Stats --}}
-        <div class="col-xl-4 d-flex flex-column gap-4">
-            {{-- Total Orang dan Pergerakan --}}
-            <div class="card shadow-sm mb-0">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Total Pergerakan (Aktual)</h5>
-                </div>
-                <div class="card-body pb-4">
-                    <p class="mb-2 text-muted fw-medium small">Total Akumulasi (13-30 Mar)</p>
-                    <div class="mb-3">
-                        <h2 class="mb-0 fw-bold text-primary display-6">
-                            {{ number_format($total_real, 0, ',', '.') }} <span
-                                class="fs-6 text-muted fw-normal">Pergerakan</span></h2>
-                        <small class="text-muted">Target Forecast:
-                            {{ number_format($total_forecast, 0, ',', '.') }}</small>
-                    </div>
-                    @if (isset($total_orang_real) && $total_orang_real > 0)
-                        <div class="mb-3 pt-2 border-top">
-                            <h4 class="mb-0 fw-bold text-info">
-                                {{ number_format($total_orang_real, 0, ',', '.') }} <span
-                                    class="fs-6 text-muted fw-normal">Unique Subscriber</span></h4>
-                            <small class="text-muted">Forecast:
-                                {{ number_format($total_orang_forecast ?? 0, 0, ',', '.') }}</small>
-                        </div>
-                    @endif
-                    <div class="alert alert-success bg-success-subtle text-success border-0 mb-0 py-2 px-3">
-                        <div class="d-flex align-items-center">
-                            <i class="mdi mdi-check-circle-outline me-2 fs-5"></i>
-                            <span class="small fst-italic">{!! strip_tags($analysis['general']) !!}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Perbandingan Pergerakan --}}
-            <div class="card shadow-sm mb-0 flex-grow-1">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Perbandingan Pergerakan Dengan
-                        Tahun Lalu</h5>
-                </div>
-                <div class="card-body">
-                    <p class="mb-4 fw-bold small text-uppercase text-muted">Perbandingan Pergerakan</p>
-
-                    @php
-                        $maxValue = max($total_real, $total_forecast);
-                        $widthReal = $maxValue > 0 ? ($total_real / $maxValue) * 100 : 0;
-                        $widthForecast = $maxValue > 0 ? ($total_forecast / $maxValue) * 100 : 0;
-                    @endphp
-
-                    {{-- Horizontal Bar: Forecast (Blue) --}}
-                    <div class="mb-4">
-                        <div class="d-flex align-items-center mb-1">
-                            <div class="flex-grow-1 bg-light rounded-pill" style="height: 25px; overflow: hidden;">
-                                <div class="bg-primary h-100 d-flex align-items-center justify-content-end pe-2 text-white fw-bold small"
-                                    style="width: {{ $widthForecast }}%;">
-                                </div>
-                            </div>
-                            <div class="ms-3 fw-bold text-primary text-end" style="width: 100px;">
-                                {{ number_format($total_forecast, 0, ',', '.') }}</div>
-                        </div>
-                        <small class="text-muted d-block ms-1" style="font-size: 11px;">Target /
-                            Forecast</small>
-                    </div>
-
-                    {{-- Horizontal Bar: Real (Yellow) --}}
-                    <div class="mb-4">
-                        <div class="d-flex align-items-center mb-1">
-                            <div class="flex-grow-1 bg-light rounded-pill" style="height: 25px; overflow: hidden;">
-                                <div class="bg-warning h-100 d-flex align-items-center justify-content-end pe-2 text-white fw-bold small"
-                                    style="width: {{ $widthReal }}%;">
-                                </div>
-                            </div>
-                            <div class="ms-3 fw-bold text-warning text-end" style="width: 100px;">
-                                {{ number_format($total_real, 0, ',', '.') }}</div>
-                        </div>
-                        <small class="text-muted d-block ms-1" style="font-size: 11px;">Aktual
-                            (Real)</small>
-                    </div>
-
-                    <div class="mt-auto">
-                        <span
-                            class="badge {{ $persen_capaian >= 100 ? 'bg-success-subtle text-success' : 'bg-success-subtle text-success' }} fs-5 fw-bold px-3 py-2">
-                            +{{ number_format($persen_capaian - 100, 1) }}%
-                        </span>
-                        <span class="text-muted ms-2 small">dari target forecast</span>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-        {{-- Right Column: Chart per OPSEL --}}
-        <div class="col-xl-8">
-            <div class="card h-100 shadow-sm">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Tren Jumlah Orang dan Pergerakan
-                        per OPSEL</h5>
-                </div>
-                <div class="card-body d-flex flex-column">
-                    <div class="flex-grow-1 d-flex align-items-center justify-content-center">
-                        <div id="chart-opsel" class="w-100" style="height: 380px;"></div>
-                    </div>
-
-                    <div
-                        class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start rounded-3">
-                        <i class="mdi mdi-information-outline fs-4 mt-1"></i>
-                        <div>
-                            <h6 class="alert-heading fw-bold mb-1 text-info font-size-14">Analisis
-                                Trend Orang</h6>
-                            <p class="mb-0 small" style="line-height: 1.5;">{!! $analysis['opsel'] !!}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Bottom Chart: Per Moda --}}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                    <h5 class="card-title mb-0 text-primary fw-bold">Tren Pergerakan Harian per Moda
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {{-- Chart --}}
-                    <div id="chart-moda" class="w-100" style="height: 400px;"></div>
-                    <p class="text-center fw-bold mt-2 text-muted small fst-italic">Grafik menunjukkan
-                        tren pergerakan
-                        harian untuk setiap moda transportasi (13 Mar - 30 Mar 2026)</p>
-
-
-                    <div
-                        class="alert alert-info bg-info-subtle text-info border-0 mt-3 mb-0 d-flex gap-3 align-items-start rounded-3">
-                        <i class="mdi mdi-information-outline fs-4 mt-1"></i>
-                        <div>
-                            <h6 class="alert-heading fw-bold mb-1 text-info font-size-14">Analisis Moda
-                                Transportasi</h6>
-                            <p class="mb-0 small" style="line-height: 1.5;">{!! $analysis['moda'] !!}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-@endsection
-
-@push('styles')
+@push('css')
     <style>
-        /* CSS for Monthly Grid Calendar */
-        .calendar-grid-table th,
-        .calendar-grid-table td {
-            border: 1px solid #ced4da;
-            vertical-align: top;
+        .page-header-container {
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #1a3353;
         }
 
-        .calendar-grid-table th {
-            text-align: center;
-            padding: 8px;
-            font-size: 13px;
-            background-color: #f8f9fa;
+        .bg-navy {
+            background-color: #1e2d4a !important;
+            color: white;
         }
 
-        .calendar-grid-table td {
-            padding: 10px;
-            width: 14.28%;
-            font-size: 13px;
+        .bg-amber {
+            background-color: #f59e0b !important;
+            color: white;
         }
 
-        .calendar-date-header {
-            font-weight: 700;
-            text-align: center;
-            margin-bottom: 8px;
-            font-size: 14px;
+        .bg-light-blue {
+            background-color: #e2e8f0;
         }
 
-        .calendar-task-list {
-            padding-left: 20px;
-            margin-bottom: 0;
-            color: #495057;
+        /* Matches reference image light blue sections */
+        .text-navy {
+            color: #1e2d4a !important;
         }
 
-        .calendar-task-list li {
-            margin-bottom: 4px;
+        .card-number-badge {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #1e2d4a;
+            border-right: 2px solid #cbd5e1;
+            padding-right: 12px;
+            margin-right: 12px;
         }
 
-        .calendar-task-list li:last-child {
-            margin-bottom: 0;
+        .section-box {
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: inset 0 0 0 1px #e2e8f0;
         }
 
-        /* Custom Background Colors */
-        .bg-empty-day {
-            background-color: #e9ecef;
-            opacity: 0.5;
+        .kpi-card {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .bg-beta-ready {
-            background-color: #ffebd6;
-            /* Light orange/yellow */
-        }
-
-        .bg-posko-period {
-            background-color: #e0f2f1;
-            /* Light teal/cyan */
-        }
-
-        .bg-deliverable {
-            background-color: #ffebd6;
-            /* Match the Beta Ready color for emphasis */
-        }
-
-        /* Ensure table is responsive */
-        .table-responsive-xl {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .min-w-1000 {
-            min-width: 1000px;
-        }
-
-        /* Horizontal Calendar Timeline */
-        .timeline-calendar {
-            width: 100%;
-            overflow-x: auto;
-            padding-bottom: 20px;
-        }
-
-        .timeline-wrapper {
-            min-width: 900px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .timeline-grid {
-            display: grid;
-            grid-template-columns: repeat(18, 1fr);
-            /* 18 days: 13 to 30 Mar */
-            text-align: center;
-        }
-
-        .timeline-day-header {
-            font-size: 10px;
-            font-weight: 700;
+        .kpi-title {
+            font-size: 0.85rem;
+            font-weight: 600;
             text-transform: uppercase;
-            color: #495057;
-            padding: 5px 0;
-            background-color: #f1f5f7;
-            border: 1px solid #fff;
+            margin-bottom: 5px;
+            opacity: 0.9;
+            text-align: center;
         }
 
-        .timeline-date-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #fff;
-            padding: 10px 0;
-            color: #fff;
-            font-weight: 700;
-            font-size: 18px;
-            height: 60px;
+        .kpi-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 0;
         }
 
-        /* Date Colors based on mockup */
-        .date-bg-gray {
-            background-color: #fff;
-            border: 1px solid #e9ecef;
-            color: #495057;
+        .kpi-subtitle {
+            font-size: 0.75rem;
+            text-align: center;
+            opacity: 0.8;
         }
 
-        .date-bg-red {
-            background-color: #f46a6a;
-        }
-
-        .date-bg-yellow {
-            background-color: #f1b44c;
-        }
-
-        .date-bg-green {
-            background-color: #34c38f;
-        }
-
-        .timeline-h-label {
-            font-size: 10px;
-            color: #74788d;
-            background-color: #e9ecef;
-            padding: 4px 0;
-            border: 1px solid #fff;
-        }
-
-        /* Event Bars Area */
-        .event-bars-container {
-            display: grid;
-            grid-template-columns: repeat(18, 1fr);
-            position: relative;
-            gap: 2px;
+        .kpi-value-box {
+            background-color: #ffe4c4;
+            color: #000;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #fcd34d;
+            font-weight: bold;
+            text-align: center;
             margin-top: 10px;
         }
 
-        .event-bar {
+        .sticky-filter {
+            position: sticky;
+            top: 70px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .narrative-box {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3b82f6;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #334155;
+        }
+
+        .skeleton-block {
+            height: 200px;
+            background-color: #e2e8f0;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            border-radius: 8px;
+        }
+
+        .skeleton-text {
+            height: 20px;
+            background-color: #e2e8f0;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
             border-radius: 4px;
-            padding: 4px 0;
-            font-size: 9px;
-            font-weight: 700;
-            text-align: center;
-            text-transform: uppercase;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid transparent;
+            margin-bottom: 10px;
         }
 
-        /* Event Colors */
-        .event-wfa {
-            background-color: #fef0d7;
-            color: #c0852e;
-            border-top: 2px solid #f1b44c;
-        }
+        @keyframes pulse {
 
-        .event-nyepi-cuti {
-            background-color: #f1b44c;
-            color: #fff;
-        }
+            0%,
+            100% {
+                opacity: 1;
+            }
 
-        .event-nyepi-hari {
-            background-color: #34c38f;
-            color: #fff;
-        }
-
-        .event-lebaran-cuti {
-            background-color: #f1b44c;
-            color: #fff;
-            border-top: 2px solid #34c38f;
-        }
-
-        .event-lebaran-hari {
-            background-color: #34c38f;
-            color: #fff;
-            border-top: 2px solid #34c38f;
-        }
-
-        .event-sekolah {
-            background-color: #e2e3e5;
-            color: #383d41;
-            border-left: 2px solid #6c757d;
-            border-right: 2px solid #6c757d;
-            border-radius: 0;
-        }
-
-        .event-posko {
-            background-color: #2ab57d;
-            /* BKT Blue/Teal */
-            color: #ffffff;
-            background-color: #3b82f6;
-            /* Blueish */
-            border-radius: 4px;
-        }
-
-        .timeline-grid-lines {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            display: grid;
-            grid-template-columns: repeat(18, 1fr);
-            pointer-events: none;
-        }
-
-        .timeline-grid-lines>div {
-            border-right: 1px dashed #eff2f7;
-        }
-
-        .timeline-grid-lines>div:last-child {
-            border-right: none;
-        }
-
-        /* Grid Spans for Events */
-        .col-span-1 {
-            grid-column: span 1;
-        }
-
-        .col-span-2 {
-            grid-column: span 2;
-        }
-
-        .col-span-3 {
-            grid-column: span 3;
-        }
-
-        .col-span-4 {
-            grid-column: span 4;
-        }
-
-        .col-span-5 {
-            grid-column: span 5;
-        }
-
-        .col-span-18 {
-            grid-column: span 18;
-        }
-
-        .start-col-4 {
-            grid-column-start: 4;
-        }
-
-        .start-col-6 {
-            grid-column-start: 6;
-        }
-
-        .start-col-7 {
-            grid-column-start: 7;
-        }
-
-        .start-col-8 {
-            grid-column-start: 8;
-        }
-
-        .start-col-13 {
-            grid-column-start: 13;
+            50% {
+                opacity: .5;
+            }
         }
     </style>
 @endpush
 
 @section('content')
 
+    <!-- Layout Container -->
+    <div class="container-fluid py-4">
+
+        <!-- Sticky Filter Bar -->
+        <div class="sticky-filter d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex flex-column">
+                    <label class="small fw-bold text-muted mb-1">Tipe Data</label>
+                    <div class="btn-group" role="group">
+                        <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_real" value="real"
+                            autocomplete="off" checked>
+                        <label class="btn btn-outline-primary btn-sm" for="dt_real">Realisasi</label>
+                        <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_fore"
+                            value="forecast" autocomplete="off">
+                        <label class="btn btn-outline-primary btn-sm" for="dt_fore">Prakiraan</label>
+                    </div>
+                </div>
+                <div class="d-flex flex-column ms-3">
+                    <label class="small fw-bold text-muted mb-1">Operator</label>
+                    <select class="form-select form-select-sm" id="opselSelect" style="width: auto; min-width: 150px;">
+                        <option value="">Semua (Agregat)</option>
+                        <option value="TSEL">Telkomsel</option>
+                        <option value="IOH">Indosat</option>
+                        <option value="XL">XL Axiata</option>
+                    </select>
+                </div>
+            </div>
+            <div class="d-flex align-items-center bg-light px-3 py-2 rounded border">
+                <i class="bx bx-calendar fs-4 me-2 text-primary"></i>
+                <div class="fw-bold text-navy">Periode: 13 Maret 2026 – 30 Maret 2026</div>
+            </div>
+        </div>
+
+        <div id="contentSkeletons">
+            @for ($i = 0; $i < 4; $i++)
+                <div class="section-box mb-4">
+                    <div class="skeleton-text w-25 mb-3"></div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="skeleton-block"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="skeleton-block"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="skeleton-block"></div>
+                        </div>
+                    </div>
+                </div>
+            @endfor
+        </div>
+
+        <div id="contentData" style="display: none;">
+            <!-- BLOCK 1: Latar Belakang -->
+            <div class="section-box d-flex align-items-start">
+                <span class="card-number-badge">01</span>
+                <div>
+                    <h5 class="fw-bold text-navy mb-3">Latar Belakang</h5>
+                    <div class="narrative-box border-0 shadow-sm">
+                        Pemantauan pergerakan masyarakat pada periode Lebaran (Angleb) 2026 dilakukan melalui pemanfaatan
+                        Mobile Positioning Data (MPD) yang diperoleh dari tiga operator seluler: Telkomsel, Indosat Ooredoo
+                        Hutchison (IOH), dan XL Axiata/Smartfren. Analisis ini mendukung pengambilan kebijakan berbasis data
+                        oleh Kementerian Perhubungan dalam rangka kesiapan infrastruktur dan transportasi.
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOCK 2: Definisi Metrik -->
+            <div class="section-box d-flex align-items-start">
+                <span class="card-number-badge">02</span>
+                <div class="w-100">
+                    <h5 class="fw-bold text-navy mb-3">Definisi Metrik</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 kpi-card">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-navy"><i class="bx bx-run me-2"></i>Jumlah Pergerakan (Movement
+                                        count)</h6>
+                                    <p class="small text-muted mb-0">Total frekuensi perjalanan yang terjadi per hari. Satu
+                                        orang dapat dihitung lebih dari satu kali jika melakukan lebih dari satu perjalanan.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 kpi-card">
+                                <div class="card-body">
+                                    <h6 class="fw-bold text-navy"><i class="bx bx-user me-2"></i>Jumlah Unique Subscriber
+                                    </h6>
+                                    <p class="small text-muted mb-0">Jumlah individu unik yang melakukan perjalanan dihitung
+                                        satu kali meskipun melakukan perjalanan berkali-kali sepanjang periode.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOCK 3 & 4: Nasional & Puncak -->
+            <div class="section-box">
+                <div class="d-flex align-items-start mb-4">
+                    <span class="card-number-badge">03</span>
+                    <h5 class="fw-bold text-navy m-0 mt-1">Hasil Pengolahan Data Nasional</h5>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card kpi-card bg-navy">
+                            <div class="card-body p-3">
+                                <div class="kpi-title">Jumlah Pergerakan</div>
+                                <div class="kpi-value-box fs-4 font-monospace" id="val_nas_pergerakan">-</div>
+                                <div class="kpi-subtitle mt-2">Pergerakan</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card kpi-card bg-amber">
+                            <div class="card-body p-3">
+                                <div class="kpi-title">Rata-Rata Koefisien</div>
+                                <div class="kpi-value-box text-white bg-transparent border-white fs-3 font-monospace"
+                                    id="val_nas_koefisien">-</div>
+                                <div class="kpi-subtitle mt-2 text-white">Perjalanan per orang</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card kpi-card bg-navy">
+                            <div class="card-body p-3">
+                                <div class="kpi-title">Orang Melakukan Perjalanan</div>
+                                <div class="d-flex gap-2 align-items-center mt-2">
+                                    <div class="bg-light text-navy fw-bold px-2 py-1 rounded small text-center"
+                                        style="width: 40%; font-size: 0.65rem;">Jumlah Unik<br />Subscriber</div>
+                                    <div class="kpi-value-box flex-grow-1 m-0 fs-4 font-monospace" id="val_nas_orang">-
+                                    </div>
+                                </div>
+                                <div class="kpi-subtitle mt-2">Masyarakat</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 row">
+                    <div class="col-md-12">
+                        <div class="narrative-box" id="nar_nas_pergerakan">Memuat...</div>
+                    </div>
+                </div>
+
+                <!-- Block 4 Chart -->
+                <div class="d-flex align-items-start mt-4 mb-3">
+                    <span class="card-number-badge">04</span>
+                    <h5 class="fw-bold text-navy m-0 mt-1">Puncak Pergerakan (Daily Trend)</h5>
+                </div>
+                <div class="card shadow-sm border-0 mb-3">
+                    <div class="card-body p-0">
+                        <div id="chart_nas_trend" style="height: 350px;"></div>
+                    </div>
+                </div>
+                <div class="row" id="peak_cards_container">
+                    <!-- populated via js -->
+                </div>
+            </div>
+
+            <!-- BLOCK 5 & 6: Unique Subscriber & Kontribusi Opsel -->
+            <div class="row g-4 mb-4">
+                <div class="col-xl-6">
+                    <div class="section-box h-100 mb-0">
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="card-number-badge">05</span>
+                            <h5 class="fw-bold text-navy m-0 mt-1">Unique Subscriber Nasional</h5>
+                        </div>
+                        <div id="chart_nas_orang_trend" style="height: 250px;"></div>
+                        <div class="narrative-box mt-3" id="nar_kstmp">Memuat...</div>
+                    </div>
+                </div>
+                <div class="col-xl-6">
+                    <div class="section-box h-100 mb-0">
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="card-number-badge">06</span>
+                            <h5 class="fw-bold text-navy m-0 mt-1">Kontribusi per Opsel</h5>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <div id="chart_opsel_pergerakan" style="height: 220px;"></div>
+                            </div>
+                            <div class="col-6">
+                                <div id="chart_opsel_orang" style="height: 220px;"></div>
+                            </div>
+                        </div>
+                        <div class="narrative-box mt-3" id="nar_nas_opsel">Memuat...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOCK 8 & 9: Real vs Forecast & YoY -->
+            <div class="row g-4 mb-4">
+                <div class="col-xl-8">
+                    <div class="section-box h-100 mb-0">
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="card-number-badge">08</span>
+                            <h5 class="fw-bold text-navy m-0 mt-1">Perbandingan Survei vs Realisasi</h5>
+                        </div>
+                        <div id="chart_forecast_comparison" style="height: 300px;"></div>
+                    </div>
+                </div>
+                <div class="col-xl-4">
+                    <div class="section-box h-100 mb-0">
+                        <div class="d-flex align-items-start mb-3">
+                            <span class="card-number-badge">09</span>
+                            <h5 class="fw-bold text-navy m-0 mt-1">Perbandingan Tahun Sebelumnya</h5>
+                        </div>
+                        <div id="chart_yoy" style="height: 220px;"></div>
+                        <div class="narrative-box mt-3 fs-6" id="nar_yoy">Memuat...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOCK 10 & 11: Jabodetabek -->
+            <div class="section-box border border-info" style="background-color: #f8fafc;">
+                <div class="d-flex align-items-start mb-4">
+                    <div class="card-number-badge" style="border-right-color: #bae6fd;">10</div>
+                    <h5 class="fw-bold text-navy m-0 mt-1">Hasil Pengolahan Intra dan Inter Jabodetabek</h5>
+                </div>
+
+                <div class="row g-4">
+                    <!-- INTRA -->
+                    <div class="col-xl-6 border-end">
+                        <h6 class="text-center fw-bold text-navy mb-3">INTRA JABODETABEK</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-12 col-md-4">
+                                <div class="card kpi-card bg-navy h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <div class="kpi-title" style="font-size: 0.7rem;">Jumlah Pergerakan</div>
+                                        <div class="kpi-value-box p-1 fs-6" id="val_intra_pergerakan">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="card kpi-card bg-amber h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <div class="kpi-title text-white" style="font-size: 0.7rem;">Rata-rata Koef.</div>
+                                        <div class="kpi-value-box text-white bg-transparent border-white p-1 fs-5"
+                                            id="val_intra_koef">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="card kpi-card bg-navy h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <div class="kpi-title" style="font-size: 0.7rem;">Jumlah Orang</div>
+                                        <div class="kpi-value-box p-1 fs-6" id="val_intra_orang">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="narrative-box" id="nar_intra">Memuat...</div>
+                        <div class="d-flex align-items-start mt-4 mb-2">
+                            <span class="card-number-badge" style="font-size: 0.9rem;">11</span>
+                            <span class="fw-bold text-navy">Trend Ordal Intra</span>
+                        </div>
+                        <div id="chart_intra_trend" style="height: 200px;"></div>
+                    </div>
+
+                    <!-- INTER -->
+                    <div class="col-xl-6">
+                        <h6 class="text-center fw-bold text-navy mb-3">INTER JABODETABEK</h6>
+                        <div class="row g-2 mb-3">
+                            <div class="col-12 col-md-4">
+                                <div class="card kpi-card bg-navy h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <div class="kpi-title" style="font-size: 0.7rem;">Jumlah Pergerakan</div>
+                                        <div class="kpi-value-box p-1 fs-6" id="val_inter_pergerakan">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="card kpi-card bg-amber h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <div class="kpi-title text-white" style="font-size: 0.7rem;">Rata-rata Koef.</div>
+                                        <div class="kpi-value-box text-white bg-transparent border-white p-1 fs-5"
+                                            id="val_inter_koef">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="card kpi-card bg-navy h-100">
+                                    <div class="card-body p-2 text-center">
+                                        <div class="kpi-title" style="font-size: 0.7rem;">Jumlah Orang</div>
+                                        <div class="kpi-value-box p-1 fs-6" id="val_inter_orang">-</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="narrative-box" id="nar_inter">Memuat...</div>
+                        <div class="d-flex align-items-start mt-4 mb-2">
+                            <span class="card-number-badge" style="font-size: 0.9rem;">11</span>
+                            <span class="fw-bold text-navy">Trend Ordal Inter</span>
+                        </div>
+                        <div id="chart_inter_trend" style="height: 200px;"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 @endsection
 
 @push('js')
     <script src="https://code.highcharts.com/highcharts.js"></script>
-    <script src="https://code.highcharts.com/modules/exporting.js"></script>
-    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const chartOpsel = @json($chart_opsel);
-            const chartModa = @json($chart_moda);
+        const formatJuta = (num) => {
+            if (num >= 1000000) return (num / 1000000).toLocaleString('id-ID', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }) + ' Juta';
+            return num.toLocaleString('id-ID');
+        };
 
-            // Chart 1: Opsel (Column: Real vs Forecast)
-            Highcharts.chart('chart-opsel', {
+        const formatNumber = (num) => num.toLocaleString('id-ID');
+
+        const formatDateShort = (dtStr) => {
+            const dt = new Date(dtStr);
+            const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+            return days[dt.getDay()] + ' ' + dt.getDate() + ' ' + months[dt.getMonth()];
+        };
+
+        $(document).ready(function() {
+            $('.filter-toggle, #opselSelect').on('change', fetchSummaryData);
+            fetchSummaryData(); // initial load
+        });
+
+        function fetchSummaryData() {
+            $('#contentData').hide();
+            $('#contentSkeletons').show();
+
+            const dataType = $('input[name="data_type"]:checked').val();
+            const opsel = $('#opselSelect').val();
+
+            $.ajax({
+                url: '{{ route('executive.summary.data') }}',
+                data: {
+                    data_type: dataType,
+                    opsel: opsel
+                },
+                success: function(res) {
+                    $('#contentSkeletons').hide();
+                    $('#contentData').fadeIn(300);
+                    renderAllBlocks(res);
+                },
+                error: function(err) {
+                    console.error("Failed to load Executive Summary data.");
+                    $('#contentSkeletons').hide();
+                }
+            });
+        }
+
+        function renderAllBlocks(data) {
+            // Block 3: Nasional KPIs
+            $('#val_nas_pergerakan').text(formatJuta(data.nasional.pergerakan));
+            $('#val_nas_orang').text(formatJuta(data.nasional.orang));
+            $('#val_nas_koefisien').text(data.nasional.koefisien.toLocaleString('id-ID', {
+                minimumFractionDigits: 2
+            }));
+            $('#nar_nas_pergerakan').html(data.nasional.narrative);
+            $('#nar_kstmp').html(data.kstmp);
+
+            // Block 4: Peak Cards
+            let peakHtml = '';
+            if (data.peak.list) {
+                data.peak.list.forEach((p, idx) => {
+                    const bg = idx === 0 ? 'bg-primary text-white' : 'bg-light';
+                    peakHtml += `<div class="col-md-4">
+                        <div class="card border-0 mb-2 ${bg}">
+                            <div class="card-body p-3 text-center">
+                                <div class="fw-bold">${formatDateShort(p.tanggal)}</div>
+                                <div class="fs-5 fw-bold">${formatNumber(p.total)}</div>
+                                <small>${p.pct}% dari total pergerakan</small>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
+            $('#peak_cards_container').html(peakHtml);
+
+            // Block 4: Peak Trend Chart
+            const trendPergerakan = data.trend_pergerakan || {};
+            const tpCats = Object.keys(trendPergerakan).map(formatDateShort);
+            const tpData = Object.values(trendPergerakan);
+            Highcharts.chart('chart_nas_trend', {
+                chart: {
+                    type: 'areaspline'
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    categories: tpCats
+                },
+                yAxis: {
+                    title: {
+                        text: null
+                    },
+                    labels: {
+                        format: '{value:,.0f}'
+                    }
+                },
+                plotOptions: {
+                    areaspline: {
+                        fillOpacity: 0.1,
+                        color: '#f59e0b',
+                        lineWidth: 3
+                    }
+                },
+                series: [{
+                    name: 'Total Pergerakan',
+                    data: tpData
+                }],
+                legend: {
+                    enabled: false
+                },
+                credits: {
+                    enabled: false
+                }
+            });
+
+            // Block 5: Orang Trend 
+            const trendOrang = data.trend_orang || {};
+            Highcharts.chart('chart_nas_orang_trend', {
+                chart: {
+                    type: 'spline'
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    categories: Object.keys(trendOrang).map(formatDateShort)
+                },
+                yAxis: {
+                    title: {
+                        text: null
+                    }
+                },
+                plotOptions: {
+                    spline: {
+                        color: '#1e2d4a',
+                        lineWidth: 3
+                    }
+                },
+                series: [{
+                    name: 'Unique Subscriber',
+                    data: Object.values(trendOrang)
+                }],
+                legend: {
+                    enabled: false
+                },
+                credits: {
+                    enabled: false
+                }
+            });
+
+            // Block 6: Opsel Donut
+            const opselRaw = data.opsel;
+            $('#nar_nas_opsel').html(opselRaw.narrative);
+
+            const pData = Object.keys(opselRaw.pergerakan || {}).map(k => ({
+                name: k,
+                y: opselRaw.pergerakan[k].pct
+            }));
+            Highcharts.chart('chart_opsel_pergerakan', {
+                chart: {
+                    type: 'pie'
+                },
+                title: {
+                    text: 'Pergerakan'
+                },
+                plotOptions: {
+                    pie: {
+                        innerSize: '60%',
+                        dataLabels: {
+                            enabled: true,
+                            format: '{point.name}: {point.y}%'
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Share Opsel',
+                    data: pData
+                }],
+                credits: {
+                    enabled: false
+                }
+            });
+
+            const oData = Object.keys(opselRaw.orang || {}).map(k => ({
+                name: k,
+                y: opselRaw.orang[k].pct
+            }));
+            Highcharts.chart('chart_opsel_orang', {
+                chart: {
+                    type: 'pie'
+                },
+                title: {
+                    text: 'Orang'
+                },
+                plotOptions: {
+                    pie: {
+                        innerSize: '60%',
+                        dataLabels: {
+                            enabled: true,
+                            format: '{point.name}: {point.y}%'
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Share Opsel',
+                    data: oData
+                }],
+                credits: {
+                    enabled: false
+                }
+            });
+
+            // Block 8: Forecast vs Real
+            const fc = data.forecast || {};
+            const fcCats = Object.keys(fc).map(formatDateShort);
+            const fcReal = Object.values(fc).map(i => i.real_pct);
+            const fcFore = Object.values(fc).map(i => i.fore_pct);
+            Highcharts.chart('chart_forecast_comparison', {
+                chart: {
+                    type: 'line'
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    categories: fcCats
+                },
+                yAxis: {
+                    title: {
+                        text: 'Persen (%)'
+                    },
+                    labels: {
+                        format: '{value}%'
+                    }
+                },
+                plotOptions: {
+                    line: {
+                        lineWidth: 3,
+                        marker: {
+                            enabled: true
+                        }
+                    }
+                },
+                series: [{
+                        name: 'Hasil Survei Prakiraan',
+                        data: fcFore,
+                        color: '#f59e0b'
+                    },
+                    {
+                        name: 'Realisasi MPD',
+                        data: fcReal,
+                        color: '#1e2d4a'
+                    }
+                ],
+                credits: {
+                    enabled: false
+                }
+            });
+
+            // Block 9: YoY
+            const yoy = data.yoy || {};
+            $('#nar_yoy').html(yoy.narrative);
+            Highcharts.chart('chart_yoy', {
                 chart: {
                     type: 'column'
                 },
                 title: {
-                    text: ''
+                    text: null
                 },
                 xAxis: {
-                    categories: chartOpsel.categories,
-                    crosshair: true
+                    categories: ['MPD 2025 (Prakiraan Baseline)', 'MPD Angleb 2026']
                 },
                 yAxis: {
-                    min: 0,
                     title: {
-                        text: 'Jumlah Pergerakan'
-                    },
-                    labels: {
-                        formatter: function() {
-                            return this.value / 1000 + 'rb';
-                        }
+                        text: null
                     }
-                },
-                tooltip: {
-                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
-                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
-                        '<td style="padding:0"><b>{point.y:,.0f}</b></td></tr>',
-                    footerFormat: '</table>',
-                    shared: true,
-                    useHTML: true
                 },
                 plotOptions: {
                     column: {
-                        pointPadding: 0.1,
-                        borderWidth: 0,
-                        borderRadius: 5
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function() {
+                                return formatNumber(this.y);
+                            }
+                        },
+                        colorByPoint: true,
+                        colors: ['#5c6e8e', '#1e2d4a']
                     }
                 },
-                series: chartOpsel.series,
+                series: [{
+                    name: 'Unique Subscriber',
+                    data: [yoy.previous, yoy.current]
+                }],
+                legend: {
+                    enabled: false
+                },
                 credits: {
                     enabled: false
                 }
             });
 
-            // Chart 2: Moda (Line: Daily Trend)
-            Highcharts.chart('chart-moda', {
+            // Block 10 & 11: Jabo
+            $('#val_intra_pergerakan').text(formatJuta(data.intra.pergerakan));
+            $('#val_intra_orang').text(formatJuta(data.intra.orang));
+            $('#val_intra_koef').text(data.intra.koefisien.toLocaleString('id-ID', {
+                minimumFractionDigits: 2
+            }));
+            $('#nar_intra').html(data.intra.narrative);
+
+            $('#val_inter_pergerakan').text(formatJuta(data.inter.pergerakan));
+            $('#val_inter_orang').text(formatJuta(data.inter.orang));
+            $('#val_inter_koef').text(data.inter.koefisien.toLocaleString('id-ID', {
+                minimumFractionDigits: 2
+            }));
+            $('#nar_inter').html(data.inter.narrative);
+
+            // Jabo Trends
+            const ti = data.trend_intra || {};
+            Highcharts.chart('chart_intra_trend', {
                 chart: {
-                    type: 'spline' // Smoother line
+                    type: 'spline'
                 },
                 title: {
-                    text: ''
+                    text: null
+                },
+                xAxis: {
+                    categories: Object.keys(ti).map(formatDateShort)
                 },
                 yAxis: {
                     title: {
-                        text: 'Jumlah Pergerakan'
-                    },
-                    labels: {
-                        formatter: function() {
-                            return this.value / 1000 + 'rb';
-                        }
+                        text: null
                     }
                 },
-                xAxis: {
-                    categories: chartModa.categories,
-                    accessibility: {
-                        rangeDescription: 'Range: 13 Mar to 30 Mar'
-                    }
-                },
+                series: [{
+                    name: 'Intra',
+                    data: Object.values(ti),
+                    color: '#3b82f6'
+                }],
                 legend: {
-                    layout: 'horizontal',
-                    align: 'center',
-                    verticalAlign: 'bottom'
+                    enabled: false
                 },
-                plotOptions: {
-                    series: {
-                        label: {
-                            connectorAllowed: false
-                        },
-                        marker: {
-                            enabled: true,
-                            radius: 4
-                        }
-                    }
-                },
-                tooltip: {
-                    shared: true,
-                    valueValues: true,
-                    valueDecimals: 0,
-                    valueSuffix: ' pergerakan'
-                },
-                series: chartModa.series,
                 credits: {
                     enabled: false
                 }
             });
-        });
+            const te = data.trend_inter || {};
+            Highcharts.chart('chart_inter_trend', {
+                chart: {
+                    type: 'spline'
+                },
+                title: {
+                    text: null
+                },
+                xAxis: {
+                    categories: Object.keys(te).map(formatDateShort)
+                },
+                yAxis: {
+                    title: {
+                        text: null
+                    }
+                },
+                series: [{
+                    name: 'Inter',
+                    data: Object.values(te),
+                    color: '#3b82f6'
+                }],
+                legend: {
+                    enabled: false
+                },
+                credits: {
+                    enabled: false
+                }
+            });
+        }
     </script>
 @endpush
