@@ -7,7 +7,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet">
     <style>
         .bg-navy {
-            background-color: #1e2d4a !important;
+            background-color: #2a3042 !important;
             color: white !important;
         }
 
@@ -17,7 +17,7 @@
         }
 
         .text-navy {
-            color: #1e2d4a !important;
+            color: #2a3042 !important;
         }
 
         .kpi-card {
@@ -95,7 +95,7 @@
         }
 
         .section-badge {
-            background-color: #1e2d4a;
+            background-color: #2a3042;
             color: white;
             border-radius: 6px;
             padding: 6px 12px;
@@ -492,22 +492,32 @@
                     <div class="row g-5 mb-5">
                         <div class="col-xl-6 position-relative z-1 d-flex flex-column">
                             <div class="row g-3 mb-4 flex-grow-1">
-                                <div class="col-6">
+                                <div class="col-4">
                                     <div class="card kpi-card bg-navy h-100">
                                         <div class="card-body p-3 text-center d-flex flex-column justify-content-center">
                                             <div class="kpi-title text-light" style="font-size: 0.70rem;">Intra Jabo
                                                 (Orang)</div>
-                                            <div class="kpi-value-box text-white p-2 fs-4 font-monospace"
+                                            <div class="kpi-value-box text-white p-2 fs-5 font-monospace"
                                                 id="val_intra_orang">-</div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-4">
                                     <div class="card kpi-card bg-amber h-100">
+                                        <div class="card-body p-3 text-center d-flex flex-column justify-content-center">
+                                            <div class="kpi-title text-light" style="font-size: 0.70rem;">Rata-rata Koef.
+                                            </div>
+                                            <div class="kpi-value-box-amber text-white p-2 fs-4 font-monospace"
+                                                id="val_intra_koefisien">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="card kpi-card bg-navy h-100">
                                         <div class="card-body p-3 text-center d-flex flex-column justify-content-center">
                                             <div class="kpi-title text-light" style="font-size: 0.70rem;">Pergerakan
                                                 (Trip)</div>
-                                            <div class="kpi-value-box-amber text-white p-2 fs-5 font-monospace"
+                                            <div class="kpi-value-box text-white p-2 fs-5 font-monospace"
                                                 id="val_intra_pergerakan">-</div>
                                         </div>
                                     </div>
@@ -518,22 +528,32 @@
 
                         <div class="col-xl-6 d-flex flex-column">
                             <div class="row g-3 mb-4 flex-grow-1">
-                                <div class="col-6">
+                                <div class="col-4">
                                     <div class="card kpi-card bg-navy h-100">
                                         <div class="card-body p-3 text-center d-flex flex-column justify-content-center">
                                             <div class="kpi-title text-light" style="font-size: 0.70rem;">Inter Jabo
                                                 (Orang)</div>
-                                            <div class="kpi-value-box text-white p-2 fs-4 font-monospace"
+                                            <div class="kpi-value-box text-white p-2 fs-5 font-monospace"
                                                 id="val_inter_orang">-</div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-6">
+                                <div class="col-4">
                                     <div class="card kpi-card bg-amber h-100">
+                                        <div class="card-body p-3 text-center d-flex flex-column justify-content-center">
+                                            <div class="kpi-title text-light" style="font-size: 0.70rem;">Rata-rata Koef.
+                                            </div>
+                                            <div class="kpi-value-box-amber text-white p-2 fs-4 font-monospace"
+                                                id="val_inter_koefisien">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="card kpi-card bg-navy h-100">
                                         <div class="card-body p-3 text-center d-flex flex-column justify-content-center">
                                             <div class="kpi-title text-light" style="font-size: 0.70rem;">Pergerakan
                                                 (Trip)</div>
-                                            <div class="kpi-value-box-amber text-white p-2 fs-5 font-monospace"
+                                            <div class="kpi-value-box text-white p-2 fs-5 font-monospace"
                                                 id="val_inter_pergerakan">-</div>
                                         </div>
                                     </div>
@@ -638,7 +658,7 @@
                     style: {
                         fontSize: '13px',
                         fontWeight: 'bold',
-                        color: '#1e2d4a'
+                        color: '#2a3042'
                     }
                 },
                 plotOptions: {
@@ -795,7 +815,7 @@
                 },
                 plotOptions: {
                     spline: {
-                        color: '#1e2d4a',
+                        color: '#2a3042',
                         lineWidth: 4,
                         marker: {
                             enabled: true,
@@ -943,7 +963,7 @@
                             }
                         },
                         colorByPoint: true,
-                        colors: ['#cbd5e1', '#1e2d4a'],
+                        colors: ['#cbd5e1', '#2a3042'],
                         borderRadius: 6,
                         borderWidth: 0
                     }
@@ -968,10 +988,16 @@
             // Block 11: Jabo Variables
             $('#val_intra_pergerakan').text(formatJuta(data.intra.pergerakan));
             $('#val_intra_orang').text(formatJuta(data.intra.orang));
+            $('#val_intra_koefisien').text(data.intra.koefisien.toLocaleString('id-ID', {
+                minimumFractionDigits: 2
+            }));
             $('#nar_intra').html(data.intra.narrative);
 
             $('#val_inter_pergerakan').text(formatJuta(data.inter.pergerakan));
             $('#val_inter_orang').text(formatJuta(data.inter.orang));
+            $('#val_inter_koefisien').text(data.inter.koefisien.toLocaleString('id-ID', {
+                minimumFractionDigits: 2
+            }));
             $('#nar_inter').html(data.inter.narrative);
 
             // Jabo Trends
@@ -985,7 +1011,7 @@
                     text: 'Intra Jabodetabek',
                     style: {
                         fontSize: '13px',
-                        color: '#1e2d4a'
+                        color: '#2a3042'
                     }
                 },
                 xAxis: {
@@ -1038,7 +1064,7 @@
                     text: 'Inter Jabodetabek',
                     style: {
                         fontSize: '13px',
-                        color: '#1e2d4a'
+                        color: '#2a3042'
                     }
                 },
                 xAxis: {
