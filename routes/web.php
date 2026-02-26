@@ -127,6 +127,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('datasource')->name('datasource.')->group(function () {
         Route::get('/upload', [DatasourceController::class, 'upload'])->name('upload');
         Route::post('/upload', [DatasourceController::class, 'storeUpload'])->name('store');
+        Route::post('/upload/validate', [DatasourceController::class, 'validateCsv'])->name('validate');
         Route::post('/upload/process-chunk', [DatasourceController::class, 'processChunk'])->name('process-chunk');
         Route::get('/history', [DatasourceController::class, 'history'])->name('history');
         Route::post('/history/{id}/delete-chunk', [DatasourceController::class, 'destroyChunk'])->name('destroy-chunk');

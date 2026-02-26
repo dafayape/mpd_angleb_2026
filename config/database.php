@@ -10,11 +10,11 @@ return [
 
         'laravel11_mysql' => [
             'driver' => 'mysql',
-            'host' => 'localhost',
-            'port' => '3307',
-            'database' => 'db_mpd',
-            'username' => 'root',
-            'password' => '36f87268eb95c41f',
+            'host' => env('LARAVEL11_DB_HOST', 'localhost'),
+            'port' => env('LARAVEL11_DB_PORT', '3307'),
+            'database' => env('LARAVEL11_DB_DATABASE', 'db_mpd'),
+            'username' => env('LARAVEL11_DB_USERNAME', 'root'),
+            'password' => env('LARAVEL11_DB_PASSWORD', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
             'prefix' => '',

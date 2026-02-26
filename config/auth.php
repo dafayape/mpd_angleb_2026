@@ -112,4 +112,16 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Password Minimum Length
+    |--------------------------------------------------------------------------
+    |
+    | This value defines the minimum length required for user passwords.
+    | You may adjust this value based on your security requirements.
+    |
+    */
+
+    'password_min_length' => env('AUTH_PASSWORD_MIN_LENGTH', 6),
+
 ];

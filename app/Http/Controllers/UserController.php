@@ -42,7 +42,7 @@ class UserController extends Controller
             'name'     => 'required|string|max:100',
             'email'    => 'required|email|unique:users,email',
             'role'     => 'required|in:admin,operator,tamu',
-            'password' => 'required|min:6|confirmed',
+            'password' => 'required|min:' . config('auth.password_min_length', 6) . '|confirmed',
         ], [
             'name.required'      => 'Nama wajib diisi.',
             'email.required'     => 'Email wajib diisi.',
@@ -50,7 +50,7 @@ class UserController extends Controller
             'email.unique'       => 'Email sudah terdaftar.',
             'role.required'      => 'Pilih peran pengguna.',
             'password.required'  => 'Password wajib diisi.',
-            'password.min'       => 'Password minimal 6 karakter.',
+            'password.min'       => 'Password minimal ' . config('auth.password_min_length', 6) . ' karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
@@ -116,7 +116,7 @@ class UserController extends Controller
 
             $rules = [
                 'name'     => 'required|string|max:100',
-                'password' => 'nullable|min:6|confirmed',
+                'password' => 'nullable|min:' . config('auth.password_min_length', 6) . '|confirmed',
             ];
 
             if ($isAdmin && !$isSelf) {

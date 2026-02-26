@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Mpd\ValidateCsvAction;
 use App\Models\ActivityLog;
 use App\Models\ImportJob;
 use Illuminate\Http\Request;
@@ -65,6 +66,35 @@ class DatasourceController extends Controller
             'history_id' => $job->id,
             'message' => 'File berhasil diupload.',
         ]);
+    }
+
+    /**
+     * Step 1.5: Validasi CSV sebelum import — cek header, tipe data, dan kode referensi
+     */
+    public function validateCsv(Request $request)
+    {
+        $historyId = $request->input('history_id');
+        $job = ImportJob::find($historyId);
+
+        if (! $job) {
+            return response()->json(['is_valid' => false, 'error' => 'Import job tidak ditemukan.'], 404);
+        }
+
+        $path = $this->resolveFilePath('mpd_uploads/'.$job->filename);
+        if (! $path) {
+            return response()->json(['is_valid' => false, 'error' => 'File tidak ditemukan di storage.'], 404);
+        }
+
+        $result = (new ValidateCsvAction())->execute($path);
+
+        // Update job status based on validation result
+        if (! $result['is_valid']) {
+            $job->update(['status' => 'validation_failed']);
+        } else {
+            $job->update(['status' => 'validated']);
+        }
+
+        return response()->json($result);
     }
 
     /**

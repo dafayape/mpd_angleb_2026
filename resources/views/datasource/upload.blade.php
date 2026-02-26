@@ -100,6 +100,7 @@
         </div>
     </div>
 
+    {{-- Progress Modal --}}
     <div class="modal fade" id="uploadProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -119,6 +120,52 @@
                         <i class="mdi mdi-cog-transfer me-1 text-primary"></i>
                         <span id="etlStatusText">ETL sedang berjalan...</span>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Validation Error Modal --}}
+    <div class="modal fade" id="validationErrorModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bx bx-error-circle me-1"></i> Validasi CSV Gagal</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="validationSummary" class="alert alert-warning mb-3" style="font-size: 13px;"></div>
+
+                    {{-- Header Errors --}}
+                    <div id="headerErrorSection" class="d-none mb-3">
+                        <h6 class="fw-bold text-danger"><i class="bx bx-columns me-1"></i> Masalah Header</h6>
+                        <div id="headerErrorContent" style="font-size: 13px;"></div>
+                    </div>
+
+                    {{-- Row Errors --}}
+                    <div id="rowErrorSection" class="d-none">
+                        <h6 class="fw-bold text-danger"><i class="bx bx-table me-1"></i> Masalah Data Baris</h6>
+                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered mb-0" style="font-size: 12px;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 60px;">Baris</th>
+                                        <th style="width: 150px;">Kolom</th>
+                                        <th style="width: 120px;">Tipe Error</th>
+                                        <th>Detail</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rowErrorTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bx bx-arrow-back me-1"></i> Kembali ke Form
+                    </button>
                 </div>
             </div>
         </div>
@@ -151,6 +198,9 @@
             modal.show();
             btn.disabled = true;
 
+            // ═══════════════════════════════════════════════════════
+            // STEP 1: Upload file ke server
+            // ═══════════════════════════════════════════════════════
             $.ajax({
                 url: "{{ route('datasource.store') }}",
                 type: "POST",
@@ -172,13 +222,18 @@
                 },
                 success: function(response) {
                     if (response.status === 'success') {
-                        statusTitle.innerText = 'Memproses Data CSV...';
-                        statusText.innerText = 'Mempersiapkan data...';
+                        // ═══════════════════════════════════════════════════════
+                        // STEP 2: Validasi CSV terhadap standar database
+                        // ═══════════════════════════════════════════════════════
+                        statusTitle.innerText = 'Memvalidasi CSV...';
+                        statusText.innerText = 'Mengecek header, tipe data, dan kode referensi...';
                         progressBar.classList.remove('bg-primary');
-                        progressBar.classList.add('bg-info');
-                        progressBar.style.width = '0%';
-                        progressBar.innerHTML = '0%';
-                        processChunk(response.history_id, 0);
+                        progressBar.classList.add('bg-warning');
+                        progressBar.style.width = '100%';
+                        progressBar.innerHTML = 'Validasi...';
+
+                        validateCsv(response.history_id, modal, progressBar, statusTitle,
+                            statusText, btn);
                     } else {
                         alert('Upload Gagal: ' + response.message);
                         btn.disabled = false;
@@ -193,10 +248,51 @@
                 }
             });
 
+            // ═══════════════════════════════════════════════════════
+            // STEP 2 handler: Validate CSV
+            // ═══════════════════════════════════════════════════════
+            function validateCsv(historyId, modal, progressBar, statusTitle, statusText, btn) {
+                $.ajax({
+                    url: "{{ route('datasource.validate') }}",
+                    type: "POST",
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        history_id: historyId
+                    },
+                    success: function(result) {
+                        if (result.is_valid) {
+                            // ✅ CSV Valid → lanjut import
+                            statusTitle.innerText = 'Memproses Data CSV...';
+                            statusText.innerText = 'CSV valid. Memulai import data...';
+                            progressBar.classList.remove('bg-warning');
+                            progressBar.classList.add('bg-info');
+                            progressBar.style.width = '0%';
+                            progressBar.innerHTML = '0%';
+                            processChunk(historyId, 0);
+                        } else {
+                            // ❌ CSV Invalid → tampilkan detail error
+                            modal.hide();
+                            showValidationErrors(result);
+                            btn.disabled = false;
+                        }
+                    },
+                    error: function(xhr) {
+                        var msg = xhr.responseJSON ? (xhr.responseJSON.error || xhr.responseJSON
+                            .message) : xhr.statusText;
+                        alert('Error Validasi: ' + msg);
+                        btn.disabled = false;
+                        modal.hide();
+                    }
+                });
+            }
+
+            // ═══════════════════════════════════════════════════════
+            // STEP 3: Process chunks (sama seperti sebelumnya)
+            // ═══════════════════════════════════════════════════════
             function processChunk(historyId, offset) {
                 $.ajax({
                     url: "{{ route('datasource.process-chunk') }}",
-                    timeout: 0, // No timeout — ETL runs synchronously and may take minutes
+                    timeout: 0,
                     type: "POST",
                     data: {
                         _token: "{{ csrf_token() }}",
@@ -223,7 +319,6 @@
                             statusText.innerText = 'Total ' + new Intl.NumberFormat('id-ID').format(
                                 response.rows_processed) + ' baris CSV diimport.';
 
-                            // Show ETL Result
                             var etlDiv = document.getElementById('etlStatus');
                             var etlText = document.getElementById('etlStatusText');
                             etlDiv.classList.remove('d-none');
@@ -256,6 +351,78 @@
                 });
             }
         });
+
+        // ═══════════════════════════════════════════════════════
+        // Show validation errors in a dedicated modal
+        // ═══════════════════════════════════════════════════════
+        function showValidationErrors(result) {
+            var errorModal = new bootstrap.Modal(document.getElementById('validationErrorModal'));
+            var summary = document.getElementById('validationSummary');
+            var headerSection = document.getElementById('headerErrorSection');
+            var headerContent = document.getElementById('headerErrorContent');
+            var rowSection = document.getElementById('rowErrorSection');
+            var rowBody = document.getElementById('rowErrorTableBody');
+
+            // Summary
+            var s = result.summary || {};
+            summary.innerHTML = '<strong>Hasil Validasi:</strong> ' +
+                '<span class="text-danger fw-bold">TIDAK VALID</span><br>' +
+                'Total baris data: ' + new Intl.NumberFormat('id-ID').format(s.total_data_rows || 0) + '<br>' +
+                'Baris dicek (sample): ' + (s.rows_checked || 0) + '<br>' +
+                'Baris bermasalah: <span class="text-danger fw-bold">' + (s.rows_with_errors || 0) + '</span>';
+
+            // Header errors
+            headerSection.classList.add('d-none');
+            if (result.header && !result.header.valid) {
+                headerSection.classList.remove('d-none');
+                var html = '';
+                if (result.header.missing && result.header.missing.length > 0) {
+                    html += '<div class="mb-1"><strong>Kolom hilang:</strong> <code>' +
+                        result.header.missing.join('</code>, <code>') + '</code></div>';
+                }
+                if (result.header.extra && result.header.extra.length > 0) {
+                    html += '<div class="mb-1"><strong>Kolom tidak dikenal:</strong> <code>' +
+                        result.header.extra.join('</code>, <code>') + '</code></div>';
+                }
+                if (!result.header.order_correct) {
+                    html +=
+                        '<div class="mb-1"><strong>Urutan kolom salah.</strong> Pastikan kolom sesuai format standar.</div>';
+                }
+                html += '<div class="text-muted mt-1">Diharapkan ' + result.header.expected_count +
+                    ' kolom, ditemukan ' + result.header.actual_count + ' kolom.</div>';
+                headerContent.innerHTML = html;
+            }
+
+            // Row errors
+            rowSection.classList.add('d-none');
+            rowBody.innerHTML = '';
+            if (result.row_errors && result.row_errors.length > 0) {
+                rowSection.classList.remove('d-none');
+                result.row_errors.forEach(function(row) {
+                    row.issues.forEach(function(issue) {
+                        var tr = document.createElement('tr');
+                        var typeLabel = {
+                            'COLUMN_COUNT': 'Jumlah Kolom',
+                            'INVALID_DATE': 'Format Tanggal',
+                            'EMPTY_REQUIRED': 'Field Kosong',
+                            'INVALID_VALUE': 'Nilai Invalid',
+                            'INVALID_NUMERIC': 'Bukan Angka',
+                            'REF_NOT_FOUND': 'Kode Tidak Terdaftar'
+                        };
+                        tr.innerHTML = '<td class="text-center">' + row.row + '</td>' +
+                            '<td><code>' + (issue.field || '-') + '</code></td>' +
+                            '<td><span class="badge bg-' +
+                            (issue.type === 'REF_NOT_FOUND' ? 'danger' : 'warning') +
+                            ' text-dark" style="font-size: 11px;">' +
+                            (typeLabel[issue.type] || issue.type) + '</span></td>' +
+                            '<td>' + issue.detail + '</td>';
+                        rowBody.appendChild(tr);
+                    });
+                });
+            }
+
+            errorModal.show();
+        }
 
         function bytesToSize(bytes) {
             var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];

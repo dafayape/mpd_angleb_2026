@@ -29,7 +29,7 @@ class ProfileController extends Controller
         $rules = [
             'name'     => 'required|string|max:100',
             'email'    => ['required', 'email', Rule::unique('users')->ignore($user->id)],
-            'password' => 'nullable|min:6|confirmed',
+            'password' => 'nullable|min:' . config('auth.password_min_length', 6) . '|confirmed',
             'photo'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
 
@@ -38,7 +38,7 @@ class ProfileController extends Controller
             'email.required'     => 'Email wajib diisi.',
             'email.email'        => 'Format email tidak valid.',
             'email.unique'       => 'Email sudah digunakan pengguna lain.',
-            'password.min'       => 'Password minimal 6 karakter.',
+            'password.min'       => 'Password minimal ' . config('auth.password_min_length', 6) . ' karakter.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
