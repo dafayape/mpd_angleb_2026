@@ -114,17 +114,24 @@
             overflow: hidden;
             display: inline-flex;
             box-shadow: none !important;
+            height: 38px;
+            /* Force symmetry with form-select */
         }
 
         .custom-toggle-group .btn {
-            border: 1px solid #5d6bc1;
-            /* Royal Blue */
-            color: #5d6bc1;
+            border: 1px solid #2a3042;
+            /* Navy */
+            color: #2a3042;
             font-weight: 700;
-            padding: 8px 30px;
+            padding: 0 30px;
             border-radius: 0;
             background-color: white;
             transition: all 0.2s ease;
+            display: d-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 36px;
+            /* 38px - 2px borders */
         }
 
         .custom-toggle-group .btn:first-child,
@@ -141,19 +148,19 @@
         }
 
         .custom-toggle-group .btn-check:checked+.btn {
-            background-color: #5d6bc1;
+            background-color: #2a3042;
             color: white;
-            border-color: #5d6bc1;
+            border-color: #2a3042;
             box-shadow: none;
         }
 
         .custom-toggle-group .btn:hover {
-            background-color: rgba(93, 107, 193, 0.05);
-            color: #5d6bc1;
+            background-color: rgba(42, 48, 66, 0.05);
+            color: #2a3042;
         }
 
         .custom-toggle-group .btn-check:checked+.btn:hover {
-            background-color: #505cba;
+            background-color: #1e2230;
             color: white;
         }
 
