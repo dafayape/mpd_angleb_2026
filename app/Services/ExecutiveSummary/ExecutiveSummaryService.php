@@ -83,9 +83,22 @@ class ExecutiveSummaryService
             $q = $this->baseQuery($kategori, $dataType, $opsel);
             if ($region === 'intra') $this->applyJaboFilter($q, 'intra');
             elseif ($region === 'inter') $this->applyJaboFilter($q, 'inter');
-            return $q->select('tanggal', DB::raw('SUM(total) as t'))
+            
+            $dbData = $q->select('tanggal', DB::raw('SUM(total) as t'))
                 ->groupBy('tanggal')->orderBy('tanggal')
                 ->get()->pluck('t', 'tanggal')->toArray();
+                
+            $result = [];
+            $period = new \DatePeriod(
+                new \DateTime(self::PERIOD_START),
+                new \DateInterval('P1D'),
+                (new \DateTime(self::PERIOD_END))->modify('+1 day')
+            );
+            foreach ($period as $date) {
+                $dateStr = $date->format('Y-m-d');
+                $result[$dateStr] = isset($dbData[$dateStr]) ? (float) $dbData[$dateStr] : 0.0;
+            }
+            return $result;
         });
     }
 
