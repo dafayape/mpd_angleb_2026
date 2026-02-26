@@ -227,14 +227,10 @@
                             var etlDiv = document.getElementById('etlStatus');
                             var etlText = document.getElementById('etlStatusText');
                             etlDiv.classList.remove('d-none');
-                            if (response.etl_error) {
-                                etlDiv.style.background = '#fff3cd';
-                                etlText.innerHTML = '⚠️ ETL Error: ' + response.etl_error;
-                            } else {
-                                etlDiv.style.background = '#d1e7dd';
-                                etlText.innerHTML = '✅ ETL berhasil! <strong>' + new Intl.NumberFormat(
-                                        'id-ID').format(response.etl_rows || 0) +
-                                    '</strong> baris tersimpan ke spatial_movements.';
+                            if (response.etl_dispatched) {
+                                etlDiv.style.background = '#e2e3e5';
+                                etlText.innerHTML =
+                                    '<i class="bx bx-loader bx-spin text-primary me-2"></i> Proses ETL (agregasi spasial PostGIS) sedang berjalan di background server. Data akan muncul di dashboard beberapa saat lagi.';
                             }
 
                             setTimeout(function() {

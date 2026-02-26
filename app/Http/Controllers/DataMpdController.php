@@ -819,18 +819,21 @@ class DataMpdController extends Controller
             $curr->addDay();
         }
 
+        $kategoriFilter = $request->input('kategori', 'REAL');
+        $isForecast = ($kategoriFilter === 'FORECAST');
+
         // 2. Caching Key
-        $cacheKey = 'mpd:jabodetabek:pergerakan-orang:v1';
+        $cacheKey = "mpd:jabodetabek:pergerakan-orang:v2:{$isForecast}";
         
         $jabodetabekCodes = $this->getJabodetabekCodes();
         
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes);
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes, $isForecast) {
+                return $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast);
             });
         } catch (\Throwable $e) {
             // Fallback
-            $data = $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes);
+            $data = $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast);
         }
 
         return view('data-mpd.jabodetabek.pergerakan-orang', [
@@ -841,7 +844,7 @@ class DataMpdController extends Controller
         ]);
     }
 
-    private function getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes)
+    private function getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast)
     {
         $dailyData = [];
         
@@ -851,7 +854,7 @@ class DataMpdController extends Controller
                 ->select('tanggal', DB::raw('SUM(total) as total_volume'))
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('kategori', 'PERGERAKAN')
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecast)
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('tanggal')
                 ->get();
@@ -868,7 +871,7 @@ class DataMpdController extends Controller
                 ->select('tanggal', DB::raw('SUM(total) as total_volume'))
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('kategori', 'ORANG')
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecast)
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('tanggal')
                 ->get();

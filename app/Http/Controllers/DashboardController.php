@@ -41,10 +41,12 @@ class DashboardController extends Controller
             $persenCapaian = $totalForecast > 0 ? ($totalReal / $totalForecast) * 100 : 0;
             $selisih = $totalReal - $totalForecast;
 
+            $isForecastFilter = request()->input('kategori') === 'FORECAST';
+
             // 2. Chart Opsel: Real Volume per Opsel (Matching Reference Style)
             // Colors: IOH (Yellow/Orange), TSEL (Red), XL (Blue)
             $opselData = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecastFilter)
                 ->where('kategori', 'PERGERAKAN')
                 ->selectRaw("opsel, SUM(total) as total")
                 ->groupBy('opsel')
@@ -79,8 +81,7 @@ class DashboardController extends Controller
 
             // 3. Chart Moda: Daily Trend
             $modaData = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                // ->where('is_forecast', false) // Show Real Only? Or Total? Let's show Real.
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecastFilter)
                 ->where('kategori', 'PERGERAKAN')
                 ->selectRaw("tanggal, kode_moda, SUM(total) as total")
                 ->groupBy('tanggal', 'kode_moda')

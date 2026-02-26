@@ -19,9 +19,12 @@ class DailyReportController extends Controller
         if ($endDate < '2026-03-13') $endDate = '2026-03-13';
         if ($endDate > '2026-03-30') $endDate = '2026-03-30';
         
+        $kategoriFilter = $request->input('kategori', 'REAL');
+        $isForecast = ($kategoriFilter === 'FORECAST');
+
         // Cache data for report
-        $cacheKey = "dailyreport:text:v1:{$startDate}:{$endDate}";
-        $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+        $cacheKey = "dailyreport:text:v2:{$startDate}:{$endDate}:{$isForecast}";
+        $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $isForecast) {
             
             // Jabodetabek codes
             $jabodetabekCodes = [
@@ -35,19 +38,19 @@ class DailyReportController extends Controller
             // --- A. NASIONAL ---
             // 1. Total Nasional (PERGERAKAN)
             $nasionalTotal = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecast)
                 ->where('kategori', 'PERGERAKAN')
                 ->sum('total');
 
             // 1b. Total ORANG (Unique Subscriber)
             $nasionalOrang = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecast)
                 ->where('kategori', 'ORANG')
                 ->sum('total');
 
             // 2. Highest Day Nasional
             $nasionalHighest = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecast)
                 ->where('kategori', 'PERGERAKAN')
                 ->select('tanggal', DB::raw('SUM(total) as daily_total'))
                 ->groupBy('tanggal')
@@ -57,21 +60,21 @@ class DailyReportController extends Controller
             // --- B. JABODETABEK ---
             // 1. Total Jabodetabek (PERGERAKAN)
             $jaboTotal = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecast)
                 ->where('kategori', 'PERGERAKAN')
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->sum('total');
 
             // 1b. Total ORANG Jabo
             $jaboOrang = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecast)
                 ->where('kategori', 'ORANG')
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->sum('total');
 
             // 2. Highest Day Jabodetabek
             $jaboHighest = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', false)
+                ->where('is_forecast', $isForecast)
                 ->where('kategori', 'PERGERAKAN')
                 ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->select('tanggal', DB::raw('SUM(total) as daily_total'))

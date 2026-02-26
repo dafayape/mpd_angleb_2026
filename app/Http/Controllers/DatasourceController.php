@@ -205,17 +205,13 @@ class DatasourceController extends Controller
             ]);
 
             // Auto-trigger ETL: Transform raw_mpd_data → spatial_movements
-            // Using dispatchSync (inline, synchronous) — guaranteed to run without queue:work
-            $etlRows = 0;
-            $etlError = null;
+            // Using dispatchAfterResponse so the HTTP request finishes and returns "Completed" to the user immediately,
+            // while the heavy PostGIS aggregations safely run in the background PHP process without Nginx timeouts.
             try {
-                $etlJob = new \App\Jobs\Mpd\TransformRawToSpatialJob($job->id);
-                $etlJob->handle();
-                $etlRows = \Illuminate\Support\Facades\DB::table('spatial_movements')->count();
-                Log::info("[Import] ETL completed synchronously. spatial_movements rows: {$etlRows}");
+                \App\Jobs\Mpd\TransformRawToSpatialJob::dispatchAfterResponse($job->id);
+                Log::info("[Import] ETL dispatched to run after response for import_job_id: {$job->id}");
             } catch (\Throwable $etlErr) {
-                Log::error('[Import] ETL failed: '.$etlErr->getMessage());
-                $etlError = $etlErr->getMessage();
+                Log::error('[Import] ETL dispatch failed: '.$etlErr->getMessage());
             }
 
             return response()->json([
@@ -226,8 +222,6 @@ class DatasourceController extends Controller
                 'percent' => 100,
                 'errors' => $errors,
                 'etl_dispatched' => true,
-                'etl_rows' => $etlRows,
-                'etl_error' => $etlError,
             ]);
         }
 

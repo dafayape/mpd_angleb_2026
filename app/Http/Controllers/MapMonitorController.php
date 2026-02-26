@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Simpul;
 use App\Models\SpatialMovement;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MapMonitorController extends Controller
@@ -14,7 +14,7 @@ class MapMonitorController extends Controller
         // Fixed Date Range: 13 March 2026 - 30 March 2026 (Angkutan Lebaran)
         $startDate = \Carbon\Carbon::create(2026, 3, 13);
         $endDate = \Carbon\Carbon::create(2026, 3, 30);
-        
+
         $dates = collect();
         while ($startDate->lte($endDate)) {
             $dates->push($startDate->format('Y-m-d'));
@@ -27,7 +27,7 @@ class MapMonitorController extends Controller
         return view('map-monitor.index', [
             'title' => 'Map Monitor',
             'breadcrumb' => ['Dashboard', 'Map Monitor'],
-            'available_dates' => $dates
+            'available_dates' => $dates,
         ]);
     }
 
@@ -55,7 +55,7 @@ class MapMonitorController extends Controller
 
             // Validate opsel
             $validOpsels = ['TSEL', 'IOH', 'XL'];
-            if ($opselFilter && !in_array($opselFilter, $validOpsels)) {
+            if ($opselFilter && ! in_array($opselFilter, $validOpsels)) {
                 $opselFilter = '';
             }
 
@@ -64,29 +64,38 @@ class MapMonitorController extends Controller
 
             // Cache for 1 hour (3600s)
             return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $opselFilter) {
-                
+
                 \Illuminate\Support\Facades\Log::info("MapMonitor: Generating data for {$startDate} to {$endDate}");
 
                 // (AUTO SEEDING REMOVED - Relying on formal NodeSeeder)
 
                 // 1. Fetch Simpuls (Optimized with PostGIS)
                 $simpuls = Simpul::select(
-                    'code', 
-                    'name', 
-                    'category', 
+                    'code',
+                    'name',
+                    'category',
                     'sub_category',
                     'radius',
                     DB::raw('ST_Y(location::geometry) as lat'),
                     DB::raw('ST_X(location::geometry) as lng')
                 )->whereNotNull('location')->get();
-                
-                \Illuminate\Support\Facades\Log::info("MapMonitor: Found " . $simpuls->count() . " nodes with location.");
 
-                // 2. Calculate Density (Volume) — aggregated across the period, filtered by opsel
+                \Illuminate\Support\Facades\Log::info('MapMonitor: Found '.$simpuls->count().' nodes with location.');
+
+                // 2. Calculate Density (Volume) — aggregated across the period, filtered by opsel and kategori
                 $volumeQuery = SpatialMovement::whereBetween('tanggal', [$startDate, $endDate]);
                 if ($opselFilter) {
                     $volumeQuery->where('opsel', $opselFilter);
                 }
+
+                // Cek filter kategori dari Request (REAL atau FORECAST), default REAL jika tidak ada untuk MapMonitor
+                $kategoriFilter = request()->input('kategori', 'REAL');
+                if ($kategoriFilter === 'FORECAST') {
+                    $volumeQuery->where('is_forecast', true);
+                } else {
+                    $volumeQuery->where('is_forecast', false); // Default behavior is to show REAL data
+                }
+
                 $volumes = $volumeQuery
                     ->select('kode_origin_simpul', DB::raw('SUM(total) as total_volume'))
                     ->groupBy('kode_origin_simpul')
@@ -95,34 +104,38 @@ class MapMonitorController extends Controller
 
                 // --- ULTIMATE FALLBACK: Return empty if DB is empty ---
                 if ($simpuls->isEmpty()) {
-                    \Illuminate\Support\Facades\Log::warning("MapMonitor: DB Empty.");
+                    \Illuminate\Support\Facades\Log::warning('MapMonitor: DB Empty.');
                     $volumes = [];
                 }
 
                 // 3. Max Volume for scaling (Safe handling for empty arrays)
-                $maxVolume = !empty($volumes) ? max($volumes) : 1;
+                $maxVolume = ! empty($volumes) ? max($volumes) : 1;
 
                 // 4. Format Data
                 $features = $simpuls->map(function ($simpul) use ($volumes, $maxVolume) {
                     $volume = $volumes[$simpul->code] ?? 0;
-                    
+
                     // Color Scaling
                     $color = '#808080'; // Default: Gray
                     if ($volume > 0) {
                         $ratio = $volume / $maxVolume;
                         $color = '#00ff00'; // Green
-                        if ($ratio > 0.33) $color = '#ffff00'; // Yellow
-                        if ($ratio > 0.66) $color = '#ff0000'; // Red
+                        if ($ratio > 0.33) {
+                            $color = '#ffff00';
+                        } // Yellow
+                        if ($ratio > 0.66) {
+                            $color = '#ff0000';
+                        } // Red
                     }
 
                     // RADIUS INTEGRATION: Use radius from DB directly
-                    $radius = (float)($simpul->radius ?: 100);
+                    $radius = (float) ($simpul->radius ?: 100);
 
                     return [
                         'type' => 'Feature',
                         'geometry' => [
                             'type' => 'Point',
-                            'coordinates' => [(float)$simpul->lng, (float)$simpul->lat]
+                            'coordinates' => [(float) $simpul->lng, (float) $simpul->lat],
                         ],
                         'properties' => [
                             'id' => $simpul->code,
@@ -130,15 +143,15 @@ class MapMonitorController extends Controller
                             'category' => $simpul->category,
                             'volume' => $volume,
                             'color' => $color,
-                            'radius' => $radius
-                        ]
+                            'radius' => $radius,
+                        ],
                     ];
                 });
 
                 // Format period label
                 $periodLabel = \Carbon\Carbon::parse($startDate)->format('d M Y');
                 if ($startDate !== $endDate) {
-                    $periodLabel .= ' — ' . \Carbon\Carbon::parse($endDate)->format('d M Y');
+                    $periodLabel .= ' — '.\Carbon\Carbon::parse($endDate)->format('d M Y');
                 }
 
                 return response()->json([
@@ -148,28 +161,28 @@ class MapMonitorController extends Controller
                     'period_label' => $periodLabel,
                     'opsel_filter' => $opselFilter ?: 'Semua Opsel',
                     'max_volume' => $maxVolume,
-                    'features' => $features
+                    'features' => $features,
                 ]);
 
             });
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('MapMonitor Error: ' . $e->getMessage());
-             // Format period label for fallback
-             $fallbackLabel = \Carbon\Carbon::parse($startDate)->format('d M Y');
+            \Illuminate\Support\Facades\Log::error('MapMonitor Error: '.$e->getMessage());
+            // Format period label for fallback
+            $fallbackLabel = \Carbon\Carbon::parse($startDate)->format('d M Y');
 
-             return response()->json([
+            return response()->json([
                 'type' => 'FeatureCollection',
                 'start_date' => $startDate,
                 'end_date' => $endDate ?? $startDate,
                 'period_label' => $fallbackLabel,
                 'max_volume' => 1,
-                'features' => []
-             ]);
+                'features' => [],
+            ]);
         }
     }
 
-    public function searchSimpul(Request $request) 
+    public function searchSimpul(Request $request)
     {
         $search = $request->input('q'); // Select2 sends 'q' parameter
 
@@ -178,9 +191,9 @@ class MapMonitorController extends Controller
                 ->whereNotNull('location');
 
             if ($search) {
-                $query->where(function($q) use ($search) {
+                $query->where(function ($q) use ($search) {
                     $q->where('name', 'ilike', "%{$search}%")
-                      ->orWhere('code', 'ilike', "%{$search}%");
+                        ->orWhere('code', 'ilike', "%{$search}%");
                 });
             }
 
@@ -191,19 +204,20 @@ class MapMonitorController extends Controller
                 return response()->json(['results' => []]);
             }
 
-            $results = $simpuls->map(function($item) {
+            $results = $simpuls->map(function ($item) {
                 return [
                     'id' => $item->code,
-                    'text' => '[' . $item->code . '] ' . $item->name . ' (' . $item->category . ')',
-                    'lat' => (float)$item->lat,
-                    'lng' => (float)$item->lng
+                    'text' => '['.$item->code.'] '.$item->name.' ('.$item->category.')',
+                    'lat' => (float) $item->lat,
+                    'lng' => (float) $item->lng,
                 ];
             });
 
             return response()->json(['results' => $results]);
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('SearchSimpul Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('SearchSimpul Error: '.$e->getMessage());
+
             return response()->json(['results' => []]);
         }
     }
@@ -227,14 +241,17 @@ class MapMonitorController extends Controller
                 $endDate = '2026-03-30';
             }
 
-            $cacheKey = "netflow:{$startDate}:{$endDate}";
+            $kategoriFilter = $request->input('kategori', 'REAL');
+            $isForecast = ($kategoriFilter === 'FORECAST');
 
-            $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+            $cacheKey = "netflow:{$startDate}:{$endDate}:{$isForecast}";
+
+            $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $isForecast) {
                 // Inflow: sum(total) grouped by dest kab/kota
                 $inflow = DB::table('spatial_movements')
                     ->select('kode_dest_kabupaten_kota as code', DB::raw('SUM(total) as total'))
                     ->whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('is_forecast', false)
+                    ->where('is_forecast', $isForecast)
                     ->where('kategori', 'PERGERAKAN')
                     ->groupBy('kode_dest_kabupaten_kota')
                     ->pluck('total', 'code');
@@ -243,7 +260,7 @@ class MapMonitorController extends Controller
                 $outflow = DB::table('spatial_movements')
                     ->select('kode_origin_kabupaten_kota as code', DB::raw('SUM(total) as total'))
                     ->whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('is_forecast', false)
+                    ->where('is_forecast', $isForecast)
                     ->where('kategori', 'PERGERAKAN')
                     ->groupBy('kode_origin_kabupaten_kota')
                     ->pluck('total', 'code');
@@ -268,7 +285,7 @@ class MapMonitorController extends Controller
 
                     $result[] = [
                         'code' => $code,
-                        'name' => $city ? $city->city_name . ' (' . $city->prov_name . ')' : $code,
+                        'name' => $city ? $city->city_name.' ('.$city->prov_name.')' : $code,
                         'inflow' => (int) $inf,
                         'outflow' => (int) $outf,
                         'netflow' => (int) $net,
@@ -276,7 +293,7 @@ class MapMonitorController extends Controller
                 }
 
                 // Sort by absolute netflow desc
-                usort($result, fn($a, $b) => abs($b['netflow']) <=> abs($a['netflow']));
+                usort($result, fn ($a, $b) => abs($b['netflow']) <=> abs($a['netflow']));
 
                 return $result;
             });
@@ -288,7 +305,8 @@ class MapMonitorController extends Controller
             ]);
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Netflow Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Netflow Error: '.$e->getMessage());
+
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
