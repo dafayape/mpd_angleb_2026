@@ -22,8 +22,8 @@ class ExecutiveSummaryService
             'opsel' => $this->getOpselContribution($dataType),
             'opsel_intra' => $this->getOpselContribution($dataType, 'intra'),
             'opsel_inter' => $this->getOpselContribution($dataType, 'inter'),
-            'forecast' => $this->getForecastComparison(),
-            'yoy' => $this->getYoyComparison(),
+            'forecast' => $this->getForecastComparison($opsel),
+            'yoy' => $this->getYoyComparison($dataType, $opsel),
             'intra' => $this->getIntraJabodetabek($dataType, $opsel),
             'inter' => $this->getInterJabodetabek($dataType, $opsel),
             'trend_pergerakan' => $this->getDailyTrend('PERGERAKAN', $dataType, $opsel),
@@ -174,12 +174,12 @@ class ExecutiveSummaryService
         });
     }
 
-    public function getForecastComparison(): array
+    public function getForecastComparison(?string $opsel): array
     {
-        $key = "executive_summary:getForecastComparison:all:all:nasional";
-        return Cache::remember($key, 1800, function() {
-            $real = $this->getDailyTrend('PERGERAKAN', 'real', null);
-            $forecast = $this->getDailyTrend('PERGERAKAN', 'forecast', null);
+        $key = "executive_summary:getForecastComparison:all:{$opsel}:nasional:v2";
+        return Cache::remember($key, 1800, function() use ($opsel) {
+            $real = $this->getDailyTrend('PERGERAKAN', 'real', $opsel);
+            $forecast = $this->getDailyTrend('PERGERAKAN', 'forecast', $opsel);
             $totReal = array_sum($real); $totFore = array_sum($forecast);
             $res = [];
             foreach (array_keys($real + $forecast) as $dt) {
@@ -194,11 +194,11 @@ class ExecutiveSummaryService
         });
     }
 
-    public function getYoyComparison(): array
+    public function getYoyComparison(string $dataType, ?string $opsel): array
     {
-        $key = "executive_summary:getYoyComparison:real:all:nasional";
-        return Cache::remember($key, 1800, function() {
-            $curr = (float) $this->baseQuery('ORANG', 'real', null)->sum('total');
+        $key = "executive_summary:getYoyComparison:{$dataType}:{$opsel}:nasional:v2";
+        return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
+            $curr = (float) $this->baseQuery('ORANG', $dataType, $opsel)->sum('total');
             $prev = config('mpd.historical_baselines.2025_orang', 115197227); // default fallback
             return [
                 'current' => $curr, 'previous' => $prev,
