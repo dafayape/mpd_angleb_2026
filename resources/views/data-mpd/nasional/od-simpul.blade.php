@@ -281,9 +281,15 @@
 
             const top20 = sankeyData.sort((a, b) => (b[2] || b.weight) - (a[2] || a.weight)).slice(0, 20);
 
+            const colors = [
+                '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6',
+                '#e67e22', '#1abc9c', '#34495e', '#d35400', '#c0392b',
+                '#2980b9', '#27ae60', '#f39c12', '#8e44ad', '#16a085'
+            ];
+
             if (top20.length > 0) {
                 const maxWeight = top20[0][2] || top20[0].weight;
-                top20.forEach(od => {
+                top20.forEach((od, index) => {
                     const fromRaw = (od[0] || od.from || '').toUpperCase();
                     const toRaw = (od[1] || od.to || '').toUpperCase();
                     const weight = od[2] || od.weight;
@@ -294,9 +300,10 @@
                     if (provCoords[fromClean] && provCoords[toClean]) {
                         const width = Math.max(1, Math.round((weight / maxWeight) * 4));
                         const opacity = Math.max(0.4, weight / maxWeight);
+                        const lineColor = colors[index % colors.length];
 
                         const polyline = L.polyline([provCoords[fromClean], provCoords[toClean]], {
-                                color: '#e74c3c',
+                                color: lineColor,
                                 weight: width,
                                 opacity: opacity,
                                 className: 'interactive-line'
@@ -314,7 +321,7 @@
                                     polygon: true,
                                     pathOptions: {
                                         stroke: true,
-                                        color: '#e74c3c',
+                                        color: lineColor,
                                         weight: width,
                                         fillOpacity: opacity
                                     }
@@ -325,14 +332,14 @@
                         polyline.on('mouseover', function(e) {
                             this.setStyle({
                                 weight: width + 4,
-                                color: '#c0392b',
+                                color: lineColor,
                                 opacity: 1
                             });
                         });
                         polyline.on('mouseout', function(e) {
                             this.setStyle({
                                 weight: width,
-                                color: '#e74c3c',
+                                color: lineColor,
                                 opacity: opacity
                             });
                         });
