@@ -160,15 +160,7 @@
                         </div>
                     </div>
 
-                    <!-- Map Desire Line -->
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="border rounded p-3"
-                                style="border-width:2px !important; border-color: #aab5c3 !important;">
-                                <div id="desire-line-map" style="height: 500px; border-radius: 8px;"></div>
-                            </div>
-                        </div>
-                    </div>
+
 
                 </div>
             </div>
@@ -185,10 +177,7 @@
     <script src="https://code.highcharts.com/modules/sankey.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://cdn.jsdelivr.net/npm/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.min.js">
-    </script>
+
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -228,108 +217,7 @@
                 }
             });
 
-            // === DESIRE LINE MAP ===
-            const provCoords = @json($prov_coords);
 
-            const map = L.map('desire-line-map', {
-                scrollWheelZoom: true
-            }).setView([-2.5, 118], 5);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; CARTO',
-                subdomains: 'abcd',
-                maxZoom: 19
-            }).addTo(map);
-
-            const top20 = sankeyData.sort((a, b) => (b[2] || b.weight) - (a[2] || a.weight)).slice(0, 20);
-
-            const colors = [
-                '#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6',
-                '#e67e22', '#1abc9c', '#34495e', '#d35400', '#c0392b',
-                '#2980b9', '#27ae60', '#f39c12', '#8e44ad', '#16a085'
-            ];
-
-            if (top20.length > 0) {
-                const maxWeight = top20[0][2] || top20[0].weight;
-                top20.forEach((od, index) => {
-                    const fromRaw = (od[0] || od.from || '').toUpperCase();
-                    const toRaw = (od[1] || od.to || '').toUpperCase();
-                    const weight = od[2] || od.weight;
-
-                    const fromClean = fromRaw.replace('(O) ', '').trim();
-                    const toClean = toRaw.replace('(D) ', '').trim();
-
-                    if (provCoords[fromClean] && provCoords[toClean]) {
-                        const width = Math.max(1, Math.round((weight / maxWeight) * 4));
-                        const opacity = Math.max(0.4, weight / maxWeight);
-                        const lineColor = colors[index % colors.length];
-
-                        const polyline = L.polyline([provCoords[fromClean], provCoords[toClean]], {
-                                color: lineColor,
-                                weight: width,
-                                opacity: opacity,
-                                className: 'interactive-line'
-                            })
-                            .addTo(map).bindPopup(
-                                `<b>${od[0] || od.from}</b> → <b>${od[1] || od.to}</b><br>Total: <b>${weight.toLocaleString('id-ID')}</b>`
-                            );
-
-                        const arrow = L.polylineDecorator(polyline, {
-                            patterns: [{
-                                offset: '100%',
-                                repeat: 0,
-                                symbol: L.Symbol.arrowHead({
-                                    pixelSize: 6 + width,
-                                    polygon: true,
-                                    pathOptions: {
-                                        stroke: true,
-                                        color: lineColor,
-                                        weight: width,
-                                        fillOpacity: opacity
-                                    }
-                                })
-                            }]
-                        }).addTo(map);
-
-                        polyline.on('mouseover', function(e) {
-                            this.setStyle({
-                                weight: width + 4,
-                                color: lineColor,
-                                opacity: 1
-                            });
-                        });
-                        polyline.on('mouseout', function(e) {
-                            this.setStyle({
-                                weight: width,
-                                color: lineColor,
-                                opacity: opacity
-                            });
-                        });
-
-                        L.circleMarker(provCoords[fromClean], {
-                                radius: 4,
-                                fillColor: '#3498db',
-                                fillOpacity: 0.8,
-                                color: '#fff',
-                                weight: 1
-                            })
-                            .addTo(map).bindTooltip(od[0] || od.from, {
-                                direction: 'top',
-                                offset: [0, -5]
-                            });
-                        L.circleMarker(provCoords[toClean], {
-                                radius: 4,
-                                fillColor: '#e74c3c',
-                                fillOpacity: 0.8,
-                                color: '#fff',
-                                weight: 1
-                            })
-                            .addTo(map).bindTooltip(od[1] || od.to, {
-                                direction: 'top',
-                                offset: [0, -5]
-                            });
-                    }
-                });
-            }
         });
     </script>
 @endpush
