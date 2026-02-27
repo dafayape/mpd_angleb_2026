@@ -124,7 +124,7 @@ class DataMpdController extends Controller
             $dataProv = $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
         }
 
-        $dataKabKota = $this->getNasionalOdKabKotaData($dates['start'], $dates['end']);
+        $dataKabKota = $this->getNasionalOdKabKotaData($startDate, $endDate);
 
         return view('data-mpd.nasional.od-simpul', [
             'title' => 'O-D Provinsi & Simpul Nasional',
@@ -271,7 +271,7 @@ class DataMpdController extends Controller
             ->take(10)
             ->values();
 
-        $sankeyData = $query->map(function($row) {
+        $sankeyData = $query->sortByDesc('total_volume')->map(function($row) {
             return [
                 'from' => '(O) ' . $row->origin_name,
                 'to' => '(D) ' . $row->dest_name,
