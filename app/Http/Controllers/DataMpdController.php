@@ -133,6 +133,7 @@ class DataMpdController extends Controller
             'simpul_udara' => $data['udara'],
             'simpul_kereta' => $data['kereta'],
             'top_origin' => $dataProv['top_origin'],
+            'top_dest' => $dataProv['top_dest'],
             'sankey' => $dataProv['sankey'],
             'total_national' => $dataProv['total_national'],
             'prov_coords' => $dataProv['prov_coords'],
@@ -182,6 +183,20 @@ class DataMpdController extends Controller
             ->take(10)
             ->values();
 
+        $topDest = $query->groupBy('dest_code')
+            ->map(function ($rows) use ($totalNational) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->dest_code,
+                    'name' => $rows->first()->dest_name,
+                    'total' => $subTotal,
+                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
         $sankeyData = $query->map(function($row) {
             return [
                 'from' => '(O) ' . $row->origin_name,
@@ -200,6 +215,7 @@ class DataMpdController extends Controller
 
         return [
             'top_origin' => $topOrigin,
+            'top_dest' => $topDest,
             'sankey' => $sankeyData,
             'total_national' => $totalNational,
             'prov_coords' => $provCoordsMapping

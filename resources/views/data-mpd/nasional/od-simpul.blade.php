@@ -62,7 +62,8 @@
                 margin-bottom: 2rem;
             }
 
-            #sankey-container {
+            #sankey-container,
+            #sankey-container-tujuan {
                 height: 650px;
             }
 
@@ -167,6 +168,87 @@
         </div>
     </div>
 
+    <!-- 02 O-D PROVINSI TUJUAN & DESIRE LINE -->
+    <div class="row mt-4" data-aos="fade-up">
+        <div class="col-12">
+            <div class="card content-card w-100 flex-column">
+                <div class="card-header d-flex align-items-center bg-white"
+                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span class="section-badge">02</span>
+                    <h5 class="fw-bold text-navy mb-0">O-D Provinsi Tujuan (10 besar provinsi tujuan favorit Nasional) &
+                        Desire line</h5>
+                </div>
+                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+
+                    <div class="row align-items-stretch">
+                        <!-- Left: Sankey -->
+                        <div class="col-xl-7 col-lg-12 mb-4 mb-xl-0 d-flex flex-column">
+                            <div class="border rounded p-3 flex-grow-1"
+                                style="border-width:2px !important; border-color: #aab5c3 !important;">
+                                <div id="sankey-container-tujuan" class="w-100"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Table -->
+                        <div class="col-xl-5 col-lg-12 d-flex flex-column">
+                            <div class="border rounded p-3 mb-4 flex-grow-1"
+                                style="border-width:2px !important; border-color: #aab5c3 !important;">
+                                <h5 class="text-center fw-bold text-primary mb-3 mt-2" style="font-size: 1.25rem;">10 Besar
+                                    Provinsi Tujuan Favorit Nasional</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped table-custom mb-0 text-center">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 60px;">Rank</th>
+                                                <th>Kode</th>
+                                                <th class="text-start">Provinsi Tujuan</th>
+                                                <th class="text-end">Total Pergerakan</th>
+                                                <th class="text-end">Persen</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($top_dest as $index => $row)
+                                                <tr>
+                                                    <td>{{ $index + 1 }}</td>
+                                                    <td>{{ $row['code'] }}</td>
+                                                    <td class="text-start">{{ $row['name'] }}</td>
+                                                    <td class="text-end fw-bold">
+                                                        {{ number_format($row['total'], 0, ',', '.') }}</td>
+                                                    <td class="text-end">{{ number_format($row['pct'], 2, ',', '.') }} %
+                                                    </td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-3 text-muted">Belum ada data
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Summary Box -->
+                            <div class="rounded p-4 d-flex align-items-center justify-content-center text-center"
+                                style="background-color: #e9f0f7; border: 1px solid #d2e0ed; min-height:100px;">
+                                @if (count($top_dest) > 0)
+                                    <span class="text-navy fw-medium" style="font-size: 1.05rem; line-height:1.5;">
+                                        Pada periode <strong>13 Maret 2026 s/d 30 Maret 2026</strong>, <strong
+                                            style="font-size:1.15rem; color:#1e3a8a;">Provinsi
+                                            {{ ucwords(strtolower($top_dest[0]['name'])) }}</strong> merupakan Provinsi
+                                        Tujuan dengan jumlah pergerakan terbanyak, yaitu sekitar <strong
+                                            style="font-size:1.15rem;">{{ number_format($top_dest[0]['total'] / 1000000, 2, ',', '.') }}
+                                            juta pergerakan</strong>
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 
 @endsection
@@ -192,6 +274,33 @@
             // === SANKEY CHART ===
             const sankeyData = @json($sankey);
             Highcharts.chart('sankey-container', {
+                title: {
+                    text: ''
+                },
+                series: [{
+                    keys: ['from', 'to', 'weight'],
+                    data: sankeyData,
+                    type: 'sankey',
+                    name: 'Pergerakan O-D',
+                    dataLabels: {
+                        style: {
+                            color: '#1a1a1a',
+                            textOutline: 'none',
+                            fontSize: '10px'
+                        }
+                    }
+                }],
+                tooltip: {
+                    headerFormat: '',
+                    pointFormat: '<b>{point.from}</b> &rarr; <b>{point.to}</b><br/>Total: <b>{point.weight:,.0f}</b>'
+                },
+                credits: {
+                    enabled: false
+                }
+            });
+
+            // === SANKEY CHART TUJUAN ===
+            Highcharts.chart('sankey-container-tujuan', {
                 title: {
                     text: ''
                 },
