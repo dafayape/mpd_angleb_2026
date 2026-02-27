@@ -183,8 +183,8 @@ class DataMpdController extends Controller
 
         $sankeyData = $query->map(function($row) {
             return [
-                'from' => $row->origin_name,
-                'to' => $row->dest_name,
+                'from' => '(O) ' . $row->origin_name,
+                'to' => '(D) ' . $row->dest_name,
                 'weight' => (int) $row->total_volume
             ];
         })->values();

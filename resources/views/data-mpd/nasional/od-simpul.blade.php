@@ -175,68 +175,7 @@
         </div>
     </div>
 
-    @php
-        $tables = [
-            ['title' => 'OD SIMPUL DARAT (TERMINAL)', 'data' => $simpul_darat, 'icon' => 'bx-bus'],
-            ['title' => 'OD SIMPUL LAUT (PELABUHAN)', 'data' => $simpul_laut, 'icon' => 'bx-anchor'],
-            ['title' => 'OD SIMPUL UDARA (BANDARA)', 'data' => $simpul_udara, 'icon' => 'bx-plane-alt'],
-            ['title' => 'OD SIMPUL KERETA (STASIUN)', 'data' => $simpul_kereta, 'icon' => 'bx-train'],
-        ];
-    @endphp
 
-    @foreach ($tables as $idx => $tbl)
-        <div class="row" data-aos="fade-up" data-aos-delay="{{ 100 * ($idx + 1) }}">
-            <div class="col-12">
-                <div class="card content-card w-100 flex-column">
-                    <div class="card-header d-flex align-items-center bg-white"
-                        style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                        <span class="section-badge">{{ str_pad($idx + 2, 2, '0', STR_PAD_LEFT) }}</span>
-                        <h5 class="fw-bold text-navy mb-0">
-                            <i class='bx {{ $tbl['icon'] }} me-2 text-primary'></i> {{ $tbl['title'] }}
-                        </h5>
-                    </div>
-
-                    <div class="card-body bg-white py-4 px-4">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped table-sm w-100 hoverTable mb-0 text-center"
-                                style="border-collapse: collapse; border-spacing: 0;">
-                                <thead class="align-middle">
-                                    <tr>
-                                        <th class="bg-dark text-white" style="min-width: 80px;">TIPE DATA</th>
-                                        <th class="bg-dark text-white" style="min-width: 80px;">OPSEL</th>
-                                        @foreach ($dates as $date)
-                                            <th style="background-color: #3b4b5e; color:white;">
-                                                {{ \Carbon\Carbon::parse($date)->format('Y-m-d') }}</th>
-                                        @endforeach
-                                        <th class="bg-dark text-white">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($tbl['data'] as $rowKey => $row)
-                                        <tr>
-                                            <td class="fw-bold">{{ $row['tipe_data'] }}</td>
-                                            <td class="fw-bold">{{ $row['opsel'] }}</td>
-                                            @foreach ($dates as $date)
-                                                <td class="text-end">{{ number_format($row[$date] ?? 0, 0, ',', '.') }}
-                                                </td>
-                                            @endforeach
-                                            <td class="text-end fw-bold bg-light">
-                                                {{ number_format($row['total'] ?? 0, 0, ',', '.') }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="{{ count($dates) + 3 }}" class="text-center py-4 text-muted">Belum
-                                                ada data.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endforeach
 
 @endsection
 
@@ -248,6 +187,8 @@
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.min.js">
+    </script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -343,23 +284,43 @@
             if (top20.length > 0) {
                 const maxWeight = top20[0][2] || top20[0].weight;
                 top20.forEach(od => {
-                    const from = (od[0] || od.from || '').toUpperCase();
-                    const to = (od[1] || od.to || '').toUpperCase();
+                    const fromRaw = (od[0] || od.from || '').toUpperCase();
+                    const toRaw = (od[1] || od.to || '').toUpperCase();
                     const weight = od[2] || od.weight;
-                    if (provCoords[from] && provCoords[to]) {
+
+                    const fromClean = fromRaw.replace('(O) ', '').trim();
+                    const toClean = toRaw.replace('(D) ', '').trim();
+
+                    if (provCoords[fromClean] && provCoords[toClean]) {
                         const width = Math.max(1, Math.round((weight / maxWeight) * 8));
                         const opacity = Math.max(0.3, weight / maxWeight);
 
-                        L.polyline([provCoords[from], provCoords[to]], {
+                        const polyline = L.polyline([provCoords[fromClean], provCoords[toClean]], {
                                 color: '#e74c3c',
                                 weight: width,
                                 opacity: opacity
                             })
                             .addTo(map).bindPopup(
                                 `<b>${od[0] || od.from}</b> → <b>${od[1] || od.to}</b><br>Total: <b>${weight.toLocaleString('id-ID')}</b>`
-                                );
+                            );
 
-                        L.circleMarker(provCoords[from], {
+                        L.polylineDecorator(polyline, {
+                            patterns: [{
+                                offset: '100%',
+                                repeat: 0,
+                                symbol: L.Symbol.arrowHead({
+                                    pixelSize: 10 + width,
+                                    polygon: false,
+                                    pathOptions: {
+                                        stroke: true,
+                                        color: '#e74c3c',
+                                        weight: width + 1
+                                    }
+                                })
+                            }]
+                        }).addTo(map);
+
+                        L.circleMarker(provCoords[fromClean], {
                                 radius: 4,
                                 fillColor: '#3498db',
                                 fillOpacity: 0.8,
@@ -370,7 +331,7 @@
                                 direction: 'top',
                                 offset: [0, -5]
                             });
-                        L.circleMarker(provCoords[to], {
+                        L.circleMarker(provCoords[toClean], {
                                 radius: 4,
                                 fillColor: '#e74c3c',
                                 fillOpacity: 0.8,
