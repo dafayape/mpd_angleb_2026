@@ -377,6 +377,105 @@ class DataMpdController extends Controller
         ];
     }
 
+    public function nasionalPergerakanHarianPage(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 30);
+        $dates = $this->getDatesCollection($startDate, $endDate);
+        
+        $cacheKey = 'mpd:nasional:pergerakan-harian:v1';
+        
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getPergerakanHarianData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getPergerakanHarianData($startDate, $endDate);
+        }
+
+        return view('pages.nasional.pergerakan-harian', [
+            'dates' => $dates,
+            'data' => $data
+        ]);
+    }
+
+    private function getPergerakanHarianData($startDate, $endDate)
+    {
+        $opsels = ['XL', 'IOH', 'TSEL'];
+        $categories = ['PERGERAKAN', 'ORANG'];
+        $dates = [];
+        
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $d = $curr->format('Y-m-d');
+            $dates[$d] = [];
+            foreach ($opsels as $op) {
+                $dates[$d][$op] = ['movement' => 0, 'people' => 0];
+            }
+            $curr->addDay();
+        }
+
+        try {
+            $query = DB::table('spatial_movements')
+                ->select(
+                    'tanggal',
+                    'opsel',
+                    'kategori',
+                    DB::raw('SUM(total) as total_volume')
+                )
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
+                ->groupBy('tanggal', 'opsel', 'kategori')
+                ->get();
+
+            foreach ($query as $row) {
+                $date = $row->tanggal;
+                $rawOpsel = strtoupper($row->opsel);
+                $cat = $row->kategori;
+                $vol = (int) $row->total_volume;
+
+                $opsel = 'OTHER';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
+                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
+                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+
+                if ($opsel === 'OTHER' || !isset($dates[$date])) continue;
+
+                if ($cat === 'PERGERAKAN') {
+                    $dates[$date][$opsel]['movement'] += $vol;
+                } elseif ($cat === 'ORANG') {
+                    $dates[$date][$opsel]['people'] += $vol;
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Pergerakan Harian DB Error: ' . $e->getMessage());
+        }
+
+        $totals = [];
+        foreach ($opsels as $op) {
+            $totals[$op] = ['movement' => 0, 'people' => 0];
+            foreach ($dates as $date => $row) {
+                $totals[$op]['movement'] += $row[$op]['movement'];
+                $totals[$op]['people'] += $row[$op]['people'];
+            }
+        }
+
+        foreach ($dates as $date => &$row) {
+            foreach ($opsels as $op) {
+                $gMov = $totals[$op]['movement'];
+                $gPpl = $totals[$op]['people'];
+                
+                $row[$op]['movement_pct'] = $gMov > 0 ? ($row[$op]['movement'] / $gMov) * 100 : 0;
+                $row[$op]['people_pct'] = $gPpl > 0 ? ($row[$op]['people'] / $gPpl) * 100 : 0;
+            }
+        }
+
+        return [
+            'daily' => $dates,
+            'totals' => $totals
+        ];
+    }
+
     public function nasionalPergerakan(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
