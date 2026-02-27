@@ -310,7 +310,7 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-data me-2 text-info"></i>Storage & Indexing:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bxs-coin-stack text-info"></i> <strong>PostgreSQL 18</strong> (Database
+                                <li><i class="bx bx-coin-stack text-info"></i> <strong>PostgreSQL 18</strong> (Database
                                     Core)</li>
                                 <li><i class="bx bx-map-alt text-info"></i> <strong>PostGIS 3.6</strong> (Ekstensi
                                     Geospasial Vector)</li>
@@ -331,7 +331,7 @@
                     </div>
                     <div class="card-body bg-light flex-grow-1 d-flex flex-column">
                         <div class="arch-step-icon bg-soft-dark">
-                            <i class="bx bx-bar-chart-square"></i>
+                            <i class="bx bx-pie-chart-alt-2"></i>
                         </div>
                         <p class="text-muted mb-4" style="line-height: 1.6; text-align: justify;">
                             Output final berupa Dashboard Interaktif, Peta Spasial Lalu Lintas (Heatmaps & Nodes), serta
@@ -342,7 +342,8 @@
                                     class="bx bx-devices me-2 text-dark"></i>Visualisasi Dashboard:</h6>
                             <ul class="tech-list">
                                 <li><i class="bx bxl-bootstrap text-dark"></i> Bootstrap 5 & jQuery (Interactive DOM)</li>
-                                <li><i class="bx bx-map text-dark"></i> <strong>Highcharts.js & Leaflet.js</strong> (Grafik
+                                <li><i class="bx bx-pie-chart-alt-2 text-dark"></i> <strong>Highcharts.js &
+                                        Leaflet.js</strong> (Grafik
                                     & Geoportal)</li>
                                 <li><i class="bx bx-bolt-circle text-dark"></i> Cache Redis Analytics Query</li>
                             </ul>
