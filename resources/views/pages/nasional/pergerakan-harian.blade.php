@@ -65,16 +65,11 @@
 
     <div class="row mb-4" data-aos="fade-down" data-aos-duration="600">
         <div class="col-12">
-            <div class="card bg-white rounded-3 border shadow-sm position-relative">
-                <div class="card-body p-3 d-flex align-items-center position-relative z-1">
-                    <div class="bg-primary rounded p-2 me-3 shadow-sm d-flex align-items-center justify-content-center"
-                        style="width: 48px; height: 48px;">
-                        <span class="text-white fw-bold fs-5">01</span>
-                    </div>
-                    <div>
-                        <h5 class="mb-0 fw-bold text-navy">Persandingan pergerakan harian total berdasarkan masing-masing
-                            opsel</h5>
-                    </div>
+            <div class="content-card mb-4" style="box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);">
+                <div class="card-body p-4 d-flex align-items-center">
+                    <div class="section-badge bg-primary">01</div>
+                    <h5 class="mb-0 fw-bold text-navy">Persandingan pergerakan harian total berdasarkan masing-masing opsel
+                    </h5>
                 </div>
             </div>
         </div>
@@ -106,31 +101,52 @@
                     <div class="table-responsive flex-grow-1 p-2">
                         <table class="table table-bordered mb-0 text-center table-custom-body w-100">
                             <thead class="{{ $conf['bg_class'] }} table-custom-header">
-                                <tr>
+                                <thead class="{{ $conf['bg_class'] }} table-custom-header">
                                     @if ($opKey === 'XL')
-                                        <th rowspan="2" style="width: 25%;">Hari, Tanggal</th>
-                                        <th colspan="2" class="border-bottom-0 pb-0">{{ $conf['name'] }}</th>
+                                        <tr>
+                                            <th rowspan="2" style="width: 25%;">Hari, Tanggal</th>
+                                            <th colspan="2" class="border-bottom-0 pb-0">{{ $conf['name'] }}</th>
+                                        </tr>
+                                        <tr>
+                                            <th style="width: 37.5%;" class="pt-2"><small class="fw-normal">Jumlah
+                                                    Pergerakan</small></th>
+                                            <th style="width: 37.5%;" class="pt-2"><small class="fw-normal">Jumlah
+                                                    Orang</small></th>
+                                        </tr>
+                                    @elseif ($opKey === 'IOH')
+                                        <!-- IOH requires 3 header levels based on user mockup -->
+                                        <tr>
+                                            <th rowspan="3" style="width: 25%;">Hari, Tanggal</th>
+                                            <th colspan="4" class="py-2">{{ $conf['name'] }}</th>
+                                        </tr>
+                                        <tr>
+                                            <th colspan="2" class="py-1"><small class="fw-normal">Jumlah
+                                                    Pergerakan</small></th>
+                                            <th colspan="2" class="py-1"><small class="fw-normal">Jumlah Orang</small>
+                                            </th>
+                                        </tr>
+                                        <tr>
+                                            <th style="width: 18%;" class="py-1">Jumlah</th>
+                                            <th style="width: 15%;" class="py-1">%</th>
+                                            <th style="width: 18%;" class="py-1">Jumlah</th>
+                                            <th style="width: 15%;" class="py-1">%</th>
+                                        </tr>
                                     @else
-                                        <th rowspan="2" style="width: 25%;">Hari, Tanggal</th>
-                                        <th colspan="2">{{ $conf['name'] }}<br><small class="fw-normal">Jumlah
-                                                Pergerakan</small></th>
-                                        <th colspan="2"><br><small class="fw-normal">Jumlah Orang</small></th>
+                                        <!-- TSEL has 2 levels -->
+                                        <tr>
+                                            <th rowspan="2" style="width: 25%;">Hari, Tanggal</th>
+                                            <th colspan="2">{{ $conf['name'] }}<br><small class="fw-normal">Jumlah
+                                                    Pergerakan</small></th>
+                                            <th colspan="2"><br><small class="fw-normal">Jumlah Orang</small></th>
+                                        </tr>
+                                        <tr>
+                                            <th style="width: 18%;">Jumlah</th>
+                                            <th style="width: 15%;">%</th>
+                                            <th style="width: 18%;">Jumlah</th>
+                                            <th style="width: 15%;">%</th>
+                                        </tr>
                                     @endif
-                                </tr>
-                                <tr>
-                                    @if ($opKey === 'XL')
-                                        <th style="width: 37.5%;" class="pt-2"><small class="fw-normal">Jumlah
-                                                Pergerakan</small></th>
-                                        <th style="width: 37.5%;" class="pt-2"><small class="fw-normal">Jumlah
-                                                Orang</small></th>
-                                    @else
-                                        <th style="width: 18%;">Jumlah</th>
-                                        <th style="width: 15%;">%</th>
-                                        <th style="width: 18%;">Jumlah</th>
-                                        <th style="width: 15%;">%</th>
-                                    @endif
-                                </tr>
-                            </thead>
+                                </thead>
                             <tbody>
                                 @foreach ($dates as $dateRaw)
                                     @php
