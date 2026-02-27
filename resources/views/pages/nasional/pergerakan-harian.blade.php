@@ -21,6 +21,25 @@
             color: white !important;
         }
 
+        .text-navy {
+            color: #2a3042 !important;
+        }
+
+        .section-badge {
+            background-color: #2a3042;
+            color: white;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            margin-right: 16px;
+            line-height: 1;
+            box-shadow: 0 4px 10px rgba(42, 48, 66, 0.15);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .table-custom-header th {
             vertical-align: middle;
             font-size: 0.85rem;
@@ -87,10 +106,7 @@
             <div class="card content-card w-100 flex-column" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
                 <div class="card-header d-flex align-items-center bg-white"
                     style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                    <div class="bg-primary rounded p-2 me-3 shadow-sm d-flex align-items-center justify-content-center"
-                        style="width: 48px; height: 48px;">
-                        <span class="text-white fw-bold fs-5">01</span>
-                    </div>
+                    <span class="section-badge">01</span>
                     <h5 class="fw-bold text-navy mb-0">Persandingan pergerakan harian total berdasarkan masing-masing opsel
                     </h5>
                 </div>
@@ -154,10 +170,15 @@
                                                     <tr>
                                                         <td class="text-start fw-medium text-dark bg-light">
                                                             {{ $labelHariTanggal }}</td>
-                                                        <td>{{ fmtNum($mov) }}</td>
-                                                        <td class="text-muted bg-light">{{ fmtPct($movPct) }}</td>
-                                                        <td>{{ fmtNum($ppl) }}</td>
-                                                        <td class="text-muted bg-light">{{ fmtPct($pplPct) }}</td>
+                                                        @if ($opKey === 'XL')
+                                                            <td>{{ fmtNum($mov) }}</td>
+                                                            <td>{{ fmtNum($ppl) }}</td>
+                                                        @else
+                                                            <td>{{ fmtNum($mov) }}</td>
+                                                            <td class="text-muted bg-light">{{ fmtPct($movPct) }}</td>
+                                                            <td>{{ fmtNum($ppl) }}</td>
+                                                            <td class="text-muted bg-light">{{ fmtPct($pplPct) }}</td>
+                                                        @endif
                                                     </tr>
                                                 @endforeach
                                             </tbody>
@@ -168,10 +189,15 @@
                                                         $totMov = $data['totals'][$opKey]['movement'] ?? 0;
                                                         $totPpl = $data['totals'][$opKey]['people'] ?? 0;
                                                     @endphp
-                                                    <th>{{ fmtNum($totMov) }}</th>
-                                                    <th>100%</th>
-                                                    <th>{{ fmtNum($totPpl) }}</th>
-                                                    <th>100%</th>
+                                                    @if ($opKey === 'XL')
+                                                        <th>{{ fmtNum($totMov) }}</th>
+                                                        <th>{{ fmtNum($totPpl) }}</th>
+                                                    @else
+                                                        <th>{{ fmtNum($totMov) }}</th>
+                                                        <th>100%</th>
+                                                        <th>{{ fmtNum($totPpl) }}</th>
+                                                        <th>100%</th>
+                                                    @endif
                                                 </tr>
                                             </tfoot>
                                         </table>
