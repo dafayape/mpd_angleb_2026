@@ -148,6 +148,10 @@
         $totMovAll = $data['akumulasi']['total_movement'] ?? 0;
         $totPplAll = $data['akumulasi']['total_people'] ?? 0;
 
+        // Setup chart data for Section 04
+        $series04_mov = ['XL' => [], 'IOH' => [], 'TSEL' => []];
+        $series04_ppl = ['XL' => [], 'IOH' => [], 'TSEL' => []];
+
         foreach ($dates as $d) {
             $dt = \Carbon\Carbon::parse($d)->locale('id');
             // e.g "Kamis 18\nDesember 2025" -> we map to array for ApexCharts line breaks
@@ -158,6 +162,12 @@
 
             $ppDaily = $data['akumulasi']['daily'][$d]['people'] ?? 0;
             $peoplePctChart[] = $totPplAll > 0 ? round(($ppDaily / $totPplAll) * 100, 2) : 0;
+
+            // Data per opsel for Section 04
+            foreach (['XL', 'IOH', 'TSEL'] as $op) {
+                $series04_mov[$op][] = $data['daily'][$d][$op]['movement'] ?? 0;
+                $series04_ppl[$op][] = $data['daily'][$d][$op]['people'] ?? 0;
+            }
         }
     @endphp
 
@@ -591,6 +601,220 @@
         </div>
     </div>
 
+    <!-- 04 PERSANDINGAN PERGERAKAN OPSEL -->
+    <div class="row mt-4 mb-5" data-aos="fade-up" data-aos-delay="300">
+        <div class="col-12">
+            <div class="card content-card w-100 flex-column" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                <div class="card-header d-flex align-items-center bg-white"
+                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span class="section-badge">04</span>
+                    <h5 class="fw-bold text-navy mb-0">Persandingan pergerakan harian total berdasarkan masing-masing opsel
+                        (Pergerakan per hari dan orang per hari)
+                    </h5>
+                </div>
+                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+
+                    <!-- BLOCK 1: PERGERAKAN PER HARI -->
+                    <div class="position-relative border rounded p-3 mb-5"
+                        style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
+                        <div class="chart-title-badge">PERGERAKAN PER HARI</div>
+
+                        <div id="chart-movement-04" style="min-height: 250px; margin-top: 20px;"></div>
+
+                        <div class="row mt-3 g-0">
+                            <div class="col-xl-9 col-lg-8 pe-2">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0 table-03 text-center align-middle"
+                                        style="min-width: 1400px;">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2" class="align-middle"
+                                                    style="background-color: #2a3042; width: 80px;">Tanggal</th>
+                                                @foreach ($dates as $i => $d)
+                                                    <th style="background-color: #486284;">
+                                                        <div style="font-size: 0.75rem;">
+                                                            H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}
+                                                        </div>
+                                                    </th>
+                                                @endforeach
+                                                <th rowspan="2" class="align-middle"
+                                                    style="background-color: #2a3042; width: 100px;">Total</th>
+                                            </tr>
+                                            <tr>
+                                                @foreach ($dates as $d)
+                                                    <th style="background-color: #5a7395; font-size: 0.7rem;">
+                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (['XL', 'IOH', 'TSEL'] as $op)
+                                                <tr>
+                                                    <td class="fw-bold text-dark" style="background-color: #f8f9fa;">
+                                                        {{ $op }}</td>
+                                                    @foreach ($dates as $d)
+                                                        <td class="text-dark">
+                                                            {{ fmtNum($data['daily'][$d][$op]['movement'] ?? 0) }}</td>
+                                                    @endforeach
+                                                    <td class="fw-bold text-dark" style="font-size:0.9rem;">
+                                                        {{ fmtNum($data['totals'][$op]['movement'] ?? 0) }}</td>
+                                                </tr>
+                                            @endforeach
+                                            <tr>
+                                                <td class="fw-bold text-dark" style="background-color: #e0e0e0;">TOTAL
+                                                </td>
+                                                @foreach ($dates as $d)
+                                                    <td class="fw-bold text-dark" style="background-color: #e0e0e0;">
+                                                        {{ fmtNum($data['akumulasi']['daily'][$d]['movement'] ?? 0) }}</td>
+                                                @endforeach
+                                                <td class="fw-bold text-dark"
+                                                    style="background-color: #e0e0e0; font-size:0.9rem;">
+                                                    {{ fmtNum($totMovAll) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-4">
+                                <div class="d-flex flex-column justify-content-between h-100">
+                                    @php
+                                        // Specific order: TSEL, IOH, XL
+                                        $orderBoxes = [
+                                            'TSEL' => [
+                                                'Total Pergerakan<br>MPD Tsel',
+                                                '#ef4444',
+                                                $data['totals']['TSEL']['movement'] ?? 0,
+                                            ],
+                                            'IOH' => [
+                                                'Total Pergerakan<br>MPD IOH',
+                                                '#f59e0b',
+                                                $data['totals']['IOH']['movement'] ?? 0,
+                                            ],
+                                            'XL' => [
+                                                'Total Pergerakan<br>MPD XL',
+                                                '#2a3042',
+                                                $data['totals']['XL']['movement'] ?? 0,
+                                            ],
+                                        ];
+                                    @endphp
+                                    @foreach ($orderBoxes as $idx => $box)
+                                        <div class="summary-box-03 border border-dark border-2 rounded mb-2 py-2">
+                                            <div style="font-size: 0.85rem; line-height: 1.3; color: #333;">
+                                                {!! $box[0] !!}<br>
+                                                <span class="highlight d-inline-block mt-1"
+                                                    style="color: {{ $box[1] }}; background-color: #fef08a !important; padding: 4px 12px; font-size: 1.15rem; font-weight: 800; border-radius: 4px;">{{ number_format($box[2] / 1000000, 2, ',', '.') }}
+                                                    Juta</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BLOCK 2: ORANG PER HARI -->
+                    <div class="position-relative border rounded p-3 mt-4"
+                        style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
+                        <div class="chart-title-badge">ORANG PER HARI</div>
+
+                        <div id="chart-people-04" style="min-height: 250px; margin-top: 20px;"></div>
+
+                        <div class="row mt-3 g-0">
+                            <div class="col-xl-9 col-lg-8 pe-2">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0 table-03 text-center align-middle"
+                                        style="min-width: 1400px;">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2" class="align-middle"
+                                                    style="background-color: #2a3042; width: 80px;">Tanggal</th>
+                                                @foreach ($dates as $i => $d)
+                                                    <th style="background-color: #1e6082;">
+                                                        <div style="font-size: 0.75rem;">
+                                                            H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}
+                                                        </div>
+                                                    </th>
+                                                @endforeach
+                                                <th rowspan="2" class="align-middle"
+                                                    style="background-color: #2a3042; width: 100px;">Total</th>
+                                            </tr>
+                                            <tr>
+                                                @foreach ($dates as $d)
+                                                    <th style="background-color: #29769e; font-size: 0.7rem;">
+                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (['XL', 'IOH', 'TSEL'] as $op)
+                                                <tr>
+                                                    <td class="fw-bold text-dark" style="background-color: #f8f9fa;">
+                                                        {{ $op }}</td>
+                                                    @foreach ($dates as $d)
+                                                        <td class="text-dark">
+                                                            {{ fmtNum($data['daily'][$d][$op]['people'] ?? 0) }}</td>
+                                                    @endforeach
+                                                    <td class="fw-bold text-dark" style="font-size:0.9rem;">
+                                                        {{ fmtNum($data['totals'][$op]['people'] ?? 0) }}</td>
+                                                </tr>
+                                            @endforeach
+                                            <tr>
+                                                <td class="fw-bold text-dark" style="background-color: #e0e0e0;">TOTAL
+                                                </td>
+                                                @foreach ($dates as $d)
+                                                    <td class="fw-bold text-dark" style="background-color: #e0e0e0;">
+                                                        {{ fmtNum($data['akumulasi']['daily'][$d]['people'] ?? 0) }}</td>
+                                                @endforeach
+                                                <td class="fw-bold text-dark"
+                                                    style="background-color: #e0e0e0; font-size:0.9rem;">
+                                                    {{ fmtNum($totPplAll) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-4">
+                                <div class="d-flex flex-column justify-content-between h-100">
+                                    @php
+                                        // Specific order: TSEL, IOH, XL
+                                        $orderBoxes = [
+                                            'TSEL' => [
+                                                'Total Orang<br>MPD Tsel',
+                                                '#ef4444',
+                                                $data['totals']['TSEL']['people'] ?? 0,
+                                            ],
+                                            'IOH' => [
+                                                'Total Orang<br>MPD IOH',
+                                                '#f59e0b',
+                                                $data['totals']['IOH']['people'] ?? 0,
+                                            ],
+                                            'XL' => [
+                                                'Total Orang<br>MPD XL',
+                                                '#2a3042',
+                                                $data['totals']['XL']['people'] ?? 0,
+                                            ],
+                                        ];
+                                    @endphp
+                                    @foreach ($orderBoxes as $idx => $box)
+                                        <div class="summary-box-03 border border-dark border-2 rounded mb-2 py-2">
+                                            <div style="font-size: 0.85rem; line-height: 1.3; color: #333;">
+                                                {!! $box[0] !!}<br>
+                                                <span class="highlight d-inline-block mt-1"
+                                                    style="color: {{ $box[1] }}; background-color: #fef08a !important; padding: 4px 12px; font-size: 1.15rem; font-weight: 800; border-radius: 4px;">{{ number_format($box[2] / 1000000, 2, ',', '.') }}
+                                                    Juta Orang</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('css')
@@ -673,6 +897,14 @@
             const movPcts = {!! json_encode($movementPctChart) !!};
             const pplPcts = {!! json_encode($peoplePctChart) !!};
 
+            const seriesXLMov = {!! json_encode($series04_mov['XL']) !!};
+            const seriesIOHMov = {!! json_encode($series04_mov['IOH']) !!};
+            const seriesTSELMov = {!! json_encode($series04_mov['TSEL']) !!};
+
+            const seriesXLPpl = {!! json_encode($series04_ppl['XL']) !!};
+            const seriesIOHPpl = {!! json_encode($series04_ppl['IOH']) !!};
+            const seriesTSELPpl = {!! json_encode($series04_ppl['TSEL']) !!};
+
             const commonOptions = {
                 chart: {
                     type: 'bar',
@@ -754,6 +986,100 @@
                         name: 'Orang',
                         data: pplPcts
                     }]
+                }).render();
+            }
+
+            // ApexCharts Rendering for Section 04
+            const commonOptions04 = {
+                chart: {
+                    type: 'bar',
+                    height: 260,
+                    toolbar: {
+                        show: false
+                    },
+                    stacked: false
+                },
+                plotOptions: {
+                    bar: {
+                        columnWidth: '60%',
+                        dataLabels: {
+                            position: 'top'
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: datesLabels,
+                    labels: {
+                        style: {
+                            fontSize: '10px',
+                            colors: '#666'
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function(val) {
+                            return val.toLocaleString('id-ID');
+                        }
+                    }
+                },
+                fill: {
+                    opacity: 1
+                },
+                grid: {
+                    borderColor: '#e0e0e0',
+                    strokeDashArray: 4
+                },
+                colors: ['#2a3042', '#f59e0b', '#ef4444'], // XL, IOH, TSEL
+                legend: {
+                    position: 'right',
+                    offsetY: 40
+                }
+            };
+
+            if (document.querySelector("#chart-movement-04")) {
+                new ApexCharts(document.querySelector("#chart-movement-04"), {
+                    ...commonOptions04,
+                    series: [{
+                            name: 'XLSmart',
+                            data: seriesXLMov
+                        },
+                        {
+                            name: 'IOH',
+                            data: seriesIOHMov
+                        },
+                        {
+                            name: 'Tsel',
+                            data: seriesTSELMov
+                        }
+                    ]
+                }).render();
+            }
+
+            if (document.querySelector("#chart-people-04")) {
+                new ApexCharts(document.querySelector("#chart-people-04"), {
+                    ...commonOptions04,
+                    series: [{
+                            name: 'XLSmart',
+                            data: seriesXLPpl
+                        },
+                        {
+                            name: 'IOH',
+                            data: seriesIOHPpl
+                        },
+                        {
+                            name: 'Tsel',
+                            data: seriesTSELPpl
+                        }
+                    ]
                 }).render();
             }
         });
