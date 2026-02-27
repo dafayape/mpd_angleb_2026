@@ -124,6 +124,8 @@ class DataMpdController extends Controller
             $dataProv = $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
         }
 
+        $dataKabKota = $this->getNasionalOdKabKotaData($dates['start'], $dates['end']);
+
         return view('data-mpd.nasional.od-simpul', [
             'title' => 'O-D Provinsi & Simpul Nasional',
             'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'O-D Provinsi & Simpul'],
@@ -135,9 +137,81 @@ class DataMpdController extends Controller
             'top_origin' => $dataProv['top_origin'],
             'top_dest' => $dataProv['top_dest'],
             'sankey' => $dataProv['sankey'],
+            'top_origin_kab' => $dataKabKota['top_origin'],
+            'top_dest_kab' => $dataKabKota['top_dest'],
+            'sankey_kab' => $dataKabKota['sankey'],
             'total_national' => $dataProv['total_national'],
             'prov_coords' => $dataProv['prov_coords'],
         ]);
+    }
+
+    private function getNasionalOdKabKotaData($startDate, $endDate)
+    {
+        try {
+            $query = DB::table('spatial_movements as sm')
+                // Join Origin City
+                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+                // Join Dest City
+                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+                ->select(
+                    'oc.code as origin_code',
+                    'oc.name as origin_name',
+                    'dc.code as dest_code',
+                    'dc.name as dest_name',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->groupBy('oc.code', 'oc.name', 'dc.code', 'dc.name')
+                ->get();
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('OD KabKota Query Error (DataMpd): ' . $e->getMessage());
+            $query = collect();
+        }
+
+        $totalNational = $query->sum('total_volume');
+        
+        $topOrigin = $query->groupBy('origin_code')
+            ->map(function ($rows) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->origin_code,
+                    'name' => $rows->first()->origin_name,
+                    'total' => $subTotal
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        $topDest = $query->groupBy('dest_code')
+            ->map(function ($rows) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->dest_code,
+                    'name' => $rows->first()->dest_name,
+                    'total' => $subTotal
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        // Top 20 overall routes for Sankey diagram
+        $sankeyData = $query->sortByDesc('total_volume')->take(20)->map(function($row) {
+            return [
+                'from' => $row->origin_name,
+                'to' => $row->dest_name,
+                'weight' => (int) $row->total_volume
+            ];
+        })->values();
+
+        return [
+            'top_origin' => $topOrigin,
+            'top_dest' => $topDest,
+            'sankey' => $sankeyData
+        ];
     }
 
     private function getNasionalOdProvinsiAsalData($startDate, $endDate)
