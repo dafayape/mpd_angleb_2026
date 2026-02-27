@@ -280,8 +280,6 @@
                                             {{ fmtNum($data['akumulasi']['total_movement']) }}</th>
                                         <th class="pb-3 pt-3 border-dark fw-bold text-dark"
                                             style="background-color: #ffffff; font-size: 1rem;">100%</th>
-                                        <th class="text-center pb-3 pt-3 border-dark fw-bold text-dark"
-                                            style="background-color: #ffffff; font-size: 1rem;">Total</th>
                                         <th class="pb-3 pt-3 border-dark fw-bold text-dark"
                                             style="background-color: #ffffff; font-size: 1rem;">
                                             {{ fmtNum($data['akumulasi']['total_people']) }}</th>
