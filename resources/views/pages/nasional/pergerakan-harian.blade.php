@@ -87,7 +87,10 @@
             <div class="card content-card w-100 flex-column" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
                 <div class="card-header d-flex align-items-center bg-white"
                     style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                    <span class="section-badge">01</span>
+                    <div class="bg-primary rounded p-2 me-3 shadow-sm d-flex align-items-center justify-content-center"
+                        style="width: 48px; height: 48px;">
+                        <span class="text-white fw-bold fs-5">01</span>
+                    </div>
                     <h5 class="fw-bold text-navy mb-0">Persandingan pergerakan harian total berdasarkan masing-masing opsel
                     </h5>
                 </div>
@@ -99,23 +102,40 @@
                                     <div class="table-responsive flex-grow-1">
                                         <table class="table table-bordered mb-0 text-center table-custom-body w-100">
                                             <thead class="{{ $conf['bg_class'] }} text-white table-custom-header">
-                                                <tr>
-                                                    <th rowspan="3" class="align-middle" style="width: 25%;">Hari,
-                                                        Tanggal</th>
-                                                    <th colspan="4" class="py-2 text-center">{{ $conf['name'] }}</th>
-                                                </tr>
-                                                <tr>
-                                                    <th colspan="2" class="py-2 border-bottom-0"><small
-                                                            class="fw-normal">Jumlah Pergerakan</small></th>
-                                                    <th colspan="2" class="py-2 border-bottom-0"><small
-                                                            class="fw-normal">Jumlah Orang</small></th>
-                                                </tr>
-                                                <tr>
-                                                    <th style="width: 18.75%;" class="py-2 border-top-0">Jumlah</th>
-                                                    <th style="width: 18.75%;" class="py-2 border-top-0">%</th>
-                                                    <th style="width: 18.75%;" class="py-2 border-top-0">Jumlah</th>
-                                                    <th style="width: 18.75%;" class="py-2 border-top-0">%</th>
-                                                </tr>
+                                                @if ($opKey === 'XL')
+                                                    <tr>
+                                                        <th rowspan="3" class="align-middle" style="width: 25%;">Hari,
+                                                            Tanggal</th>
+                                                        <th colspan="2" class="py-2 text-center">{{ $conf['name'] }}</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th rowspan="2" class="align-middle py-2"><small
+                                                                class="fw-normal">Jumlah Pergerakan</small></th>
+                                                        <th rowspan="2" class="align-middle py-2"><small
+                                                                class="fw-normal">Jumlah Orang</small></th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th style="display:none;"></th>
+                                                    </tr>
+                                                @else
+                                                    <tr>
+                                                        <th rowspan="3" class="align-middle" style="width: 25%;">Hari,
+                                                            Tanggal</th>
+                                                        <th colspan="4" class="py-2 text-center">{{ $conf['name'] }}</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th colspan="2" class="py-2 border-bottom-0"><small
+                                                                class="fw-normal">Jumlah Pergerakan</small></th>
+                                                        <th colspan="2" class="py-2 border-bottom-0"><small
+                                                                class="fw-normal">Jumlah Orang</small></th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th style="width: 18.75%;" class="py-2 border-top-0">Jumlah</th>
+                                                        <th style="width: 18.75%;" class="py-2 border-top-0">%</th>
+                                                        <th style="width: 18.75%;" class="py-2 border-top-0">Jumlah</th>
+                                                        <th style="width: 18.75%;" class="py-2 border-top-0">%</th>
+                                                    </tr>
+                                                @endif
                                             </thead>
                                             <tbody>
                                                 @foreach ($dates as $dateRaw)
