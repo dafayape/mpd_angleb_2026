@@ -135,6 +135,7 @@ class DataMpdController extends Controller
             'top_origin' => $dataProv['top_origin'],
             'sankey' => $dataProv['sankey'],
             'total_national' => $dataProv['total_national'],
+            'prov_coords' => $dataProv['prov_coords'],
         ]);
     }
 
@@ -189,10 +190,19 @@ class DataMpdController extends Controller
             ];
         })->values();
 
+        $provCoordsDB = DB::table('ref_provinces')->get();
+        $provCoordsMapping = [];
+        foreach ($provCoordsDB as $prov) {
+            if (!empty($prov->latitude) && !empty($prov->longitude)) {
+                $provCoordsMapping[strtoupper($prov->name)] = [(float) $prov->latitude, (float) $prov->longitude];
+            }
+        }
+
         return [
             'top_origin' => $topOrigin,
             'sankey' => $sankeyData,
-            'total_national' => $totalNational
+            'total_national' => $totalNational,
+            'prov_coords' => $provCoordsMapping
         ];
     }
 

@@ -229,46 +229,7 @@
             });
 
             // === DESIRE LINE MAP ===
-            const provCoords = {
-                'ACEH': [-4.695, 96.749],
-                'SUMATERA UTARA': [2.116, 99.546],
-                'SUMATERA BARAT': [-0.740, 100.800],
-                'RIAU': [0.293, 101.768],
-                'JAMBI': [-1.615, 103.613],
-                'SUMATERA SELATAN': [-3.319, 104.914],
-                'BENGKULU': [-3.800, 102.265],
-                'LAMPUNG': [-4.871, 104.983],
-                'KEPULAUAN BANGKA BELITUNG': [-2.741, 106.440],
-                'KEPULAUAN RIAU': [3.946, 108.143],
-                'DKI JAKARTA': [-6.208, 106.846],
-                'JAWA BARAT': [-6.889, 107.609],
-                'JAWA TENGAH': [-7.151, 110.140],
-                'DI YOGYAKARTA': [-7.797, 110.371],
-                'JAWA TIMUR': [-7.536, 112.237],
-                'BANTEN': [-6.405, 106.064],
-                'BALI': [-8.350, 115.088],
-                'NUSA TENGGARA BARAT': [-8.650, 117.362],
-                'NUSA TENGGARA TIMUR': [-8.658, 121.079],
-                'KALIMANTAN BARAT': [-0.278, 111.475],
-                'KALIMANTAN TENGAH': [-1.681, 113.382],
-                'KALIMANTAN SELATAN': [-3.092, 115.283],
-                'KALIMANTAN TIMUR': [1.693, 116.419],
-                'KALIMANTAN UTARA': [3.073, 116.604],
-                'SULAWESI UTARA': [0.625, 123.975],
-                'SULAWESI TENGAH': [-1.430, 121.445],
-                'SULAWESI SELATAN': [-3.669, 119.974],
-                'SULAWESI TENGGARA': [-4.145, 122.175],
-                'GORONTALO': [0.696, 122.447],
-                'SULAWESI BARAT': [-2.844, 119.232],
-                'MALUKU': [-3.239, 130.145],
-                'MALUKU UTARA': [1.570, 127.809],
-                'PAPUA BARAT': [-1.337, 133.174],
-                'PAPUA': [-4.269, 138.081],
-                'PAPUA SELATAN': [-6.729, 139.997],
-                'PAPUA TENGAH': [-3.590, 136.260],
-                'PAPUA PEGUNUNGAN': [-4.081, 138.504],
-                'PAPUA BARAT DAYA': [-1.959, 132.298]
-            };
+            const provCoords = @json($prov_coords);
 
             const map = L.map('desire-line-map', {
                 scrollWheelZoom: true
