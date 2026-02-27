@@ -224,10 +224,8 @@
                                     <tr>
                                         <th rowspan="3" class="align-middle border-dark text-start px-4"
                                             style="width: 25%; background-color: #dbe4eb; font-weight: bold;">AKUMULASI</th>
-                                        <th colspan="2" class="py-2 text-center border-dark"
+                                        <th colspan="4" class="py-2 text-center border-dark"
                                             style="background-color: #dbe4eb; font-weight: bold;">Akumulasi</th>
-                                        <th colspan="2" class="py-2 text-center border-dark"
-                                            style="background-color: #e7ebf0;"></th>
                                     </tr>
                                     <tr>
                                         <th colspan="2" class="py-2 text-center border-dark"
@@ -242,7 +240,8 @@
                                             class="py-2 border-dark text-dark fw-bold">Jumlah</th>
                                         <th style="width: 18.75%; background-color: #ffffff;"
                                             class="py-2 border-dark text-dark fw-bold">%</th>
-                                        <th style="width: 18.75%; background-color: #ffffff;" class="py-2 border-dark"></th>
+                                        <th style="width: 18.75%; background-color: #ffffff;"
+                                            class="py-2 border-dark text-dark fw-bold">Jumlah</th>
                                         <th style="width: 18.75%; background-color: #ffffff;"
                                             class="py-2 border-dark text-dark fw-bold">%</th>
                                     </tr>
@@ -259,8 +258,7 @@
                                             $labelHariTanggal = $carbonDate->isoFormat('dddd, D MMMM YYYY');
                                         @endphp
                                         <tr>
-                                            <td class="text-start text-dark border-dark"
-                                                style="background-color: #fafafa;">
+                                            <td class="text-start text-dark border-dark" style="background-color: #fafafa;">
                                                 {{ $labelHariTanggal }}</td>
                                             <td class="border-dark">{{ fmtNum($mov) }}</td>
                                             <td class="text-dark border-dark" style="background-color: #fafafa;">
