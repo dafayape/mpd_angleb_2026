@@ -383,7 +383,7 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
-        $cacheKey = 'mpd:nasional:pergerakan-harian:v4';
+        $cacheKey = 'mpd:nasional:pergerakan-harian:v5';
         
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
@@ -424,10 +424,11 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereRaw('UPPER(kategori) = ?', ['PERGERAKAN'])
+                ->whereIn(DB::raw('UPPER(kategori)'), ['PERGERAKAN', 'ORANG'])
                 ->groupBy('tanggal', 'opsel', 'kategori')
                 ->get();
 
+            $hasOrang = [];
             foreach ($query as $row) {
                 $date = substr($row->tanggal, 0, 10);
                 $rawOpsel = strtoupper($row->opsel);
@@ -443,7 +444,18 @@ class DataMpdController extends Controller
 
                 if ($cat === 'PERGERAKAN') {
                     $dates[$date][$opsel]['movement'] += $vol;
-                    $dates[$date][$opsel]['people'] += $vol; // Assuming 1 movement = 1 person
+                } elseif ($cat === 'ORANG') {
+                    $dates[$date][$opsel]['people'] += $vol;
+                    $hasOrang[$date][$opsel] = true;
+                }
+            }
+            
+            // Fallback for missing ORANG data
+            foreach ($dates as $date => &$row) {
+                foreach ($opsels as $op) {
+                   if (!isset($hasOrang[$date][$op])) {
+                       $row[$op]['people'] = $row[$op]['movement']; // 1:1 fallback
+                   }
                 }
             }
         } catch (\Throwable $e) {
@@ -469,9 +481,52 @@ class DataMpdController extends Controller
             }
         }
 
+        // --- AKUMULASI (Section 02) ---
+        $akumulasiDaily = [];
+        $totalAkumulasiMov = 0;
+        $totalAkumulasiPpl = 0;
+        
+        foreach ($dates as $date => $row) {
+            $amov = 0; $appl = 0;
+            foreach ($opsels as $op) {
+                $amov += $row[$op]['movement'];
+                $appl += $row[$op]['people'];
+            }
+            $akumulasiDaily[$date] = [
+                'movement' => $amov,
+                'people' => $appl
+            ];
+            $totalAkumulasiMov += $amov;
+            $totalAkumulasiPpl += $appl;
+        }
+
+        foreach ($akumulasiDaily as $date => &$row) {
+            $row['movement_pct'] = $totalAkumulasiMov > 0 ? ($row['movement'] / $totalAkumulasiMov) * 100 : 0;
+            $row['people_pct'] = $totalAkumulasiPpl > 0 ? ($row['people'] / $totalAkumulasiPpl) * 100 : 0;
+        }
+        
+        // Find Peak Days
+        $sortedDaily = $akumulasiDaily;
+        uasort($sortedDaily, fn($a, $b) => $b['movement'] <=> $a['movement']);
+        $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
+
+        // Calculate unique subscriber
+        $uniqueSubscriber = $totalAkumulasiMov > 0 ? round($totalAkumulasiMov / 2.13) : 0;
+        $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 2) : 0;
+
+        $akumulasiData = [
+            'daily' => $akumulasiDaily,
+            'total_movement' => $totalAkumulasiMov,
+            'total_people' => $totalAkumulasiPpl,
+            'peak_days' => $peakDays,
+            'unique_subscriber' => $uniqueSubscriber,
+            'koefisien' => $koefisien
+        ];
+
         return [
             'daily' => $dates,
-            'totals' => $totals
+            'totals' => $totals,
+            'akumulasi' => $akumulasiData
         ];
     }
 
