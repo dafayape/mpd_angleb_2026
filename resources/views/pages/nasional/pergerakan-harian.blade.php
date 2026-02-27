@@ -11,22 +11,9 @@
             color: white !important;
         }
 
-        .bg-amber {
-            background-color: #f59e0b !important;
-            color: white !important;
-        }
-
-        .bg-tsel {
-            background-color: #ef4444 !important;
-            color: white !important;
-        }
-
-        .text-navy {
-            color: #2a3042 !important;
-        }
-
         .section-badge {
-            background-color: #2a3042;
+            background-color: #556ee6;
+            /* Primary blue to match user screenshot */
             color: white;
             border-radius: 8px;
             padding: 12px 14px;
@@ -34,7 +21,7 @@
             font-weight: 900;
             margin-right: 16px;
             line-height: 1;
-            box-shadow: 0 4px 10px rgba(42, 48, 66, 0.15);
+            box-shadow: 0 4px 10px rgba(85, 110, 230, 0.2);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -118,40 +105,23 @@
                                     <div class="table-responsive flex-grow-1">
                                         <table class="table table-bordered mb-0 text-center table-custom-body w-100">
                                             <thead class="{{ $conf['bg_class'] }} text-white table-custom-header">
-                                                @if ($opKey === 'XL')
-                                                    <tr>
-                                                        <th rowspan="3" class="align-middle" style="width: 25%;">Hari,
-                                                            Tanggal</th>
-                                                        <th colspan="2" class="py-2 text-center">{{ $conf['name'] }}</th>
-                                                    </tr>
-                                                    <tr>
-                                                        <th rowspan="2" class="align-middle py-2"><small
-                                                                class="fw-normal">Jumlah Pergerakan</small></th>
-                                                        <th rowspan="2" class="align-middle py-2"><small
-                                                                class="fw-normal">Jumlah Orang</small></th>
-                                                    </tr>
-                                                    <tr>
-                                                        <th style="display:none;"></th>
-                                                    </tr>
-                                                @else
-                                                    <tr>
-                                                        <th rowspan="3" class="align-middle" style="width: 25%;">Hari,
-                                                            Tanggal</th>
-                                                        <th colspan="4" class="py-2 text-center">{{ $conf['name'] }}</th>
-                                                    </tr>
-                                                    <tr>
-                                                        <th colspan="2" class="py-2 border-bottom-0"><small
-                                                                class="fw-normal">Jumlah Pergerakan</small></th>
-                                                        <th colspan="2" class="py-2 border-bottom-0"><small
-                                                                class="fw-normal">Jumlah Orang</small></th>
-                                                    </tr>
-                                                    <tr>
-                                                        <th style="width: 18.75%;" class="py-2 border-top-0">Jumlah</th>
-                                                        <th style="width: 18.75%;" class="py-2 border-top-0">%</th>
-                                                        <th style="width: 18.75%;" class="py-2 border-top-0">Jumlah</th>
-                                                        <th style="width: 18.75%;" class="py-2 border-top-0">%</th>
-                                                    </tr>
-                                                @endif
+                                                <tr>
+                                                    <th rowspan="3" class="align-middle" style="width: 25%;">Hari,
+                                                        Tanggal</th>
+                                                    <th colspan="4" class="py-2 text-center">{{ $conf['name'] }}</th>
+                                                </tr>
+                                                <tr>
+                                                    <th colspan="2" class="py-2 border-bottom-0"><small
+                                                            class="fw-normal">Jumlah Pergerakan</small></th>
+                                                    <th colspan="2" class="py-2 border-bottom-0"><small
+                                                            class="fw-normal">Jumlah Orang</small></th>
+                                                </tr>
+                                                <tr>
+                                                    <th style="width: 18.75%;" class="py-2 border-top-0">Jumlah</th>
+                                                    <th style="width: 18.75%;" class="py-2 border-top-0">%</th>
+                                                    <th style="width: 18.75%;" class="py-2 border-top-0">Jumlah</th>
+                                                    <th style="width: 18.75%;" class="py-2 border-top-0">%</th>
+                                                </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach ($dates as $dateRaw)
@@ -170,15 +140,10 @@
                                                     <tr>
                                                         <td class="text-start fw-medium text-dark bg-light">
                                                             {{ $labelHariTanggal }}</td>
-                                                        @if ($opKey === 'XL')
-                                                            <td>{{ fmtNum($mov) }}</td>
-                                                            <td>{{ fmtNum($ppl) }}</td>
-                                                        @else
-                                                            <td>{{ fmtNum($mov) }}</td>
-                                                            <td class="text-muted bg-light">{{ fmtPct($movPct) }}</td>
-                                                            <td>{{ fmtNum($ppl) }}</td>
-                                                            <td class="text-muted bg-light">{{ fmtPct($pplPct) }}</td>
-                                                        @endif
+                                                        <td>{{ fmtNum($mov) }}</td>
+                                                        <td class="text-muted bg-light">{{ fmtPct($movPct) }}</td>
+                                                        <td>{{ fmtNum($ppl) }}</td>
+                                                        <td class="text-muted bg-light">{{ fmtPct($pplPct) }}</td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
@@ -189,15 +154,10 @@
                                                         $totMov = $data['totals'][$opKey]['movement'] ?? 0;
                                                         $totPpl = $data['totals'][$opKey]['people'] ?? 0;
                                                     @endphp
-                                                    @if ($opKey === 'XL')
-                                                        <th>{{ fmtNum($totMov) }}</th>
-                                                        <th>{{ fmtNum($totPpl) }}</th>
-                                                    @else
-                                                        <th>{{ fmtNum($totMov) }}</th>
-                                                        <th>100%</th>
-                                                        <th>{{ fmtNum($totPpl) }}</th>
-                                                        <th>100%</th>
-                                                    @endif
+                                                    <th>{{ fmtNum($totMov) }}</th>
+                                                    <th>100%</th>
+                                                    <th>{{ fmtNum($totPpl) }}</th>
+                                                    <th>100%</th>
                                                 </tr>
                                             </tfoot>
                                         </table>
