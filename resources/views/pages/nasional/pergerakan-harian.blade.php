@@ -11,6 +11,20 @@
             color: white !important;
         }
 
+        .bg-amber {
+            background-color: #f59e0b !important;
+            color: white !important;
+        }
+
+        .bg-tsel {
+            background-color: #ef4444 !important;
+            color: white !important;
+        }
+
+        .text-navy {
+            color: #2a3042 !important;
+        }
+
         .section-badge {
             background-color: #556ee6;
             /* Primary blue to match user screenshot */

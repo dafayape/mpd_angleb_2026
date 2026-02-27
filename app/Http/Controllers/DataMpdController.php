@@ -383,7 +383,7 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
-        $cacheKey = 'mpd:nasional:pergerakan-harian:v1';
+        $cacheKey = 'mpd:nasional:pergerakan-harian:v2';
         
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
@@ -424,12 +424,13 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
+                ->where('kategori', 'PERGERAKAN')
                 ->groupBy('tanggal', 'opsel', 'kategori')
                 ->get();
 
             foreach ($query as $row) {
-                $date = $row->tanggal;
+                // Ensure datetime string is truncated to Y-m-d layout for array key mapping
+                $date = substr($row->tanggal, 0, 10);
                 $rawOpsel = strtoupper($row->opsel);
                 $cat = $row->kategori;
                 $vol = (int) $row->total_volume;
@@ -443,8 +444,7 @@ class DataMpdController extends Controller
 
                 if ($cat === 'PERGERAKAN') {
                     $dates[$date][$opsel]['movement'] += $vol;
-                } elseif ($cat === 'ORANG') {
-                    $dates[$date][$opsel]['people'] += $vol;
+                    $dates[$date][$opsel]['people'] += $vol; // Assuming 1 movement = 1 person
                 }
             }
         } catch (\Throwable $e) {
