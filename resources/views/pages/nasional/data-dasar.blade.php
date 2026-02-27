@@ -78,7 +78,6 @@
         }
 
         .tech-list li i {
-            color: #10b981;
             margin-right: 10px;
             font-size: 1.25rem;
         }
@@ -184,10 +183,11 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-server me-2 text-primary"></i>Infrastruktur Endpoint:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bx-check-circle"></i> <strong>Apache HTTP Server 2.4</strong> (Web Server)
+                                <li><i class="bx bx-server text-primary"></i> <strong>Apache HTTP Server 2.4</strong> (Web
+                                    Server)
                                 </li>
-                                <li><i class="bx bx-check-circle"></i> IDCloudHost Enterprise VPS Infrastructure</li>
-                                <li><i class="bx bx-check-circle"></i> Form Multipart Bulk CSV Upload</li>
+                                <li><i class="bx bx-cloud text-primary"></i> IDCloudHost Enterprise VPS Infrastructure</li>
+                                <li><i class="bx bx-copy-alt text-primary"></i> Form Multipart Bulk CSV Upload</li>
                             </ul>
                         </div>
                     </div>
@@ -214,10 +214,12 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-check-shield me-2 text-success"></i>Validasi & Parsing:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bx-check-circle"></i> <strong>Laravel 12</strong> (Core Application Server)
+                                <li><i class="bx bxl-php text-success"></i> <strong>Laravel 12</strong> (Core Application
+                                    Server)
                                 </li>
-                                <li><i class="bx bx-check-circle"></i> <strong>PHP 8.4</strong> (Fast JIT Processing)</li>
-                                <li><i class="bx bx-check-circle"></i> Memory-efficient Generator Chunking</li>
+                                <li><i class="bx bx-code-block text-success"></i> <strong>PHP 8.4</strong> (Fast JIT
+                                    Processing)</li>
+                                <li><i class="bx bx-microchip text-success"></i> Memory-efficient Generator Chunking</li>
                             </ul>
                         </div>
                     </div>
@@ -243,10 +245,11 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-layer me-2 text-warning"></i>Message Streaming:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bx-check-circle"></i> <strong>Redis Server 8.0.5</strong> (Broker utama)
+                                <li><i class="bx bx-data text-warning"></i> <strong>Redis Server 8.0.5</strong> (Broker
+                                    utama)
                                 </li>
-                                <li><i class="bx bx-check-circle"></i> Laravel Scheduler & Redis Streams Queue</li>
-                                <li><i class="bx bx-check-circle"></i> Supervisor (Daemon Background Monitor)</li>
+                                <li><i class="bx bx-list-ul text-warning"></i> Laravel Scheduler & Redis Streams Queue</li>
+                                <li><i class="bx bx-terminal text-warning"></i> Supervisor (Daemon Background Monitor)</li>
                             </ul>
                         </div>
                     </div>
@@ -275,9 +278,10 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-slider-alt me-2 text-danger"></i>Job Engine Tools:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bx-check-circle"></i> Daemon Queue Workers (PHP CLI)</li>
-                                <li><i class="bx bx-check-circle"></i> Algoritma Pemetaan Unique Subscriber OD</li>
-                                <li><i class="bx bx-check-circle"></i> Batch Insert `upsert()` Optimization</li>
+                                <li><i class="bx bx-cog text-danger"></i> Daemon Queue Workers (PHP CLI)</li>
+                                <li><i class="bx bx-git-branch text-danger"></i> Algoritma Pemetaan Unique Subscriber OD
+                                </li>
+                                <li><i class="bx bx-refresh text-danger"></i> Batch Insert `upsert()` Optimization</li>
                             </ul>
                         </div>
                     </div>
@@ -303,10 +307,11 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-data me-2 text-info"></i>Storage & Indexing:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bx-check-circle"></i> <strong>PostgreSQL 18</strong> (Database Core)</li>
-                                <li><i class="bx bx-check-circle"></i> <strong>PostGIS 3.6</strong> (Ekstensi Geospasial
-                                    Vector)</li>
-                                <li><i class="bx bx-check-circle"></i> Partitioning & B-Tree Spatial/GIST Indexes</li>
+                                <li><i class="bx bxs-coin-stack text-info"></i> <strong>PostgreSQL 18</strong> (Database
+                                    Core)</li>
+                                <li><i class="bx bx-map-alt text-info"></i> <strong>PostGIS 3.6</strong> (Ekstensi
+                                    Geospasial Vector)</li>
+                                <li><i class="bx bx-sitemap text-info"></i> Partitioning & B-Tree Spatial/GIST Indexes</li>
                             </ul>
                         </div>
                     </div>
@@ -332,10 +337,10 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-devices me-2 text-dark"></i>Visualisasi Dashboard:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bx-check-circle"></i> Bootstrap 5 & jQuery (Interactive DOM)</li>
-                                <li><i class="bx bx-check-circle"></i> <strong>Highcharts.js & Leaflet.js</strong> (Grafik
+                                <li><i class="bx bxl-bootstrap text-dark"></i> Bootstrap 5 & jQuery (Interactive DOM)</li>
+                                <li><i class="bx bx-map text-dark"></i> <strong>Highcharts.js & Leaflet.js</strong> (Grafik
                                     & Geoportal)</li>
-                                <li><i class="bx bx-check-circle"></i> Cache Redis Analytics Query</li>
+                                <li><i class="bx bx-bolt-circle text-dark"></i> Cache Redis Analytics Query</li>
                             </ul>
                         </div>
                     </div>
