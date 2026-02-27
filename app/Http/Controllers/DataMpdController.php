@@ -110,24 +110,90 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
         
         $cacheKey = 'mpd:nasional:od-simpul:split:v1';
+        $cacheKeyOdProv = 'mpd:nasional:od-simpul:prov:v1';
         
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
                 return $this->getNasionalOdSimpulData($startDate, $endDate);
             });
+            $dataProv = Cache::remember($cacheKeyOdProv, 3600, function () use ($startDate, $endDate) {
+                return $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
+            });
         } catch (\Throwable $e) {
             $data = $this->getNasionalOdSimpulData($startDate, $endDate);
+            $dataProv = $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
         }
 
         return view('data-mpd.nasional.od-simpul', [
-            'title' => 'O-D Simpul Nasional',
-            'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'O-D Simpul'],
+            'title' => 'O-D Provinsi & Simpul Nasional',
+            'breadcrumb' => ['Data MPD Opsel', 'Nasional', 'O-D Provinsi & Simpul'],
             'dates' => $dates,
             'simpul_darat' => $data['darat'],
             'simpul_laut' => $data['laut'],
             'simpul_udara' => $data['udara'],
             'simpul_kereta' => $data['kereta'],
+            'top_origin' => $dataProv['top_origin'],
+            'sankey' => $dataProv['sankey'],
+            'total_national' => $dataProv['total_national'],
         ]);
+    }
+
+    private function getNasionalOdProvinsiAsalData($startDate, $endDate)
+    {
+        try {
+            $query = DB::table('spatial_movements as sm')
+                // Join Origin City & Province
+                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+                ->join('ref_provinces as op', 'oc.province_code', '=', 'op.code')
+                // Join Dest City & Province
+                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+                ->join('ref_provinces as dp', 'dc.province_code', '=', 'dp.code')
+                ->select(
+                    'op.code as origin_code',
+                    'op.name as origin_name',
+                    'dp.code as dest_code',
+                    'dp.name as dest_name',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->groupBy('op.code', 'op.name', 'dp.code', 'dp.name')
+                ->get();
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('OD Provinsi Query Error (DataMpd): ' . $e->getMessage());
+            $query = collect();
+        }
+
+        $totalNational = $query->sum('total_volume');
+        
+        $topOrigin = $query->groupBy('origin_code')
+            ->map(function ($rows) use ($totalNational) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->origin_code,
+                    'name' => $rows->first()->origin_name,
+                    'total' => $subTotal,
+                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        $sankeyData = $query->map(function($row) {
+            return [
+                'from' => $row->origin_name,
+                'to' => $row->dest_name,
+                'weight' => (int) $row->total_volume
+            ];
+        })->values();
+
+        return [
+            'top_origin' => $topOrigin,
+            'sankey' => $sankeyData,
+            'total_national' => $totalNational
+        ];
     }
 
     private function getNasionalOdSimpulData($startDate, $endDate)
