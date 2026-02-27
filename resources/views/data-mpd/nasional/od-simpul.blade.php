@@ -271,7 +271,7 @@
             };
 
             const map = L.map('desire-line-map', {
-                scrollWheelZoom: false
+                scrollWheelZoom: true
             }).setView([-2.5, 118], 5);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; CARTO',
@@ -292,33 +292,50 @@
                     const toClean = toRaw.replace('(D) ', '').trim();
 
                     if (provCoords[fromClean] && provCoords[toClean]) {
-                        const width = Math.max(1, Math.round((weight / maxWeight) * 8));
-                        const opacity = Math.max(0.3, weight / maxWeight);
+                        const width = Math.max(1, Math.round((weight / maxWeight) * 4));
+                        const opacity = Math.max(0.4, weight / maxWeight);
 
                         const polyline = L.polyline([provCoords[fromClean], provCoords[toClean]], {
                                 color: '#e74c3c',
                                 weight: width,
-                                opacity: opacity
+                                opacity: opacity,
+                                className: 'interactive-line'
                             })
                             .addTo(map).bindPopup(
                                 `<b>${od[0] || od.from}</b> → <b>${od[1] || od.to}</b><br>Total: <b>${weight.toLocaleString('id-ID')}</b>`
                             );
 
-                        L.polylineDecorator(polyline, {
+                        const arrow = L.polylineDecorator(polyline, {
                             patterns: [{
                                 offset: '100%',
                                 repeat: 0,
                                 symbol: L.Symbol.arrowHead({
-                                    pixelSize: 10 + width,
-                                    polygon: false,
+                                    pixelSize: 6 + width,
+                                    polygon: true,
                                     pathOptions: {
                                         stroke: true,
                                         color: '#e74c3c',
-                                        weight: width + 1
+                                        weight: width,
+                                        fillOpacity: opacity
                                     }
                                 })
                             }]
                         }).addTo(map);
+
+                        polyline.on('mouseover', function(e) {
+                            this.setStyle({
+                                weight: width + 4,
+                                color: '#c0392b',
+                                opacity: 1
+                            });
+                        });
+                        polyline.on('mouseout', function(e) {
+                            this.setStyle({
+                                weight: width,
+                                color: '#e74c3c',
+                                opacity: opacity
+                            });
+                        });
 
                         L.circleMarker(provCoords[fromClean], {
                                 radius: 4,
