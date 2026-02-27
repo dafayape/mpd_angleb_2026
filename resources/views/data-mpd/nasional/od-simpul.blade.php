@@ -377,6 +377,32 @@
                 });
             }
 
+            // === SANKEY HELPER UNTUK FORCE SORTING & ALIGNMENT ===
+            function generateSortedNodes(data) {
+                let origins = {};
+                let dests = {};
+                data.forEach(item => {
+                    origins[item.from] = (origins[item.from] || 0) + item.weight;
+                    dests[item.to] = (dests[item.to] || 0) + item.weight;
+                });
+
+                // Sort secara descending (paling atas = volume paling besar)
+                let sortedOrigins = Object.keys(origins).sort((a, b) => origins[b] - origins[a]);
+                let sortedDests = Object.keys(dests).sort((a, b) => dests[b] - dests[a]);
+
+                let nodes = [];
+                sortedOrigins.forEach((id) => nodes.push({
+                    id: id,
+                    column: 0
+                }));
+                sortedDests.forEach((id) => nodes.push({
+                    id: id,
+                    column: 1
+                }));
+
+                return nodes;
+            }
+
             // === SANKEY CHART ===
             const sankeyData = @json($sankey);
             Highcharts.chart('sankey-container', {
@@ -386,6 +412,7 @@
                 series: [{
                     keys: ['from', 'to', 'weight'],
                     data: sankeyData,
+                    nodes: generateSortedNodes(sankeyData),
                     type: 'sankey',
                     name: 'Pergerakan O-D',
                     dataLabels: {
@@ -413,6 +440,7 @@
                 series: [{
                     keys: ['from', 'to', 'weight'],
                     data: sankeyData,
+                    nodes: generateSortedNodes(sankeyData),
                     type: 'sankey',
                     name: 'Pergerakan O-D',
                     dataLabels: {
@@ -441,6 +469,7 @@
                 series: [{
                     keys: ['from', 'to', 'weight'],
                     data: sankeyKabData,
+                    nodes: generateSortedNodes(sankeyKabData),
                     type: 'sankey',
                     name: 'Pergerakan O-D Kab/Kota',
                     dataLabels: {
