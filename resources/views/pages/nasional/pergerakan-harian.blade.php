@@ -26,8 +26,7 @@
         }
 
         .section-badge {
-            background-color: #556ee6;
-            /* Primary blue to match user screenshot */
+            background-color: #2a3042;
             color: white;
             border-radius: 8px;
             padding: 12px 14px;
@@ -35,7 +34,7 @@
             font-weight: 900;
             margin-right: 16px;
             line-height: 1;
-            box-shadow: 0 4px 10px rgba(85, 110, 230, 0.2);
+            box-shadow: 0 4px 10px rgba(42, 48, 66, 0.15);
             display: inline-flex;
             align-items: center;
             justify-content: center;
