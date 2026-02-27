@@ -215,12 +215,13 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-check-shield me-2 text-success"></i>Validasi & Parsing:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bxl-php text-success"></i> <strong>Laravel 12</strong> (Core Application
+                                <li><i class="bx bx-code-block text-success"></i> <strong>Laravel 12</strong> (Core
+                                    Application
                                     Server)
                                 </li>
                                 <li><i class="bx bx-code-block text-success"></i> <strong>PHP 8.4</strong> (Fast JIT
                                     Processing)</li>
-                                <li><i class="bx bx-microchip text-success"></i> Memory-efficient Generator Chunking
+                                <li><i class="bx bx-bolt-circle text-success"></i> Memory-efficient Generator Chunking
                                 </li>
                             </ul>
                         </div>
@@ -300,7 +301,7 @@
                     </div>
                     <div class="card-body bg-light flex-grow-1 d-flex flex-column">
                         <div class="arch-step-icon bg-soft-info">
-                            <i class="bx bx-coin-stack"></i>
+                            <i class="bx bx-list-ul"></i>
                         </div>
                         <p class="text-muted mb-4" style="line-height: 1.6; text-align: justify;">
                             Hasil <i>clean data</i> yang telah di-transformasi spasial & agregat koefisien disimpan di Data
@@ -310,7 +311,7 @@
                             <h6 class="fw-bold fs-6 mb-3 text-navy border-bottom pb-2"><i
                                     class="bx bx-data me-2 text-info"></i>Storage & Indexing:</h6>
                             <ul class="tech-list">
-                                <li><i class="bx bx-coin-stack text-info"></i> <strong>PostgreSQL 18</strong> (Database
+                                <li><i class="bx bx-data text-info"></i> <strong>PostgreSQL 18</strong> (Database
                                     Core)</li>
                                 <li><i class="bx bx-map-alt text-info"></i> <strong>PostGIS 3.6</strong> (Ekstensi
                                     Geospasial Vector)</li>
