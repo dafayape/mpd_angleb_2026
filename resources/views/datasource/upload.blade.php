@@ -427,7 +427,8 @@
                     '<h6 class="fw-bold text-dark"><i class="bx bx-error text-warning me-1"></i> Peringatan OPSEL Tidak Sesuai</h6>' +
                     '<div style="font-size: 13px;">Anda memilih OPSEL <span class="badge bg-primary">' + result
                     .opsel_mismatch.selected + '</span> di form, ' +
-                    'namun di dalam file CSV ditemukan OPSEL <span class="badge bg-danger">' + result.opsel_mismatch
+                    'namun di dalam file CSV ditemukan OPSEL <span class="badge bg-danger text-wrap text-break" style="line-height: 1.4; max-width: 100%; word-break: break-all; text-align: left;">' +
+                    result.opsel_mismatch
                     .mismatched.join(', ') + '</span>.</div>' +
                     '<div class="mt-2 fw-bold text-dark" style="font-size: 12px;">Apakah Anda yakin ingin tetap melanjutkan import data ini?</div>';
 
