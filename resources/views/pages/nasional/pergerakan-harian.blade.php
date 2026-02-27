@@ -63,14 +63,18 @@
         </ol>
     @endcomponent
 
-    <div class="row mb-3" data-aos="fade-down" data-aos-duration="600">
+    <div class="row mb-4" data-aos="fade-down" data-aos-duration="600">
         <div class="col-12">
-            <div class="alert bg-white border shadow-sm d-flex align-items-center mb-0" role="alert">
-                <i class="bx bx-info-circle fs-4 text-primary me-3"></i>
-                <div class="text-muted">
-                    Persandingan data total pergerakan harian <strong>(13 - 30 Maret 2026)</strong> berdasarkan
-                    masing-masing Operator Seluler: XLSmart, IOH, dan TSEL. Jika data observasi nol, maka sistem akan
-                    langsung menampilkannya secara transparan (0).
+            <div class="card bg-white rounded-3 border shadow-sm position-relative">
+                <div class="card-body p-3 d-flex align-items-center position-relative z-1">
+                    <div class="bg-primary rounded p-2 me-3 shadow-sm d-flex align-items-center justify-content-center"
+                        style="width: 48px; height: 48px;">
+                        <span class="text-white fw-bold fs-5">01</span>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold text-navy">Persandingan pergerakan harian total berdasarkan masing-masing
+                            opsel</h5>
+                    </div>
                 </div>
             </div>
         </div>
@@ -89,7 +93,7 @@
 
         // Setup Opsels
         $opselsConfig = [
-            'XL' => ['name' => 'XLSmart', 'bg_class' => 'bg-navy', 'text_class' => 'text-primary'],
+            'XL' => ['name' => 'XL', 'bg_class' => 'bg-navy', 'text_class' => 'text-primary'],
             'IOH' => ['name' => 'IOH', 'bg_class' => 'bg-amber', 'text_class' => 'text-warning'],
             'TSEL' => ['name' => 'TSEL', 'bg_class' => 'bg-tsel', 'text_class' => 'text-danger'],
         ];
@@ -103,21 +107,28 @@
                         <table class="table table-bordered mb-0 text-center table-custom-body w-100">
                             <thead class="{{ $conf['bg_class'] }} table-custom-header">
                                 <tr>
-                                    @if ($loop->first)
+                                    @if ($opKey === 'XL')
                                         <th rowspan="2" style="width: 25%;">Hari, Tanggal</th>
+                                        <th colspan="2" class="border-bottom-0 pb-0">{{ $conf['name'] }}</th>
                                     @else
-                                        <!-- Hide date header on other tables visually in sync if requested, but for responsive layout, rendering it is better. Let's render it for standalone integrity -> but the user screenshot shows middle and right tables don't specify date column headers? Oh wait, the screenshot only shows headers for Movement and People! The user cropped the image to show them seamlessly -> if stacked, they MUST have dates. -->
-                                        <th rowspan="2" class="d-xl-none" style="width: 25%;">Hari, Tanggal</th>
+                                        <th rowspan="2" style="width: 25%;">Hari, Tanggal</th>
+                                        <th colspan="2">{{ $conf['name'] }}<br><small class="fw-normal">Jumlah
+                                                Pergerakan</small></th>
+                                        <th colspan="2"><br><small class="fw-normal">Jumlah Orang</small></th>
                                     @endif
-                                    <th colspan="2">{{ $conf['name'] }}<br><small class="fw-normal">Jumlah
-                                            Pergerakan</small></th>
-                                    <th colspan="2"><br><small class="fw-normal">Jumlah Orang</small></th>
                                 </tr>
                                 <tr>
-                                    <th style="width: 18%;">Jumlah</th>
-                                    <th style="width: 15%;">%</th>
-                                    <th style="width: 18%;">Jumlah</th>
-                                    <th style="width: 15%;">%</th>
+                                    @if ($opKey === 'XL')
+                                        <th style="width: 37.5%;" class="pt-2"><small class="fw-normal">Jumlah
+                                                Pergerakan</small></th>
+                                        <th style="width: 37.5%;" class="pt-2"><small class="fw-normal">Jumlah
+                                                Orang</small></th>
+                                    @else
+                                        <th style="width: 18%;">Jumlah</th>
+                                        <th style="width: 15%;">%</th>
+                                        <th style="width: 18%;">Jumlah</th>
+                                        <th style="width: 15%;">%</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -133,35 +144,37 @@
                                         $pplPct = $row['people_pct'] ?? 0;
                                     @endphp
                                     <tr>
-                                        @if ($loop->parent->first)
-                                            <td class="text-start fw-medium text-dark bg-light">{{ $labelHariTanggal }}</td>
-                                        @else
-                                            <td class="text-start fw-medium text-dark bg-light d-xl-none">
-                                                {{ $labelHariTanggal }}</td>
-                                        @endif
+                                        <!-- Keep symmetrical across 3 tables so they align properly -->
+                                        <td class="text-start fw-medium text-dark bg-light">{{ $labelHariTanggal }}</td>
 
-                                        <td>{{ fmtNum($mov) }}</td>
-                                        <td class="text-muted">{{ fmtPct($movPct) }}</td>
-                                        <td>{{ fmtNum($ppl) }}</td>
-                                        <td class="text-muted">{{ fmtPct($pplPct) }}</td>
+                                        @if ($opKey === 'XL')
+                                            <td>{{ fmtNum($mov) }}</td>
+                                            <td>{{ fmtNum($ppl) }}</td>
+                                        @else
+                                            <td>{{ fmtNum($mov) }}</td>
+                                            <td class="text-muted bg-light">{{ fmtPct($movPct) }}</td>
+                                            <td>{{ fmtNum($ppl) }}</td>
+                                            <td class="text-muted bg-light">{{ fmtPct($pplPct) }}</td>
+                                        @endif
                                     </tr>
                                 @endforeach
                             </tbody>
                             <tfoot class="{{ $conf['bg_class'] }} text-white font-weight-bold">
                                 <tr>
-                                    @if ($loop->first)
-                                        <th class="text-start">Total</th>
-                                    @else
-                                        <th class="text-start d-xl-none">Total</th>
-                                    @endif
+                                    <th class="text-start">Total</th>
                                     @php
                                         $totMov = $data['totals'][$opKey]['movement'] ?? 0;
                                         $totPpl = $data['totals'][$opKey]['people'] ?? 0;
                                     @endphp
-                                    <th>{{ fmtNum($totMov) }}</th>
-                                    <th>100%</th>
-                                    <th>{{ fmtNum($totPpl) }}</th>
-                                    <th>100%</th>
+                                    @if ($opKey === 'XL')
+                                        <th>{{ fmtNum($totMov) }}</th>
+                                        <th>{{ fmtNum($totPpl) }}</th>
+                                    @else
+                                        <th>{{ fmtNum($totMov) }}</th>
+                                        <th>100%</th>
+                                        <th>{{ fmtNum($totPpl) }}</th>
+                                        <th>100%</th>
+                                    @endif
                                 </tr>
                             </tfoot>
                         </table>
@@ -177,8 +190,7 @@
                                 @if ($totMov > 0)
                                     Berdasarkan akumulasi tanggal 13 - 30 Maret 2026, total pergerakan yang terekam oleh
                                     <strong>{{ $conf['name'] }}</strong> adalah <strong>{{ fmtNum($totMov) }}</strong>,
-                                    mencakup basis <strong>{{ fmtNum($totPpl) }}</strong> target orang. Pola pergerakan
-                                    cenderung dinamis tiap harinya.
+                                    mencakup <strong>{{ fmtNum($totPpl) }}</strong> target orang.
                                 @else
                                     Pada rentang waktu ini, belum terdapat rekaman observasi pergerakan yang valid secara
                                     menyeluruh untuk operator <strong>{{ $conf['name'] }}</strong>.
