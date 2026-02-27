@@ -163,6 +163,7 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
                 ->groupBy('oc.code', 'oc.name', 'dc.code', 'dc.name')
+                ->orderByRaw('total_volume DESC')
                 ->get();
 
         } catch (\Throwable $e) {
@@ -199,7 +200,7 @@ class DataMpdController extends Controller
             ->values();
 
         // Top 20 overall routes for Sankey diagram
-        $sankeyData = $query->sortByDesc('total_volume')->take(20)->map(function($row) {
+        $sankeyData = $query->take(20)->map(function($row) {
             return [
                 'from' => '(O) ' . $row->origin_name,
                 'to' => '(D) ' . $row->dest_name,
@@ -234,6 +235,7 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
                 ->groupBy('op.code', 'op.name', 'dp.code', 'dp.name')
+                ->orderByRaw('total_volume DESC')
                 ->get();
 
         } catch (\Throwable $e) {
@@ -271,7 +273,7 @@ class DataMpdController extends Controller
             ->take(10)
             ->values();
 
-        $sankeyData = $query->sortByDesc('total_volume')->map(function($row) {
+        $sankeyData = $query->map(function($row) {
             return [
                 'from' => '(O) ' . $row->origin_name,
                 'to' => '(D) ' . $row->dest_name,
