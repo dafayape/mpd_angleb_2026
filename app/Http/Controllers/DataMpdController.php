@@ -201,8 +201,8 @@ class DataMpdController extends Controller
         // Top 20 overall routes for Sankey diagram
         $sankeyData = $query->sortByDesc('total_volume')->take(20)->map(function($row) {
             return [
-                'from' => $row->origin_name,
-                'to' => $row->dest_name,
+                'from' => '(O) ' . $row->origin_name,
+                'to' => '(D) ' . $row->dest_name,
                 'weight' => (int) $row->total_volume
             ];
         })->values();
