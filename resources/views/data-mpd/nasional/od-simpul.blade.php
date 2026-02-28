@@ -3,23 +3,17 @@
 @section('title', $title)
 
 @section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-                <h4 class="mb-sm-0 font-size-18">{{ $title }}</h4>
-
-                <div class="page-title-right">
-                    <ol class="breadcrumb m-0">
-                        @foreach ($breadcrumb as $crumb)
-                            <li class="breadcrumb-item {{ $loop->last ? 'active' : '' }}">
-                                {{ $crumb }}
-                            </li>
-                        @endforeach
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
+    @component('layout.partials.page-header', ['number' => '04', 'title' => $title])
+        <ol class="breadcrumb m-0 mb-0">
+            @foreach ($breadcrumb as $crumb)
+                @if ($loop->last)
+                    <li class="breadcrumb-item active">{{ $crumb }}</li>
+                @else
+                    <li class="breadcrumb-item"><a href="#">{{ $crumb }}</a></li>
+                @endif
+            @endforeach
+        </ol>
+    @endcomponent
 
     @push('css')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"

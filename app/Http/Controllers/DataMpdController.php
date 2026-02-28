@@ -109,8 +109,10 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
         
-        $cacheKey = 'mpd:nasional:od-simpul:split:v1';
-        $cacheKeyOdProv = 'mpd:nasional:od-simpul:prov:v1';
+        $dString = $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
+        $cacheKey = "mpd:nasional:od-simpul:split:v1:{$dString}";
+        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v1:{$dString}";
+        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v1:{$dString}";
         
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
@@ -119,12 +121,14 @@ class DataMpdController extends Controller
             $dataProv = Cache::remember($cacheKeyOdProv, 3600, function () use ($startDate, $endDate) {
                 return $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
             });
+            $dataKabKota = Cache::remember($cacheKeyOdKabKota, 3600, function () use ($startDate, $endDate) {
+                return $this->getNasionalOdKabKotaData($startDate, $endDate);
+            });
         } catch (\Throwable $e) {
             $data = $this->getNasionalOdSimpulData($startDate, $endDate);
             $dataProv = $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
+            $dataKabKota = $this->getNasionalOdKabKotaData($startDate, $endDate);
         }
-
-        $dataKabKota = $this->getNasionalOdKabKotaData($startDate, $endDate);
 
         return view('data-mpd.nasional.od-simpul', [
             'title' => 'O-D Provinsi & Simpul Nasional',
