@@ -548,6 +548,108 @@ class DataMpdController extends Controller
             'detail' => array_values($detailRows) // Re-index for simpler loop
         ];
     }
+    public function nasionalModeSharePage(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 30);
+        
+        $dString = $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
+        $cacheKey = "mpd:nasional:mode-share-page:v1:{$dString}";
+        
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getModeSharePageData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getModeSharePageData($startDate, $endDate);
+        }
+
+        return view('pages.nasional.mode-share', [
+            'data' => $data
+        ]);
+    }
+
+    private function getModeSharePageData($startDate, $endDate)
+    {
+        try {
+            $query = DB::table('spatial_movements as sm')
+                ->select(
+                    'sm.kode_moda',
+                    'sm.kategori',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.is_forecast', false) // As per image saying "Real"
+                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->groupBy('sm.kode_moda', 'sm.kategori')
+                ->get();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Mode Share Page Query Error (DataMpd): ' . $e->getMessage());
+            $query = collect();
+        }
+
+        $modes = [
+            'A' => 'Angkutan Jalan (Bus AKAP)',
+            'B' => 'Angkutan Jalan (Bus AKDP)',
+            'C' => 'Angkutan Kereta Api Antarkota',
+            'D' => 'Angkutan Kereta Api KCJB',
+            'E' => 'Angkutan Kereta Api Perkotaan',
+            'F' => 'Angkutan Laut',
+            'G' => 'Angkutan Penyeberangan',
+            'H' => 'Angkutan Udara',
+            'I' => 'Mobil Pribadi',
+            'J' => 'Motor Pribadi',
+            'K' => 'Sepeda'
+        ];
+
+        $pergerakanMap = [];
+        $orangMap = [];
+
+        foreach ($modes as $code => $name) {
+            $pergerakanMap[$code] = ['name' => $name, 'y' => 0];
+            $orangMap[$code] = ['name' => $name, 'y' => 0];
+        }
+
+        $totalPergerakan = 0;
+        $totalOrang = 0;
+
+        foreach ($query as $row) {
+            $code = strtoupper($row->kode_moda);
+            $kat = strtoupper($row->kategori);
+            $vol = (int) $row->total_volume;
+
+            if (isset($modes[$code])) {
+                if ($kat === 'PERGERAKAN') {
+                    $pergerakanMap[$code]['y'] += $vol;
+                    $totalPergerakan += $vol;
+                } elseif ($kat === 'ORANG') {
+                    $orangMap[$code]['y'] += $vol;
+                    $totalOrang += $vol;
+                }
+            }
+        }
+
+        // Calculate Percentages
+        foreach ($pergerakanMap as &$item) {
+            $pct = $totalPergerakan > 0 ? ($item['y'] / $totalPergerakan) * 100 : 0;
+            $item['pct'] = round($pct, 2);
+        }
+        foreach ($orangMap as &$item) {
+            $pct = $totalOrang > 0 ? ($item['y'] / $totalOrang) * 100 : 0;
+            $item['pct'] = round($pct, 2);
+        }
+
+        // Sort descending
+        usort($pergerakanMap, fn($a, $b) => $b['y'] <=> $a['y']);
+        usort($orangMap, fn($a, $b) => $b['y'] <=> $a['y']);
+
+        return [
+            'pergerakan' => array_values($pergerakanMap),
+            'orang' => array_values($orangMap),
+            'total_pergerakan' => $totalPergerakan,
+            'total_orang' => $totalOrang
+        ];
+    }
 
     public function nasionalPergerakanHarianPage(Request $request)
     {

@@ -23,7 +23,7 @@ Route::middleware(['auth'])->group(function () {
         Route::view('/data-dasar', 'pages.nasional.data-dasar')->name('data-dasar');
         Route::get('/pergerakan-harian', [\App\Http\Controllers\DataMpdController::class, 'nasionalPergerakanHarianPage'])->name('pergerakan-harian');
         Route::get('/od', [\App\Http\Controllers\DataMpdController::class, 'nasionalOdSimpul'])->name('od');
-        Route::view('/mode-share', 'pages.nasional.mode-share')->name('mode-share');
+        Route::get('/mode-share', [\App\Http\Controllers\DataMpdController::class, 'nasionalModeSharePage'])->name('mode-share');
     });
 
     // Jabodetabek
