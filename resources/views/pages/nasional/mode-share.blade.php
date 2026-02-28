@@ -50,7 +50,7 @@
             .legend-item {
                 display: flex;
                 flex-direction: column;
-                width: 50%;
+                width: 230px;
                 margin-bottom: 12px;
                 font-size: 0.85rem;
             }
@@ -112,7 +112,7 @@
                         <div class="col-lg-6 d-flex">
                             <div class="card content-card w-100 h-100 p-4 border-0 shadow-sm">
                                 <div class="chart-title-center mb-3">
-                                    <h5>Distribusi Angkutan</h5>
+                                    <h5>Distribusi Angkutan (Pergerakan - Real)</h5>
                                 </div>
                                 <div id="chart-pergerakan" style="height: 350px;"></div>
                                 <div class="custom-legend mt-4" id="legend-pergerakan">
@@ -125,7 +125,7 @@
                         <div class="col-lg-6 d-flex">
                             <div class="card content-card w-100 h-100 p-4 border-0 shadow-sm">
                                 <div class="chart-title-center mb-3">
-                                    <h5>Distribusi Angkutan</h5>
+                                    <h5>Distribusi Angkutan (Orang - Real)</h5>
                                 </div>
                                 <div id="chart-orang" style="height: 350px;"></div>
                                 <div class="custom-legend mt-4" id="legend-orang">
