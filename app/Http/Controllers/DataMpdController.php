@@ -554,18 +554,26 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
         
         $dString = $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:mode-share-page:v1:{$dString}";
+        $cacheKey = "mpd:nasional:mode-share-page:v2:{$dString}";
         
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getModeSharePageData($startDate, $endDate);
+                return [
+                    'summary' => $this->getModeSharePageData($startDate, $endDate),
+                    'daily' => $this->getDailyModeShareData($startDate, $endDate)
+                ];
             });
         } catch (\Throwable $e) {
-            $data = $this->getModeSharePageData($startDate, $endDate);
+            $data = [
+                'summary' => $this->getModeSharePageData($startDate, $endDate),
+                'daily' => $this->getDailyModeShareData($startDate, $endDate)
+            ];
         }
 
         return view('pages.nasional.mode-share', [
-            'data' => $data
+            'data' => $data['summary'],
+            'dailyData' => $data['daily'],
+            'dates' => $this->getDatesCollection($startDate, $endDate)
         ]);
     }
 
@@ -649,6 +657,71 @@ class DataMpdController extends Controller
             'total_pergerakan' => $totalPergerakan,
             'total_orang' => $totalOrang
         ];
+    }
+
+    private function getDailyModeShareData($startDate, $endDate)
+    {
+        $modes = [
+            'A' => 'Angkutan Jalan (Bus AKAP)',
+            'B' => 'Angkutan Jalan (Bus AKDP)',
+            'C' => 'Angkutan Kereta Api Antarkota',
+            'D' => 'Angkutan Kereta Api KCJB',
+            'E' => 'Angkutan Kereta Api Perkotaan',
+            'F' => 'Angkutan Laut',
+            'G' => 'Angkutan Penyeberangan',
+            'H' => 'Angkutan Udara',
+            'I' => 'Mobil Pribadi',
+            'J' => 'Motor Pribadi',
+            'K' => 'Sepeda'
+        ];
+
+        // Prepare date range collection (as string format Y-m-d)
+        $dateKeys = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dateKeys[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        // Initialize skeleton
+        $dailyData = [];
+        foreach ($modes as $code => $name) {
+            $dailyData[$code] = [
+                'name' => $name,
+                'total_pergerakan' => 0,
+                'daily' => array_fill_keys($dateKeys, 0)
+            ];
+        }
+
+        try {
+            $query = DB::table('spatial_movements as sm')
+                ->select(
+                    'sm.tanggal',
+                    'sm.kode_moda',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.is_forecast', false)
+                ->where(DB::raw('UPPER(sm.kategori)'), 'PERGERAKAN')
+                ->groupBy('sm.tanggal', 'sm.kode_moda')
+                ->get();
+
+            foreach ($query as $row) {
+                $date = $row->tanggal;
+                $code = strtoupper($row->kode_moda);
+                $vol = (int) $row->total_volume;
+
+                if (isset($dailyData[$code]) && isset($dailyData[$code]['daily'][$date])) {
+                    $dailyData[$code]['daily'][$date] += $vol;
+                    $dailyData[$code]['total_pergerakan'] += $vol;
+                }
+            }
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Daily Mode Share Query Error (DataMpd): ' . $e->getMessage());
+        }
+
+        return $dailyData;
     }
 
     public function nasionalPergerakanHarianPage(Request $request)

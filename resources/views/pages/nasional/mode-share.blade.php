@@ -138,6 +138,71 @@
             </div>
         </div>
     </div>
+    <div class="row mb-4" data-aos="fade-up" data-aos-duration="600">
+        <div class="col-12">
+            <div class="card content-card w-100 flex-column border-0" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                <div class="card-header d-flex align-items-center bg-white"
+                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); border-radius: 12px 12px 0 0;">
+                    <span class="section-badge">02</span>
+                    <h5 class="fw-bold text-navy mb-0">Pergerakan harian berdasarkan mode share (pemilihan moda
+                        transportasi)</h5>
+                </div>
+                <div class="card-body bg-light" style="padding: 1.5rem; border-radius: 0 0 12px 12px;">
+                    @php
+                        $chartCategories = [];
+                        foreach ($dates as $d) {
+                            $c = \Carbon\Carbon::parse($d)->locale('id');
+                            $chartCategories[] =
+                                '<div class="text-center">' .
+                                $c->isoFormat('dddd, D') .
+                                '<br/>' .
+                                $c->isoFormat('MMMM') .
+                                '<br/>' .
+                                $c->isoFormat('YYYY') .
+                                '</div>';
+                        }
+                    @endphp
+                    <div class="row g-4">
+                        @foreach ($dailyData as $code => $modeData)
+                            <div class="col-12">
+                                <div class="card w-100 p-4 shadow-sm"
+                                    style="border: 2px solid #5a647d; border-radius: 25px; background: white;">
+                                    <div class="d-flex justify-content-end mb-3">
+                                        <div class="d-flex flex-column align-items-end">
+                                            <div class="mb-2 text-center"
+                                                style="background-color: #dbe4eb; border: 1px solid #999; border-radius: 4px; padding: 6px 40px; font-weight: bold; font-size: 1.1rem; color: #333; min-width: 250px;">
+                                                {{ strtoupper($modeData['name']) }}
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3 text-end" style="line-height: 1.1;">
+                                                    <small class="text-muted fw-bold">Total Pergerakan</small><br />
+                                                    <span
+                                                        class="text-dark fw-bold">{{ strtoupper($modeData['name']) }}</span>
+                                                </div>
+                                                <div
+                                                    style="background-color: #fef0cd; padding: 6px 15px; font-weight: bold; color: #333; font-size: 1.1rem; border-radius: 4px;">
+                                                    @php
+                                                        $tot = $modeData['total_pergerakan'];
+                                                        if ($tot >= 1000000) {
+                                                            echo number_format($tot / 1000000, 2, ',', '.') . ' Juta';
+                                                        } else {
+                                                            echo number_format($tot, 0, ',', '.');
+                                                        }
+                                                    @endphp
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="chart-daily-{{ $code }}" style="height: 300px;"></div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     @push('scripts')
         <script src="https://code.highcharts.com/highcharts.js"></script>
@@ -253,6 +318,90 @@
 
                 renderChartAndLegend('chart-pergerakan', 'legend-pergerakan', validPergerakan);
                 renderChartAndLegend('chart-orang', 'legend-orang', validOrang);
+
+                // Daily Chart logic
+                var dailyData = @json($dailyData);
+                var chartCategories = @json($chartCategories);
+
+                Object.keys(dailyData).forEach(function(code) {
+                    var modeData = dailyData[code];
+                    var seriesData = [];
+                    var rawDates = Object.keys(modeData.daily).sort();
+                    rawDates.forEach(function(d) {
+                        seriesData.push(modeData.daily[d]);
+                    });
+
+                    Highcharts.chart('chart-daily-' + code, {
+                        chart: {
+                            type: 'column',
+                            backgroundColor: 'transparent'
+                        },
+                        title: {
+                            text: null
+                        },
+                        xAxis: {
+                            categories: chartCategories,
+                            labels: {
+                                style: {
+                                    fontSize: '10px',
+                                    color: '#666'
+                                },
+                                useHTML: true
+                            },
+                            lineWidth: 1,
+                            lineColor: '#ccc'
+                        },
+                        yAxis: {
+                            title: {
+                                text: null
+                            },
+                            labels: {
+                                formatter: function() {
+                                    return formatNum(this.value);
+                                },
+                                style: {
+                                    color: '#666'
+                                }
+                            },
+                            gridLineColor: '#eee'
+                        },
+                        tooltip: {
+                            formatter: function() {
+                                // Extract plain text from HTML category
+                                var plainCat = this.x.replace(/<[^>]*>?/gm, ' ');
+                                return '<b>' + plainCat + '</b><br/>' +
+                                    modeData.name + ': <b>' + formatNum(this.y) + '</b>';
+                            }
+                        },
+                        plotOptions: {
+                            column: {
+                                dataLabels: {
+                                    enabled: true,
+                                    formatter: function() {
+                                        return formatNum(this.y);
+                                    },
+                                    style: {
+                                        fontSize: '9px',
+                                        fontWeight: 'normal',
+                                        color: '#333',
+                                        textOutline: 'none'
+                                    }
+                                },
+                                color: '#1a6f8b',
+                                borderRadius: 0,
+                                pointPadding: 0.1
+                            }
+                        },
+                        series: [{
+                            name: modeData.name,
+                            data: seriesData,
+                            showInLegend: false
+                        }],
+                        credits: {
+                            enabled: false
+                        }
+                    });
+                });
             });
         </script>
     @endpush
