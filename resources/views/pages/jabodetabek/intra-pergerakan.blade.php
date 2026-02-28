@@ -621,36 +621,38 @@
                                         style="min-width: 1400px;">
                                         <thead>
                                             <tr>
-                                                <th rowspan="2" class="align-middle"
+                                                <th rowspan="2" class="align-middle text-white"
                                                     style="background-color: #2a3042; width: 80px;">Tanggal</th>
                                                 @foreach ($dates as $i => $d)
-                                                    <th style="background-color: #486284;">
+                                                    <th style="background-color: #486284; color: white;">
                                                         <div style="font-size: 0.75rem;">
                                                             H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}
                                                         </div>
                                                     </th>
                                                 @endforeach
-                                                <th rowspan="2" class="align-middle"
+                                                <th rowspan="2" class="align-middle text-white"
                                                     style="background-color: #2a3042; width: 100px;">Total</th>
                                             </tr>
                                             <tr>
                                                 @foreach ($dates as $d)
-                                                    <th style="background-color: #5a7395; font-size: 0.7rem;">
-                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</th>
+                                                    <th
+                                                        style="background-color: #5a7395; color: white; font-size: 0.7rem;">
+                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-<br>MMM-YY') !!}</th>
                                                 @endforeach
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach (['XL', 'IOH', 'TSEL'] as $op)
                                                 <tr>
-                                                    <td class="fw-bold text-dark" style="background-color: #f8f9fa;">
+                                                    <td class="fw-bold text-dark" style="background-color: #ffffff;">
                                                         {{ $op }}</td>
                                                     @foreach ($dates as $d)
-                                                        <td class="text-dark">
+                                                        <td class="text-dark" style="background-color: #ffffff;">
                                                             {{ fmtNumJab($data['daily'][$d][$op]['pergerakan'] ?? 0) }}
                                                         </td>
                                                     @endforeach
-                                                    <td class="fw-bold text-dark" style="font-size:0.9rem;">
+                                                    <td class="fw-bold text-dark"
+                                                        style="font-size:0.9rem; background-color: #ffffff;">
                                                         {{ fmtNumJab($data['totals'][$op]['pergerakan'] ?? 0) }}</td>
                                                 </tr>
                                             @endforeach
@@ -721,35 +723,37 @@
                                         style="min-width: 1400px;">
                                         <thead>
                                             <tr>
-                                                <th rowspan="2" class="align-middle"
+                                                <th rowspan="2" class="align-middle text-white"
                                                     style="background-color: #2a3042; width: 80px;">Tanggal</th>
                                                 @foreach ($dates as $i => $d)
-                                                    <th style="background-color: #1e6082;">
+                                                    <th style="background-color: #1e6082; color: white;">
                                                         <div style="font-size: 0.75rem;">
                                                             H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}
                                                         </div>
                                                     </th>
                                                 @endforeach
-                                                <th rowspan="2" class="align-middle"
+                                                <th rowspan="2" class="align-middle text-white"
                                                     style="background-color: #2a3042; width: 100px;">Total</th>
                                             </tr>
                                             <tr>
                                                 @foreach ($dates as $d)
-                                                    <th style="background-color: #29769e; font-size: 0.7rem;">
-                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</th>
+                                                    <th
+                                                        style="background-color: #29769e; color: white; font-size: 0.7rem;">
+                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-<br>MMM-YY') !!}</th>
                                                 @endforeach
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach (['XL', 'IOH', 'TSEL'] as $op)
                                                 <tr>
-                                                    <td class="fw-bold text-dark" style="background-color: #f8f9fa;">
+                                                    <td class="fw-bold text-dark" style="background-color: #ffffff;">
                                                         {{ $op }}</td>
                                                     @foreach ($dates as $d)
-                                                        <td class="text-dark">
+                                                        <td class="text-dark" style="background-color: #ffffff;">
                                                             {{ fmtNumJab($data['daily'][$d][$op]['orang'] ?? 0) }}</td>
                                                     @endforeach
-                                                    <td class="fw-bold text-dark" style="font-size:0.9rem;">
+                                                    <td class="fw-bold text-dark"
+                                                        style="font-size:0.9rem; background-color: #ffffff;">
                                                         {{ fmtNumJab($data['totals'][$op]['orang'] ?? 0) }}</td>
                                                 </tr>
                                             @endforeach
