@@ -28,7 +28,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Jabodetabek
     Route::prefix('jabodetabek')->name('pages.jabodetabek.')->group(function () {
-        Route::view('/intra-pergerakan', 'pages.jabodetabek.intra-pergerakan')->name('intra-pergerakan');
+        Route::get('/intra-pergerakan', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekIntraPergerakanPage'])->name('intra-pergerakan');
         Route::view('/intra-od', 'pages.jabodetabek.intra-od')->name('intra-od');
         Route::view('/inter-pergerakan', 'pages.jabodetabek.inter-pergerakan')->name('inter-pergerakan');
         Route::view('/inter-od', 'pages.jabodetabek.inter-od')->name('inter-od');

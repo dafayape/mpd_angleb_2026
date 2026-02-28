@@ -101,6 +101,136 @@ class DataMpdController extends Controller
         ]);
     }
 
+    public function jabodetabekIntraPergerakanPage(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 30);
+        
+        $dString = $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
+        $cacheKey = "mpd:jabodetabek:intra-pergerakan:v1:{$dString}";
+        
+        $jabodetabekCodes = $this->getJabodetabekCodes();
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+                return $this->getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes);
+        }
+
+        return view('pages.jabodetabek.intra-pergerakan', [
+            'dates' => $this->getDatesCollection($startDate, $endDate),
+            'data' => $data
+        ]);
+    }
+
+    private function getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes)
+    {
+        $opsels = ['XL', 'TSEL', 'IOH'];
+        $categories = ['PERGERAKAN', 'ORANG']; // We'll map to 'pergerakan' and 'orang'
+        
+        // Prepare Date Keys array
+        $dateKeys = [];
+        $curr = $startDate->copy();
+        while ($curr->lte($endDate)) {
+            $dateKeys[] = $curr->format('Y-m-d');
+            $curr->addDay();
+        }
+
+        // Initialize Data Structure
+        $result = [];
+        foreach ($dateKeys as $date) {
+            $result[$date] = [];
+            foreach ($opsels as $opsel) {
+                $result[$date][$opsel] = [
+                    'pergerakan' => 0,
+                    'orang' => 0
+                ];
+            }
+        }
+
+        try {
+            $query = DB::table('spatial_movements as sm')
+                ->select(
+                    'sm.tanggal',
+                    'sm.opsel',
+                    'sm.kategori',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.is_forecast', false) // Only REAL data
+                ->whereIn(DB::raw('UPPER(sm.kategori)'), $categories)
+                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
+                ->get();
+
+            foreach ($query as $row) {
+                $date = $row->tanggal;
+                $rawOpsel = strtoupper($row->opsel);
+                $kat = strtoupper($row->kategori) === 'PERGERAKAN' ? 'pergerakan' : 'orang';
+                $vol = (int) $row->total_volume;
+
+                // Normalize Opsel
+                $opsel = 'OTHER';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
+                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
+                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+
+                if ($opsel !== 'OTHER' && isset($result[$date][$opsel])) {
+                    $result[$date][$opsel][$kat] += $vol;
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Jabodetabek Intra Pergerakan DB Error: ' . $e->getMessage());
+        }
+
+        // Calculate Totals and Percentages
+        $totals = [];
+        foreach ($opsels as $opsel) {
+            $totals[$opsel] = ['pergerakan' => 0, 'orang' => 0];
+        }
+
+        foreach ($result as $date => $opselData) {
+            $dailyTotalPergerakan = 0;
+            $dailyTotalOrang = 0;
+
+            foreach ($opsels as $opsel) {
+                $dailyTotalPergerakan += $opselData[$opsel]['pergerakan'];
+                $dailyTotalOrang += $opselData[$opsel]['orang'];
+                $totals[$opsel]['pergerakan'] += $opselData[$opsel]['pergerakan'];
+                $totals[$opsel]['orang'] += $opselData[$opsel]['orang'];
+            }
+
+            // Calculate daily % for each opsel
+            foreach ($opsels as $opsel) {
+                $result[$date][$opsel]['pct_pergerakan'] = $dailyTotalPergerakan > 0 
+                    ? ($result[$date][$opsel]['pergerakan'] / $dailyTotalPergerakan) * 100 : 0;
+                $result[$date][$opsel]['pct_orang'] = $dailyTotalOrang > 0 
+                    ? ($result[$date][$opsel]['orang'] / $dailyTotalOrang) * 100 : 0;
+            }
+        }
+
+        // Calculate Overall Totals and Overall %
+        $overallTotalPergerakan = array_sum(array_column($totals, 'pergerakan'));
+        $overallTotalOrang = array_sum(array_column($totals, 'orang'));
+
+        foreach ($opsels as $opsel) {
+            $totals[$opsel]['pct_pergerakan'] = $overallTotalPergerakan > 0 
+                ? ($totals[$opsel]['pergerakan'] / $overallTotalPergerakan) * 100 : 0;
+            $totals[$opsel]['pct_orang'] = $overallTotalOrang > 0 
+                ? ($totals[$opsel]['orang'] / $overallTotalOrang) * 100 : 0;
+        }
+
+        return [
+            'daily' => $result,
+            'totals' => $totals,
+            'overall_pergerakan' => $overallTotalPergerakan,
+            'overall_orang' => $overallTotalOrang
+        ];
+    }
+
     // --- NASIONAL METHODS ---
 
     public function nasionalOdSimpul(Request $request)
