@@ -200,4 +200,186 @@
             </div>
         </div>
     </div>
+
+    <!-- 02 AKUMULASI -->
+    <div class="row mt-4 mb-4" data-aos="fade-up" data-aos-delay="100">
+        <div class="col-12">
+            <div class="card content-card w-100 flex-column" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                <div class="card-header d-flex align-items-center bg-white"
+                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span class="section-badge">02</span>
+                    <h5 class="fw-bold text-navy mb-0">Akumulasi pergerakan harian dari seluruh opsel dan jumlah unique
+                        subscribernya (Intra Jabodetabek)
+                    </h5>
+                </div>
+                <div class="card-body bg-light" style="padding: 1.5rem;">
+                    <div class="card w-100 shadow-sm border-0 d-flex flex-column mb-4">
+                        <div class="table-responsive flex-grow-1">
+                            <table class="table table-bordered border-dark table-hover mb-0 text-center align-middle"
+                                style="font-size: 0.85rem;">
+                                <thead class="text-dark">
+                                    <tr>
+                                        <th rowspan="3" class="align-middle border-dark text-start px-4"
+                                            style="width: 25%; background-color: #dbe4eb; font-weight: bold;">AKUMULASI</th>
+                                        <th colspan="4" class="py-2 text-center border-dark"
+                                            style="background-color: #dbe4eb; font-weight: bold;">DATA REAL</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2" class="py-2 text-center border-dark"
+                                            style="background-color: #dbe4eb; font-weight: bold;"><small class="fw-bold"
+                                                style="font-size: 0.9rem;">Jumlah Pergerakan</small></th>
+                                        <th colspan="2" class="py-2 text-center border-dark"
+                                            style="background-color: #e7ebf0; font-weight: bold;"><small class="fw-bold"
+                                                style="font-size: 0.9rem;">Jumlah Orang Harian</small></th>
+                                    </tr>
+                                    <tr>
+                                        <th style="width: 18.75%; background-color: #ffffff;"
+                                            class="py-2 border-dark text-dark fw-bold">Jumlah</th>
+                                        <th style="width: 18.75%; background-color: #ffffff;"
+                                            class="py-2 border-dark text-dark fw-bold">%</th>
+                                        <th style="width: 18.75%; background-color: #ffffff;"
+                                            class="py-2 border-dark text-dark fw-bold">Jumlah</th>
+                                        <th style="width: 18.75%; background-color: #ffffff;"
+                                            class="py-2 border-dark text-dark fw-bold">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($dates as $dateRaw)
+                                        @php
+                                            $row = $data['akumulasi']['daily'][$dateRaw] ?? null;
+                                            $mov = $row['movement'] ?? 0;
+                                            $movPct = $row['movement_pct'] ?? 0;
+                                            $ppl = $row['people'] ?? 0;
+                                            $pplPct = $row['people_pct'] ?? 0;
+                                            $carbonDate = \Carbon\Carbon::parse($dateRaw)->locale('id');
+                                            $labelHariTanggal = $carbonDate->isoFormat('D MMMM YYYY');
+                                        @endphp
+                                        <tr>
+                                            <td class="text-start text-dark border-dark"
+                                                style="background-color: #fafafa;">
+                                                {{ $labelHariTanggal }}</td>
+                                            <td class="border-dark">{{ fmtNumJab($mov) }}</td>
+                                            <td class="text-dark border-dark" style="background-color: #fafafa;">
+                                                {{ fmtPctJab($movPct) }}</td>
+                                            <td class="border-dark">{{ fmtNumJab($ppl) }}</td>
+                                            <td class="text-dark border-dark" style="background-color: #fafafa;">
+                                                {{ fmtPctJab($pplPct) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="font-weight-bold border-dark">
+                                    <tr>
+                                        <th class="text-center pb-3 pt-3 border-dark fw-bold text-dark"
+                                            style="background-color: #dbe4eb; font-size: 1rem;">Total</th>
+                                        <th class="pb-3 pt-3 border-dark fw-bold text-dark"
+                                            style="background-color: #dbe4eb; font-size: 1rem;">
+                                            {{ fmtNumJab($data['akumulasi']['total_movement']) }}</th>
+                                        <th class="pb-3 pt-3 border-dark fw-bold text-dark"
+                                            style="background-color: #dbe4eb; font-size: 1rem;">100%</th>
+                                        <th class="pb-3 pt-3 border-dark fw-bold text-dark"
+                                            style="background-color: #e7ebf0; font-size: 1rem;">
+                                            {{ fmtNumJab($data['akumulasi']['total_people']) }}</th>
+                                        <th class="pb-3 pt-3 border-dark fw-bold text-dark"
+                                            style="background-color: #e7ebf0; font-size: 1rem;">100%</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Dashboard -->
+                <div class="row mt-4 mb-5">
+                    <div class="col-12">
+                        <div class="card content-card" style="background-color: #eef2f5; border: none; box-shadow: none;">
+                            <div class="card-body p-4">
+                                <div class="row text-center mb-4 px-2">
+                                    <!-- Box 1 -->
+                                    <div class="col-md-4 mb-3 mb-md-0 px-2">
+                                        <div class="card h-100 mb-0 border-0"
+                                            style="background-color: #3b4b5e; color: white; border-radius: 8px;">
+                                            <div class="card-body p-3 d-flex flex-column justify-content-center">
+                                                <h6 class="mb-3 text-uppercase text-white letter-spacing-1"
+                                                    style="font-size: 0.85rem;">Jumlah Pergerakan Intra Jabodetabek</h6>
+                                                <div class="bg-white text-dark rounded py-3 px-2 mx-1 shadow-sm">
+                                                    <h4 class="mb-1 fw-bold text-dark" style="font-size: 1.4rem;">
+                                                        {{ number_format($data['akumulasi']['total_movement'] / 1000000, 2, ',', '.') }}
+                                                        Juta</h4>
+                                                    <small class="text-muted fw-medium font-size-12">Pergerakan</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Box 2 -->
+                                    <div class="col-md-4 mb-3 mb-md-0 px-2">
+                                        <div class="card h-100 mb-0 border-0"
+                                            style="background-color: #eb7c22; color: white; border-radius: 8px;">
+                                            <div class="card-body p-3 d-flex flex-column justify-content-center">
+                                                <h6 class="mb-3 text-uppercase text-white letter-spacing-1"
+                                                    style="font-size: 0.85rem;">Rata-Rata Koefisien</h6>
+                                                <div class="bg-white text-dark rounded py-3 px-2 mx-1 shadow-sm d-flex flex-column justify-content-center h-100"
+                                                    style="min-height: 80px;">
+                                                    <h4 class="mb-0 fw-bold text-dark" style="font-size: 1.8rem;">
+                                                        {{ number_format($data['akumulasi']['koefisien'], 3, ',', '.') }}
+                                                    </h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Box 3 -->
+                                    <div class="col-md-4 px-2">
+                                        <div class="card h-100 mb-0 border-0"
+                                            style="background-color: #3b4b5e; color: white; border-radius: 8px;">
+                                            <div class="card-body p-3 d-flex flex-column justify-content-center">
+                                                <h6 class="mb-3 text-uppercase text-white letter-spacing-1"
+                                                    style="font-size: 0.85rem; line-height: 1.3;">Jumlah Orang
+                                                    Yang Melakukan<br>Perjalanan (Intra Jabodetabek)</h6>
+                                                <div class="bg-white text-dark rounded py-2 px-2 mx-1 shadow-sm d-flex align-items-center justify-content-center h-100"
+                                                    style="min-height: 80px;">
+                                                    <div class="text-start me-3 border-end pe-3" style="line-height:1.2;">
+                                                        <small class="text-muted d-block fw-medium"
+                                                            style="font-size:0.75rem;">Jumlah Unik</small>
+                                                        <small class="text-muted d-block fw-medium"
+                                                            style="font-size:0.75rem;">Subscriber:</small>
+                                                    </div>
+                                                    <div class="text-center">
+                                                        <h4 class="mb-1 fw-bold text-dark" style="font-size: 1.4rem;">
+                                                            {{ number_format($data['akumulasi']['unique_subscriber'] / 1000000, 2, ',', '.') }}
+                                                            juta</h4>
+                                                        <small class="text-muted fw-medium font-size-12">masyarakat</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <ul class="mb-0 text-dark"
+                                    style="font-size: 0.95rem; line-height: 1.6; padding-left: 2rem;">
+                                    <li class="mb-2"><strong>Jumlah <em>unique subscriber</em></strong> yang
+                                        melakukan pergerakan pada Periode Angkutan Lebaran 2026 di wilayah
+                                        <strong>Jabodetabek</strong> pada tanggal 13 - 30 Maret 2026 (realisasi) sebanyak
+                                        <strong>{{ fmtNumJab($data['akumulasi']['unique_subscriber']) }}
+                                            orang.</strong></li>
+                                    <li class="mb-2"><strong>Jumlah pergerakan/<em>movement count</em></strong> di
+                                        wilayah Jabodetabek sebesar
+                                        <strong>{{ fmtNumJab($data['akumulasi']['total_movement']) }}
+                                            pergerakan.</strong>
+                                    </li>
+                                    <li>Dari data akumulasi tersebut maka data ini menunjukkan bahwa terdapat rata-rata
+                                        lebih dari satu perjalanan per individu selama periode pengamatan, dengan
+                                        <strong>rasio sekitar
+                                            {{ number_format($data['akumulasi']['koefisien'], 3, ',', '.') }} kali
+                                            perjalanan per orang</strong>.
+                                    </li>
+                                </ul>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
 @endsection

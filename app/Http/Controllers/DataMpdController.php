@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\SpatialMovement;
 use App\Models\Simpul;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class DataMpdController extends Controller
 {
@@ -26,7 +25,7 @@ class DataMpdController extends Controller
             // Tangerang
             '3603', '3671', '3674', // Kab Tangerang, Kota Tangerang, Kota Tangsel
             // Bekasi
-            '3216', '3275'
+            '3216', '3275',
         ];
     }
 
@@ -35,7 +34,7 @@ class DataMpdController extends Controller
         // 1. Date Range: 13 March 2026 - 30 March 2026
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
-        
+
         $dates = collect();
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
@@ -45,7 +44,7 @@ class DataMpdController extends Controller
 
         // 2. Caching Key
         $cacheKey = 'mpd:jabodetabek:od-simpul:matrix:v2';
-        
+
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
         try {
@@ -61,7 +60,7 @@ class DataMpdController extends Controller
             'title' => 'O-D Simpul Jabodetabek',
             'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'O-D Simpul'],
             'dates' => $dates,
-            'matrix' => $matrix
+            'matrix' => $matrix,
         ]);
     }
 
@@ -70,7 +69,7 @@ class DataMpdController extends Controller
         // 1. Date Range: 13 March 2026 - 30 March 2026
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
-        
+
         $dates = collect();
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
@@ -80,9 +79,9 @@ class DataMpdController extends Controller
 
         // 2. Caching Key
         $cacheKey = 'mpd:jabodetabek:mode-share:matrix:v2';
-        
+
         $jabodetabekCodes = $this->getJabodetabekCodes();
-        
+
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
                 return $this->getModeShareData($startDate, $endDate, $jabodetabekCodes);
@@ -97,7 +96,7 @@ class DataMpdController extends Controller
             'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Mode Share'],
             'dates' => $dates,
             'movementMatrix' => $data['movement'],
-            'peopleMatrix' => $data['people']
+            'peopleMatrix' => $data['people'],
         ]);
     }
 
@@ -105,10 +104,10 @@ class DataMpdController extends Controller
     {
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
-        
-        $dString = $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
+
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:jabodetabek:intra-pergerakan:v1:{$dString}";
-        
+
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
         try {
@@ -121,7 +120,7 @@ class DataMpdController extends Controller
 
         return view('pages.jabodetabek.intra-pergerakan', [
             'dates' => $this->getDatesCollection($startDate, $endDate),
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
@@ -129,7 +128,7 @@ class DataMpdController extends Controller
     {
         $opsels = ['XL', 'TSEL', 'IOH'];
         $categories = ['PERGERAKAN', 'ORANG']; // We'll map to 'pergerakan' and 'orang'
-        
+
         // Prepare Date Keys array
         $dateKeys = [];
         $curr = $startDate->copy();
@@ -145,7 +144,7 @@ class DataMpdController extends Controller
             foreach ($opsels as $opsel) {
                 $result[$date][$opsel] = [
                     'pergerakan' => 0,
-                    'orang' => 0
+                    'orang' => 0,
                 ];
             }
         }
@@ -174,16 +173,20 @@ class DataMpdController extends Controller
 
                 // Normalize Opsel
                 $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
-                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
-                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
+                    $opsel = 'XL';
+                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
+                    $opsel = 'IOH';
+                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
+                    $opsel = 'TSEL';
+                }
 
                 if ($opsel !== 'OTHER' && isset($result[$date][$opsel])) {
                     $result[$date][$opsel][$kat] += $vol;
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Jabodetabek Intra Pergerakan DB Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Jabodetabek Intra Pergerakan DB Error: '.$e->getMessage());
         }
 
         // Calculate Totals and Percentages
@@ -205,21 +208,65 @@ class DataMpdController extends Controller
 
             // Calculate daily % for each opsel
             foreach ($opsels as $opsel) {
-                $result[$date][$opsel]['pct_pergerakan'] = $dailyTotalPergerakan > 0 
+                $result[$date][$opsel]['pct_pergerakan'] = $dailyTotalPergerakan > 0
                     ? ($result[$date][$opsel]['pergerakan'] / $dailyTotalPergerakan) * 100 : 0;
-                $result[$date][$opsel]['pct_orang'] = $dailyTotalOrang > 0 
+                $result[$date][$opsel]['pct_orang'] = $dailyTotalOrang > 0
                     ? ($result[$date][$opsel]['orang'] / $dailyTotalOrang) * 100 : 0;
             }
         }
 
-        // Calculate Overall Totals and Overall %
+        // --- AKUMULASI (Section 02) ---
+        $akumulasiDaily = [];
+        $totalAkumulasiMov = 0;
+        $totalAkumulasiPpl = 0;
+
+        foreach ($result as $date => $opselData) {
+            $amov = 0;
+            $appl = 0;
+            foreach ($opsels as $op) {
+                $amov += $opselData[$op]['pergerakan'];
+                $appl += $opselData[$op]['orang'];
+            }
+            $akumulasiDaily[$date] = [
+                'movement' => $amov,
+                'people' => $appl,
+            ];
+            $totalAkumulasiMov += $amov;
+            $totalAkumulasiPpl += $appl;
+        }
+
+        foreach ($akumulasiDaily as $date => &$rowAkum) {
+            $rowAkum['movement_pct'] = $totalAkumulasiMov > 0 ? ($rowAkum['movement'] / $totalAkumulasiMov) * 100 : 0;
+            $rowAkum['people_pct'] = $totalAkumulasiPpl > 0 ? ($rowAkum['people'] / $totalAkumulasiPpl) * 100 : 0;
+        }
+
+        // Find Peak Days
+        $sortedDaily = $akumulasiDaily;
+        uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
+        $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
+
+        // Calculate unique subscriber
+        // Taking koefisien ~2.542 based on Jabodetabek reference
+        $uniqueSubscriber = $totalAkumulasiMov > 0 ? round($totalAkumulasiMov / 2.542) : 0;
+        $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 3) : 0;
+
+        $akumulasiData = [
+            'daily' => $akumulasiDaily,
+            'total_movement' => $totalAkumulasiMov,
+            'total_people' => $totalAkumulasiPpl,
+            'peak_days' => $peakDays,
+            'unique_subscriber' => $uniqueSubscriber,
+            'koefisien' => $koefisien,
+        ];
+
+        // Calculate Overall Totals and Overall % for Opsel Nodes
         $overallTotalPergerakan = array_sum(array_column($totals, 'pergerakan'));
         $overallTotalOrang = array_sum(array_column($totals, 'orang'));
 
         foreach ($opsels as $opsel) {
-            $totals[$opsel]['pct_pergerakan'] = $overallTotalPergerakan > 0 
+            $totals[$opsel]['pct_pergerakan'] = $overallTotalPergerakan > 0
                 ? ($totals[$opsel]['pergerakan'] / $overallTotalPergerakan) * 100 : 0;
-            $totals[$opsel]['pct_orang'] = $overallTotalOrang > 0 
+            $totals[$opsel]['pct_orang'] = $overallTotalOrang > 0
                 ? ($totals[$opsel]['orang'] / $overallTotalOrang) * 100 : 0;
         }
 
@@ -227,7 +274,8 @@ class DataMpdController extends Controller
             'daily' => $result,
             'totals' => $totals,
             'overall_pergerakan' => $overallTotalPergerakan,
-            'overall_orang' => $overallTotalOrang
+            'overall_orang' => $overallTotalOrang,
+            'akumulasi' => $akumulasiData,
         ];
     }
 
@@ -238,12 +286,12 @@ class DataMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
-        
-        $dString = $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
+
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:nasional:od-simpul:split:v1:{$dString}";
         $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v1:{$dString}";
         $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v1:{$dString}";
-        
+
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
                 return $this->getNasionalOdSimpulData($startDate, $endDate);
@@ -301,19 +349,20 @@ class DataMpdController extends Controller
                 ->get();
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('OD KabKota Query Error (DataMpd): ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('OD KabKota Query Error (DataMpd): '.$e->getMessage());
             $query = collect();
         }
 
         $totalNational = $query->sum('total_volume');
-        
+
         $topOrigin = $query->groupBy('origin_code')
             ->map(function ($rows) {
                 $subTotal = $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->origin_code,
                     'name' => $rows->first()->origin_name,
-                    'total' => $subTotal
+                    'total' => $subTotal,
                 ];
             })
             ->sortByDesc('total')
@@ -323,10 +372,11 @@ class DataMpdController extends Controller
         $topDest = $query->groupBy('dest_code')
             ->map(function ($rows) {
                 $subTotal = $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->dest_code,
                     'name' => $rows->first()->dest_name,
-                    'total' => $subTotal
+                    'total' => $subTotal,
                 ];
             })
             ->sortByDesc('total')
@@ -334,18 +384,18 @@ class DataMpdController extends Controller
             ->values();
 
         // Top 20 overall routes for Sankey diagram
-        $sankeyData = $query->take(20)->map(function($row) {
+        $sankeyData = $query->take(20)->map(function ($row) {
             return [
-                'from' => '(O) ' . $row->origin_name,
-                'to' => '(D) ' . $row->dest_name,
-                'weight' => (int) $row->total_volume
+                'from' => '(O) '.$row->origin_name,
+                'to' => '(D) '.$row->dest_name,
+                'weight' => (int) $row->total_volume,
             ];
         })->values();
 
         return [
             'top_origin' => $topOrigin,
             'top_dest' => $topDest,
-            'sankey' => $sankeyData
+            'sankey' => $sankeyData,
         ];
     }
 
@@ -373,20 +423,21 @@ class DataMpdController extends Controller
                 ->get();
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('OD Provinsi Query Error (DataMpd): ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('OD Provinsi Query Error (DataMpd): '.$e->getMessage());
             $query = collect();
         }
 
         $totalNational = $query->sum('total_volume');
-        
+
         $topOrigin = $query->groupBy('origin_code')
             ->map(function ($rows) use ($totalNational) {
                 $subTotal = $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->origin_code,
                     'name' => $rows->first()->origin_name,
                     'total' => $subTotal,
-                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0
+                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0,
                 ];
             })
             ->sortByDesc('total')
@@ -396,29 +447,30 @@ class DataMpdController extends Controller
         $topDest = $query->groupBy('dest_code')
             ->map(function ($rows) use ($totalNational) {
                 $subTotal = $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->dest_code,
                     'name' => $rows->first()->dest_name,
                     'total' => $subTotal,
-                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0
+                    'pct' => $totalNational > 0 ? ($subTotal / $totalNational) * 100 : 0,
                 ];
             })
             ->sortByDesc('total')
             ->take(10)
             ->values();
 
-        $sankeyData = $query->map(function($row) {
+        $sankeyData = $query->map(function ($row) {
             return [
-                'from' => '(O) ' . $row->origin_name,
-                'to' => '(D) ' . $row->dest_name,
-                'weight' => (int) $row->total_volume
+                'from' => '(O) '.$row->origin_name,
+                'to' => '(D) '.$row->dest_name,
+                'weight' => (int) $row->total_volume,
             ];
         })->values();
 
         $provCoordsDB = DB::table('ref_provinces')->get();
         $provCoordsMapping = [];
         foreach ($provCoordsDB as $prov) {
-            if (!empty($prov->latitude) && !empty($prov->longitude)) {
+            if (! empty($prov->latitude) && ! empty($prov->longitude)) {
                 $provCoordsMapping[strtoupper($prov->name)] = [(float) $prov->latitude, (float) $prov->longitude];
             }
         }
@@ -428,7 +480,7 @@ class DataMpdController extends Controller
             'top_dest' => $topDest,
             'sankey' => $sankeyData,
             'total_national' => $totalNational,
-            'prov_coords' => $provCoordsMapping
+            'prov_coords' => $provCoordsMapping,
         ];
     }
 
@@ -439,7 +491,7 @@ class DataMpdController extends Controller
             'Terminal' => 'darat',
             'Pelabuhan' => 'laut',
             'Bandara' => 'udara',
-            'Stasiun' => 'kereta'
+            'Stasiun' => 'kereta',
         ];
 
         // Opsel list
@@ -449,21 +501,22 @@ class DataMpdController extends Controller
 
         // Initialize Structure
         $result = [
-            'darat' => [], 'laut' => [], 'udara' => [], 'kereta' => []
+            'darat' => [], 'laut' => [], 'udara' => [], 'kereta' => [],
         ];
 
         // Helper to init row
-        $initRow = function($opsel, $tipe) use ($startDate, $endDate) {
+        $initRow = function ($opsel, $tipe) use ($startDate, $endDate) {
             $row = [
                 'tipe_data' => $tipe,
                 'opsel' => $opsel,
-                'total' => 0
+                'total' => 0,
             ];
             $curr = $startDate->copy();
             while ($curr->lte($endDate)) {
                 $row[$curr->format('Y-m-d')] = 0;
                 $curr->addDay();
             }
+
             return $row;
         };
 
@@ -472,15 +525,15 @@ class DataMpdController extends Controller
         // Or grouped by type? Reference showed "FORECAST IOH", "FORECAST XL", then "REAL IOH" etc.
         // Actually typical table is sorted by Type then Opsel or Opsel then Type.
         // User example: FORECAST IOH, FORECAST XL... then REAL IOH, REAL TSEL...
-        
+
         foreach ($catMap as $dbCat => $key) {
-           foreach ($types as $tipe) {
-               foreach ($opsels as $opsel) {
-                   // Create a key for easy access, e.g. "FORECAST_IOH"
-                   $rowKey = $tipe . '_' . $opsel;
-                   $result[$key][$rowKey] = $initRow($opsel, $tipe);
-               }
-           }
+            foreach ($types as $tipe) {
+                foreach ($opsels as $opsel) {
+                    // Create a key for easy access, e.g. "FORECAST_IOH"
+                    $rowKey = $tipe.'_'.$opsel;
+                    $result[$key][$rowKey] = $initRow($opsel, $tipe);
+                }
+            }
         }
 
         try {
@@ -500,22 +553,30 @@ class DataMpdController extends Controller
 
             foreach ($query as $row) {
                 $dbCat = $row->kategori_simpul;
-                if (!isset($catMap[$dbCat])) continue; // Skip unknown categories
+                if (! isset($catMap[$dbCat])) {
+                    continue;
+                } // Skip unknown categories
 
                 $key = $catMap[$dbCat];
                 $date = $row->tanggal;
-                
+
                 // Colors/Opsel Normalization
                 $rawOpsel = strtoupper($row->opsel);
                 $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
-                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
-                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
+                    $opsel = 'XL';
+                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
+                    $opsel = 'IOH';
+                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
+                    $opsel = 'TSEL';
+                }
 
-                if ($opsel === 'OTHER') continue;
+                if ($opsel === 'OTHER') {
+                    continue;
+                }
 
                 $tipe = $row->is_forecast ? 'FORECAST' : 'REAL';
-                $rowKey = $tipe . '_' . $opsel;
+                $rowKey = $tipe.'_'.$opsel;
 
                 if (isset($result[$key][$rowKey])) {
                     $vol = $row->total_volume;
@@ -524,7 +585,7 @@ class DataMpdController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Nasional OD Simpul Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Nasional OD Simpul Error: '.$e->getMessage());
         }
 
         return $result;
@@ -535,9 +596,9 @@ class DataMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
-        
+
         $cacheKey = 'mpd:nasional:mode-share:tables:v1';
-        
+
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
                 return $this->getNasionalModeShareData($startDate, $endDate);
@@ -552,7 +613,7 @@ class DataMpdController extends Controller
             'dates' => $dates,
             'data_umum' => $data['umum'],
             'data_pribadi' => $data['pribadi'],
-            'data_detail' => $data['detail']
+            'data_detail' => $data['detail'],
         ]);
     }
 
@@ -562,9 +623,9 @@ class DataMpdController extends Controller
         $opsels = ['XL', 'IOH', 'TSEL'];
         $types = ['REAL', 'FORECAST'];
         $pribadiModes = ['Mobil Pribadi', 'Motor Pribadi', 'Sepeda'];
-        
+
         // Helper to check category
-        $getCat = fn($modeName) => in_array($modeName, $pribadiModes) ? 'PRIBADI' : 'UMUM';
+        $getCat = fn ($modeName) => in_array($modeName, $pribadiModes) ? 'PRIBADI' : 'UMUM';
 
         // Prepare Date Keys
         $dateKeys = [];
@@ -578,7 +639,7 @@ class DataMpdController extends Controller
         // result['umum'][date][type][opsel] = ['mov' => 0, 'ppl' => 0]
         $aggregated = [
             'UMUM' => [],
-            'PRIBADI' => []
+            'PRIBADI' => [],
         ];
 
         // Initialize Aggregated Structure
@@ -598,10 +659,10 @@ class DataMpdController extends Controller
         // We need robust list of all modes first
         $allModes = DB::table('ref_transport_modes')->orderBy('code')->pluck('name')->toArray();
         if (empty($allModes)) {
-             $allModes = [
+            $allModes = [
                 'Angkutan Jalan (Bus AKAP)', 'Angkutan Jalan (Bus AKDP)', 'Angkutan Kereta Api Antarkota',
                 'Angkutan Kereta Api KCJB', 'Angkutan Kereta Api Perkotaan', 'Angkutan Laut',
-                'Angkutan Penyeberangan', 'Angkutan Udara', 'Mobil Pribadi', 'Motor Pribadi', 'Sepeda'
+                'Angkutan Penyeberangan', 'Angkutan Udara', 'Mobil Pribadi', 'Motor Pribadi', 'Sepeda',
             ];
         }
 
@@ -617,7 +678,7 @@ class DataMpdController extends Controller
                         'moda' => $m,
                         'tipe' => $t,
                         'kategori' => $getCat($m),
-                        'daily' => array_fill_keys($dateKeys, 0)
+                        'daily' => array_fill_keys($dateKeys, 0),
                     ];
                 }
             }
@@ -644,15 +705,21 @@ class DataMpdController extends Controller
                 $modeName = $row->moda_name;
                 $vol = $row->total_volume;
                 $type = $row->is_forecast ? 'FORECAST' : 'REAL';
-                
-                 // Normalize Opsel
+
+                // Normalize Opsel
                 $rawOpsel = strtoupper($row->opsel);
                 $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
-                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
-                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
+                    $opsel = 'XL';
+                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
+                    $opsel = 'IOH';
+                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
+                    $opsel = 'TSEL';
+                }
 
-                if ($opsel === 'OTHER') continue;
+                if ($opsel === 'OTHER') {
+                    continue;
+                }
 
                 // A. Populate Detailed Row
                 $rowKey = "{$opsel}_{$modeName}_{$type}";
@@ -669,41 +736,42 @@ class DataMpdController extends Controller
             }
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Nasional Mode Share Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Nasional Mode Share Error: '.$e->getMessage());
         }
 
         return [
             'umum' => $aggregated['UMUM'],
             'pribadi' => $aggregated['PRIBADI'],
-            'detail' => array_values($detailRows) // Re-index for simpler loop
+            'detail' => array_values($detailRows), // Re-index for simpler loop
         ];
     }
+
     public function nasionalModeSharePage(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
-        
-        $dString = $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
+
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:nasional:mode-share-page:v2:{$dString}";
-        
+
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
                 return [
                     'summary' => $this->getModeSharePageData($startDate, $endDate),
-                    'daily' => $this->getDailyModeShareData($startDate, $endDate)
+                    'daily' => $this->getDailyModeShareData($startDate, $endDate),
                 ];
             });
         } catch (\Throwable $e) {
             $data = [
                 'summary' => $this->getModeSharePageData($startDate, $endDate),
-                'daily' => $this->getDailyModeShareData($startDate, $endDate)
+                'daily' => $this->getDailyModeShareData($startDate, $endDate),
             ];
         }
 
         return view('pages.nasional.mode-share', [
             'data' => $data['summary'],
             'dailyData' => $data['daily'],
-            'dates' => $this->getDatesCollection($startDate, $endDate)
+            'dates' => $this->getDatesCollection($startDate, $endDate),
         ]);
     }
 
@@ -722,7 +790,7 @@ class DataMpdController extends Controller
                 ->groupBy('sm.kode_moda', 'sm.kategori')
                 ->get();
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Mode Share Page Query Error (DataMpd): ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Mode Share Page Query Error (DataMpd): '.$e->getMessage());
             $query = collect();
         }
 
@@ -737,7 +805,7 @@ class DataMpdController extends Controller
             'H' => 'Angkutan Udara',
             'I' => 'Mobil Pribadi',
             'J' => 'Motor Pribadi',
-            'K' => 'Sepeda'
+            'K' => 'Sepeda',
         ];
 
         $pergerakanMap = [];
@@ -778,14 +846,14 @@ class DataMpdController extends Controller
         }
 
         // Sort descending
-        usort($pergerakanMap, fn($a, $b) => $b['y'] <=> $a['y']);
-        usort($orangMap, fn($a, $b) => $b['y'] <=> $a['y']);
+        usort($pergerakanMap, fn ($a, $b) => $b['y'] <=> $a['y']);
+        usort($orangMap, fn ($a, $b) => $b['y'] <=> $a['y']);
 
         return [
             'pergerakan' => array_values($pergerakanMap),
             'orang' => array_values($orangMap),
             'total_pergerakan' => $totalPergerakan,
-            'total_orang' => $totalOrang
+            'total_orang' => $totalOrang,
         ];
     }
 
@@ -802,7 +870,7 @@ class DataMpdController extends Controller
             'H' => 'Angkutan Udara',
             'I' => 'Mobil Pribadi',
             'J' => 'Motor Pribadi',
-            'K' => 'Sepeda'
+            'K' => 'Sepeda',
         ];
 
         // Prepare date range collection (as string format Y-m-d)
@@ -819,7 +887,7 @@ class DataMpdController extends Controller
             $dailyData[$code] = [
                 'name' => $name,
                 'total_pergerakan' => 0,
-                'daily' => array_fill_keys($dateKeys, 0)
+                'daily' => array_fill_keys($dateKeys, 0),
             ];
         }
 
@@ -848,7 +916,7 @@ class DataMpdController extends Controller
             }
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Daily Mode Share Query Error (DataMpd): ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Daily Mode Share Query Error (DataMpd): '.$e->getMessage());
         }
 
         return $dailyData;
@@ -859,9 +927,9 @@ class DataMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
-        
+
         $cacheKey = 'mpd:nasional:pergerakan-harian:v5';
-        
+
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
                 return $this->getPergerakanHarianData($startDate, $endDate);
@@ -872,7 +940,7 @@ class DataMpdController extends Controller
 
         return view('pages.nasional.pergerakan-harian', [
             'dates' => $dates,
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
@@ -881,7 +949,7 @@ class DataMpdController extends Controller
         $opsels = ['XL', 'IOH', 'TSEL'];
         $categories = ['PERGERAKAN', 'ORANG'];
         $dates = [];
-        
+
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
             $d = $curr->format('Y-m-d');
@@ -913,11 +981,17 @@ class DataMpdController extends Controller
                 $vol = (int) $row->total_volume;
 
                 $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
-                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
-                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
+                    $opsel = 'XL';
+                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
+                    $opsel = 'IOH';
+                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
+                    $opsel = 'TSEL';
+                }
 
-                if ($opsel === 'OTHER' || !isset($dates[$date])) continue;
+                if ($opsel === 'OTHER' || ! isset($dates[$date])) {
+                    continue;
+                }
 
                 if ($cat === 'PERGERAKAN') {
                     $dates[$date][$opsel]['movement'] += $vol;
@@ -926,17 +1000,17 @@ class DataMpdController extends Controller
                     $hasOrang[$date][$opsel] = true;
                 }
             }
-            
+
             // Fallback for missing ORANG data
             foreach ($dates as $date => &$row) {
                 foreach ($opsels as $op) {
-                   if (!isset($hasOrang[$date][$op])) {
-                       $row[$op]['people'] = $row[$op]['movement']; // 1:1 fallback
-                   }
+                    if (! isset($hasOrang[$date][$op])) {
+                        $row[$op]['people'] = $row[$op]['movement']; // 1:1 fallback
+                    }
                 }
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Pergerakan Harian DB Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Pergerakan Harian DB Error: '.$e->getMessage());
         }
 
         $totals = [];
@@ -952,7 +1026,7 @@ class DataMpdController extends Controller
             foreach ($opsels as $op) {
                 $gMov = $totals[$op]['movement'];
                 $gPpl = $totals[$op]['people'];
-                
+
                 $row[$op]['movement_pct'] = $gMov > 0 ? ($row[$op]['movement'] / $gMov) * 100 : 0;
                 $row[$op]['people_pct'] = $gPpl > 0 ? ($row[$op]['people'] / $gPpl) * 100 : 0;
             }
@@ -962,16 +1036,17 @@ class DataMpdController extends Controller
         $akumulasiDaily = [];
         $totalAkumulasiMov = 0;
         $totalAkumulasiPpl = 0;
-        
+
         foreach ($dates as $date => $row) {
-            $amov = 0; $appl = 0;
+            $amov = 0;
+            $appl = 0;
             foreach ($opsels as $op) {
                 $amov += $row[$op]['movement'];
                 $appl += $row[$op]['people'];
             }
             $akumulasiDaily[$date] = [
                 'movement' => $amov,
-                'people' => $appl
+                'people' => $appl,
             ];
             $totalAkumulasiMov += $amov;
             $totalAkumulasiPpl += $appl;
@@ -981,10 +1056,10 @@ class DataMpdController extends Controller
             $row['movement_pct'] = $totalAkumulasiMov > 0 ? ($row['movement'] / $totalAkumulasiMov) * 100 : 0;
             $row['people_pct'] = $totalAkumulasiPpl > 0 ? ($row['people'] / $totalAkumulasiPpl) * 100 : 0;
         }
-        
+
         // Find Peak Days
         $sortedDaily = $akumulasiDaily;
-        uasort($sortedDaily, fn($a, $b) => $b['movement'] <=> $a['movement']);
+        uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
         // Calculate unique subscriber
@@ -997,13 +1072,13 @@ class DataMpdController extends Controller
             'total_people' => $totalAkumulasiPpl,
             'peak_days' => $peakDays,
             'unique_subscriber' => $uniqueSubscriber,
-            'koefisien' => $koefisien
+            'koefisien' => $koefisien,
         ];
 
         return [
             'daily' => $dates,
             'totals' => $totals,
-            'akumulasi' => $akumulasiData
+            'akumulasi' => $akumulasiData,
         ];
     }
 
@@ -1012,9 +1087,9 @@ class DataMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
-        
+
         $cacheKey = 'mpd:nasional:pergerakan:tables:v2';
-        
+
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
                 return $this->getPergerakanDataTables($startDate, $endDate);
@@ -1029,7 +1104,7 @@ class DataMpdController extends Controller
             'dates' => $dates,
             'real' => $data['real'],
             'forecast' => $data['forecast'],
-            'accum' => $data['accum']
+            'accum' => $data['accum'],
         ]);
     }
 
@@ -1049,12 +1124,12 @@ class DataMpdController extends Controller
         // Temporary storage to calc totals first (for percentage)
         $temp = [
             'REAL' => [],
-            'FORECAST' => []
+            'FORECAST' => [],
         ];
-        
+
         $opselTotals = [
             'REAL' => array_fill_keys($opsels, 0),
-            'FORECAST' => array_fill_keys($opsels, 0)
+            'FORECAST' => array_fill_keys($opsels, 0),
         ];
 
         // Fetch Data
@@ -1070,8 +1145,8 @@ class DataMpdController extends Controller
                 ->where('kategori', 'PERGERAKAN');
 
             // Apply Filters if provided (e.g. Jabodetabek)
-            if (!empty($filterCodes)) {
-                 $query->whereIn('kode_origin_kabupaten_kota', $filterCodes);
+            if (! empty($filterCodes)) {
+                $query->whereIn('kode_origin_kabupaten_kota', $filterCodes);
             }
 
             $rows = $query->groupBy('tanggal', 'opsel', 'is_forecast')->get();
@@ -1079,51 +1154,66 @@ class DataMpdController extends Controller
             foreach ($rows as $row) {
                 $type = $row->is_forecast ? 'FORECAST' : 'REAL';
                 $date = $row->tanggal;
-                
+
                 // Colors/Opsel Normalization
                 $rawOpsel = strtoupper($row->opsel);
                 $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
-                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
-                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
+                    $opsel = 'XL';
+                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
+                    $opsel = 'IOH';
+                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
+                    $opsel = 'TSEL';
+                }
 
-                if ($opsel === 'OTHER') continue;
+                if ($opsel === 'OTHER') {
+                    continue;
+                }
 
                 $vol = $row->total_volume;
 
-                if (!isset($temp[$type][$date])) $temp[$type][$date] = [];
-                if (!isset($temp[$type][$date][$opsel])) $temp[$type][$date][$opsel] = 0;
-                
+                if (! isset($temp[$type][$date])) {
+                    $temp[$type][$date] = [];
+                }
+                if (! isset($temp[$type][$date][$opsel])) {
+                    $temp[$type][$date][$opsel] = 0;
+                }
+
                 $temp[$type][$date][$opsel] += $vol;
                 $opselTotals[$type][$opsel] += $vol;
             }
         } catch (\Throwable $e) {
-             \Illuminate\Support\Facades\Log::error('Pergerakan Tables Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Pergerakan Tables Error: '.$e->getMessage());
         }
 
         // Process Final Structure
         $final = [
             'real' => [],
             'forecast' => [],
-            'accum' => [] // Specifically for the Accumulation Table (Real)
+            'accum' => [], // Specifically for the Accumulation Table (Real)
         ];
 
         // Helper for Label
-        $formatLabel = function($val) {
-             if ($val >= 1000000) return number_format($val / 1000000, 2, ',', '.') . ' juta';
-             if ($val >= 1000) return number_format($val / 1000, 2, ',', '.') . ' ribu';
-             return number_format($val, 0, ',', '.');
+        $formatLabel = function ($val) {
+            if ($val >= 1000000) {
+                return number_format($val / 1000000, 2, ',', '.').' juta';
+            }
+            if ($val >= 1000) {
+                return number_format($val / 1000, 2, ',', '.').' ribu';
+            }
+
+            return number_format($val, 0, ',', '.');
         };
 
         // Running Accumulators
         $runningAccum = [
             'REAL' => ['total_mov' => 0, 'total_ppl' => 0],
-            'FORECAST' => ['total_mov' => 0, 'total_ppl' => 0]
+            'FORECAST' => ['total_mov' => 0, 'total_ppl' => 0],
         ];
 
         foreach ($types as $type) {
             $arrKey = strtolower($type);
-            
+
             foreach ($dateKeys as $date) {
                 $row = [
                     'date' => $date,
@@ -1131,7 +1221,7 @@ class DataMpdController extends Controller
                     'total_mov' => 0,
                     'total_ppl' => 0,
                     'accum_mov' => 0,
-                    'accum_ppl' => 0
+                    'accum_ppl' => 0,
                 ];
 
                 // Opsels
@@ -1139,18 +1229,18 @@ class DataMpdController extends Controller
                     $vol = $temp[$type][$date][$op] ?? 0;
                     $grand = $opselTotals[$type][$op];
                     $pct = $grand > 0 ? ($vol / $grand) * 100 : 0;
-                    
+
                     $row['opsels'][$op] = [
                         'vol' => $vol,
                         'pct' => $pct,
-                        'label' => $formatLabel($vol)
+                        'label' => $formatLabel($vol),
                     ];
 
                     $row['total_mov'] += $vol;
                 }
-                
+
                 // People 1:1 ratio assume
-                $row['total_ppl'] = $row['total_mov']; 
+                $row['total_ppl'] = $row['total_mov'];
 
                 // Update Accumulation
                 $runningAccum[$type]['total_mov'] += $row['total_mov'];
@@ -1166,7 +1256,7 @@ class DataMpdController extends Controller
         // Accumulation Table (Derived from Real)
         foreach ($final['real'] as $date => $row) {
             $grandTotalReal = $runningAccum['REAL']['total_mov'];
-            
+
             $pctMov = $grandTotalReal > 0 ? ($row['total_mov'] / $grandTotalReal) * 100 : 0;
             $pctPpl = $grandTotalReal > 0 ? ($row['total_ppl'] / $grandTotalReal) * 100 : 0;
 
@@ -1175,24 +1265,24 @@ class DataMpdController extends Controller
                     'vol' => $row['total_mov'],
                     'pct' => $pctMov,
                     'label' => $formatLabel($row['total_mov']),
-                    'accum' => $row['accum_mov']
+                    'accum' => $row['accum_mov'],
                 ],
                 'ppl' => [
                     'vol' => $row['total_ppl'],
                     'pct' => $pctPpl,
                     'label' => $formatLabel($row['total_ppl']),
-                    'accum' => $row['accum_ppl']
-                ]
+                    'accum' => $row['accum_ppl'],
+                ],
             ];
         }
-        
+
         // Re-loop to fix percentages in Accum table (since GrandTotal is only known at end)
         $grandTotalMov = $runningAccum['REAL']['total_mov'];
         $grandTotalPpl = $runningAccum['REAL']['total_ppl'];
 
         foreach ($final['accum'] as $date => &$row) {
-             $row['mov']['pct'] = $grandTotalMov > 0 ? ($row['mov']['vol'] / $grandTotalMov) * 100 : 0;
-             $row['ppl']['pct'] = $grandTotalPpl > 0 ? ($row['ppl']['vol'] / $grandTotalPpl) * 100 : 0;
+            $row['mov']['pct'] = $grandTotalMov > 0 ? ($row['mov']['vol'] / $grandTotalMov) * 100 : 0;
+            $row['ppl']['pct'] = $grandTotalPpl > 0 ? ($row['ppl']['vol'] / $grandTotalPpl) * 100 : 0;
         }
 
         return $final;
@@ -1206,6 +1296,7 @@ class DataMpdController extends Controller
             $dates->push($curr->format('Y-m-d'));
             $curr->addDay();
         }
+
         return $dates;
     }
 
@@ -1246,7 +1337,7 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN');
 
-            if (!empty($filterCodes)) {
+            if (! empty($filterCodes)) {
                 $query->whereIn('sm.kode_origin_kabupaten_kota', $filterCodes);
             }
 
@@ -1265,7 +1356,7 @@ class DataMpdController extends Controller
             }
         } catch (\Throwable $e) {
             // If DB Query fails, we return the initialized empty pivot
-            \Illuminate\Support\Facades\Log::error('OD Simpul DB Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('OD Simpul DB Error: '.$e->getMessage());
         }
 
         return $pivot;
@@ -1286,9 +1377,9 @@ class DataMpdController extends Controller
         // Fallback if empty (ensure tables are never blank)
         if (empty($modes)) {
             $modes = [
-                'Angkutan Jalan (Bus AKAP)', 'Angkutan Jalan (Bus AKDP)', 
-                'Angkutan Kereta Api', 'Angkutan Laut', 'Angkutan Udara', 
-                'Mobil Pribadi', 'Motor Pribadi'
+                'Angkutan Jalan (Bus AKAP)', 'Angkutan Jalan (Bus AKDP)',
+                'Angkutan Kereta Api', 'Angkutan Laut', 'Angkutan Udara',
+                'Mobil Pribadi', 'Motor Pribadi',
             ];
         }
 
@@ -1313,7 +1404,7 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN');
 
-            if (!empty($filterCodes)) {
+            if (! empty($filterCodes)) {
                 $query->whereIn('sm.kode_origin_kabupaten_kota', $filterCodes);
             }
 
@@ -1338,7 +1429,7 @@ class DataMpdController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-             \Illuminate\Support\Facades\Log::error('Mode Share DB Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Mode Share DB Error: '.$e->getMessage());
         }
 
         return ['movement' => $pivotMovement, 'people' => $pivotPeople];
@@ -1349,14 +1440,14 @@ class DataMpdController extends Controller
         // 1. Date Range: 13 March 2026 - 30 March 2026
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
-        
+
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         // 2. Caching Key
         $cacheKey = 'mpd:jabodetabek:pergerakan:tables:v2';
-        
+
         $jabodetabekCodes = $this->getJabodetabekCodes();
-        
+
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
                 return $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes);
@@ -1372,7 +1463,7 @@ class DataMpdController extends Controller
             'dates' => $dates,
             'real' => $data['real'],
             'forecast' => $data['forecast'],
-            'accum' => $data['accum']
+            'accum' => $data['accum'],
         ]);
     }
 
@@ -1384,10 +1475,10 @@ class DataMpdController extends Controller
         while ($curr->lte($endDate)) {
             $d = $curr->format('Y-m-d');
             $dates[$d] = [
-                'XL'   => ['movement' => 0, 'people' => 0],
-                'IOH'  => ['movement' => 0, 'people' => 0],
+                'XL' => ['movement' => 0, 'people' => 0],
+                'IOH' => ['movement' => 0, 'people' => 0],
                 'TSEL' => ['movement' => 0, 'people' => 0],
-                'Total' => ['movement' => 0, 'people' => 0]
+                'Total' => ['movement' => 0, 'people' => 0],
             ];
             $curr->addDay();
         }
@@ -1402,7 +1493,7 @@ class DataMpdController extends Controller
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('kategori', 'PERGERAKAN');
 
-            if (!empty($filterCodes)) {
+            if (! empty($filterCodes)) {
                 $query->whereIn('kode_origin_kabupaten_kota', $filterCodes);
             }
 
@@ -1415,14 +1506,18 @@ class DataMpdController extends Controller
 
                 // Normalize Opsel Name
                 $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) $opsel = 'XL';
-                elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $opsel = 'IOH';
-                elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $opsel = 'TSEL';
+                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
+                    $opsel = 'XL';
+                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
+                    $opsel = 'IOH';
+                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
+                    $opsel = 'TSEL';
+                }
 
                 if (isset($dates[$date]) && isset($dates[$date][$opsel])) {
                     $dates[$date][$opsel]['movement'] += $vol;
                     $dates[$date][$opsel]['people'] += $vol; // Assumed 1:1
-                    
+
                     // Add to Day Total
                     $dates[$date]['Total']['movement'] += $vol;
                     $dates[$date]['Total']['people'] += $vol;
@@ -1430,7 +1525,7 @@ class DataMpdController extends Controller
             }
 
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Pergerakan DB Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Pergerakan DB Error: '.$e->getMessage());
         }
 
         return $dates;
@@ -1441,7 +1536,7 @@ class DataMpdController extends Controller
         // 1. Date Range: 13 March 2026 - 30 March 2026
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
-        
+
         $dates = collect();
         $curr = $startDate->copy();
         while ($curr->lte($endDate)) {
@@ -1454,9 +1549,9 @@ class DataMpdController extends Controller
 
         // 2. Caching Key
         $cacheKey = "mpd:jabodetabek:pergerakan-orang:v2:{$isForecast}";
-        
+
         $jabodetabekCodes = $this->getJabodetabekCodes();
-        
+
         try {
             $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes, $isForecast) {
                 return $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast);
@@ -1470,14 +1565,14 @@ class DataMpdController extends Controller
             'title' => 'Akumulasi Pergerakan & Orang Jabodetabek',
             'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Pergerakan & Orang'],
             'dates' => $dates,
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
     private function getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast)
     {
         $dailyData = [];
-        
+
         try {
             // Query PERGERAKAN
             $movements = DB::table('spatial_movements')
@@ -1492,7 +1587,7 @@ class DataMpdController extends Controller
             foreach ($movements as $row) {
                 $dailyData[$row->tanggal] = [
                     'movement' => (int) $row->total_volume,
-                    'people' => 0
+                    'people' => 0,
                 ];
             }
 
@@ -1507,13 +1602,13 @@ class DataMpdController extends Controller
                 ->get();
 
             foreach ($people as $row) {
-                if (!isset($dailyData[$row->tanggal])) {
+                if (! isset($dailyData[$row->tanggal])) {
                     $dailyData[$row->tanggal] = ['movement' => 0, 'people' => 0];
                 }
                 $dailyData[$row->tanggal]['people'] = (int) $row->total_volume;
             }
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Pergerakan Orang DB Error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Pergerakan Orang DB Error: '.$e->getMessage());
         }
 
         return $dailyData;
