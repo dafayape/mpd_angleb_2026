@@ -60,7 +60,7 @@
 
             .table-responsive {
                 border-radius: 8px;
-                overflow: hidden;
+                overflow-x: auto;
                 box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
             }
 
