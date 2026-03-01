@@ -9,6 +9,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+// === TEMPORARY DEBUG: Hapus setelah fix ===
+Route::any('/debug-route-info', function () {
+    return response()->json([
+        'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? 'N/A',
+        'REQUEST_URI'    => $_SERVER['REQUEST_URI'] ?? 'N/A',
+        'SCRIPT_NAME'    => $_SERVER['SCRIPT_NAME'] ?? 'N/A',
+        'SCRIPT_FILENAME'=> $_SERVER['SCRIPT_FILENAME'] ?? 'N/A',
+        'PATH_INFO'      => $_SERVER['PATH_INFO'] ?? 'N/A',
+        'DOCUMENT_ROOT'  => $_SERVER['DOCUMENT_ROOT'] ?? 'N/A',
+        'PHP_SELF'       => $_SERVER['PHP_SELF'] ?? 'N/A',
+        'laravel_path'   => request()->path(),
+        'laravel_method' => request()->method(),
+        'laravel_url'    => request()->url(),
+        'laravel_fullUrl'=> request()->fullUrl(),
+    ]);
+});
+// === END DEBUG ===
+
 // Login route — SSO dikelola oleh Laravel 11, redirect ke sana
 Route::get('/login', fn () => redirect('https://mpdbkt.web.id/login'))->name('login');
 
