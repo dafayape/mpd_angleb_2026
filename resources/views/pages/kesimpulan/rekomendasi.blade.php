@@ -87,7 +87,8 @@
                     <div>
                         <h4 class="mb-2 fw-bold text-white">Rekomendasi Kebijakan Eksekutif (AI Generated)</h4>
                         <p class="mb-0 text-white-50" style="font-size: 1.05rem;">
-                            Analisis ini dihasilkan secara <strong>otomatis</strong> oleh <strong>Gemini 1.5 Pro AI</strong>
+                            Analisis ini dihasilkan secara <strong>otomatis</strong> oleh <strong>Sistem Kecerdasan Buatan
+                                (AI) terintegrasi</strong>
                             berdasarkan sintesis keseluruhan pergerakan data dari Operator Seluler (MPD) selama masa Angleb
                             2026. Memberikan wawasan kebijakan <i>Decision Support System</i> yang informatif, interaktif,
                             dan solutif.
