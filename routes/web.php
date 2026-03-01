@@ -9,9 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+// Login route — SSO dikelola oleh Laravel 11, redirect ke sana
+Route::get('/login', fn () => redirect('https://mpdbkt.web.id/login'))->name('login');
+
 Route::middleware(['auth'])->group(function () {
 
-    Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::match(['get', 'head'], '/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Profile
