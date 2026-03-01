@@ -1,0 +1,22 @@
+HTTP/2 301 
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+location: https://mpdbkt.web.id/angleb/mpd/
+cache-control: max-age=0
+expires: Sun, 01 Mar 2026 12:40:07 GMT
+content-length: 305
+content-type: text/html; charset=iso-8859-1
+date: Sun, 01 Mar 2026 12:40:07 GMT
+server: Apache
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>301 Moved Permanently</title>
+</head><body>
+<h1>Moved Permanently</h1>
+<p>The document has moved <a href="https://mpdbkt.web.id/angleb/mpd/">here</a>.</p>
+<hr>
+<address>Apache Server at mpdbkt.web.id Port 443</address>
+</body></html>

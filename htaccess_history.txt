@@ -1,0 +1,155 @@
+commit eeca22f
+Author: Daffa Jaya Perkasa <251403746+dafayape@users.noreply.github.com>
+Date:   77 minutes ago
+
+    feat: enhance Devlog viewer UI/UX with updated styling and functionality, and implement role-based access for monitoring menu items.
+
+diff --git a/public/.htaccess b/public/.htaccess
+index b574a59..f933656 100644
+--- a/public/.htaccess
++++ b/public/.htaccess
+@@ -23,3 +23,106 @@
+     RewriteCond %{REQUEST_FILENAME} !-f
+     RewriteRule ^ index.php [L]
+ </IfModule>
++
++# ─── GZIP / DEFLATE COMPRESSION ───
++<IfModule mod_deflate.c>
++    AddOutputFilterByType DEFLATE text/html
++    AddOutputFilterByType DEFLATE text/css
++    AddOutputFilterByType DEFLATE text/javascript
++    AddOutputFilterByType DEFLATE text/xml
++    AddOutputFilterByType DEFLATE text/plain
++    AddOutputFilterByType DEFLATE application/javascript
++    AddOutputFilterByType DEFLATE application/x-javascript
++    AddOutputFilterByType DEFLATE application/json
++    AddOutputFilterByType DEFLATE application/xml
++    AddOutputFilterByType DEFLATE application/rss+xml
++    AddOutputFilterByType DEFLATE application/xhtml+xml
++    AddOutputFilterByType DEFLATE image/svg+xml
++    AddOutputFilterByType DEFLATE font/ttf
++    AddOutputFilterByType DEFLATE font/woff
++    AddOutputFilterByType DEFLATE font/woff2
++    AddOutputFilterByType DEFLATE font/otf
++
++    # Remove browser bugs for older browsers
++    BrowserMatch ^Mozilla/4 gzip-only-text/html
++    BrowserMatch ^Mozilla/4\.0[678] no-gzip
++    BrowserMatch \bMSIE !no-gzip !gzip-only-text/html
++    Header append Vary User-Agent
++</IfModule>
++
++# ─── BROWSER CACHING (Expires Headers) ───
++<IfModule mod_expires.c>
++    ExpiresActive On
++
++    # Default: 1 hour
++    ExpiresDefault "access plus 1 hour"
++
++    # HTML: no cache (always fresh from server)
++    ExpiresByType text/html "access plus 0 seconds"
++
++    # CSS & JavaScript: 1 year (cache-busted by query string)
++    ExpiresByType text/css "access plus 1 year"
++    ExpiresByType application/javascript "access plus 1 year"
++    ExpiresByType application/x-javascript "access plus 1 year"
++    ExpiresByType text/javascript "access plus 1 year"
++
++    # Images: 1 year
++    ExpiresByType image/jpeg "access plus 1 year"
++    ExpiresByType image/png "access plus 1 year"
++    ExpiresByType image/gif "access plus 1 year"
++    ExpiresByType image/webp "access plus 1 year"
++    ExpiresByType image/svg+xml "access plus 1 year"
++    ExpiresByType image/x-icon "access plus 1 year"
++    ExpiresByType image/vnd.microsoft.icon "access plus 1 year"
++
++    # Fonts: 1 year
++    ExpiresByType font/woff "access plus 1 year"
++    ExpiresByType font/woff2 "access plus 1 year"
++    ExpiresByType font/ttf "access plus 1 year"
++    ExpiresByType font/otf "access plus 1 year"
++    ExpiresByType application/font-woff "access plus 1 year"
++    ExpiresByType application/font-woff2 "access plus 1 year"
++    ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
++
++    # JSON/XML: 1 hour
++    ExpiresByType application/json "access plus 1 hour"
++    ExpiresByType application/xml "access plus 1 hour"
++</IfModule>
++
++# ─── CACHE-CONTROL HEADERS ───
++<IfModule mod_headers.c>
++    # Static assets: immutable cache
++    <FilesMatch "\.(css|js|woff|woff2|ttf|otf|eot|svg)$">
++        Header set Cache-Control "public, max-age=31536000, immutable"
++    </FilesMatch>
++
++    # Images: long cache
++    <FilesMatch "\.(jpg|jpeg|png|gif|webp|ico)$">
++        Header set Cache-Control "public, max-age=31536000, immutable"
++    </FilesMatch>
++
++    # HTML: no cache (dynamic content)
++    <FilesMatch "\.(html|php)$">
++        Header set Cache-Control "no-cache, no-store, must-revalidate"
++        Header set Pragma "no-cache"
++        Header set Expires "0"
++    </FilesMatch>
++
++    # Security Headers
++    Header always set X-Content-Type-Options "nosniff"
++    Header always set X-Frame-Options "SAMEORIGIN"
++    Header always set X-XSS-Protection "1; mode=block"
++    Header always set Referrer-Policy "strict-origin-when-cross-origin"
++
++    # Remove Server signature
++    Header unset Server
++    Header unset X-Powered-By
++</IfModule>
++
++# ─── ETAG (Disable for static — use Cache-Control instead) ───
++<IfModule mod_headers.c>
++    <FilesMatch "\.(css|js|jpg|jpeg|png|gif|webp|woff|woff2|ttf|otf|eot|svg|ico)$">
++        Header unset ETag
++    </FilesMatch>
++</IfModule>
++FileETag None
+
+commit e507887
+Author: Daffa Jaya Perkasa <251403746+dafayape@users.noreply.github.com>
+Date:   2 weeks ago
+
+    Start: MPD ANGLEB 2026
+
+diff --git a/public/.htaccess b/public/.htaccess
+new file mode 100644
+index 0000000..b574a59
+--- /dev/null
++++ b/public/.htaccess
+@@ -0,0 +1,25 @@
++<IfModule mod_rewrite.c>
++    <IfModule mod_negotiation.c>
++        Options -MultiViews -Indexes
++    </IfModule>
++
++    RewriteEngine On
++
++    # Handle Authorization Header
++    RewriteCond %{HTTP:Authorization} .
++    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
++
++    # Handle X-XSRF-Token Header
++    RewriteCond %{HTTP:x-xsrf-token} .
++    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
++
++    # Redirect Trailing Slashes If Not A Folder...
++    RewriteCond %{REQUEST_FILENAME} !-d
++    RewriteCond %{REQUEST_URI} (.+)/$
++    RewriteRule ^ %1 [L,R=301]
++
++    # Send Requests To Front Controller...
++    RewriteCond %{REQUEST_FILENAME} !-d
++    RewriteCond %{REQUEST_FILENAME} !-f
++    RewriteRule ^ index.php [L]
++</IfModule>

@@ -1,0 +1,29 @@
+HTTP/2 302 
+cache-control: no-cache, private
+date: Sun, 01 Mar 2026 12:40:21 GMT
+set-cookie: XSRF-TOKEN=eyJpdiI6IkVTRFVqMXg4MXhiemVVSkFSY0ZQN1E9PSIsInZhbHVlIjoiRk1zTWpHdkthVTRQNjJwMmtwbmZqRVVzdFJadkY3VGhpZW1pNmJWUzk2ZkVBOFlTZTY1cUpjOE00YW5mSm50QnY1cFBUL0NIbWNnSEs2dTcrTGIzaEVrQTMyUGZHTmNjbDh5SjI0Y3VMVjRiQVZ5bEdoUU1vRk5kSlJhMDVtb2kiLCJtYWMiOiJlMzAyYWRjYWVkZGI5ZjFjYjczNzFkYWVkZTkxZTM5MTY0ZjRiMzI3YjI3ZTVkMThlNzIxOWQ1ZDg2MDBhNWY4IiwidGFnIjoiIn0%3D; expires=Sun, 01 Mar 2026 14:40:21 GMT; Max-Age=7200; path=/; domain=.mpdbkt.web.id; secure; samesite=lax
+set-cookie: mpd_shared_session=eyJpdiI6InVKbFBnVDJ4N05iblpMTHB1T3VrV1E9PSIsInZhbHVlIjoiYWNxRnJhdzhNK2NHNmtjSEJ1QS9KMFN6dmJWMGJFbWQzQ29jUVVkQnFMTHl3WkRGMnk0TmJQd1BjU3ZmV25BVGdtTzBzRHRFckdxc3BaMTVQOG8vMG00dlJXbGFhZFh1OUZubVdRL3drRndDcUhDVkp2WUxqYkIrVFJnbnI0U2QiLCJtYWMiOiJlZTI5ODBmN2Y4M2ZjODBiNTkyODczMzJiNjNjODdiNGU0NTE3ZjdkZDIyNjk2ZmJkYzE2YTkyNjM3YWJmODdjIiwidGFnIjoiIn0%3D; expires=Sun, 01 Mar 2026 14:40:21 GMT; Max-Age=7200; path=/; domain=.mpdbkt.web.id; secure; httponly; samesite=lax
+x-content-type-options: nosniff
+x-frame-options: SAMEORIGIN
+x-xss-protection: 1; mode=block
+referrer-policy: strict-origin-when-cross-origin
+location: https://mpdbkt.web.id/login
+cache-control: no-cache, no-store, must-revalidate
+expires: 0
+vary: Accept-Encoding,User-Agent
+pragma: no-cache
+content-type: text/html; charset=utf-8
+server: Apache
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="refresh" content="0;url='https://mpdbkt.web.id/login'" />
+
+        <title>Redirecting to https://mpdbkt.web.id/login</title>
+    </head>
+    <body>
+        Redirecting to <a href="https://mpdbkt.web.id/login">https://mpdbkt.web.id/login</a>.
+    </body>
+</html>
