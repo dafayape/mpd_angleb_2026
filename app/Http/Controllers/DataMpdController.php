@@ -381,6 +381,34 @@ class DataMpdController extends Controller
             'total_pergerakan' => $totalVolume
         ];
     }
+    public function jabodetabekInterOdPage(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 30);
+        $dates = $this->getDatesCollection($startDate, $endDate);
+
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
+        $cacheKey = "mpd:jabodetabek:inter-od:v1:{$dString}";
+
+        $jabodetabekCodes = $this->getJabodetabekCodes();
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+                return $this->getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes);
+        }
+
+        return view('pages.jabodetabek.inter-od', [
+            'title' => 'O-D Inter Jabodetabek',
+            'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'O-D Inter'],
+            'dates' => $dates,
+            'top_dest' => $data['top_dest'],
+            'sankey' => $data['sankey'],
+            'total_pergerakan' => $data['total_pergerakan']
+        ]);
+    }
 
     private function getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes)
     {
