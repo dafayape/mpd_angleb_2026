@@ -2113,4 +2113,151 @@ class DataMpdController extends Controller
             'top_dest_nfr' => $topDestNfr,
         ];
     }
+
+    // --- KESIMPULAN NASIONAL ---
+    public function kesimpulanNasionalPage(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 30);
+        $dates = $this->getDatesCollection($startDate, $endDate);
+
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
+        $cacheKey = "mpd:kesimpulan:nasional:v1:{$dString}";
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getKesimpulanNasionalData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getKesimpulanNasionalData($startDate, $endDate);
+        }
+
+        return view('pages.kesimpulan.nasional', [
+            'title' => 'Kesimpulan Nasional',
+            'breadcrumb' => ['Data MPD Opsel', 'Kesimpulan & Rekomendasi', 'Nasional'],
+            'dates' => $dates,
+            'data' => $data
+        ]);
+    }
+
+    private function getKesimpulanNasionalData($startDate, $endDate)
+    {
+        $startDateStr = $startDate->format('Y-m-d');
+        $endDateStr = $endDate->format('Y-m-d');
+
+        // 1. Total Pergerakan & Puncak
+        $dailyMovements = DB::table('spatial_movements')
+            ->select('tanggal', DB::raw('SUM(total) as daily_total'))
+            ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+            ->where('kategori', 'PERGERAKAN')
+            ->where('is_forecast', false)
+            ->groupBy('tanggal')
+            ->orderByDesc('daily_total')
+            ->get();
+        
+        $totalPergerakan = $dailyMovements->sum('daily_total');
+        $peakDays = $dailyMovements->take(2);
+        
+        // 2. Total unique subscriber (approximated by Total Orang or Total Pergerakan / factor)
+        // From previous logic, total orang / 2.13 ratio can be mentioned. Let's get Total ORANG
+        $totalOrang = DB::table('spatial_movements')
+            ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+            ->where('kategori', 'ORANG')
+            ->where('is_forecast', false)
+            ->sum('total');
+            
+        // 3. Kontribusi Operator (TSEL, IOH, XL)
+        $opselMovement = DB::table('spatial_movements')
+            ->select('opsel', DB::raw('SUM(total) as op_total'))
+            ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+            ->where('kategori', 'PERGERAKAN')
+            ->where('is_forecast', false)
+            ->groupBy('opsel')
+            ->get();
+            
+        $opselOrang = DB::table('spatial_movements')
+            ->select('opsel', DB::raw('SUM(total) as op_total'))
+            ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+            ->where('kategori', 'ORANG')
+            ->where('is_forecast', false)
+            ->groupBy('opsel')
+            ->get();
+
+        $operatorStats = [
+            'PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0],
+            'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0]
+        ];
+
+        foreach ($opselMovement as $row) {
+            $rawOpsel = strtoupper($row->opsel);
+            if (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $operatorStats['PERGERAKAN']['TSEL'] += $row->op_total;
+            if (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $operatorStats['PERGERAKAN']['IOH'] += $row->op_total;
+            if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS') || str_contains($rawOpsel, 'SMARTFREN')) $operatorStats['PERGERAKAN']['XL'] += $row->op_total;
+        }
+        foreach ($opselOrang as $row) {
+            $rawOpsel = strtoupper($row->opsel);
+            if (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $operatorStats['ORANG']['TSEL'] += $row->op_total;
+            if (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $operatorStats['ORANG']['IOH'] += $row->op_total;
+            if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS') || str_contains($rawOpsel, 'SMARTFREN')) $operatorStats['ORANG']['XL'] += $row->op_total;
+        }
+
+        // 4. Top 5 Provinsi Asal
+        $top5ProvAsal = DB::table('spatial_movements as sm')
+            ->join('ref_provinces as p', 'sm.kode_origin_provinsi', '=', 'p.code')
+            ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->groupBy('p.name')
+            ->orderByDesc('prov_total')
+            ->take(5)
+            ->get();
+
+        // 5. Top 5 Provinsi Tujuan
+        $top5ProvTujuan = DB::table('spatial_movements as sm')
+            ->join('ref_provinces as p', 'sm.kode_dest_provinsi', '=', 'p.code')
+            ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->groupBy('p.name')
+            ->orderByDesc('prov_total')
+            ->take(5)
+            ->get();
+
+        // 6. Top 5 Kota/Kab Asal
+        $top3KotaAsal = DB::table('spatial_movements as sm')
+            ->join('ref_cities as c', 'sm.kode_origin_kabupaten_kota', '=', 'c.code')
+            ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->groupBy('c.name')
+            ->orderByDesc('city_total')
+            ->take(3)
+            ->get();
+
+        // 7. Top 5 Kota/Kab Tujuan
+        $top5KotaTujuan = DB::table('spatial_movements as sm')
+            ->join('ref_cities as c', 'sm.kode_dest_kabupaten_kota', '=', 'c.code')
+            ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->groupBy('c.name')
+            ->orderByDesc('city_total')
+            ->take(5)
+            ->get();
+
+        return [
+            'total_pergerakan' => $totalPergerakan,
+            'total_orang' => $totalOrang,
+            'peak_days' => $peakDays,
+            'operator_stats' => $operatorStats,
+            'top_5_prov_asal' => $top5ProvAsal,
+            'top_5_prov_tujuan' => $top5ProvTujuan,
+            'top_3_kota_asal' => $top3KotaAsal,
+            'top_5_kota_tujuan' => $top5KotaTujuan
+        ];
+    }
 }
