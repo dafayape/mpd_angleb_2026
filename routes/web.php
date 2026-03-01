@@ -56,7 +56,9 @@ Route::middleware(['auth'])->group(function () {
     Route::view('/executive/daily-report-page', 'pages.executive.daily-report')->name('pages.executive.daily-report');
 
     // Pengaturan
-    Route::view('/pengaturan', 'pages.pengaturan.pengaturan')->name('pengaturan');
+    Route::get('/pengaturan', [\App\Http\Controllers\PengaturanController::class, 'index'])->name('pengaturan');
+    Route::post('/pengaturan', [\App\Http\Controllers\PengaturanController::class, 'update'])->name('pengaturan.update');
+    Route::post('/pengaturan/test-whatsapp', [\App\Http\Controllers\PengaturanController::class, 'testWhatsApp'])->name('pengaturan.test-wa');
 
     // Grafik MPD Routes
     Route::controller(\App\Http\Controllers\GrafikMpdController::class)->group(function () {
@@ -93,6 +95,7 @@ Route::middleware(['auth'])->group(function () {
     // Executive Summary
     Route::prefix('executive-summary')->name('executive.')->group(function () {
         Route::get('/daily-report', [\App\Http\Controllers\DailyReportController::class, 'index'])->name('daily-report');
+        Route::post('/daily-report', [\App\Http\Controllers\DailyReportController::class, 'sendWhatsApp'])->name('daily-report.send-wa');
 
         Route::get('/summary', [\App\Http\Controllers\ExecutiveSummaryController::class, 'index'])->name('summary');
         Route::get('/summary/data', [\App\Http\Controllers\ExecutiveSummaryController::class, 'getData'])->name('summary.data');
