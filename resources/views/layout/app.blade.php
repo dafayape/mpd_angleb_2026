@@ -400,10 +400,6 @@
                             <ul class="sub-menu" aria-expanded="false">
                                 <li><a href="{{ route('pages.substansi.stasiun-ka-antar-kota') }}">Stasiun KA Antar
                                         Kota</a></li>
-                                <li><a href="{{ route('pages.substansi.stasiun-ka-regional') }}">Stasiun KA
-                                        Regional</a></li>
-                                <li><a href="{{ route('pages.substansi.stasiun-ka-cepat') }}">Stasiun KA Cepat
-                                        (Whoosh)</a></li>
                                 <li><a href="{{ route('pages.substansi.pelabuhan-penyeberangan') }}">Pelabuhan
                                         Penyeberangan</a></li>
                                 <li><a href="{{ route('pages.substansi.pelabuhan-laut') }}">Pelabuhan Laut</a></li>

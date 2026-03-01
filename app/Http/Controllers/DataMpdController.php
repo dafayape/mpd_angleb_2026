@@ -2390,13 +2390,11 @@ class DataMpdController extends Controller
         // Actual categories: Bandara(empty), Pelabuhan(Laut/Penyeberangan), Stasiun(Antar Kota only), Terminal(A/B)
         $map = [
             'stasiun-ka-antar-kota'    => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '13'],
-            'stasiun-ka-regional'      => ['category' => 'Stasiun', 'sub_category' => null,               'title' => 'Stasiun KA Regional',        'view' => 'pages.substansi._simpul-layout',  'number' => '14', 'note' => 'Sub-kategori Regional tidak tersedia di data referensi. Menampilkan seluruh data Stasiun.'],
-            'stasiun-ka-cepat'         => ['category' => 'Stasiun', 'sub_category' => null,               'title' => 'Stasiun KA Cepat',           'view' => 'pages.substansi._simpul-layout',  'number' => '15', 'note' => 'Sub-kategori KA Cepat tidak tersedia di data referensi. Menampilkan seluruh data Stasiun.'],
-            'pelabuhan-penyeberangan'  => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '16'],
-            'pelabuhan-laut'           => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '17'],
-            'bandara'                  => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '18'],
-            'terminal'                 => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '19'],
-            'od-simpul-pelabuhan'      => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '20'],
+            'pelabuhan-penyeberangan'  => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '14'],
+            'pelabuhan-laut'           => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '15'],
+            'bandara'                  => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '16'],
+            'terminal'                 => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '17'],
+            'od-simpul-pelabuhan'      => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '18'],
         ];
 
         if (!isset($map[$slug])) {

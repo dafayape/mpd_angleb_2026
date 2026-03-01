@@ -1,4 +1,4 @@
-{{-- Shared Simpul Transportasi Layout — Premium Clean Design --}}
+{{-- Shared Simpul Transportasi Layout — Clean & Balanced --}}
 @extends('layout.app')
 
 @section('title', $title)
@@ -9,10 +9,6 @@
         .bg-navy {
             background-color: #2a3042 !important;
             color: white !important;
-        }
-
-        .text-navy {
-            color: #2a3042 !important;
         }
 
         .simpul-card {
@@ -32,21 +28,18 @@
             background: #fff;
             border-bottom: 2px solid #e2e8f0;
             padding: 1rem 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
-        .simpul-card .card-header .badge-section {
+        .badge-section {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: linear-gradient(135deg, #2a3042 0%, #3b4a6b 100%);
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
             color: #fff;
-            padding: 5px 14px;
+            padding: 6px 14px;
             border-radius: 6px;
             font-weight: 700;
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             letter-spacing: 0.3px;
             text-transform: uppercase;
         }
@@ -56,14 +49,14 @@
         }
 
         .conclusion-box {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border-left: 5px solid #22c55e;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 5px solid #3b82f6;
             border-radius: 8px;
             padding: 1.25rem 1.5rem;
         }
 
         .conclusion-box .route-highlight {
-            color: #0369a1;
+            color: #1d4ed8;
             font-weight: 700;
             font-size: 1.1rem;
         }
@@ -75,10 +68,6 @@
             padding: 0.75rem 1rem;
             color: #92400e;
             font-size: 0.9rem;
-        }
-
-        .note-banner i {
-            color: #f59e0b;
         }
 
         .empty-state {
@@ -132,9 +121,9 @@
         </div>
     </div>
 
-    {{-- Note Banner (for KA Regional/Cepat) --}}
+    {{-- Note Banner --}}
     @if (!empty($note))
-        <div class="row mb-3" data-aos="fade-down" data-aos-delay="50">
+        <div class="row mb-3">
             <div class="col-12">
                 <div class="note-banner d-flex align-items-center gap-2">
                     <i class="bx bx-info-circle fs-5"></i>
@@ -145,7 +134,7 @@
     @endif
 
     <div class="row" data-aos="fade-up" data-aos-delay="100">
-        {{-- LEFT: Top 10 Asal + Top 10 Tujuan --}}
+        {{-- LEFT COLUMN --}}
         <div class="col-lg-6 col-12">
             {{-- 10 Besar Asal --}}
             <div class="card simpul-card">
@@ -158,7 +147,7 @@
                             <p>Data tidak tersedia</p>
                         </div>
                     @else
-                        <div id="chart-origin" style="min-height:360px"></div>
+                        <div id="chart-origin" style="min-height:380px"></div>
                     @endif
                 </div>
             </div>
@@ -175,13 +164,13 @@
                             <p>Data tidak tersedia</p>
                         </div>
                     @else
-                        <div id="chart-dest" style="min-height:360px"></div>
+                        <div id="chart-dest" style="min-height:380px"></div>
                     @endif
                 </div>
             </div>
         </div>
 
-        {{-- RIGHT: O-D Simpul + Conclusion --}}
+        {{-- RIGHT COLUMN --}}
         <div class="col-lg-6 col-12">
             {{-- O-D Simpul --}}
             <div class="card simpul-card">
@@ -194,7 +183,7 @@
                             <p>Data tidak tersedia</p>
                         </div>
                     @else
-                        <div id="chart-od" style="min-height:360px"></div>
+                        <div id="chart-od" style="min-height:380px"></div>
                     @endif
                 </div>
             </div>
@@ -204,8 +193,10 @@
                 <div class="card simpul-card">
                     <div class="card-body pt-3">
                         <div class="conclusion-box">
-                            <p class="mb-2 fw-semibold text-dark" style="font-size:1rem">Rute <span
-                                    class="route-highlight">{{ $top_od_name }}</span></p>
+                            <p class="mb-2 fw-semibold text-dark" style="font-size:1rem">
+                                <i class="bx bx-trending-up text-primary me-1"></i>
+                                Rute <span class="route-highlight">{{ $top_od_name }}</span>
+                            </p>
                             <p class="mb-0 text-muted" style="font-size:0.95rem">menjadi rute {{ strtolower($title) }} yang
                                 paling banyak diminati selama masa Angleb 2026.</p>
                         </div>
@@ -231,7 +222,7 @@
             var destData = @json($top_dest);
             var odData = @json($top_od);
 
-            function renderHorizontalBar(el, dataset, labelKey, barColor) {
+            function renderBar(el, dataset, labelKey, barColor) {
                 if (!dataset || !dataset.length || !document.getElementById(el)) return;
 
                 var cats = dataset.map(function(r) {
@@ -251,7 +242,8 @@
                         backgroundColor: 'transparent',
                         style: {
                             fontFamily: 'inherit'
-                        }
+                        },
+                        marginRight: 80
                     },
                     title: {
                         text: null
@@ -261,9 +253,10 @@
                         labels: {
                             style: {
                                 fontSize: '11px',
-                                color: '#475569',
-                                fontWeight: '500'
-                            }
+                                color: '#1e293b',
+                                fontWeight: '600'
+                            },
+                            x: -5
                         }
                     },
                     yAxis: {
@@ -274,27 +267,28 @@
                     },
                     tooltip: {
                         useHTML: true,
-                        formatter: function() {
-                            return '<b>' + this.point.category + '</b><br>Volume: <b>' + Highcharts
-                                .numberFormat(this.y, 0, ',', '.') + '</b><br>Proporsi: <b>' + pcts[this
-                                    .point.index] + '%</b>';
+                        headerFormat: '',
+                        pointFormatter: function() {
+                            return '<b>' + this.category + '</b><br>' +
+                                'Volume: <b>' + Highcharts.numberFormat(this.y, 0, ',', '.') +
+                                '</b><br>' +
+                                'Proporsi: <b>' + pcts[this.index] + '%</b>';
                         }
                     },
                     plotOptions: {
                         bar: {
-                            borderRadius: 3,
-                            pointPadding: 0.08,
-                            groupPadding: 0.06,
+                            borderRadius: 4,
+                            pointPadding: 0.05,
+                            groupPadding: 0.05,
                             borderWidth: 0,
                             dataLabels: {
                                 enabled: true,
-                                align: 'left',
-                                inside: false,
+                                align: 'right',
+                                inside: true,
                                 useHTML: true,
                                 formatter: function() {
-                                    return '<span style="font-size:10px;color:#94a3b8;margin-right:4px">' +
-                                        pcts[this.point.index] + '%</span><b style="color:#1e293b">' +
-                                        Highcharts.numberFormat(this.y, 0, ',', '.') + '</b>';
+                                    return '<span style="font-size:11px;color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.3)">' +
+                                        Highcharts.numberFormat(this.y, 0, ',', '.') + '</span>';
                                 }
                             }
                         }
@@ -309,10 +303,10 @@
                 });
             }
 
-            renderHorizontalBar('chart-origin', originData, 'name', '#60a5fa');
-            renderHorizontalBar('chart-dest', destData, 'name', '#38bdf8');
+            renderBar('chart-origin', originData, 'name', '#3b82f6');
+            renderBar('chart-dest', destData, 'name', '#0ea5e9');
 
-            // O-D Chart (no code prefix)
+            // O-D Chart
             if (odData && odData.length && document.getElementById('chart-od')) {
                 var odCats = odData.map(function(r) {
                     return r.od_name || '—';
@@ -330,7 +324,8 @@
                         backgroundColor: 'transparent',
                         style: {
                             fontFamily: 'inherit'
-                        }
+                        },
+                        marginRight: 80
                     },
                     title: {
                         text: null
@@ -340,9 +335,10 @@
                         labels: {
                             style: {
                                 fontSize: '11px',
-                                color: '#475569',
-                                fontWeight: '500'
-                            }
+                                color: '#1e293b',
+                                fontWeight: '600'
+                            },
+                            x: -5
                         }
                     },
                     yAxis: {
@@ -353,34 +349,35 @@
                     },
                     tooltip: {
                         useHTML: true,
-                        formatter: function() {
-                            return '<b>' + this.point.category + '</b><br>Volume: <b>' + Highcharts
-                                .numberFormat(this.y, 0, ',', '.') + '</b><br>Proporsi: <b>' + odPcts[
-                                    this.point.index] + '%</b>';
+                        headerFormat: '',
+                        pointFormatter: function() {
+                            return '<b>' + this.category + '</b><br>' +
+                                'Volume: <b>' + Highcharts.numberFormat(this.y, 0, ',', '.') +
+                                '</b><br>' +
+                                'Proporsi: <b>' + odPcts[this.index] + '%</b>';
                         }
                     },
                     plotOptions: {
                         bar: {
-                            borderRadius: 3,
-                            pointPadding: 0.08,
-                            groupPadding: 0.06,
+                            borderRadius: 4,
+                            pointPadding: 0.05,
+                            groupPadding: 0.05,
                             borderWidth: 0,
                             dataLabels: {
                                 enabled: true,
-                                align: 'left',
-                                inside: false,
+                                align: 'right',
+                                inside: true,
                                 useHTML: true,
                                 formatter: function() {
-                                    return '<span style="font-size:10px;color:#94a3b8;margin-right:4px">' +
-                                        odPcts[this.point.index] + '%</span><b style="color:#1e293b">' +
-                                        Highcharts.numberFormat(this.y, 0, ',', '.') + '</b>';
+                                    return '<span style="font-size:11px;color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.3)">' +
+                                        Highcharts.numberFormat(this.y, 0, ',', '.') + '</span>';
                                 }
                             }
                         }
                     },
                     series: [{
                         data: odVals,
-                        color: '#818cf8'
+                        color: '#6366f1'
                     }],
                     credits: {
                         enabled: false
