@@ -450,7 +450,258 @@
                     </div>
                 </div>
 
-            </div>
-        </div>
-    </div>
-@endsection
+                <!-- 03 PERGERAKAN HARIAN TOTAL -->
+                <div class="row mt-4 mb-5" data-aos="fade-up" data-aos-delay="200">
+                    <div class="col-12">
+                        <div class="card content-card w-100 flex-column"
+                            style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                            <div class="card-header d-flex align-items-center bg-white"
+                                style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                                <span class="section-badge">03</span>
+                                <h5 class="fw-bold text-navy mb-0">Pergerakan Harian Total (Pergerakan per hari dan orang
+                                    per hari)
+                                    Inter Jabodetabek
+                                </h5>
+                            </div>
+                            <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+
+                                <!-- BLOCK 1: PERGERAKAN PER HARI -->
+                                <div class="position-relative border rounded p-3 mb-5"
+                                    style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
+                                    <div class="chart-title-badge">PERGERAKAN PER HARI</div>
+
+                                    <div id="chart-movement" style="min-height: 250px; margin-top: 20px;"></div>
+
+                                    <div class="row mt-3 g-0">
+                                        <div class="col-xl-9 col-lg-8 pe-2">
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered mb-0 table-03 text-center align-middle"
+                                                    style="min-width: 1300px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th rowspan="2" class="align-middle"
+                                                                style="background-color: #2a3042; width: 80px;">Tanggal
+                                                            </th>
+                                                            @foreach ($dates as $d)
+                                                                <th style="background-color: #486284;">
+                                                                    <div style="font-size: 0.75rem;">
+                                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</div>
+                                                                </th>
+                                                            @endforeach
+                                                            <th rowspan="2" class="align-middle"
+                                                                style="background-color: #2a3042; width: 100px;">Total</th>
+                                                        </tr>
+                                                        <tr>
+                                                            @foreach ($dates as $i => $d)
+                                                                <th style="background-color: #5a7395; font-size: 0.7rem;">
+                                                                    H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}
+                                                                </th>
+                                                            @endforeach
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="fw-bold text-dark"
+                                                                style="background-color: #f8f9fa;">Jumlah
+                                                            </td>
+                                                            @foreach ($dates as $d)
+                                                                <td class="fw-bold text-dark">
+                                                                    {{ fmtNumJab($data['akumulasi']['daily'][$d]['movement'] ?? 0) }}
+                                                                </td>
+                                                            @endforeach
+                                                            <td class="fw-bold text-dark" style="font-size:0.9rem;">
+                                                                {{ fmtNumJab($totMovAll) }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-3 col-lg-4">
+                                            <div class="summary-box-03 border border-dark border-2 rounded">
+                                                <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
+                                                    Total pergerakan pada periode<br>
+                                                    <strong>13 Maret 2026 s/d 30 Maret 2026</strong> mencapai<br>
+                                                    <span class="highlight text-dark"
+                                                        style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNumJab($totMovAll) }}
+                                                        Pergerakan</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- BLOCK 2: ORANG PER HARI -->
+                                <div class="position-relative border rounded p-3 mt-4"
+                                    style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
+                                    <div class="chart-title-badge">ORANG PER HARI</div>
+
+                                    <div id="chart-people" style="min-height: 250px; margin-top: 20px;"></div>
+
+                                    <div class="row mt-3 g-0">
+                                        <div class="col-xl-9 col-lg-8 pe-2">
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered mb-0 table-03 text-center align-middle"
+                                                    style="min-width: 1300px;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th rowspan="2" class="align-middle"
+                                                                style="background-color: #2a3042; width: 80px;">Tanggal
+                                                            </th>
+                                                            @foreach ($dates as $d)
+                                                                <th style="background-color: #1e6082;">
+                                                                    <div style="font-size: 0.75rem;">
+                                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</div>
+                                                                </th>
+                                                            @endforeach
+                                                            <th rowspan="2" class="align-middle"
+                                                                style="background-color: #2a3042; width: 100px;">Total</th>
+                                                        </tr>
+                                                        <tr>
+                                                            @foreach ($dates as $i => $d)
+                                                                <th style="background-color: #29769e; font-size: 0.7rem;">
+                                                                    H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}
+                                                                </th>
+                                                            @endforeach
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="fw-bold text-dark"
+                                                                style="background-color: #f8f9fa;">Jumlah
+                                                            </td>
+                                                            @foreach ($dates as $d)
+                                                                <td class="fw-bold text-dark">
+                                                                    {{ fmtNumJab($data['akumulasi']['daily'][$d]['people'] ?? 0) }}
+                                                                </td>
+                                                            @endforeach
+                                                            <td class="fw-bold text-dark" style="font-size:0.9rem;">
+                                                                {{ fmtNumJab($totPplAll) }}</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-xl-3 col-lg-4">
+                                            <div class="summary-box-03 border border-dark border-2 rounded">
+                                                <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
+                                                    Total orang pada periode<br>
+                                                    <strong>13 Maret 2026 s/d 30 Maret 2026</strong> mencapai<br>
+                                                    <span class="highlight text-dark"
+                                                        style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNumJab($totPplAll) }}
+                                                        Orang</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endsection
+
+            @push('scripts')
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+                <script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        if (typeof AOS !== 'undefined') {
+                            AOS.init({
+                                once: true,
+                                offset: 50,
+                                duration: 600
+                            });
+                        }
+
+                        // ApexCharts Rendering for Section 03
+                        const datesLabels = {!! json_encode($datesArrForChart) !!};
+                        const movPcts = {!! json_encode($movementPctChart) !!};
+                        const pplPcts = {!! json_encode($peoplePctChart) !!};
+
+                        const commonOptions = {
+                            chart: {
+                                type: 'bar',
+                                height: 260,
+                                toolbar: {
+                                    show: false
+                                },
+                                animations: {
+                                    enabled: true
+                                }
+                            },
+                            plotOptions: {
+                                bar: {
+                                    dataLabels: {
+                                        position: 'top'
+                                    },
+                                    columnWidth: '55%'
+                                }
+                            },
+                            dataLabels: {
+                                enabled: true,
+                                formatter: function(val) {
+                                    return val + "%";
+                                },
+                                offsetY: -22,
+                                style: {
+                                    fontSize: '12px',
+                                    colors: ["#555"]
+                                }
+                            },
+                            stroke: {
+                                show: true,
+                                width: 2,
+                                colors: ['transparent']
+                            },
+                            xaxis: {
+                                categories: datesLabels,
+                                labels: {
+                                    style: {
+                                        fontSize: '10.5px',
+                                        colors: '#666'
+                                    }
+                                }
+                            },
+                            yaxis: {
+                                max: function(max) {
+                                    return max + 2;
+                                }, // give some top padding
+                                labels: {
+                                    formatter: function(val) {
+                                        return val.toFixed(2) + "%";
+                                    }
+                                }
+                            },
+                            fill: {
+                                opacity: 1
+                            },
+                            grid: {
+                                borderColor: '#e0e0e0',
+                                strokeDashArray: 4
+                            },
+                            colors: ['#1e6082']
+                        };
+
+                        if (document.querySelector("#chart-movement")) {
+                            new ApexCharts(document.querySelector("#chart-movement"), {
+                                ...commonOptions,
+                                series: [{
+                                    name: 'Pergerakan',
+                                    data: movPcts
+                                }]
+                            }).render();
+                        }
+
+                        if (document.querySelector("#chart-people")) {
+                            new ApexCharts(document.querySelector("#chart-people"), {
+                                ...commonOptions,
+                                series: [{
+                                    name: 'Orang',
+                                    data: pplPcts
+                                }]
+                            }).render();
+                        }
+                    });
+                </script>
+            @endpush
