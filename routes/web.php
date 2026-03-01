@@ -31,7 +31,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/intra-pergerakan', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekIntraPergerakanPage'])->name('intra-pergerakan');
         Route::get('/intra-od', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekIntraOdPage'])->name('intra-od');
         Route::get('/inter-pergerakan', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekInterPergerakanPage'])->name('inter-pergerakan');
-        Route::view('/inter-od', 'pages.jabodetabek.inter-od')->name('inter-od');
+        Route::get('/inter-od', [\App\Http\Controllers\DataMpdController::class, 'jabodetabekInterOdPage'])->name('inter-od');
     });
 
     // Substansi Tambahan

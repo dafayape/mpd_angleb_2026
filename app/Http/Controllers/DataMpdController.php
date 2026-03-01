@@ -382,6 +382,70 @@ class DataMpdController extends Controller
         ];
     }
 
+    private function getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes)
+    {
+        try {
+            $query = DB::table('spatial_movements as sm')
+                // Join Origin City
+                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+                // Join Dest City & Province
+                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+                ->join('ref_provinces as dp', 'dc.province_code', '=', 'dp.code')
+                ->select(
+                    'oc.code as origin_code',
+                    'oc.name as origin_name',
+                    'dp.code as dest_prov_code',
+                    'dp.name as dest_prov_name',
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.is_forecast', false)
+                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                // Origin IS in Jabodetabek
+                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                // Destination IS NOT in Jabodetabek
+                ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy('oc.code', 'oc.name', 'dp.code', 'dp.name')
+                ->orderByRaw('total_volume DESC')
+                ->get();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('OD Inter Jabodetabek Query Error: '.$e->getMessage());
+            $query = collect();
+        }
+
+        $totalVolume = $query->sum('total_volume');
+
+        // Note: Keynote 32 focuses on Top 10 Destination Provinces.
+        $topDest = $query->groupBy('dest_prov_code')
+            ->map(function ($rows) use ($totalVolume) {
+                $subTotal = $rows->sum('total_volume');
+                return [
+                    'code' => $rows->first()->dest_prov_code,
+                    'name' => $rows->first()->dest_prov_name,
+                    'total' => $subTotal,
+                    'pct' => $totalVolume > 0 ? ($subTotal / $totalVolume) * 100 : 0
+                ];
+            })
+            ->sortByDesc('total')
+            ->take(20) // Keep 20 for completeness, UI displays 20 in screenshot
+            ->values();
+
+        // Sankey Top 20 overall routes
+        $sankeyData = $query->take(20)->map(function ($row) {
+            return [
+                'from' => '(O) '.$row->origin_name,
+                'to' => '(D) '.$row->dest_prov_name,
+                'weight' => (int) $row->total_volume,
+            ];
+        })->values();
+
+        return [
+            'top_dest' => $topDest,
+            'sankey' => $sankeyData,
+            'total_pergerakan' => $totalVolume
+        ];
+    }
+
     public function jabodetabekInterPergerakanPage(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
