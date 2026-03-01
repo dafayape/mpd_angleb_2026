@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class PengaturanController extends Controller
@@ -46,7 +47,7 @@ class PengaturanController extends Controller
 
         // Log
         DB::table('activity_logs')->insert([
-            'user_id'     => auth()->id(),
+            'user_id'     => Auth::id(),
             'action'      => 'update_settings',
             'description' => 'Mengubah pengaturan WhatsApp',
             'created_at'  => now(),

@@ -13,16 +13,12 @@ class PerformanceHeaders
      */
     public function handle(Request $request, Closure $next): Response
     {
-        /** @var Response $response */
         $response = $next($request);
 
-        // Only modify responses that have headers (skip streams, redirects, etc.)
-        if (method_exists($response, 'header')) {
-            $response->header('X-Content-Type-Options', 'nosniff');
-            $response->header('X-Frame-Options', 'SAMEORIGIN');
-            $response->header('X-XSS-Protection', '1; mode=block');
-            $response->header('Referrer-Policy', 'strict-origin-when-cross-origin');
-        }
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        $response->headers->set('X-XSS-Protection', '1; mode=block');
+        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
         return $response;
     }

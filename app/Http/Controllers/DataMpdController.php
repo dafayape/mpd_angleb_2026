@@ -306,7 +306,7 @@ class DataMpdController extends Controller
             'top_origin' => $data['top_origin'],
             'top_dest' => $data['top_dest'],
             'sankey' => $data['sankey'],
-            'total_pergerakan' => $data['total_pergerakan']
+            'total_pergerakan' => $data['total_pergerakan'],
         ]);
     }
 
@@ -341,11 +341,12 @@ class DataMpdController extends Controller
         $topOrigin = $query->groupBy('origin_code')
             ->map(function ($rows) use ($totalVolume) {
                 $subTotal = $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->origin_code,
                     'name' => $rows->first()->origin_name,
                     'total' => $subTotal,
-                    'pct' => $totalVolume > 0 ? ($subTotal / $totalVolume) * 100 : 0
+                    'pct' => $totalVolume > 0 ? ($subTotal / $totalVolume) * 100 : 0,
                 ];
             })
             ->sortByDesc('total')
@@ -355,11 +356,12 @@ class DataMpdController extends Controller
         $topDest = $query->groupBy('dest_code')
             ->map(function ($rows) use ($totalVolume) {
                 $subTotal = $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->dest_code,
                     'name' => $rows->first()->dest_name,
                     'total' => $subTotal,
-                    'pct' => $totalVolume > 0 ? ($subTotal / $totalVolume) * 100 : 0
+                    'pct' => $totalVolume > 0 ? ($subTotal / $totalVolume) * 100 : 0,
                 ];
             })
             ->sortByDesc('total')
@@ -379,9 +381,10 @@ class DataMpdController extends Controller
             'top_origin' => $topOrigin,
             'top_dest' => $topDest,
             'sankey' => $sankeyData,
-            'total_pergerakan' => $totalVolume
+            'total_pergerakan' => $totalVolume,
         ];
     }
+
     public function jabodetabekInterOdPage(Request $request)
     {
         $startDate = Carbon::create(2026, 3, 13);
@@ -407,7 +410,7 @@ class DataMpdController extends Controller
             'dates' => $dates,
             'top_dest' => $data['top_dest'],
             'sankey' => $data['sankey'],
-            'total_pergerakan' => $data['total_pergerakan']
+            'total_pergerakan' => $data['total_pergerakan'],
         ]);
     }
 
@@ -448,11 +451,12 @@ class DataMpdController extends Controller
         $topDest = $query->groupBy('dest_prov_code')
             ->map(function ($rows) use ($totalVolume) {
                 $subTotal = $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->dest_prov_code,
                     'name' => $rows->first()->dest_prov_name,
                     'total' => $subTotal,
-                    'pct' => $totalVolume > 0 ? ($subTotal / $totalVolume) * 100 : 0
+                    'pct' => $totalVolume > 0 ? ($subTotal / $totalVolume) * 100 : 0,
                 ];
             })
             ->sortByDesc('total')
@@ -471,7 +475,7 @@ class DataMpdController extends Controller
         return [
             'top_dest' => $topDest,
             'sankey' => $sankeyData,
-            'total_pergerakan' => $totalVolume
+            'total_pergerakan' => $totalVolume,
         ];
     }
 
@@ -535,11 +539,11 @@ class DataMpdController extends Controller
                 ->whereIn(DB::raw('UPPER(sm.kategori)'), $categories)
                 ->where(function ($q) use ($jabodetabekCodes) {
                     $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                      ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
-                      ->orWhere(function ($q2) use ($jabodetabekCodes) {
-                          $q2->whereNotIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                             ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
-                      });
+                        ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+                        ->orWhere(function ($q2) use ($jabodetabekCodes) {
+                            $q2->whereNotIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+                        });
                 })
                 ->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
                 ->get();
@@ -630,7 +634,7 @@ class DataMpdController extends Controller
             'unique_subscriber' => $uniqueSubscriber,
             'koefisien' => $koefisien,
         ];
-        
+
         $overallTotalPergerakan = array_sum(array_column($totals, 'pergerakan'));
         $overallTotalOrang = array_sum(array_column($totals, 'orang'));
 
@@ -2061,7 +2065,7 @@ class DataMpdController extends Controller
         foreach ($allCityCodes as $code) {
             $outRecord = $outflow->get($code);
             $inRecord = $inflow->get($code);
-            
+
             $outVal = $outRecord ? (float) $outRecord->total_outflow : 0;
             $inVal = $inRecord ? (float) $inRecord->total_inflow : 0;
             $cityName = $outRecord ? $outRecord->city_name : ($inRecord ? $inRecord->city_name : 'Unknown');
@@ -2077,36 +2081,36 @@ class DataMpdController extends Controller
                 'inflow' => $inVal,
                 'netflow' => $netflow,
                 'nfr' => $nfr,
-                'keterangan' => $netflow <= 0 ? 'ASAL' : 'TUJUAN'
+                'keterangan' => $netflow <= 0 ? 'ASAL' : 'TUJUAN',
             ];
         }
 
         $mergedColl = collect($merged);
 
         // Top 20 Origin Netflow (Lowest/Most Negative Netflow)
-        $topOriginNetflow = $mergedColl->filter(fn($r) => $r['netflow'] <= 0)
-            ->sortBy('netflow') 
+        $topOriginNetflow = $mergedColl->filter(fn ($r) => $r['netflow'] <= 0)
+            ->sortBy('netflow')
             ->take(20)
             ->values();
 
         // Top 20 Dest Netflow (Highest/Most Positive Netflow)
-        $topDestNetflow = $mergedColl->filter(fn($r) => $r['netflow'] > 0)
+        $topDestNetflow = $mergedColl->filter(fn ($r) => $r['netflow'] > 0)
             ->sortByDesc('netflow')
             ->take(20)
             ->values();
 
         // Top 20 Origin NFR (Lowest NFR close to -1)
-        $topOriginNfr = $mergedColl->filter(fn($r) => $r['nfr'] <= 0)
+        $topOriginNfr = $mergedColl->filter(fn ($r) => $r['nfr'] <= 0)
             ->sortBy('nfr')
             ->take(20)
             ->values();
 
         // Top 20 Dest NFR (Highest NFR close to +1)
-        $topDestNfr = $mergedColl->filter(fn($r) => $r['nfr'] > 0)
+        $topDestNfr = $mergedColl->filter(fn ($r) => $r['nfr'] > 0)
             ->sortByDesc('nfr')
             ->take(20)
             ->values();
-        
+
         return [
             'top_origin_netflow' => $topOriginNetflow,
             'top_dest_netflow' => $topDestNetflow,
@@ -2137,7 +2141,7 @@ class DataMpdController extends Controller
             'title' => 'Kesimpulan Nasional',
             'breadcrumb' => ['Data MPD Opsel', 'Kesimpulan & Rekomendasi', 'Nasional'],
             'dates' => $dates,
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
@@ -2155,10 +2159,10 @@ class DataMpdController extends Controller
             ->groupBy('tanggal')
             ->orderByDesc('daily_total')
             ->get();
-        
+
         $totalPergerakan = $dailyMovements->sum('daily_total');
         $peakDays = $dailyMovements->take(2);
-        
+
         // 2. Total unique subscriber (approximated by Total Orang or Total Pergerakan / factor)
         // From previous logic, total orang / 2.13 ratio can be mentioned. Let's get Total ORANG
         $totalOrang = DB::table('spatial_movements')
@@ -2166,7 +2170,7 @@ class DataMpdController extends Controller
             ->where('kategori', 'ORANG')
             ->where('is_forecast', false)
             ->sum('total');
-            
+
         // 3. Kontribusi Operator (TSEL, IOH, XL)
         $opselMovement = DB::table('spatial_movements')
             ->select('opsel', DB::raw('SUM(total) as op_total'))
@@ -2175,7 +2179,7 @@ class DataMpdController extends Controller
             ->where('is_forecast', false)
             ->groupBy('opsel')
             ->get();
-            
+
         $opselOrang = DB::table('spatial_movements')
             ->select('opsel', DB::raw('SUM(total) as op_total'))
             ->whereBetween('tanggal', [$startDateStr, $endDateStr])
@@ -2186,20 +2190,32 @@ class DataMpdController extends Controller
 
         $operatorStats = [
             'PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0],
-            'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0]
+            'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0],
         ];
 
         foreach ($opselMovement as $row) {
             $rawOpsel = strtoupper($row->opsel);
-            if (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $operatorStats['PERGERAKAN']['TSEL'] += $row->op_total;
-            if (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $operatorStats['PERGERAKAN']['IOH'] += $row->op_total;
-            if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS') || str_contains($rawOpsel, 'SMARTFREN')) $operatorStats['PERGERAKAN']['XL'] += $row->op_total;
+            if (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
+                $operatorStats['PERGERAKAN']['TSEL'] += $row->op_total;
+            }
+            if (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
+                $operatorStats['PERGERAKAN']['IOH'] += $row->op_total;
+            }
+            if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS') || str_contains($rawOpsel, 'SMARTFREN')) {
+                $operatorStats['PERGERAKAN']['XL'] += $row->op_total;
+            }
         }
         foreach ($opselOrang as $row) {
             $rawOpsel = strtoupper($row->opsel);
-            if (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) $operatorStats['ORANG']['TSEL'] += $row->op_total;
-            if (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) $operatorStats['ORANG']['IOH'] += $row->op_total;
-            if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS') || str_contains($rawOpsel, 'SMARTFREN')) $operatorStats['ORANG']['XL'] += $row->op_total;
+            if (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
+                $operatorStats['ORANG']['TSEL'] += $row->op_total;
+            }
+            if (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
+                $operatorStats['ORANG']['IOH'] += $row->op_total;
+            }
+            if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS') || str_contains($rawOpsel, 'SMARTFREN')) {
+                $operatorStats['ORANG']['XL'] += $row->op_total;
+            }
         }
 
         // 4. Top 5 Provinsi Asal
@@ -2260,7 +2276,7 @@ class DataMpdController extends Controller
             'top_5_prov_asal' => $top5ProvAsal,
             'top_5_prov_tujuan' => $top5ProvTujuan,
             'top_3_kota_asal' => $top3KotaAsal,
-            'top_5_kota_tujuan' => $top5KotaTujuan
+            'top_5_kota_tujuan' => $top5KotaTujuan,
         ];
     }
 
@@ -2286,7 +2302,7 @@ class DataMpdController extends Controller
             'title' => 'Kesimpulan Jabodetabek',
             'breadcrumb' => ['Data MPD Opsel', 'Kesimpulan & Rekomendasi', 'Jabodetabek'],
             'dates' => $dates,
-            'data' => $data
+            'data' => $data,
         ]);
     }
 
@@ -2297,7 +2313,7 @@ class DataMpdController extends Controller
 
         $jabodetabekCodes = [
             '3171', '3172', '3173', '3174', '3175', '3101', // DKI Jakarta
-            '3271', '3201', '3276', '3216', '3671', '3603', '3674' // Bodebek
+            '3271', '3201', '3276', '3216', '3671', '3603', '3674', // Bodebek
         ];
 
         // 1. INTRA JABODETABEK Peak Days
@@ -2311,7 +2327,7 @@ class DataMpdController extends Controller
             ->groupBy('sm.tanggal')
             ->orderByDesc('daily_total')
             ->get();
-            
+
         $intraPeakDays = $intraDaily->take(2);
 
         // 2. INTER JABODETABEK Peak Days (Jabodetabek to National)
@@ -2325,10 +2341,10 @@ class DataMpdController extends Controller
             ->groupBy('sm.tanggal')
             ->orderByDesc('daily_total')
             ->get();
-            
+
         $interPeakDays = $interDaily->take(2);
 
-        // 3. Daerah Asal Pergerakan Masyarakat Jabodetabek (Top Origin) ALL JABO? 
+        // 3. Daerah Asal Pergerakan Masyarakat Jabodetabek (Top Origin) ALL JABO?
         // Based on the text: "Kabupaten Bogor menjadi daerah asal... disusul Jaktim, Jaksel". This implies we look at overall origins starting FROM Jabodetabek.
         $topOriginJabo = DB::table('spatial_movements as sm')
             ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
@@ -2377,34 +2393,35 @@ class DataMpdController extends Controller
             'inter_peak_days' => $interPeakDays,
             'top_origin_jabo' => $topOriginJabo,
             'top_dest_intra_jabo' => $topDestIntraJabo,
-            'top_prov_dest_inter_jabo' => $topProvDestInterJabo
+            'top_prov_dest_inter_jabo' => $topProvDestInterJabo,
         ];
     }
+
     // --- GENERIC SIMPUL TRANSPORTASI PAGE ---
     public function substansiSimpulPage(Request $request, $slug)
     {
         $startDate = Carbon::create(2026, 3, 13);
-        $endDate   = Carbon::create(2026, 3, 30);
+        $endDate = Carbon::create(2026, 3, 30);
 
         // Map slug -> config (sub_category values verified from ref_simpul.csv)
         // Actual categories: Bandara(empty), Pelabuhan(Laut/Penyeberangan), Stasiun(Antar Kota only), Terminal(A/B)
         $map = [
-            'stasiun-ka-antar-kota'    => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '13'],
-            'pelabuhan-penyeberangan'  => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '14'],
-            'pelabuhan-laut'           => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '15'],
-            'bandara'                  => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '16'],
-            'terminal'                 => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '17'],
-            'od-simpul-pelabuhan'      => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '18'],
+            'stasiun-ka-antar-kota' => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '13'],
+            'pelabuhan-penyeberangan' => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '14'],
+            'pelabuhan-laut' => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '15'],
+            'bandara' => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '16'],
+            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '17'],
+            'od-simpul-pelabuhan' => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '18'],
         ];
 
-        if (!isset($map[$slug])) {
+        if (! isset($map[$slug])) {
             abort(404);
         }
 
-        $cfg       = $map[$slug];
-        $category  = $cfg['category'];
-        $subCat    = $cfg['sub_category'];
-        $cacheKey  = "mpd:simpul:{$slug}:" . $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
+        $cfg = $map[$slug];
+        $category = $cfg['category'];
+        $subCat = $cfg['sub_category'];
+        $cacheKey = "mpd:simpul:{$slug}:".$startDate->format('Ymd').'_'.$endDate->format('Ymd');
 
         $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $category, $subCat) {
 
@@ -2425,7 +2442,9 @@ class DataMpdController extends Controller
                 ->where('sm.is_forecast', false)
                 ->where(function ($q) use ($category, $subCat) {
                     $q->where('n.category', $category);
-                    if ($subCat) $q->where('n.sub_category', $subCat);
+                    if ($subCat) {
+                        $q->where('n.sub_category', $subCat);
+                    }
                 })
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->groupBy('n.code', 'n.name')
@@ -2442,7 +2461,9 @@ class DataMpdController extends Controller
                 ->where('sm.is_forecast', false)
                 ->where(function ($q) use ($category, $subCat) {
                     $q->where('n.category', $category);
-                    if ($subCat) $q->where('n.sub_category', $subCat);
+                    if ($subCat) {
+                        $q->where('n.sub_category', $subCat);
+                    }
                 })
                 ->where('sm.kode_dest_simpul', '!=', '')
                 ->groupBy('n.code', 'n.name')
@@ -2463,7 +2484,9 @@ class DataMpdController extends Controller
                 ->where('sm.is_forecast', false)
                 ->where(function ($q) use ($category, $subCat) {
                     $q->where('o.category', $category);
-                    if ($subCat) $q->where('o.sub_category', $subCat);
+                    if ($subCat) {
+                        $q->where('o.sub_category', $subCat);
+                    }
                 })
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->where('sm.kode_dest_simpul', '!=', '')
@@ -2474,32 +2497,35 @@ class DataMpdController extends Controller
 
             // Calculate totals for percentage
             $totalOrigin = $topOrigin->sum('total_volume');
-            $totalDest   = $topDest->sum('total_volume');
-            $totalOd     = $topOd->sum('total_volume');
+            $totalDest = $topDest->sum('total_volume');
+            $totalOd = $topOd->sum('total_volume');
 
             // Attach percentages
-            $topOrigin = $topOrigin->map(fn($r) => (object) array_merge((array) $r, ['pct' => $totalOrigin > 0 ? round($r->total_volume / $totalOrigin * 100, 2) : 0]));
-            $topDest   = $topDest->map(fn($r) => (object) array_merge((array) $r, ['pct' => $totalDest > 0 ? round($r->total_volume / $totalDest * 100, 2) : 0]));
-            $topOd     = $topOd->map(fn($r) => (object) array_merge((array) $r, ['pct' => $totalOd > 0 ? round($r->total_volume / $totalOd * 100, 2) : 0]));
+            $topOrigin = $topOrigin->map(fn ($r) => (object) array_merge((array) $r, ['pct' => $totalOrigin > 0 ? round($r->total_volume / $totalOrigin * 100, 2) : 0]));
+            $topDest = $topDest->map(fn ($r) => (object) array_merge((array) $r, ['pct' => $totalDest > 0 ? round($r->total_volume / $totalDest * 100, 2) : 0]));
+            $topOd = $topOd->map(fn ($r) => (object) array_merge((array) $r, ['pct' => $totalOd > 0 ? round($r->total_volume / $totalOd * 100, 2) : 0]));
 
             // Build conclusion text
             $topOdName = $topOd->first()?->od_name ?? '-';
 
             return [
-                'top_origin'    => $topOrigin,
-                'top_dest'      => $topDest,
-                'top_od'        => $topOd,
-                'total_origin'  => $totalOrigin,
-                'total_dest'    => $totalDest,
-                'total_od'      => $totalOd,
-                'top_od_name'   => $topOdName,
+                'top_origin' => $topOrigin,
+                'top_dest' => $topDest,
+                'top_od' => $topOd,
+                'total_origin' => $totalOrigin,
+                'total_dest' => $totalDest,
+                'total_od' => $totalOd,
+                'top_od_name' => $topOdName,
             ];
         });
 
-        return view($cfg['view'], array_merge($data, [
-            'title'      => $cfg['title'],
+        /** @var string $viewName */
+        $viewName = $cfg['view'];
+
+        return view($viewName, array_merge($data, [
+            'title' => $cfg['title'],
             'pageNumber' => $cfg['number'],
-            'note'       => $cfg['note'] ?? null,
+            'note' => $cfg['note'] ?? null,
         ]));
     }
 
@@ -2513,7 +2539,7 @@ class DataMpdController extends Controller
 
         $aiContent = Cache::get($cacheKey);
 
-        if (!$aiContent) {
+        if (! $aiContent) {
             $totalPergerakan = DB::table('spatial_movements')
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('kategori', 'PERGERAKAN')
@@ -2532,42 +2558,42 @@ class DataMpdController extends Controller
                 ->pluck('name')
                 ->implode(', ');
 
-            $prompt = "Anda adalah Analis Ahli Sistem Transportasi dan Kebijakan Publik untuk Kementerian. 
+            $prompt = 'Anda adalah Analis Ahli Sistem Transportasi dan Kebijakan Publik untuk Kementerian. 
 Tugas Anda adalah membaca ringkasan data pergerakan masyarakat (MPD Mobile Positioning Data) selama masa Lebaran (Angleb) 2026 dan memberikan rekomendasi kebijakan yang interaktif, informatif, dan solutif.
-Total Pergerakan Nasional tercatat sebesar: " . number_format($totalPergerakan, 0, ',', '.') . " pergerakan.
+Total Pergerakan Nasional tercatat sebesar: '.number_format($totalPergerakan, 0, ',', '.')." pergerakan.
 Provinsi tujuan paling dominan adalah: {$topTujuan}.
 
 Berikan 5 poin rekomendasi kebijakan utama (seperti infrastruktur tol, manajemen simpul transportasi, keselamatan, dll) yang harus diambil oleh Pimpinan Kementerian. Tuliskan dalam format Markdown yang rapi dan profesional, gunakan bold untuk key points, dan bullet points.
 PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN menambahkan blok kutipan statis (menggunakan blockquote markdown `>`) dengan judul **Sumber Data:** yang menjelaskan secara persis bahwa analisis data ini diperoleh dan dapat dipertanggungjawabkan dari hasil pengolahan \"Data Ekstraksi Mobile Positioning Data (MPD) Operator Seluler: Telkomsel, Indosat Ooredoo Hutchison, dan XL Axiata periode Angleb 2026\". Buat penjelasan keseluruhan yang mendalam namun solutif.";
 
-            $apiKey = env('GEMINI_API_KEY', 'AIzaSyCXZub9wlUn8ALXN-aRd9kWIU0pc3gSXR8');
+            $apiKey = env('GEMINI_API_KEY');
             $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
-            
+
             try {
                 $response = Http::post($url, [
                     'contents' => [
                         [
                             'parts' => [
-                                ['text' => $prompt]
-                            ]
-                        ]
-                    ]
+                                ['text' => $prompt],
+                            ],
+                        ],
+                    ],
                 ]);
 
                 if ($response->successful()) {
                     $json = $response->json();
                     $aiContent = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
-                    
+
                     if ($aiContent) {
                         Cache::put($cacheKey, $aiContent, 86400);
                     } else {
-                        $aiContent = "Gagal mengambil rekomendasi (Format AI tidak sesuai).";
+                        $aiContent = 'Gagal mengambil rekomendasi (Format AI tidak sesuai).';
                     }
                 } else {
-                    $aiContent = "Gagal menghubungi layanan AI Endpoint. Status: " . $response->status() . " Body: " . $response->body();
+                    $aiContent = 'Gagal menghubungi layanan AI Endpoint. Status: '.$response->status().' Body: '.$response->body();
                 }
             } catch (\Exception $e) {
-                $aiContent = "Terjadi kesalahan sistem saat memuat rekomendasi AI: " . $e->getMessage();
+                $aiContent = 'Terjadi kesalahan sistem saat memuat rekomendasi AI: '.$e->getMessage();
             }
         }
 
@@ -2576,7 +2602,7 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
 
         return view('pages.kesimpulan.rekomendasi', [
             'ai_html' => $parsedHtml,
-            'title' => 'Rekomendasi Kebijakan'
+            'title' => 'Rekomendasi Kebijakan',
         ]);
     }
 }
