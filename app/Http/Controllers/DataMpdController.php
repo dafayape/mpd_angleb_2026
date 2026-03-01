@@ -2386,16 +2386,17 @@ class DataMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate   = Carbon::create(2026, 3, 30);
 
-        // Map slug -> config
+        // Map slug -> config (sub_category values verified from ref_simpul.csv)
+        // Actual categories: Bandara(empty), Pelabuhan(Laut/Penyeberangan), Stasiun(Antar Kota only), Terminal(A/B)
         $map = [
-            'stasiun-ka-antar-kota'    => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',      'number' => '13'],
-            'stasiun-ka-regional'      => ['category' => 'Stasiun', 'sub_category' => 'Regional',        'title' => 'Stasiun KA Regional',        'view' => 'pages.substansi._simpul-layout',        'number' => '14'],
-            'stasiun-ka-cepat'         => ['category' => 'Stasiun', 'sub_category' => 'KA Cepat',        'title' => 'Stasiun KA Cepat',           'view' => 'pages.substansi._simpul-layout',           'number' => '15'],
-            'pelabuhan-penyeberangan'  => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',    'number' => '16'],
-            'pelabuhan-laut'           => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',             'number' => '17'],
-            'bandara'                  => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',                    'number' => '18'],
-            'terminal'                 => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',                   'number' => '19'],
-            'od-simpul-pelabuhan'      => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',        'number' => '20'],
+            'stasiun-ka-antar-kota'    => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '13'],
+            'stasiun-ka-regional'      => ['category' => 'Stasiun', 'sub_category' => null,               'title' => 'Stasiun KA Regional',        'view' => 'pages.substansi._simpul-layout',  'number' => '14', 'note' => 'Sub-kategori Regional tidak tersedia di data referensi. Menampilkan seluruh data Stasiun.'],
+            'stasiun-ka-cepat'         => ['category' => 'Stasiun', 'sub_category' => null,               'title' => 'Stasiun KA Cepat',           'view' => 'pages.substansi._simpul-layout',  'number' => '15', 'note' => 'Sub-kategori KA Cepat tidak tersedia di data referensi. Menampilkan seluruh data Stasiun.'],
+            'pelabuhan-penyeberangan'  => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '16'],
+            'pelabuhan-laut'           => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '17'],
+            'bandara'                  => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '18'],
+            'terminal'                 => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '19'],
+            'od-simpul-pelabuhan'      => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '20'],
         ];
 
         if (!isset($map[$slug])) {
@@ -2423,7 +2424,7 @@ class DataMpdController extends Controller
                 ->select('n.code', 'n.name', DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
-                ->where('sm.is_forecast', 0)
+                ->where('sm.is_forecast', false)
                 ->where(function ($q) use ($category, $subCat) {
                     $q->where('n.category', $category);
                     if ($subCat) $q->where('n.sub_category', $subCat);
@@ -2440,7 +2441,7 @@ class DataMpdController extends Controller
                 ->select('n.code', 'n.name', DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
-                ->where('sm.is_forecast', 0)
+                ->where('sm.is_forecast', false)
                 ->where(function ($q) use ($category, $subCat) {
                     $q->where('n.category', $category);
                     if ($subCat) $q->where('n.sub_category', $subCat);
@@ -2461,7 +2462,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
-                ->where('sm.is_forecast', 0)
+                ->where('sm.is_forecast', false)
                 ->where(function ($q) use ($category, $subCat) {
                     $q->where('o.category', $category);
                     if ($subCat) $q->where('o.sub_category', $subCat);
@@ -2498,8 +2499,9 @@ class DataMpdController extends Controller
         });
 
         return view($cfg['view'], array_merge($data, [
-            'title'     => $cfg['title'],
+            'title'      => $cfg['title'],
             'pageNumber' => $cfg['number'],
+            'note'       => $cfg['note'] ?? null,
         ]));
     }
 
