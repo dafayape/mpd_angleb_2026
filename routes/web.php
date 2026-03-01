@@ -44,7 +44,7 @@ Route::middleware(['auth'])->group(function () {
         Route::view('/bandara', 'pages.substansi.bandara')->name('bandara');
         Route::view('/terminal', 'pages.substansi.terminal')->name('terminal');
         Route::view('/od-simpul-pelabuhan', 'pages.substansi.od-simpul-pelabuhan')->name('od-simpul-pelabuhan');
-        Route::view('/netflow', 'pages.substansi.netflow')->name('netflow');
+        Route::get('/netflow', [\App\Http\Controllers\DataMpdController::class, 'substansiNetflowPage'])->name('netflow');
     });
 
     // Kesimpulan & Rekomendasi

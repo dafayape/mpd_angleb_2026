@@ -1983,4 +1983,134 @@ class DataMpdController extends Controller
 
         return $dailyData;
     }
+
+    // --- SUBSTANSI NETFLOW ---
+    public function substansiNetflowPage(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 30);
+        $dates = $this->getDatesCollection($startDate, $endDate);
+
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
+        $cacheKey = "mpd:substansi:netflow:v1:{$dString}";
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getSubstansiNetflowData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getSubstansiNetflowData($startDate, $endDate);
+        }
+
+        return view('pages.substansi.netflow', [
+            'title' => 'Netflow Pergerakan Nasional',
+            'breadcrumb' => ['Data MPD Opsel', 'Substansi', 'Netflow Pergerakan'],
+            'dates' => $dates,
+            'top_origin_netflow' => $data['top_origin_netflow'],
+            'top_dest_netflow' => $data['top_dest_netflow'],
+            'top_origin_nfr' => $data['top_origin_nfr'],
+            'top_dest_nfr' => $data['top_dest_nfr'],
+        ]);
+    }
+
+    private function getSubstansiNetflowData($startDate, $endDate)
+    {
+        try {
+            $startDateStr = $startDate->format('Y-m-d');
+            $endDateStr = $endDate->format('Y-m-d');
+
+            // Outflow: origin is the city
+            $outflow = DB::table('spatial_movements as sm')
+                ->join('ref_cities as c', 'sm.kode_origin_kabupaten_kota', '=', 'c.code')
+                ->select(
+                    'c.code as city_code',
+                    'c.name as city_name',
+                    DB::raw('SUM(sm.total) as total_outflow')
+                )
+                ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+                ->where('sm.is_forecast', false)
+                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->groupBy('c.code', 'c.name')
+                ->get()
+                ->keyBy('city_code');
+
+            // Inflow: dest is the city
+            $inflow = DB::table('spatial_movements as sm')
+                ->join('ref_cities as c', 'sm.kode_dest_kabupaten_kota', '=', 'c.code')
+                ->select(
+                    'c.code as city_code',
+                    'c.name as city_name',
+                    DB::raw('SUM(sm.total) as total_inflow')
+                )
+                ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+                ->where('sm.is_forecast', false)
+                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->groupBy('c.code', 'c.name')
+                ->get()
+                ->keyBy('city_code');
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Netflow DB Error: '.$e->getMessage());
+            $outflow = collect();
+            $inflow = collect();
+        }
+
+        $merged = [];
+        $allCityCodes = $outflow->keys()->merge($inflow->keys())->unique();
+
+        foreach ($allCityCodes as $code) {
+            $outRecord = $outflow->get($code);
+            $inRecord = $inflow->get($code);
+            
+            $outVal = $outRecord ? (float) $outRecord->total_outflow : 0;
+            $inVal = $inRecord ? (float) $inRecord->total_inflow : 0;
+            $cityName = $outRecord ? $outRecord->city_name : ($inRecord ? $inRecord->city_name : 'Unknown');
+
+            $netflow = $inVal - $outVal; // as requested: Inflow - Outflow
+            $totalFlow = $inVal + $outVal;
+            $nfr = $totalFlow > 0 ? ($netflow / $totalFlow) : 0;
+
+            $merged[] = [
+                'code' => $code,
+                'name' => $cityName,
+                'outflow' => $outVal,
+                'inflow' => $inVal,
+                'netflow' => $netflow,
+                'nfr' => $nfr,
+                'keterangan' => $netflow <= 0 ? 'ASAL' : 'TUJUAN'
+            ];
+        }
+
+        $mergedColl = collect($merged);
+
+        // Top 20 Origin Netflow (Lowest/Most Negative Netflow)
+        $topOriginNetflow = $mergedColl->filter(fn($r) => $r['netflow'] <= 0)
+            ->sortBy('netflow') 
+            ->take(20)
+            ->values();
+
+        // Top 20 Dest Netflow (Highest/Most Positive Netflow)
+        $topDestNetflow = $mergedColl->filter(fn($r) => $r['netflow'] > 0)
+            ->sortByDesc('netflow')
+            ->take(20)
+            ->values();
+
+        // Top 20 Origin NFR (Lowest NFR close to -1)
+        $topOriginNfr = $mergedColl->filter(fn($r) => $r['nfr'] <= 0)
+            ->sortBy('nfr')
+            ->take(20)
+            ->values();
+
+        // Top 20 Dest NFR (Highest NFR close to +1)
+        $topDestNfr = $mergedColl->filter(fn($r) => $r['nfr'] > 0)
+            ->sortByDesc('nfr')
+            ->take(20)
+            ->values();
+        
+        return [
+            'top_origin_netflow' => $topOriginNetflow,
+            'top_dest_netflow' => $topDestNetflow,
+            'top_origin_nfr' => $topOriginNfr,
+            'top_dest_nfr' => $topDestNfr,
+        ];
+    }
 }
