@@ -141,7 +141,81 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- 02 O-D KOTA TUJUAN JABODETABEK & DESIRE LINE -->
+    <div class="row mt-4 mb-5" data-aos="fade-up">
+        <div class="col-12">
+            <div class="card content-card w-100 flex-column">
+                <div class="card-header d-flex align-items-center bg-white"
+                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span class="section-badge">02</span>
+                    <h5 class="fw-bold text-navy mb-0">O-D Intra Jabodetabek (Top 10 kota/kab tujuan favorit Jabodetabek)
+                    </h5>
+                </div>
+                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+
+                    <div class="row align-items-stretch">
+                        <!-- Left: Sankey -->
+                        <div class="col-xl-7 col-lg-12 mb-4 mb-xl-0 d-flex flex-column">
+                            <div class="border rounded p-3 flex-grow-1"
+                                style="border-width:2px !important; border-color: #aab5c3 !important;">
+                                <div id="sankey-container-tujuan" class="w-100" style="height: 650px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Table -->
+                        <div class="col-xl-5 col-lg-12 d-flex flex-column">
+                            <h5 class="fw-bold text-navy mb-3 mt-2" style="font-size: 1.25rem;">Kota/Kab Tujuan Favorit
+                                Jabodetabek</h5>
+                            <div class="border rounded p-0 mb-4 flex-grow-1"
+                                style="border-width:2px !important; border-color: #aab5c3 !important; overflow: hidden;">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped table-custom mb-0 text-center">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-start">Kota/Kabupaten Tujuan</th>
+                                                <th class="text-end">Jumlah Pergerakan</th>
+                                                <th style="width: 60px;">Rank</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($top_dest as $index => $row)
+                                                <tr
+                                                    @if ($index === 0) style="border: 2px solid #ef4444;" @endif>
+                                                    <td class="text-start">{{ strtoupper($row['name']) }}</td>
+                                                    <td class="text-end" style="font-size: 13px;">
+                                                        {{ number_format($row['total'], 0, ',', '.') }}</td>
+                                                    <td>{{ $index + 1 }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="3" class="text-center py-3 text-muted">Belum ada data
+                                                    </td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Summary Box -->
+                            <div class="rounded p-4 d-flex align-items-center justify-content-center text-center"
+                                style="background-color: #f1f5f9; min-height:100px;">
+                                @if (count($top_dest) > 0)
+                                    <span class="text-dark fw-medium" style="font-size: 1.05rem; line-height:1.5;">
+                                        Kab/Kota tujuan yang menjadi favorit di Jabodetabek untuk melakukan perjalanan
+                                        (Intra
+                                        Jabodetabek) Adalah<br><br>
+                                        <span class="highlight text-primary"
+                                            style="background-color: #fef08a !important; padding: 10px 15px; font-size: 1.35rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 5px; width: 100%;">{{ strtoupper($top_dest[0]['name']) }}</span>
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </div>
@@ -229,6 +303,46 @@
                         enabled: false
                     }
                 });
+
+
+                if (document.getElementById('sankey-container-tujuan')) {
+                    Highcharts.chart('sankey-container-tujuan', {
+                        chart: {
+                            spacingBottom: 30,
+                            spacingTop: 30,
+                            spacingLeft: 10,
+                            spacingRight: 10
+                        },
+                        title: {
+                            text: null
+                        },
+                        tooltip: {
+                            formatter: function() {
+                                if (this.point.isNode) {
+                                    return `<b>${this.point.name}</b><br/>Total: ${formatNumber(this.point.weight)} pergerakan`;
+                                }
+                                return `<b>${this.point.from}</b> \u2192 <b>${this.point.to}</b><br/>Jumlah: ${formatNumber(this.point.weight)}`;
+                            }
+                        },
+                        series: [{
+                            keys: ['from', 'to', 'weight'],
+                            data: sankeyData.map(d => [d.from, d.to, d.weight]),
+                            nodes: nodes,
+                            type: 'sankey',
+                            name: 'Pergerakan Intra Jabodetabek',
+                            dataLabels: {
+                                style: {
+                                    color: '#333',
+                                    textOutline: 'none',
+                                    fontSize: '10px'
+                                }
+                            }
+                        }],
+                        credits: {
+                            enabled: false
+                        }
+                    });
+                }
             }
 
         });

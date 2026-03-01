@@ -303,6 +303,7 @@ class DataMpdController extends Controller
             'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'O-D Intra'],
             'dates' => $dates,
             'top_origin' => $data['top_origin'],
+            'top_dest' => $data['top_dest'],
             'sankey' => $data['sankey'],
             'total_pergerakan' => $data['total_pergerakan']
         ]);
