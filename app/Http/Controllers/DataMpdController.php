@@ -2203,7 +2203,8 @@ class DataMpdController extends Controller
 
         // 4. Top 5 Provinsi Asal
         $top5ProvAsal = DB::table('spatial_movements as sm')
-            ->join('ref_provinces as p', 'sm.kode_origin_provinsi', '=', 'p.code')
+            ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+            ->join('ref_provinces as p', 'oc.province_code', '=', 'p.code')
             ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
@@ -2215,7 +2216,8 @@ class DataMpdController extends Controller
 
         // 5. Top 5 Provinsi Tujuan
         $top5ProvTujuan = DB::table('spatial_movements as sm')
-            ->join('ref_provinces as p', 'sm.kode_dest_provinsi', '=', 'p.code')
+            ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+            ->join('ref_provinces as p', 'dc.province_code', '=', 'p.code')
             ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
