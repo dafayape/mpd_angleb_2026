@@ -2414,11 +2414,12 @@ class DataMpdController extends Controller
 
             // 2. Build the Prompt
             $prompt = "Anda adalah Analis Ahli Sistem Transportasi dan Kebijakan Publik untuk Kementerian. 
-Tugas Anda adalah membaca data pergerakan masyarakat (MPD Mobile Positioning Data) selama masa Lebaran (Angleb) 2026 dan memberikan rekomendasi kebijakan yang interaktif, informatif, dan solutif.
+Tugas Anda adalah membaca ringkasan data pergerakan masyarakat (MPD Mobile Positioning Data) selama masa Lebaran (Angleb) 2026 dan memberikan rekomendasi kebijakan yang interaktif, informatif, dan solutif.
 Total Pergerakan Nasional tercatat sebesar: " . number_format($totalPergerakan, 0, ',', '.') . " pergerakan.
 Provinsi tujuan paling dominan adalah: {$topTujuan}.
 
-Berikan 5 poin rekomendasi kebijakan utama (seperti infrastruktur tol, manajemen simpul transportasi, keselamatan, dll) yang harus diambil oleh pimpinan. Tuliskan dalam format Markdown yang rapi dan profesional, gunakan bold untuk key points, dan list. Buat penjelasan yang mendalam tapi padat.";
+Berikan 5 poin rekomendasi kebijakan utama (seperti infrastruktur tol, manajemen simpul transportasi, keselamatan, dll) yang harus diambil oleh Pimpinan Kementerian. Tuliskan dalam format Markdown yang rapi dan profesional, gunakan bold untuk key points, dan bullet points.
+PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN menambahkan blok kutipan statis (menggunakan blockquote markdown `>`) dengan judul **Sumber Data:** yang menjelaskan secara persis bahwa analisis data ini diperoleh dan dapat dipertanggungjawabkan dari hasil pengolahan \"Data Ekstraksi Mobile Positioning Data (MPD) Operator Seluler: Telkomsel, Indosat Ooredoo Hutchison, dan XL Axiata periode Angleb 2026\". Buat penjelasan keseluruhan yang mendalam namun solutif.";
 
             // 3. Call Gemini API
             $apiKey = env('GEMINI_API_KEY', 'AIzaSyA4MUtyfaGUfqAAU_XROBKo9X__NPUkryw');
