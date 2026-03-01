@@ -288,7 +288,8 @@
                                 useHTML: true,
                                 formatter: function() {
                                     return '<span style="font-size:11px;color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.3)">' +
-                                        Highcharts.numberFormat(this.y, 0, ',', '.') + '</span>';
+                                        Highcharts.numberFormat(this.y, 0, ',', '.') + ' (' + pcts[this
+                                            .point.index] + '%)</span>';
                                 }
                             }
                         }
@@ -370,7 +371,8 @@
                                 useHTML: true,
                                 formatter: function() {
                                     return '<span style="font-size:11px;color:#fff;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.3)">' +
-                                        Highcharts.numberFormat(this.y, 0, ',', '.') + '</span>';
+                                        Highcharts.numberFormat(this.y, 0, ',', '.') + ' (' + odPcts[
+                                            this.point.index] + '%)</span>';
                                 }
                             }
                         }
