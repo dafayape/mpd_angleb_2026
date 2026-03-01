@@ -2262,4 +2262,121 @@ class DataMpdController extends Controller
             'top_5_kota_tujuan' => $top5KotaTujuan
         ];
     }
+
+    // --- KESIMPULAN JABODETABEK ---
+    public function kesimpulanJabodetabekPage(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 30);
+        $dates = $this->getDatesCollection($startDate, $endDate);
+
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
+        $cacheKey = "mpd:kesimpulan:jabodetabek:v1:{$dString}";
+
+        try {
+            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+                return $this->getKesimpulanJabodetabekData($startDate, $endDate);
+            });
+        } catch (\Throwable $e) {
+            $data = $this->getKesimpulanJabodetabekData($startDate, $endDate);
+        }
+
+        return view('pages.kesimpulan.jabodetabek', [
+            'title' => 'Kesimpulan Jabodetabek',
+            'breadcrumb' => ['Data MPD Opsel', 'Kesimpulan & Rekomendasi', 'Jabodetabek'],
+            'dates' => $dates,
+            'data' => $data
+        ]);
+    }
+
+    private function getKesimpulanJabodetabekData($startDate, $endDate)
+    {
+        $startDateStr = $startDate->format('Y-m-d');
+        $endDateStr = $endDate->format('Y-m-d');
+
+        $jabodetabekCodes = [
+            '3171', '3172', '3173', '3174', '3175', '3101', // DKI Jakarta
+            '3271', '3201', '3276', '3216', '3671', '3603', '3674' // Bodebek
+        ];
+
+        // 1. INTRA JABODETABEK Peak Days
+        $intraDaily = DB::table('spatial_movements as sm')
+            ->select('sm.tanggal', DB::raw('SUM(sm.total) as daily_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('sm.tanggal')
+            ->orderByDesc('daily_total')
+            ->get();
+            
+        $intraPeakDays = $intraDaily->take(2);
+
+        // 2. INTER JABODETABEK Peak Days (Jabodetabek to National)
+        $interDaily = DB::table('spatial_movements as sm')
+            ->select('sm.tanggal', DB::raw('SUM(sm.total) as daily_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('sm.tanggal')
+            ->orderByDesc('daily_total')
+            ->get();
+            
+        $interPeakDays = $interDaily->take(2);
+
+        // 3. Daerah Asal Pergerakan Masyarakat Jabodetabek (Top Origin) ALL JABO? 
+        // Based on the text: "Kabupaten Bogor menjadi daerah asal... disusul Jaktim, Jaksel". This implies we look at overall origins starting FROM Jabodetabek.
+        $topOriginJabo = DB::table('spatial_movements as sm')
+            ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+            ->select('oc.name', DB::raw('SUM(sm.total) as city_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            // It says "pergerakan Masyarakat Jabodetabek", implies origin is Jabo, regardless of destination (could be intra + inter)
+            ->groupBy('oc.name')
+            ->orderByDesc('city_total')
+            ->take(3)
+            ->get();
+
+        // 4. Tujuan Intra Jabodetabek (Top Dest INTRA)
+        $topDestIntraJabo = DB::table('spatial_movements as sm')
+            ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+            ->select('dc.name', DB::raw('SUM(sm.total) as city_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes) // Intra
+            ->groupBy('dc.name')
+            ->orderByDesc('city_total')
+            ->take(3)
+            ->get();
+
+        // 5. Tujuan Inter Jabodetabek (Top Prov Dest INTER)
+        $topProvDestInterJabo = DB::table('spatial_movements as sm')
+            ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+            ->join('ref_provinces as dp', 'dc.province_code', '=', 'dp.code')
+            ->select('dp.name', DB::raw('SUM(sm.total) as prov_total'))
+            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->where('sm.is_forecast', false)
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes) // Inter
+            ->groupBy('dp.name')
+            ->orderByDesc('prov_total')
+            ->take(1) // Usually West Java dominates as per text
+            ->get();
+
+        return [
+            'intra_peak_days' => $intraPeakDays,
+            'inter_peak_days' => $interPeakDays,
+            'top_origin_jabo' => $topOriginJabo,
+            'top_dest_intra_jabo' => $topDestIntraJabo,
+            'top_prov_dest_inter_jabo' => $topProvDestInterJabo
+        ];
+    }
 }

@@ -50,7 +50,7 @@ Route::middleware(['auth'])->group(function () {
     // Kesimpulan & Rekomendasi
     Route::prefix('kesimpulan')->name('pages.kesimpulan.')->group(function () {
         Route::get('/nasional', [\App\Http\Controllers\DataMpdController::class, 'kesimpulanNasionalPage'])->name('nasional');
-        Route::view('/jabodetabek', 'pages.kesimpulan.jabodetabek')->name('jabodetabek');
+        Route::get('/jabodetabek', [\App\Http\Controllers\DataMpdController::class, 'kesimpulanJabodetabekPage'])->name('jabodetabek');
         Route::view('/rekomendasi', 'pages.kesimpulan.rekomendasi')->name('rekomendasi');
     });
 
