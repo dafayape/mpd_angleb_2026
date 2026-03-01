@@ -58,8 +58,7 @@ class KeynoteController extends Controller
 
             // Substansi Tambahan
             ['no' => 36, 'content' => 'Simpul Transportasi Terpadat — Stasiun KA antar kota asal dan tujuan terpadat', 'group' => 'Substansi Tambahan', 'route' => 'pages.substansi.stasiun-ka-antar-kota'],
-            ['no' => 36, 'content' => 'Simpul Transportasi Terpadat — Stasiun KA regional asal dan tujuan terpadat', 'group' => 'Substansi Tambahan', 'route' => 'pages.substansi.stasiun-ka-regional'],
-            ['no' => 36, 'content' => 'Simpul Transportasi Terpadat — Stasiun KA cepat asal dan tujuan terpadat', 'group' => 'Substansi Tambahan', 'route' => 'pages.substansi.stasiun-ka-cepat'],
+
             ['no' => 36, 'content' => 'Simpul Transportasi Terpadat — Pelabuhan penyeberangan asal dan tujuan terpadat', 'group' => 'Substansi Tambahan', 'route' => 'pages.substansi.pelabuhan-penyeberangan'],
             ['no' => 36, 'content' => 'Simpul Transportasi Terpadat — Pelabuhan laut asal dan tujuan terpadat', 'group' => 'Substansi Tambahan', 'route' => 'pages.substansi.pelabuhan-laut'],
             ['no' => 36, 'content' => 'Simpul Transportasi Terpadat — Bandara asal dan tujuan terpadat', 'group' => 'Substansi Tambahan', 'route' => 'pages.substansi.bandara'],
