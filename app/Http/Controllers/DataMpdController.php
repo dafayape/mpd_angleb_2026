@@ -2380,6 +2380,128 @@ class DataMpdController extends Controller
             'top_prov_dest_inter_jabo' => $topProvDestInterJabo
         ];
     }
+    // --- GENERIC SIMPUL TRANSPORTASI PAGE ---
+    public function substansiSimpulPage(Request $request, $slug)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate   = Carbon::create(2026, 3, 30);
+
+        // Map slug -> config
+        $map = [
+            'stasiun-ka-antar-kota'    => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',      'number' => '13'],
+            'stasiun-ka-regional'      => ['category' => 'Stasiun', 'sub_category' => 'Regional',        'title' => 'Stasiun KA Regional',        'view' => 'pages.substansi._simpul-layout',        'number' => '14'],
+            'stasiun-ka-cepat'         => ['category' => 'Stasiun', 'sub_category' => 'KA Cepat',        'title' => 'Stasiun KA Cepat',           'view' => 'pages.substansi._simpul-layout',           'number' => '15'],
+            'pelabuhan-penyeberangan'  => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',    'number' => '16'],
+            'pelabuhan-laut'           => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',             'number' => '17'],
+            'bandara'                  => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',                    'number' => '18'],
+            'terminal'                 => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',                   'number' => '19'],
+            'od-simpul-pelabuhan'      => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',        'number' => '20'],
+        ];
+
+        if (!isset($map[$slug])) {
+            abort(404);
+        }
+
+        $cfg       = $map[$slug];
+        $category  = $cfg['category'];
+        $subCat    = $cfg['sub_category'];
+        $cacheKey  = "mpd:simpul:{$slug}:" . $startDate->format('Ymd') . '_' . $endDate->format('Ymd');
+
+        $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $category, $subCat) {
+
+            // --- Build the base node query filter ---
+            $nodeFilter = function ($query) use ($category, $subCat) {
+                $query->where('category', $category);
+                if ($subCat) {
+                    $query->where('sub_category', $subCat);
+                }
+            };
+
+            // TOP 10 ORIGIN (Asal)
+            $topOrigin = DB::table('spatial_movements as sm')
+                ->join('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
+                ->select('n.code', 'n.name', DB::raw('SUM(sm.total) as total_volume'))
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.is_forecast', 0)
+                ->where(function ($q) use ($category, $subCat) {
+                    $q->where('n.category', $category);
+                    if ($subCat) $q->where('n.sub_category', $subCat);
+                })
+                ->where('sm.kode_origin_simpul', '!=', '')
+                ->groupBy('n.code', 'n.name')
+                ->orderByDesc('total_volume')
+                ->take(10)
+                ->get();
+
+            // TOP 10 DESTINATION (Tujuan)
+            $topDest = DB::table('spatial_movements as sm')
+                ->join('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
+                ->select('n.code', 'n.name', DB::raw('SUM(sm.total) as total_volume'))
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.is_forecast', 0)
+                ->where(function ($q) use ($category, $subCat) {
+                    $q->where('n.category', $category);
+                    if ($subCat) $q->where('n.sub_category', $subCat);
+                })
+                ->where('sm.kode_dest_simpul', '!=', '')
+                ->groupBy('n.code', 'n.name')
+                ->orderByDesc('total_volume')
+                ->take(10)
+                ->get();
+
+            // TOP 10 O-D PAIRS
+            $topOd = DB::table('spatial_movements as sm')
+                ->join('ref_transport_nodes as o', 'sm.kode_origin_simpul', '=', 'o.code')
+                ->join('ref_transport_nodes as d', 'sm.kode_dest_simpul', '=', 'd.code')
+                ->select(
+                    DB::raw("CONCAT(COALESCE(o.name, sm.kode_origin_simpul), ' - ', COALESCE(d.name, sm.kode_dest_simpul)) as od_name"),
+                    DB::raw('SUM(sm.total) as total_volume')
+                )
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.is_forecast', 0)
+                ->where(function ($q) use ($category, $subCat) {
+                    $q->where('o.category', $category);
+                    if ($subCat) $q->where('o.sub_category', $subCat);
+                })
+                ->where('sm.kode_origin_simpul', '!=', '')
+                ->where('sm.kode_dest_simpul', '!=', '')
+                ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
+                ->orderByDesc('total_volume')
+                ->take(10)
+                ->get();
+
+            // Calculate totals for percentage
+            $totalOrigin = $topOrigin->sum('total_volume');
+            $totalDest   = $topDest->sum('total_volume');
+            $totalOd     = $topOd->sum('total_volume');
+
+            // Attach percentages
+            $topOrigin = $topOrigin->map(fn($r) => (object) array_merge((array) $r, ['pct' => $totalOrigin > 0 ? round($r->total_volume / $totalOrigin * 100, 2) : 0]));
+            $topDest   = $topDest->map(fn($r) => (object) array_merge((array) $r, ['pct' => $totalDest > 0 ? round($r->total_volume / $totalDest * 100, 2) : 0]));
+            $topOd     = $topOd->map(fn($r) => (object) array_merge((array) $r, ['pct' => $totalOd > 0 ? round($r->total_volume / $totalOd * 100, 2) : 0]));
+
+            // Build conclusion text
+            $topOdName = $topOd->first()?->od_name ?? '-';
+
+            return [
+                'top_origin'    => $topOrigin,
+                'top_dest'      => $topDest,
+                'top_od'        => $topOd,
+                'total_origin'  => $totalOrigin,
+                'total_dest'    => $totalDest,
+                'total_od'      => $totalOd,
+                'top_od_name'   => $topOdName,
+            ];
+        });
+
+        return view($cfg['view'], array_merge($data, [
+            'title'     => $cfg['title'],
+            'pageNumber' => $cfg['number'],
+        ]));
+    }
 
     // --- REKOMENDASI KEBIJAKAN (AI) ---
     public function rekomendasiPage(Request $request)

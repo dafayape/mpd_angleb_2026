@@ -36,14 +36,14 @@ Route::middleware(['auth'])->group(function () {
 
     // Substansi Tambahan
     Route::prefix('substansi')->name('pages.substansi.')->group(function () {
-        Route::view('/stasiun-ka-antar-kota', 'pages.substansi.stasiun-ka-antar-kota')->name('stasiun-ka-antar-kota');
-        Route::view('/stasiun-ka-regional', 'pages.substansi.stasiun-ka-regional')->name('stasiun-ka-regional');
-        Route::view('/stasiun-ka-cepat', 'pages.substansi.stasiun-ka-cepat')->name('stasiun-ka-cepat');
-        Route::view('/pelabuhan-penyeberangan', 'pages.substansi.pelabuhan-penyeberangan')->name('pelabuhan-penyeberangan');
-        Route::view('/pelabuhan-laut', 'pages.substansi.pelabuhan-laut')->name('pelabuhan-laut');
-        Route::view('/bandara', 'pages.substansi.bandara')->name('bandara');
-        Route::view('/terminal', 'pages.substansi.terminal')->name('terminal');
-        Route::view('/od-simpul-pelabuhan', 'pages.substansi.od-simpul-pelabuhan')->name('od-simpul-pelabuhan');
+        Route::get('/stasiun-ka-antar-kota', fn(\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'stasiun-ka-antar-kota'))->name('stasiun-ka-antar-kota');
+        Route::get('/stasiun-ka-regional', fn(\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'stasiun-ka-regional'))->name('stasiun-ka-regional');
+        Route::get('/stasiun-ka-cepat', fn(\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'stasiun-ka-cepat'))->name('stasiun-ka-cepat');
+        Route::get('/pelabuhan-penyeberangan', fn(\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'pelabuhan-penyeberangan'))->name('pelabuhan-penyeberangan');
+        Route::get('/pelabuhan-laut', fn(\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'pelabuhan-laut'))->name('pelabuhan-laut');
+        Route::get('/bandara', fn(\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'bandara'))->name('bandara');
+        Route::get('/terminal', fn(\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'terminal'))->name('terminal');
+        Route::get('/od-simpul-pelabuhan', fn(\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'od-simpul-pelabuhan'))->name('od-simpul-pelabuhan');
         Route::get('/netflow', [\App\Http\Controllers\DataMpdController::class, 'substansiNetflowPage'])->name('netflow');
     });
 
