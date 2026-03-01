@@ -2400,7 +2400,8 @@ class DataMpdController extends Controller
                 ->sum('total');
 
             $topTujuan = DB::table('spatial_movements as sm')
-                ->join('ref_provinces as p', 'sm.kode_dest_provinsi', '=', 'p.code')
+                ->join('ref_cities as c', 'sm.kode_dest_kabupaten_kota', '=', 'c.code')
+                ->join('ref_provinces as p', 'c.province_code', '=', 'p.code')
                 ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
