@@ -12,8 +12,15 @@
     <link rel="shortcut icon" href="{{ asset('assets/images/favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="dns-prefetch" href="https://code.highcharts.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet"
+        media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet">
+    </noscript>
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" id="bootstrap-style" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/icons.min.css') }}" rel="stylesheet" type="text/css" />
     <link href="{{ asset('assets/css/app.min.css') }}" id="app-style" rel="stylesheet" type="text/css" />
@@ -474,35 +481,37 @@
                             </a>
                         </li>
 
-                        <li class="menu-title">Sistem Monitoring</li>
+                        @if (in_array(Auth::user()->role ?? '', ['su', 'admin']))
+                            <li class="menu-title">Sistem Monitoring</li>
 
-                        <li>
-                            <a href="{{ route('pengguna') }}" class="waves-effect">
-                                <i class="bx bx-user"></i>
-                                <span>Pengguna</span>
-                            </a>
-                        </li>
+                            <li>
+                                <a href="{{ route('pengguna') }}" class="waves-effect">
+                                    <i class="bx bx-user"></i>
+                                    <span>Pengguna</span>
+                                </a>
+                            </li>
 
-                        <li>
-                            <a href="{{ route('log-aktivitas') }}" class="waves-effect">
-                                <i class="bx bx-history"></i>
-                                <span>Log Aktivitas</span>
-                            </a>
-                        </li>
+                            <li>
+                                <a href="{{ route('log-aktivitas') }}" class="waves-effect">
+                                    <i class="bx bx-history"></i>
+                                    <span>Log Aktivitas</span>
+                                </a>
+                            </li>
 
-                        <li>
-                            <a href="{{ route('devlog') }}" class="waves-effect">
-                                <i class="bx bx-code-alt"></i>
-                                <span>Log Developer</span>
-                            </a>
-                        </li>
+                            <li>
+                                <a href="{{ route('devlog') }}" class="waves-effect">
+                                    <i class="bx bx-code-alt"></i>
+                                    <span>Log Developer</span>
+                                </a>
+                            </li>
 
-                        <li>
-                            <a href="{{ route('pengaturan') }}" class="waves-effect">
-                                <i class="bx bx-cog"></i>
-                                <span>Pengaturan</span>
-                            </a>
-                        </li>
+                            <li>
+                                <a href="{{ route('pengaturan') }}" class="waves-effect">
+                                    <i class="bx bx-cog"></i>
+                                    <span>Pengaturan</span>
+                                </a>
+                            </li>
+                        @endif
 
                     </ul>
                 </div>
@@ -539,41 +548,68 @@
     <script src="{{ asset('assets/libs/jquery/jquery.min.js') }}"></script>
     <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('assets/libs/metismenu/metisMenu.min.js') }}"></script>
-    <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}"></script>
-    <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/simplebar/simplebar.min.js') }}" defer></script>
+    <script src="{{ asset('assets/libs/node-waves/waves.min.js') }}" defer></script>
     <script src="{{ asset('assets/js/app.js') }}"></script>
 
     @stack('js')
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        // Lazy-load SweetAlert2 only when needed
+        var _swalLoaded = false;
+        var _swalCallbacks = [];
+
+        function loadSwal(cb) {
+            if (_swalLoaded && typeof Swal !== 'undefined') {
+                cb();
+                return;
+            }
+            _swalCallbacks.push(cb);
+            if (!_swalLoaded) {
+                _swalLoaded = true;
+                var s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js';
+                s.onload = function() {
+                    _swalCallbacks.forEach(function(fn) {
+                        fn();
+                    });
+                    _swalCallbacks = [];
+                };
+                document.head.appendChild(s);
+            }
+        }
+
         document.getElementById('btnLogout').addEventListener('click', function(e) {
             e.preventDefault();
-            Swal.fire({
-                title: 'Yakin ingin logout?',
-                text: 'Sesi kamu akan berakhir.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya, Logout',
-                cancelButtonText: 'Batal'
-            }).then(function(result) {
-                if (result.isConfirmed) {
-                    document.getElementById('logout-form').submit();
-                }
+            loadSwal(function() {
+                Swal.fire({
+                    title: 'Yakin ingin logout?',
+                    text: 'Sesi kamu akan berakhir.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Ya, Logout',
+                    cancelButtonText: 'Batal'
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        document.getElementById('logout-form').submit();
+                    }
+                });
             });
         });
 
         @if (session('success'))
-            Swal.fire({
-                toast: true,
-                position: 'top',
-                icon: 'success',
-                title: '{{ session('success') }}',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true
+            loadSwal(function() {
+                Swal.fire({
+                    toast: true,
+                    position: 'top',
+                    icon: 'success',
+                    title: '{{ session('success') }}',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
             });
         @endif
     </script>

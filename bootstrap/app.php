@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo('https://mpdbkt.web.id/login');
+        $middleware->append(\App\Http\Middleware\PerformanceHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
     })->create();
