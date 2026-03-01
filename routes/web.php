@@ -9,21 +9,25 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-// === TEMPORARY DEBUG: Hapus setelah fix ===
+// === TEMPORARY DEBUG ===
 Route::any('/debug-route-info', function () {
+    $routes = collect(\Illuminate\Support\Facades\Route::getRoutes()->get())->map(fn($route) => [
+        'uri' => $route->uri(),
+        'methods' => $route->methods(),
+    ])->toArray();
+
     return response()->json([
         'REQUEST_METHOD' => $_SERVER['REQUEST_METHOD'] ?? 'N/A',
         'REQUEST_URI'    => $_SERVER['REQUEST_URI'] ?? 'N/A',
-        'SCRIPT_NAME'    => $_SERVER['SCRIPT_NAME'] ?? 'N/A',
-        'SCRIPT_FILENAME'=> $_SERVER['SCRIPT_FILENAME'] ?? 'N/A',
-        'PATH_INFO'      => $_SERVER['PATH_INFO'] ?? 'N/A',
-        'DOCUMENT_ROOT'  => $_SERVER['DOCUMENT_ROOT'] ?? 'N/A',
-        'PHP_SELF'       => $_SERVER['PHP_SELF'] ?? 'N/A',
         'laravel_path'   => request()->path(),
         'laravel_method' => request()->method(),
-        'laravel_url'    => request()->url(),
-        'laravel_fullUrl'=> request()->fullUrl(),
+        'registered_routes' => $routes,
     ]);
+});
+
+// Jika Nginx membaca path '/' tetapi karena suatu alasan methods-nya error, ini akan menangkapnya paksa
+Route::get('/tes-root', function() {
+    return "TES ROOT WORKS!";
 });
 // === END DEBUG ===
 
@@ -31,8 +35,9 @@ Route::any('/debug-route-info', function () {
 Route::get('/login', fn () => redirect('https://mpdbkt.web.id/login'))->name('login');
 
 Route::middleware(['auth'])->group(function () {
-
-    Route::match(['get', 'head'], '/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    // Kita biarkan route aslinya disembunyikan dulu untuk testing
+    // Route::match(['get', 'head'], '/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', function() { return "VERIFIED GET WORKS!"; });
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Profile
