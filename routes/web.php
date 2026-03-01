@@ -51,7 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('kesimpulan')->name('pages.kesimpulan.')->group(function () {
         Route::get('/nasional', [\App\Http\Controllers\DataMpdController::class, 'kesimpulanNasionalPage'])->name('nasional');
         Route::get('/jabodetabek', [\App\Http\Controllers\DataMpdController::class, 'kesimpulanJabodetabekPage'])->name('jabodetabek');
-        Route::view('/rekomendasi', 'pages.kesimpulan.rekomendasi')->name('rekomendasi');
+        Route::get('/rekomendasi', [\App\Http\Controllers\DataMpdController::class, 'rekomendasiPage'])->name('rekomendasi');
     });
 
     // Executive Summary (New Pages)

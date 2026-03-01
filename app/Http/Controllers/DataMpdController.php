@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 
 class DataMpdController extends Controller
 {
@@ -2378,5 +2379,79 @@ class DataMpdController extends Controller
             'top_dest_intra_jabo' => $topDestIntraJabo,
             'top_prov_dest_inter_jabo' => $topProvDestInterJabo
         ];
+    }
+
+    // --- REKOMENDASI KEBIJAKAN (AI) ---
+    public function rekomendasiPage(Request $request)
+    {
+        $startDate = Carbon::create(2026, 3, 13);
+        $endDate = Carbon::create(2026, 3, 30);
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
+        
+        $cacheKey = "mpd:rekomendasi:gemini_v1:{$dString}";
+
+        // Temporarily get basic stats to feed AI if we don't have cache
+        $aiContent = Cache::remember($cacheKey, 86400, function () use ($startDate, $endDate) {
+            
+            // 1. Gather Basic Context Data
+            $totalPergerakan = DB::table('spatial_movements')
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('kategori', 'PERGERAKAN')
+                ->sum('total');
+
+            $topTujuan = DB::table('spatial_movements as sm')
+                ->join('ref_provinces as p', 'sm.kode_dest_provinsi', '=', 'p.code')
+                ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
+                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->groupBy('p.name')
+                ->orderByDesc('prov_total')
+                ->take(3)
+                ->get()
+                ->pluck('name')
+                ->implode(', ');
+
+            // 2. Build the Prompt
+            $prompt = "Anda adalah Analis Ahli Sistem Transportasi dan Kebijakan Publik untuk Kementerian. 
+Tugas Anda adalah membaca data pergerakan masyarakat (MPD Mobile Positioning Data) selama masa Lebaran (Angleb) 2026 dan memberikan rekomendasi kebijakan yang interaktif, informatif, dan solutif.
+Total Pergerakan Nasional tercatat sebesar: " . number_format($totalPergerakan, 0, ',', '.') . " pergerakan.
+Provinsi tujuan paling dominan adalah: {$topTujuan}.
+
+Berikan 5 poin rekomendasi kebijakan utama (seperti infrastruktur tol, manajemen simpul transportasi, keselamatan, dll) yang harus diambil oleh pimpinan. Tuliskan dalam format Markdown yang rapi dan profesional, gunakan bold untuk key points, dan list. Buat penjelasan yang mendalam tapi padat.";
+
+            // 3. Call Gemini API
+            $apiKey = env('GEMINI_API_KEY', 'AIzaSyA4MUtyfaGUfqAAU_XROBKo9X__NPUkryw');
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key={$apiKey}";
+            
+            try {
+                $response = Http::post($url, [
+                    'contents' => [
+                        [
+                            'parts' => [
+                                ['text' => $prompt]
+                            ]
+                        ]
+                    ]
+                ]);
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    return $json['candidates'][0]['content']['parts'][0]['text'] ?? 'Gagal mengambil rekomendasi (Format AI tidak sesuai).';
+                }
+
+                return "Gagal menghubungi layanan AI Endpoint. Status: " . $response->status() . " Body: " . $response->body();
+                
+            } catch (\Exception $e) {
+                return "Terjadi kesalahan sistem saat memuat rekomendasi AI: " . $e->getMessage();
+            }
+        });
+
+        // Parse markdown text simply for view
+        $parsedHtml = \Illuminate\Support\Str::markdown($aiContent);
+
+        return view('pages.kesimpulan.rekomendasi', [
+            'ai_html' => $parsedHtml,
+            'title' => 'Rekomendasi Kebijakan'
+        ]);
     }
 }
