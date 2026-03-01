@@ -2423,7 +2423,7 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
 
             // 3. Call Gemini API
             $apiKey = env('GEMINI_API_KEY', 'AIzaSyCXZub9wlUn8ALXN-aRd9kWIU0pc3gSXR8');
-            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={$apiKey}";
+            $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}";
             
             try {
                 $response = Http::post($url, [
