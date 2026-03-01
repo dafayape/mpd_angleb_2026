@@ -2387,13 +2387,11 @@ class DataMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        
-        $cacheKey = "mpd:rekomendasi:gemini_v1:{$dString}";
+        $cacheKey = "mpd:rekomendasi:gemini_v3:{$dString}";
 
-        // Temporarily get basic stats to feed AI if we don't have cache
-        $aiContent = Cache::remember($cacheKey, 86400, function () use ($startDate, $endDate) {
-            
-            // 1. Gather Basic Context Data
+        $aiContent = Cache::get($cacheKey);
+
+        if (!$aiContent) {
             $totalPergerakan = DB::table('spatial_movements')
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('kategori', 'PERGERAKAN')
@@ -2412,7 +2410,6 @@ class DataMpdController extends Controller
                 ->pluck('name')
                 ->implode(', ');
 
-            // 2. Build the Prompt
             $prompt = "Anda adalah Analis Ahli Sistem Transportasi dan Kebijakan Publik untuk Kementerian. 
 Tugas Anda adalah membaca ringkasan data pergerakan masyarakat (MPD Mobile Positioning Data) selama masa Lebaran (Angleb) 2026 dan memberikan rekomendasi kebijakan yang interaktif, informatif, dan solutif.
 Total Pergerakan Nasional tercatat sebesar: " . number_format($totalPergerakan, 0, ',', '.') . " pergerakan.
@@ -2421,7 +2418,6 @@ Provinsi tujuan paling dominan adalah: {$topTujuan}.
 Berikan 5 poin rekomendasi kebijakan utama (seperti infrastruktur tol, manajemen simpul transportasi, keselamatan, dll) yang harus diambil oleh Pimpinan Kementerian. Tuliskan dalam format Markdown yang rapi dan profesional, gunakan bold untuk key points, dan bullet points.
 PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN menambahkan blok kutipan statis (menggunakan blockquote markdown `>`) dengan judul **Sumber Data:** yang menjelaskan secara persis bahwa analisis data ini diperoleh dan dapat dipertanggungjawabkan dari hasil pengolahan \"Data Ekstraksi Mobile Positioning Data (MPD) Operator Seluler: Telkomsel, Indosat Ooredoo Hutchison, dan XL Axiata periode Angleb 2026\". Buat penjelasan keseluruhan yang mendalam namun solutif.";
 
-            // 3. Call Gemini API
             $apiKey = env('GEMINI_API_KEY', 'AIzaSyCXZub9wlUn8ALXN-aRd9kWIU0pc3gSXR8');
             $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={$apiKey}";
             
@@ -2438,15 +2434,20 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
 
                 if ($response->successful()) {
                     $json = $response->json();
-                    return $json['candidates'][0]['content']['parts'][0]['text'] ?? 'Gagal mengambil rekomendasi (Format AI tidak sesuai).';
+                    $aiContent = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
+                    
+                    if ($aiContent) {
+                        Cache::put($cacheKey, $aiContent, 86400);
+                    } else {
+                        $aiContent = "Gagal mengambil rekomendasi (Format AI tidak sesuai).";
+                    }
+                } else {
+                    $aiContent = "Gagal menghubungi layanan AI Endpoint. Status: " . $response->status() . " Body: " . $response->body();
                 }
-
-                return "Gagal menghubungi layanan AI Endpoint. Status: " . $response->status() . " Body: " . $response->body();
-                
             } catch (\Exception $e) {
-                return "Terjadi kesalahan sistem saat memuat rekomendasi AI: " . $e->getMessage();
+                $aiContent = "Terjadi kesalahan sistem saat memuat rekomendasi AI: " . $e->getMessage();
             }
-        });
+        }
 
         // Parse markdown text simply for view
         $parsedHtml = \Illuminate\Support\Str::markdown($aiContent);
