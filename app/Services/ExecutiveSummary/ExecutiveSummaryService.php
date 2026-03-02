@@ -9,13 +9,22 @@ use Illuminate\Support\Facades\DB;
 
 class ExecutiveSummaryService
 {
-    public const PERIOD_START = '2026-03-13';
-    public const PERIOD_END = '2026-03-30';
     public const JABODETABEK_PROVINCES = ['31', '32', '36'];
+
+    private function getStartDate(): string
+    {
+        return config('mpd.start_date', '2026-03-13');
+    }
+
+    private function getEndDate(): string
+    {
+        return config('mpd.end_date', '2026-03-30');
+    }
 
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v2";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v3:{$dateKey}";
         return Cache::remember($key, 1800, fn() => [
             'nasional' => $this->getNasionalMetrics($dataType, $opsel),
             'peak' => $this->getPeakDay($dataType, $opsel),
@@ -36,7 +45,7 @@ class ExecutiveSummaryService
 
     private function baseQuery(string $kategori, string $dataType, ?string $opsel)
     {
-        $q = SpatialMovement::whereBetween('tanggal', [self::PERIOD_START, self::PERIOD_END])
+        $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
             ->where('kategori', $kategori)
             ->where('is_forecast', $dataType === 'forecast');
         if ($opsel) $q->where('opsel', $opsel);
@@ -45,7 +54,8 @@ class ExecutiveSummaryService
 
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional:{$dateKey}";
         return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
             $pergerakan = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->sum('total');
             $orang = (float) $this->baseQuery('ORANG', $dataType, $opsel)->sum('total');
@@ -61,7 +71,8 @@ class ExecutiveSummaryService
 
     public function getOpselContribution(string $dataType, ?string $region = null): array
     {
-        $key = "executive_summary:getOpselContribution:{$dataType}:all:" . ($region ?? 'nasional');
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getOpselContribution:{$dataType}:all:" . ($region ?? 'nasional') . ":{$dateKey}";
         return Cache::remember($key, 1800, function() use ($dataType, $region) {
             $data = [];
             foreach (['PERGERAKAN', 'ORANG'] as $kat) {
@@ -83,7 +94,8 @@ class ExecutiveSummaryService
 
     public function getDailyTrend(string $kategori, string $dataType, ?string $opsel, string $region = 'nasional'): array
     {
-        $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}:{$dateKey}";
         return Cache::remember($key, 1800, function() use ($kategori, $dataType, $opsel, $region) {
             $q = $this->baseQuery($kategori, $dataType, $opsel);
             if ($region === 'intra') $this->applyJaboFilter($q, 'intra');
@@ -95,9 +107,9 @@ class ExecutiveSummaryService
                 
             $result = [];
             $period = new \DatePeriod(
-                new \DateTime(self::PERIOD_START),
+                new \DateTime($this->getStartDate()),
                 new \DateInterval('P1D'),
-                (new \DateTime(self::PERIOD_END))->modify('+1 day')
+                (new \DateTime($this->getEndDate()))->modify('+1 day')
             );
             foreach ($period as $date) {
                 $dateStr = $date->format('Y-m-d');
@@ -109,7 +121,8 @@ class ExecutiveSummaryService
 
     public function getPeakDay(string $dataType, ?string $opsel): array
     {
-        $key = "executive_summary:getPeakDay:{$dataType}:{$opsel}:nasional";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getPeakDay:{$dataType}:{$opsel}:nasional:{$dateKey}";
         return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
             $trend = $this->getDailyTrend('PERGERAKAN', $dataType, $opsel);
             if(empty($trend)) return [];
@@ -138,7 +151,8 @@ class ExecutiveSummaryService
 
     public function getIntraJabodetabek(string $dataType, ?string $opsel): array
     {
-        $key = "executive_summary:getIntraJabodetabek:{$dataType}:{$opsel}:intra";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getIntraJabodetabek:{$dataType}:{$opsel}:intra:{$dateKey}";
         return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
             $p = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->tap(fn($q) => $this->applyJaboFilter($q, 'intra'))->sum('total');
             $o = (float) $this->baseQuery('ORANG', $dataType, $opsel)->tap(fn($q) => $this->applyJaboFilter($q, 'intra'))->sum('total');
@@ -151,7 +165,8 @@ class ExecutiveSummaryService
 
     public function getInterJabodetabek(string $dataType, ?string $opsel): array
     {
-        $key = "executive_summary:getInterJabodetabek:{$dataType}:{$opsel}:inter";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getInterJabodetabek:{$dataType}:{$opsel}:inter:{$dateKey}";
         return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
             $p = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->tap(fn($q) => $this->applyJaboFilter($q, 'inter'))->sum('total');
             $o = (float) $this->baseQuery('ORANG', $dataType, $opsel)->tap(fn($q) => $this->applyJaboFilter($q, 'inter'))->sum('total');
@@ -164,7 +179,8 @@ class ExecutiveSummaryService
 
     public function getKoefisien(string $dataType, ?string $opsel, ?string $region = null): float
     {
-        $key = "executive_summary:getKoefisien:{$dataType}:{$opsel}:{$region}";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getKoefisien:{$dataType}:{$opsel}:{$region}:{$dateKey}";
         return Cache::remember($key, 1800, function() use ($dataType, $opsel, $region) {
             $pQ = $this->baseQuery('PERGERAKAN', $dataType, $opsel);
             $oQ = $this->baseQuery('ORANG', $dataType, $opsel);
@@ -176,7 +192,8 @@ class ExecutiveSummaryService
 
     public function getForecastComparison(?string $opsel): array
     {
-        $key = "executive_summary:getForecastComparison:all:{$opsel}:nasional:v2";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getForecastComparison:all:{$opsel}:nasional:v3:{$dateKey}";
         return Cache::remember($key, 1800, function() use ($opsel) {
             $real = $this->getDailyTrend('PERGERAKAN', 'real', $opsel);
             $forecast = $this->getDailyTrend('PERGERAKAN', 'forecast', $opsel);
@@ -196,7 +213,8 @@ class ExecutiveSummaryService
 
     public function getYoyComparison(string $dataType, ?string $opsel): array
     {
-        $key = "executive_summary:getYoyComparison:{$dataType}:{$opsel}:nasional:v2";
+        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $key = "executive_summary:getYoyComparison:{$dataType}:{$opsel}:nasional:v3:{$dateKey}";
         return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
             $curr = (float) $this->baseQuery('ORANG', $dataType, $opsel)->sum('total');
             $prev = config('mpd.historical_baselines.2025_orang', 115197227); // default fallback
