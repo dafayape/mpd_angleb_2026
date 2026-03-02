@@ -54,8 +54,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/rekomendasi', [\App\Http\Controllers\DataMpdController::class, 'rekomendasiPage'])->name('rekomendasi');
     });
 
-    // Executive Summary (New Pages)
-    Route::view('/executive/daily-report-page', 'pages.executive.daily-report')->name('pages.executive.daily-report');
+
 
     // Pengaturan
     Route::get('/pengaturan', [\App\Http\Controllers\PengaturanController::class, 'index'])->name('pengaturan');

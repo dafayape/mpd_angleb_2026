@@ -25,3 +25,19 @@ Thumbs.db
 node_modules/
 vendor/
 documents/
+
+# Temp/debug files
+/curl_output*.txt
+/diff.txt
+/*.sql
+/temp_*.txt
+/seed_result.txt
+/routes_dump.txt
+/route_list.json
+/htaccess_history.txt
+/server.log
+/manual_*.php
+/test_*.php
+/fix*.php
+/fix*.py
+/pdo_*.php
