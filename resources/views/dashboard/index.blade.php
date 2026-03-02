@@ -169,8 +169,8 @@
             border-radius: 12px;
             border: none;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-            mb-4;
-            overflow: hidden;
+            margin-bottom: 1.5rem;
+            overflow: visible;
         }
 
         .content-card .card-header {
@@ -208,6 +208,15 @@
             50% {
                 opacity: .5;
             }
+        }
+
+        /* Highcharts Export Menu Fix */
+        .highcharts-contextmenu {
+            z-index: 9999 !important;
+        }
+
+        .highcharts-container {
+            overflow: visible !important;
         }
     </style>
 @endpush
