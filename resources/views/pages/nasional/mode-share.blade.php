@@ -206,6 +206,8 @@
 
     @push('scripts')
         <script src="https://code.highcharts.com/highcharts.js"></script>
+        <script src="https://code.highcharts.com/modules/exporting.js"></script>
+        <script src="https://code.highcharts.com/modules/export-data.js"></script>
         <!-- Highcharts accessibility module might be useful but sticking to core is fine -->
         <script>
             $(document).ready(function() {

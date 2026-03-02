@@ -226,6 +226,8 @@
 @push('scripts')
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/modules/sankey.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -238,6 +240,7 @@
             }
 
             const formatNumber = (num) => {
+                if (num == null || isNaN(num)) return '0';
                 return new Intl.NumberFormat('id-ID').format(num);
             };
 
