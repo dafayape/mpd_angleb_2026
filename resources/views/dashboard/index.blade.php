@@ -663,6 +663,7 @@
         });
 
         const formatJuta = (num) => {
+            if (num == null || isNaN(num)) return '0';
             if (num >= 1000000) return (num / 1000000).toLocaleString('id-ID', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
@@ -670,7 +671,7 @@
             return num.toLocaleString('id-ID');
         };
 
-        const formatNumber = (num) => num.toLocaleString('id-ID');
+        const formatNumber = (num) => (num == null || isNaN(num)) ? '0' : num.toLocaleString('id-ID');
 
         const formatDateShort = (dtStr) => {
             const dt = new Date(dtStr);
@@ -775,9 +776,9 @@
 
         function renderAllBlocks(data, satuan) {
             // Block 03: Nasional KPIs
-            $('#val_nas_pergerakan').text(formatJuta(data.nasional.pergerakan));
-            $('#val_nas_orang').text(formatJuta(data.nasional.orang));
-            $('#val_nas_koefisien').text(data.nasional.koefisien.toLocaleString('id-ID', {
+            $('#val_nas_pergerakan').text(formatJuta(data.nasional?.pergerakan || 0));
+            $('#val_nas_orang').text(formatJuta(data.nasional?.orang || 0));
+            $('#val_nas_koefisien').text((data.nasional?.koefisien || 0).toLocaleString('id-ID', {
                 minimumFractionDigits: 2
             }));
             $('#nar_nas_pergerakan').html(data.nasional.narrative);
@@ -1069,19 +1070,19 @@
             });
 
             // Block 11: Jabo Variables
-            $('#val_intra_pergerakan').text(formatJuta(data.intra.pergerakan));
-            $('#val_intra_orang').text(formatJuta(data.intra.orang));
-            $('#val_intra_koefisien').text(data.intra.koefisien.toLocaleString('id-ID', {
+            $('#val_intra_pergerakan').text(formatJuta(data.intra?.pergerakan || 0));
+            $('#val_intra_orang').text(formatJuta(data.intra?.orang || 0));
+            $('#val_intra_koefisien').text((data.intra?.koefisien || 0).toLocaleString('id-ID', {
                 minimumFractionDigits: 2
             }));
-            $('#nar_intra').html(data.intra.narrative);
+            $('#nar_intra').html(data.intra?.narrative || '-');
 
-            $('#val_inter_pergerakan').text(formatJuta(data.inter.pergerakan));
-            $('#val_inter_orang').text(formatJuta(data.inter.orang));
-            $('#val_inter_koefisien').text(data.inter.koefisien.toLocaleString('id-ID', {
+            $('#val_inter_pergerakan').text(formatJuta(data.inter?.pergerakan || 0));
+            $('#val_inter_orang').text(formatJuta(data.inter?.orang || 0));
+            $('#val_inter_koefisien').text((data.inter?.koefisien || 0).toLocaleString('id-ID', {
                 minimumFractionDigits: 2
             }));
-            $('#nar_inter').html(data.inter.narrative);
+            $('#nar_inter').html(data.inter?.narrative || '-');
 
             // Jabo Trends
             const ti = data.trend_intra || {};
