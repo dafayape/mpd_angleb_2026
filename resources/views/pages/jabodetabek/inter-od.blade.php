@@ -214,7 +214,7 @@
                     tooltip: {
                         formatter: function() {
                             if (this.point.isNode) {
-                                return `<b>${this.point.name}</b><br/>Total: ${formatNumber(this.point.weight)} pergerakan`;
+                                return `<b>${this.point.name}</b><br/>Total: ${formatNumber(this.point.sum)} pergerakan`;
                             }
                             return `<b>${this.point.from}</b> \u2192 <b>${this.point.to}</b><br/>Jumlah: ${formatNumber(this.point.weight)}`;
                         }
