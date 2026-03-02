@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Services\ExecutiveSummary;
@@ -23,9 +24,10 @@ class ExecutiveSummaryService
 
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v3:{$dateKey}";
-        return Cache::remember($key, 1800, fn() => [
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v4:{$dateKey}";
+
+        return Cache::remember($key, 1800, fn () => [
             'nasional' => $this->getNasionalMetrics($dataType, $opsel),
             'peak' => $this->getPeakDay($dataType, $opsel),
             'opsel' => $this->getOpselContribution($dataType),
@@ -48,32 +50,38 @@ class ExecutiveSummaryService
         $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
             ->where('kategori', $kategori)
             ->where('is_forecast', $dataType === 'forecast');
-        if ($opsel) $q->where('opsel', $opsel);
+        if ($opsel) {
+            $q->where('opsel', $opsel);
+        }
+
         return $q;
     }
 
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional:{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
+
+        return Cache::remember($key, 1800, function () use ($dataType, $opsel) {
             $pergerakan = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->sum('total');
             $orang = (float) $this->baseQuery('ORANG', $dataType, $opsel)->sum('total');
             $koefisien = $orang > 0 ? round($pergerakan / $orang, 2) : 0.0;
+
             return [
                 'pergerakan' => $pergerakan,
                 'orang' => $orang,
                 'koefisien' => $koefisien,
-                'narrative' => $this->generateNarrative(['pergerakan' => $pergerakan], 'nasional_pergerakan')
+                'narrative' => $this->generateNarrative(['pergerakan' => $pergerakan], 'nasional_pergerakan'),
             ];
         });
     }
 
     public function getOpselContribution(string $dataType, ?string $region = null): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
-        $key = "executive_summary:getOpselContribution:{$dataType}:all:" . ($region ?? 'nasional') . ":{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($dataType, $region) {
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
+        $key = "executive_summary:getOpselContribution:{$dataType}:all:".($region ?? 'nasional').":{$dateKey}";
+
+        return Cache::remember($key, 1800, function () use ($dataType, $region) {
             $data = [];
             foreach (['PERGERAKAN', 'ORANG'] as $kat) {
                 $q = $this->baseQuery($kat, $dataType, null);
@@ -84,27 +92,34 @@ class ExecutiveSummaryService
                 $total = $sums->sum();
                 foreach (['TSEL', 'IOH', 'XL'] as $op) {
                     $val = $sums[$op] ?? 0;
-                    $data[strtolower($kat)][$op] = ['total' => $val, 'pct' => $total > 0 ? round(($val/$total)*100, 1) : 0];
+                    $data[strtolower($kat)][$op] = ['total' => $val, 'pct' => $total > 0 ? round(($val / $total) * 100, 1) : 0];
                 }
             }
             $data['narrative'] = $this->generateNarrative($data, 'opsel');
+
             return $data;
         });
     }
 
     public function getDailyTrend(string $kategori, string $dataType, ?string $opsel, string $region = 'nasional'): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}:{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($kategori, $dataType, $opsel, $region) {
+
+        return Cache::remember($key, 1800, function () use ($kategori, $dataType, $opsel, $region) {
             $q = $this->baseQuery($kategori, $dataType, $opsel);
-            if ($region === 'intra') $this->applyJaboFilter($q, 'intra');
-            elseif ($region === 'inter') $this->applyJaboFilter($q, 'inter');
-            
+            if ($region === 'intra') {
+                $this->applyJaboFilter($q, 'intra');
+            } elseif ($region === 'inter') {
+                $this->applyJaboFilter($q, 'inter');
+            }
+
             $dbData = $q->select('tanggal', DB::raw('SUM(total) as t'))
                 ->groupBy('tanggal')->orderBy('tanggal')
-                ->get()->pluck('t', 'tanggal')->toArray();
-                
+                ->get()
+                ->mapWithKeys(fn ($item) => [\Carbon\Carbon::parse($item->tanggal)->format('Y-m-d') => $item->t])
+                ->toArray();
+
             $result = [];
             $period = new \DatePeriod(
                 new \DateTime($this->getStartDate()),
@@ -115,23 +130,28 @@ class ExecutiveSummaryService
                 $dateStr = $date->format('Y-m-d');
                 $result[$dateStr] = isset($dbData[$dateStr]) ? (float) $dbData[$dateStr] : 0.0;
             }
+
             return $result;
         });
     }
 
     public function getPeakDay(string $dataType, ?string $opsel): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getPeakDay:{$dataType}:{$opsel}:nasional:{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
+
+        return Cache::remember($key, 1800, function () use ($dataType, $opsel) {
             $trend = $this->getDailyTrend('PERGERAKAN', $dataType, $opsel);
-            if(empty($trend)) return [];
+            if (empty($trend)) {
+                return [];
+            }
             arsort($trend);
             $total = array_sum($trend);
             $peaks = [];
             foreach (array_slice($trend, 0, 3, true) as $tgl => $val) {
-                $peaks[] = ['tanggal' => $tgl, 'total' => $val, 'pct' => $total > 0 ? round(($val/$total)*100, 1) : 0];
+                $peaks[] = ['tanggal' => $tgl, 'total' => $val, 'pct' => $total > 0 ? round(($val / $total) * 100, 1) : 0];
             }
+
             return ['top' => $peaks[0] ?? null, 'list' => $peaks];
         });
     }
@@ -141,7 +161,7 @@ class ExecutiveSummaryService
         $jabo = implode("','", self::JABODETABEK_PROVINCES);
         $condOrigin = "LEFT(kode_origin_kabupaten_kota, 2) IN ('$jabo')";
         $condDest = "LEFT(kode_dest_kabupaten_kota, 2) IN ('$jabo')";
-        
+
         if ($type === 'intra') {
             $query->whereRaw("($condOrigin AND $condDest)");
         } else {
@@ -151,77 +171,92 @@ class ExecutiveSummaryService
 
     public function getIntraJabodetabek(string $dataType, ?string $opsel): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getIntraJabodetabek:{$dataType}:{$opsel}:intra:{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
-            $p = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->tap(fn($q) => $this->applyJaboFilter($q, 'intra'))->sum('total');
-            $o = (float) $this->baseQuery('ORANG', $dataType, $opsel)->tap(fn($q) => $this->applyJaboFilter($q, 'intra'))->sum('total');
+
+        return Cache::remember($key, 1800, function () use ($dataType, $opsel) {
+            $p = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->tap(fn ($q) => $this->applyJaboFilter($q, 'intra'))->sum('total');
+            $o = (float) $this->baseQuery('ORANG', $dataType, $opsel)->tap(fn ($q) => $this->applyJaboFilter($q, 'intra'))->sum('total');
+
             return [
                 'pergerakan' => $p, 'orang' => $o, 'koefisien' => $this->getKoefisien($dataType, $opsel, 'intra'),
-                'narrative' => $this->generateNarrative(['pergerakan' => $p], 'intra')
+                'narrative' => $this->generateNarrative(['pergerakan' => $p], 'intra'),
             ];
         });
     }
 
     public function getInterJabodetabek(string $dataType, ?string $opsel): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getInterJabodetabek:{$dataType}:{$opsel}:inter:{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
-            $p = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->tap(fn($q) => $this->applyJaboFilter($q, 'inter'))->sum('total');
-            $o = (float) $this->baseQuery('ORANG', $dataType, $opsel)->tap(fn($q) => $this->applyJaboFilter($q, 'inter'))->sum('total');
+
+        return Cache::remember($key, 1800, function () use ($dataType, $opsel) {
+            $p = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->tap(fn ($q) => $this->applyJaboFilter($q, 'inter'))->sum('total');
+            $o = (float) $this->baseQuery('ORANG', $dataType, $opsel)->tap(fn ($q) => $this->applyJaboFilter($q, 'inter'))->sum('total');
+
             return [
                 'pergerakan' => $p, 'orang' => $o, 'koefisien' => $this->getKoefisien($dataType, $opsel, 'inter'),
-                'narrative' => $this->generateNarrative(['pergerakan' => $p], 'inter')
+                'narrative' => $this->generateNarrative(['pergerakan' => $p], 'inter'),
             ];
         });
     }
 
     public function getKoefisien(string $dataType, ?string $opsel, ?string $region = null): float
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getKoefisien:{$dataType}:{$opsel}:{$region}:{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($dataType, $opsel, $region) {
+
+        return Cache::remember($key, 1800, function () use ($dataType, $opsel, $region) {
             $pQ = $this->baseQuery('PERGERAKAN', $dataType, $opsel);
             $oQ = $this->baseQuery('ORANG', $dataType, $opsel);
-            if ($region) { $this->applyJaboFilter($pQ, $region); $this->applyJaboFilter($oQ, $region); }
+            if ($region) {
+                $this->applyJaboFilter($pQ, $region);
+                $this->applyJaboFilter($oQ, $region);
+            }
             $o = (float) $oQ->sum('total');
+
             return $o > 0 ? round((float) $pQ->sum('total') / $o, 2) : 0.0;
         });
     }
 
     public function getForecastComparison(?string $opsel): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getForecastComparison:all:{$opsel}:nasional:v3:{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($opsel) {
+
+        return Cache::remember($key, 1800, function () use ($opsel) {
             $real = $this->getDailyTrend('PERGERAKAN', 'real', $opsel);
             $forecast = $this->getDailyTrend('PERGERAKAN', 'forecast', $opsel);
-            $totReal = array_sum($real); $totFore = array_sum($forecast);
+            $totReal = array_sum($real);
+            $totFore = array_sum($forecast);
             $res = [];
             foreach (array_keys($real + $forecast) as $dt) {
-                $r = $real[$dt] ?? 0; $f = $forecast[$dt] ?? 0;
+                $r = $real[$dt] ?? 0;
+                $f = $forecast[$dt] ?? 0;
                 $res[$dt] = [
-                    'real_pct' => $totReal > 0 ? round(($r/$totReal)*100, 1) : 0,
-                    'fore_pct' => $totFore > 0 ? round(($f/$totFore)*100, 1) : 0
+                    'real_pct' => $totReal > 0 ? round(($r / $totReal) * 100, 1) : 0,
+                    'fore_pct' => $totFore > 0 ? round(($f / $totFore) * 100, 1) : 0,
                 ];
             }
             ksort($res);
+
             return $res;
         });
     }
 
     public function getYoyComparison(string $dataType, ?string $opsel): array
     {
-        $dateKey = $this->getStartDate() . '_' . $this->getEndDate();
+        $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getYoyComparison:{$dataType}:{$opsel}:nasional:v3:{$dateKey}";
-        return Cache::remember($key, 1800, function() use ($dataType, $opsel) {
+
+        return Cache::remember($key, 1800, function () use ($dataType, $opsel) {
             $curr = (float) $this->baseQuery('ORANG', $dataType, $opsel)->sum('total');
             $prev = config('mpd.historical_baselines.2025_orang', 115197227); // default fallback
+
             return [
                 'current' => $curr, 'previous' => $prev,
                 'growth_pct' => $prev > 0 ? round((($curr - $prev) / $prev) * 100, 2) : 0,
-                'narrative' => "Angka tersebut lebih besar sekitar ".($prev>0?round((($curr-$prev)/$prev)*100,2):0)."% dari estimasi masyarakat tahun sebelumnya."
+                'narrative' => 'Angka tersebut lebih besar sekitar '.($prev > 0 ? round((($curr - $prev) / $prev) * 100, 2) : 0).'% dari estimasi masyarakat tahun sebelumnya.',
             ];
         });
     }
@@ -239,12 +274,20 @@ class ExecutiveSummaryService
                 }
             }
             $maxOpselName = $maxOpsel ?: 'Satu operator';
+
             return "{$maxOpselName} mendominasi perekaman mobilitas dengan menyumbang sekitar {$maxPct}% dari total pergerakan.";
         }
         $val = number_format($metrics['pergerakan'] ?? 0, 0, ',', '.');
-        if ($type === 'intra') return "Jumlah pergerakan Masyarakat Intra Jabodetabek pada periode ini adalah {$val} pergerakan.";
-        if ($type === 'inter') return "Sedangkan untuk jumlah pergerakan Masyarakat Inter Jabodetabek sebesar {$val} pergerakan.";
-        if ($type === 'nasional_pergerakan') return "Jumlah pergerakan masyarakat pada Periode Angkutan Lebaran 2026, dengan nilai realisasi adalah {$val} pergerakan.";
-        return "Distribusi pergerakan penduduk relatif stabil selama periode pengamatan.";
+        if ($type === 'intra') {
+            return "Jumlah pergerakan Masyarakat Intra Jabodetabek pada periode ini adalah {$val} pergerakan.";
+        }
+        if ($type === 'inter') {
+            return "Sedangkan untuk jumlah pergerakan Masyarakat Inter Jabodetabek sebesar {$val} pergerakan.";
+        }
+        if ($type === 'nasional_pergerakan') {
+            return "Jumlah pergerakan masyarakat pada Periode Angkutan Lebaran 2026, dengan nilai realisasi adalah {$val} pergerakan.";
+        }
+
+        return 'Distribusi pergerakan penduduk relatif stabil selama periode pengamatan.';
     }
 }
