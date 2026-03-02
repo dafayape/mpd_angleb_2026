@@ -28,6 +28,7 @@ class PengaturanController extends Controller
             'qontak_access_token',
             'qontak_refresh_token',
             'qontak_channel_id',
+            'qontak_message_template_id',
         ];
 
         foreach ($fields as $key) {

@@ -316,6 +316,23 @@ Terima kasih.</textarea>
                             showConfirmButton: false,
                             timer: 3000
                         });
+                    } else if (data.fallback) {
+                        btn.innerHTML = '<i class="bx bxl-whatsapp me-1"></i> Kirim WA';
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Konfigurasi Qontak Belum Lengkap',
+                            html: '<p>' + data.message +
+                                '</p><p class="text-muted small mt-2">Teks laporan sudah disalin ke clipboard. Buka WhatsApp Web untuk kirim manual.</p>',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="bx bx-copy me-1"></i> Salin & Buka WA Web',
+                            cancelButtonText: 'Tutup'
+                        }).then(function(result) {
+                            if (result.isConfirmed && data.report_text) {
+                                navigator.clipboard.writeText(data.report_text).then(function() {
+                                    window.open('https://web.whatsapp.com/', '_blank');
+                                });
+                            }
+                        });
                     } else {
                         btn.innerHTML = '<i class="bx bxl-whatsapp me-1"></i> Kirim WA';
                         Swal.fire({

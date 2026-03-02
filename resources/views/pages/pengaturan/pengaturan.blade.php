@@ -254,12 +254,21 @@
                                 placeholder="Refresh token dari Qontak">
                         </div>
 
-                        <div class="mb-0">
+                        <div class="mb-3">
                             <label class="form-label-custom">Channel Integration ID</label>
                             <input type="text" name="qontak_channel_id" class="form-control token-field"
                                 value="{{ $settings->get('qontak_channel_id', '') }}"
                                 placeholder="ID channel WhatsApp di Qontak">
                             <div class="help-text">Dapatkan dari menu Integrations di dashboard Qontak</div>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label-custom">Message Template ID</label>
+                            <input type="text" name="qontak_message_template_id" class="form-control token-field"
+                                value="{{ $settings->get('qontak_message_template_id', '') }}"
+                                placeholder="UUID template pesan WhatsApp">
+                            <div class="help-text">Buat template pesan di dashboard Qontak → Message Templates. Gunakan 1
+                                variabel body <code>{{ 1 }}</code> untuk isi laporan.</div>
                         </div>
                     </div>
                 </div>

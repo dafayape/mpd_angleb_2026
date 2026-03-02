@@ -123,7 +123,15 @@ class DailyReportController extends Controller
     }
 
     /**
-     * Send report via WhatsApp (Qontak API)
+     * Send report via WhatsApp (Qontak Broadcast API)
+     *
+     * Qontak broadcast/direct requires:
+     *  - message_template_id (approved WhatsApp template UUID)
+     *  - channel_integration_id (WhatsApp channel UUID)
+     *  - to_number, to_name
+     *  - parameters: { header: {}, body: [ {key, value} ] }
+     *
+     * If template is not configured, falls back to building a wa.me link.
      */
     public function sendWhatsApp(Request $request)
     {
@@ -140,11 +148,31 @@ class DailyReportController extends Controller
             $settings = DB::table('app_settings')->pluck('value', 'key');
             $waNumbers = $settings->get('wa_recipients', '');
             $token = $settings->get('qontak_access_token', '');
+            $channelId = $settings->get('qontak_channel_id', '');
+            $templateId = $settings->get('qontak_message_template_id', '');
 
-            if (empty($waNumbers) || empty($token)) {
+            if (empty($waNumbers)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Nomor WhatsApp atau token Qontak belum dikonfigurasi. Silakan atur di menu Pengaturan.',
+                    'message' => 'Nomor WhatsApp penerima belum dikonfigurasi. Silakan atur di menu Pengaturan.',
+                ]);
+            }
+
+            // Check Qontak readiness
+            $qontakReady = !empty($token) && !empty($channelId) && !empty($templateId);
+
+            if (!$qontakReady) {
+                // Fallback: return the text for manual sending
+                $missing = [];
+                if (empty($token)) $missing[] = 'Access Token';
+                if (empty($channelId)) $missing[] = 'Channel Integration ID';
+                if (empty($templateId)) $missing[] = 'Message Template ID';
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konfigurasi Qontak belum lengkap ('.implode(', ', $missing).'). Silakan lengkapi di menu Pengaturan, atau gunakan tombol Salin Teks untuk kirim manual.',
+                    'fallback' => true,
+                    'report_text' => $reportText,
                 ]);
             }
 
@@ -159,23 +187,38 @@ class DailyReportController extends Controller
                 }
 
                 try {
+                    // Qontak Broadcast Direct API
                     $response = Http::withHeaders([
                         'Authorization' => 'Bearer '.$token,
                         'Content-Type' => 'application/json',
-                    ])->post('https://service-chat.qontak.com/api/open/v1/broadcasts/whatsapp/direct', [
+                    ])->timeout(30)->post('https://service-chat.qontak.com/api/open/v1/broadcasts/whatsapp/direct', [
                         'to_number' => $phone,
                         'to_name' => 'Penerima Laporan',
-                        'channel_integration_id' => $settings->get('qontak_channel_id', ''),
-                        'body' => $reportText,
+                        'message_template_id' => $templateId,
+                        'channel_integration_id' => $channelId,
+                        'language' => ['code' => 'id'],
+                        'parameters' => [
+                            'body' => [
+                                [
+                                    'key' => '1',
+                                    'value' => 'body_text',
+                                    'value_text' => $reportText,
+                                ],
+                            ],
+                        ],
                     ]);
 
                     if ($response->successful()) {
                         $sent++;
+                        Log::info("WA terkirim ke {$phone}");
                     } else {
-                        $errors[] = $phone.': '.$response->body();
+                        $errBody = $response->body();
+                        $errors[] = $phone.': '.$errBody;
+                        Log::warning("WA gagal ke {$phone}: {$errBody}");
                     }
                 } catch (\Exception $e) {
                     $errors[] = $phone.': '.$e->getMessage();
+                    Log::error("WA exception ke {$phone}: ".$e->getMessage());
                 }
             }
 
