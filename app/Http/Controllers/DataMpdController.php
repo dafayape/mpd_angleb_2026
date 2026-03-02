@@ -2566,7 +2566,7 @@ Provinsi tujuan paling dominan adalah: {$topTujuan}.
 Berikan 5 poin rekomendasi kebijakan utama (seperti infrastruktur tol, manajemen simpul transportasi, keselamatan, dll) yang harus diambil oleh Pimpinan Kementerian. Tuliskan dalam format Markdown yang rapi dan profesional, gunakan bold untuk key points, dan bullet points.
 PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN menambahkan blok kutipan statis (menggunakan blockquote markdown `>`) dengan judul **Sumber Data:** yang menjelaskan secara persis bahwa analisis data ini diperoleh dan dapat dipertanggungjawabkan dari hasil pengolahan \"Data Ekstraksi Mobile Positioning Data (MPD) Operator Seluler: Telkomsel, Indosat Ooredoo Hutchison, dan XL Axiata periode Angleb 2026\". Buat penjelasan keseluruhan yang mendalam namun solutif.";
 
-            $apiKey = env('GEMINI_API_KEY');
+            $apiKey = config('mpd.gemini_api_key');
             $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
 
             try {
@@ -2585,7 +2585,7 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
                     $aiContent = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
 
                     if ($aiContent) {
-                        Cache::put($cacheKey, $aiContent, 86400);
+                        Cache::put($cacheKey, $aiContent, config('mpd.cache_ttl.ai_rekomendasi', 86400));
                     } else {
                         $aiContent = 'Gagal mengambil rekomendasi (Format AI tidak sesuai).';
                     }

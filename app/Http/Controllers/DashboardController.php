@@ -6,13 +6,16 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Cache Key for Dashboard - 1 Hour
-        // Uses simple cache key assuming data updates via ETL which clears cache or auto-expires
-        $cacheKey = 'dashboard:index:v1';
+        $kategoriFilter = request()->input('kategori', 'REAL');
+        $isForecastFilter = ($kategoriFilter === 'FORECAST');
 
-        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () {
-            $startDate = '2026-03-13';
-            $endDate = '2026-03-30';
+        $startDate = config('mpd.start_date');
+        $endDate = config('mpd.end_date');
+        $cacheTtl = config('mpd.cache_ttl.dashboard', 3600);
+
+        $cacheKey = "dashboard:index:v2:{$kategoriFilter}";
+
+        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, $cacheTtl, function () use ($startDate, $endDate, $isForecastFilter) {
 
             // 1. Totals — PERGERAKAN (Real & Forecast)
             $totals = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
@@ -40,8 +43,6 @@ class DashboardController extends Controller
             // Avoid division by zero
             $persenCapaian = $totalForecast > 0 ? ($totalReal / $totalForecast) * 100 : 0;
             $selisih = $totalReal - $totalForecast;
-
-            $isForecastFilter = request()->input('kategori') === 'FORECAST';
 
             // 2. Chart Opsel: Real Volume per Opsel (Matching Reference Style)
             // Colors: IOH (Yellow/Orange), TSEL (Red), XL (Blue)

@@ -14,22 +14,15 @@ class DailyReportController extends Controller
 {
     public function index(Request $request)
     {
-        $startDate = $request->input('start_date', '2026-03-13');
-        $endDate = $request->input('end_date', '2026-03-30');
+        $minDate = config('mpd.start_date');
+        $maxDate = config('mpd.end_date');
 
-        // Enforce Date Limits Server-Side (13 Mar 2026 - 30 Mar 2026)
-        if ($startDate < '2026-03-13') {
-            $startDate = '2026-03-13';
-        }
-        if ($startDate > '2026-03-30') {
-            $startDate = '2026-03-30';
-        }
-        if ($endDate < '2026-03-13') {
-            $endDate = '2026-03-13';
-        }
-        if ($endDate > '2026-03-30') {
-            $endDate = '2026-03-30';
-        }
+        $startDate = $request->input('start_date', $minDate);
+        $endDate = $request->input('end_date', $maxDate);
+
+        // Enforce Date Limits Server-Side
+        $startDate = max($minDate, min($maxDate, $startDate));
+        $endDate = max($minDate, min($maxDate, $endDate));
 
         $kategoriFilter = $request->input('kategori', 'REAL');
         $isForecast = ($kategoriFilter === 'FORECAST');
@@ -40,13 +33,7 @@ class DailyReportController extends Controller
         $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $isForecast, $opselFilter) {
 
             // Jabodetabek codes
-            $jabodetabekCodes = [
-                '3171', '3172', '3173', '3174', '3175', '3101', // DKI
-                '3201', '3271', // Bogor
-                '3276',        // Depok
-                '3603', '3671', '3674', // Tangerang
-                '3216', '3275',  // Bekasi
-            ];
+            $jabodetabekCodes = config('mpd.jabodetabek_codes');
 
             // Opsel filter helper
             $applyOpsel = function ($query) use ($opselFilter) {
