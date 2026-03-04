@@ -141,8 +141,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/log-aktivitas', [ActivityLogController::class, 'index'])->name('log-aktivitas');
     Route::get('/log-aktivitas/export', [ActivityLogController::class, 'export'])->name('log-aktivitas.export');
 
-    // Log Developer
     Route::get('/devlog', [\App\Http\Controllers\DevLogController::class, 'index'])->name('devlog');
+    Route::post('/devlog/fix', [\App\Http\Controllers\DevLogController::class, 'markFixed'])->name('devlog.fix');
 });
 
 Route::get('/sso-login', function (Request $request) {

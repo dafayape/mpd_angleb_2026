@@ -25,6 +25,9 @@ class DevLogController extends Controller
         $lines = [];
         $filePath = $logPath.'/'.$selectedFile;
 
+        $fixedLogsPath = storage_path('logs/fixed_logs.json');
+        $fixedLogs = File::exists($fixedLogsPath) ? json_decode(File::get($fixedLogsPath), true) ?? [] : [];
+
         if ($selectedFile && File::exists($filePath) && str_starts_with(realpath($filePath), realpath($logPath))) {
             $content = File::get($filePath);
             $fileSize = File::size($filePath);
@@ -33,7 +36,7 @@ class DevLogController extends Controller
                 $content = $this->tailFile($filePath, 500);
             }
 
-            $lines = $this->parseLogEntries($content);
+            $lines = $this->parseLogEntries($content, $fixedLogs);
         }
 
         return view('devlog.index', [
@@ -61,7 +64,7 @@ class DevLogController extends Controller
         return $output;
     }
 
-    private function parseLogEntries(string $content): array
+    private function parseLogEntries(string $content, array $fixedLogs = []): array
     {
         $pattern = '/\[(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[^\]]*)\]\s+(\w+)\.(\w+):\s+(.*?)(?=\n\[\d{4}-|\z)/s';
 
@@ -69,14 +72,48 @@ class DevLogController extends Controller
 
         $entries = [];
         foreach (array_reverse($matches) as $match) {
+            $timestamp = $match[1];
+            $message = trim($match[4]);
+            $id = md5($timestamp . $message);
+
+            if (in_array($id, $fixedLogs)) {
+                continue;
+            }
+
             $entries[] = [
-                'timestamp' => $match[1],
+                'id'        => $id,
+                'timestamp' => $timestamp,
                 'channel'   => $match[2],
                 'level'     => strtoupper($match[3]),
-                'message'   => trim($match[4]),
+                'message'   => $message,
             ];
         }
 
         return array_slice($entries, 0, 200);
+    }
+
+    public function markFixed(Request $request)
+    {
+        if (! in_array(Auth::user()->role, ['su', 'admin'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $id = $request->input('id');
+        if (!$id) {
+            return response()->json(['error' => 'ID is required'], 400);
+        }
+
+        $fixedLogsPath = storage_path('logs/fixed_logs.json');
+        $fixedLogs = [];
+        if (File::exists($fixedLogsPath)) {
+            $fixedLogs = json_decode(File::get($fixedLogsPath), true) ?? [];
+        }
+
+        if (!in_array($id, $fixedLogs)) {
+            $fixedLogs[] = $id;
+            File::put($fixedLogsPath, json_encode($fixedLogs));
+        }
+
+        return response()->json(['success' => true]);
     }
 }
