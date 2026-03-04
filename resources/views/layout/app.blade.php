@@ -375,14 +375,6 @@
                             </ul>
                         </li>
 
-                        <li>
-                            <a href="{{ route('pages.substansi.netflow') }}" class="waves-effect">
-                                <i class="bx bx-transfer"></i>
-                                <span>Netflow</span>
-                            </a>
-                        </li>
-
-
                         <li class="menu-title">Kesimpulan dan Rekomendasi</li>
 
                         <li>
@@ -415,6 +407,13 @@
                                 <li><a href="{{ route('pages.substansi.od-simpul-pelabuhan') }}">Origin-Destination
                                         (OD) Simpul Pelabuhan</a></li>
                             </ul>
+                        </li>
+
+                        <li>
+                            <a href="{{ route('pages.substansi.netflow') }}" class="waves-effect">
+                                <i class="bx bx-transfer"></i>
+                                <span>Netflow</span>
+                            </a>
                         </li>
 
                         <li>
