@@ -206,7 +206,7 @@ class ExecutiveSummaryService
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
         $key = "executive_summary:getKoefisien:{$dataType}:{$opsel}:{$region}:{$dateKey}";
 
-        return Cache::remember($key, 1800, function () use ($dataType, $opsel, $region) {
+        return (float) Cache::remember($key, 1800, function () use ($dataType, $opsel, $region) {
             $pQ = $this->baseQuery('PERGERAKAN', $dataType, $opsel);
             $oQ = $this->baseQuery('ORANG', $dataType, $opsel);
             if ($region) {
