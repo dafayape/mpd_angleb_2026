@@ -389,6 +389,13 @@
                             </ul>
                         </li>
 
+                        <li>
+                            <a href="{{ route('pages.kesimpulan.rekomendasi') }}" class="waves-effect">
+                                <i class="bx bx-file"></i>
+                                <span>Rekomendasi</span>
+                            </a>
+                        </li>
+
                         <li class="menu-title">Substansi Tambahan</li>
 
                         <li>
@@ -413,13 +420,6 @@
                             <a href="{{ route('pages.substansi.netflow') }}" class="waves-effect">
                                 <i class="bx bx-transfer"></i>
                                 <span>Netflow</span>
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="{{ route('pages.kesimpulan.rekomendasi') }}" class="waves-effect">
-                                <i class="bx bx-file"></i>
-                                <span>Rekomendasi</span>
                             </a>
                         </li>
 

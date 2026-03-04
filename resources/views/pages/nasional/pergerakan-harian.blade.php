@@ -910,7 +910,16 @@
                     type: 'bar',
                     height: 260,
                     toolbar: {
-                        show: false
+                        show: true,
+                        tools: {
+                            download: true,
+                            selection: false,
+                            zoom: false,
+                            zoomin: false,
+                            zoomout: false,
+                            pan: false,
+                            reset: false
+                        }
                     },
                     animations: {
                         enabled: true
@@ -995,7 +1004,16 @@
                     type: 'bar',
                     height: 260,
                     toolbar: {
-                        show: false
+                        show: true,
+                        tools: {
+                            download: true,
+                            selection: false,
+                            zoom: false,
+                            zoomin: false,
+                            zoomout: false,
+                            pan: false,
+                            reset: false
+                        }
                     },
                     stacked: false
                 },
