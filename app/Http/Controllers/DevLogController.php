@@ -64,6 +64,29 @@ class DevLogController extends Controller
         return $output;
     }
 
+    private function isErrorStillExist(string $message): bool
+    {
+        // Try to extract URL from the log string
+        // Usually Laravel logs the URL somewhere or we can attempt to re-run the previous trace.
+        // But logs are static text. A simpler approach for "auto-detecting if an error is fixed"
+        // is to check if the exact error signature (File + Line) has been modified since the log timestamp.
+        
+        preg_match('/at (.*?\.php):(\d+)/', $message, $matches);
+        if (count($matches) === 3) {
+            $filePath = $matches[1];
+            $lineNumber = (int) $matches[2];
+
+            if (File::exists($filePath)) {
+                // If the file was modified AFTER the error happened (we'll check timestamps later if needed, 
+                // but just checking if the line of code changed is another heuristic).
+                // Actually, the most robust way to auto-fix is to see if the file's modification time is newer
+                // than the log entry's timestamp.
+                return File::lastModified($filePath);
+            }
+        }
+        return false;
+    }
+
     private function parseLogEntries(string $content, array $fixedLogs = []): array
     {
         $pattern = '/\[(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}[^\]]*)\]\s+(\w+)\.(\w+):\s+(.*?)(?=\n\[\d{4}-|\z)/s';
@@ -71,12 +94,37 @@ class DevLogController extends Controller
         preg_match_all($pattern, $content, $matches, PREG_SET_ORDER);
 
         $entries = [];
+        $fixedLogsPath = storage_path('logs/fixed_logs.json');
+        $newlyFixed = false;
+
         foreach (array_reverse($matches) as $match) {
             $timestamp = $match[1];
             $message = trim($match[4]);
             $id = md5($timestamp . $message);
 
             if (in_array($id, $fixedLogs)) {
+                continue;
+            }
+
+            // Auto-detect if likely fixed by checking if the file mentioned in the error 
+            // has been modified *after* the error occurred.
+            $isFixed = false;
+            $logTime = strtotime($timestamp);
+            
+            preg_match('/at (.*?\.php):(\d+)/', $message, $errMatches);
+            if (count($errMatches) === 3) {
+                $errFile = $errMatches[1];
+                if (File::exists($errFile)) {
+                    $fileModTime = File::lastModified($errFile);
+                    if ($fileModTime > $logTime) {
+                        $isFixed = true;
+                    }
+                }
+            }
+
+            if ($isFixed) {
+                $fixedLogs[] = $id;
+                $newlyFixed = true;
                 continue;
             }
 
@@ -89,31 +137,10 @@ class DevLogController extends Controller
             ];
         }
 
+        if ($newlyFixed) {
+            File::put($fixedLogsPath, json_encode(array_unique($fixedLogs)));
+        }
+
         return array_slice($entries, 0, 200);
-    }
-
-    public function markFixed(Request $request)
-    {
-        if (! in_array(Auth::user()->role, ['su', 'admin'])) {
-            return response()->json(['error' => 'Unauthorized'], 403);
-        }
-
-        $id = $request->input('id');
-        if (!$id) {
-            return response()->json(['error' => 'ID is required'], 400);
-        }
-
-        $fixedLogsPath = storage_path('logs/fixed_logs.json');
-        $fixedLogs = [];
-        if (File::exists($fixedLogsPath)) {
-            $fixedLogs = json_decode(File::get($fixedLogsPath), true) ?? [];
-        }
-
-        if (!in_array($id, $fixedLogs)) {
-            $fixedLogs[] = $id;
-            File::put($fixedLogsPath, json_encode($fixedLogs));
-        }
-
-        return response()->json(['success' => true]);
     }
 }

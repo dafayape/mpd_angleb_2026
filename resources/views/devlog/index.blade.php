@@ -442,42 +442,6 @@
             font-size: 36px;
             color: #22c55e;
         }
-
-        .dl-btn-fix {
-            position: absolute;
-            top: 14px;
-            right: 18px;
-            z-index: 10;
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            border-radius: 6px;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            color: #10b981;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            opacity: 0;
-        }
-
-        .dl-entry:hover .dl-btn-fix {
-            opacity: 1;
-        }
-
-        .dl-btn-fix:hover {
-            background: #ecfdf5;
-            border-color: #10b981;
-        }
-
-        .dl-entry.fade-out {
-            opacity: 0;
-            transform: translateX(10px);
-            pointer-events: none;
-            transition: all 0.3s ease;
-        }
     </style>
 @endpush
 
@@ -646,10 +610,6 @@
                                 <div class="dl-hint">klik untuk expand</div>
                             @endif
                         </div>
-                        <button class="dl-btn-fix" onclick="markAsFixed(event, '{{ $entry['id'] }}', this)"
-                            title="Tandai Error Sudah Diperbaiki">
-                            <i class="bx bx-check"></i> Fix
-                        </button>
                     </div>
                 @endforeach
             @endif
@@ -701,51 +661,6 @@
                 top: 0,
                 behavior: 'smooth'
             });
-        }
-
-        function markAsFixed(e, id, btn) {
-            e.stopPropagation(); // prevent expanding the row
-            var originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i>';
-            btn.disabled = true;
-
-            fetch('{{ route('devlog.fix') }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        id: id
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        var entry = btn.closest('.dl-entry');
-                        entry.classList.add('fade-out');
-                        setTimeout(() => {
-                            entry.remove();
-                            // Update total count
-                            var visibleCountText = document.getElementById('visibleCount').textContent;
-                            var currentTotal = parseInt(visibleCountText);
-                            if (!isNaN(currentTotal) && currentTotal > 0) {
-                                document.getElementById('visibleCount').textContent = (currentTotal - 1) +
-                                    ' entries';
-                            }
-                        }, 300);
-                    } else {
-                        btn.innerHTML = originalText;
-                        btn.disabled = false;
-                        alert('Gagal menandai log. ' + (data.error || ''));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    alert('Terjadi kesalahan koneksi.');
-                });
         }
     </script>
 @endpush

@@ -54,8 +54,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/rekomendasi', [\App\Http\Controllers\DataMpdController::class, 'rekomendasiPage'])->name('rekomendasi');
     });
 
-
-
     // Pengaturan
     Route::get('/pengaturan', [\App\Http\Controllers\PengaturanController::class, 'index'])->name('pengaturan');
     Route::post('/pengaturan', [\App\Http\Controllers\PengaturanController::class, 'update'])->name('pengaturan.update');
@@ -142,7 +140,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/log-aktivitas/export', [ActivityLogController::class, 'export'])->name('log-aktivitas.export');
 
     Route::get('/devlog', [\App\Http\Controllers\DevLogController::class, 'index'])->name('devlog');
-    Route::post('/devlog/fix', [\App\Http\Controllers\DevLogController::class, 'markFixed'])->name('devlog.fix');
 });
 
 Route::get('/sso-login', function (Request $request) {
