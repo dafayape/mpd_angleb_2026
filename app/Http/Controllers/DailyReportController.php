@@ -145,14 +145,20 @@ class DailyReportController extends Controller
             }
 
             // Check Meta Cloud API readiness
-            $metaReady = !empty($token) && !empty($phoneId) && !empty($templateName);
+            $metaReady = ! empty($token) && ! empty($phoneId) && ! empty($templateName);
 
-            if (!$metaReady) {
+            if (! $metaReady) {
                 // Fallback: return the text for manual sending
                 $missing = [];
-                if (empty($token)) $missing[] = 'Access Token';
-                if (empty($phoneId)) $missing[] = 'Phone Number ID';
-                if (empty($templateName)) $missing[] = 'Message Template Name';
+                if (empty($token)) {
+                    $missing[] = 'Access Token';
+                }
+                if (empty($phoneId)) {
+                    $missing[] = 'Phone Number ID';
+                }
+                if (empty($templateName)) {
+                    $missing[] = 'Message Template Name';
+                }
 
                 return response()->json([
                     'success' => false,
@@ -190,12 +196,12 @@ class DailyReportController extends Controller
                                     'parameters' => [
                                         [
                                             'type' => 'text',
-                                            'text' => $reportText
-                                        ]
-                                    ]
-                                ]
-                            ]
-                        ]
+                                            'text' => $reportText,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
                     ]);
 
                     if ($response->successful()) {
@@ -308,16 +314,12 @@ class DailyReportController extends Controller
 
         $opselLabel = $opsel === 'ALL' ? '' : " (Opsel: {$opsel})";
 
-        return "Yth. *Bapak Kepala Badan Kebijakan Transportasi*\n\n"
-             .'Dengan hormat, izin melaporkan perkembangan pemantauan pergerakan orang pada periode Angleb 2026 '
-             ."dengan menggunakan _Mobile Positioning Data_ (MPD){$opselLabel} posisi dari *{$periodStr}* sebagai berikut:\n\n"
+        return "1. Periode Pematauan: *{$periodStr}*\n"
              ."A.\tPergerakan NASIONAL:\n"
              ."1. Total/akumulasi {$tipeTeks} pergerakan orang adalah sebanyak *{$nasTotal}* orang;\n"
              ."2. {$tipeTeksUc} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{$nasHighDate}* sebanyak *{$nasHighVal}* orang.\n\n"
              ."B.\tPergerakan JABODETABEK:\n"
              ."1. Total/akumulasi {$tipeTeks} pergerakan orang adalah sebanyak *{$jabTotal}* orang;\n"
-             ."2. {$tipeTeksUc} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{$jabHighDate}* sebanyak *{$jabHighVal}* orang.\n\n"
-             ."Demikian disampaikan dan mohon arahannya.\n\n"
-             .'Terima kasih.';
+             ."2. {$tipeTeksUc} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{$jabHighDate}* sebanyak *{$jabHighVal}* orang.";
     }
 }

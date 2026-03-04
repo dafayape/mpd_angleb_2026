@@ -59,8 +59,17 @@
             border: none;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             margin-bottom: 24px;
-            overflow: hidden;
+            overflow: visible !important;
             background: white;
+        }
+
+        /* Highcharts Export Menu Fix */
+        .highcharts-contextmenu {
+            z-index: 9999 !important;
+        }
+
+        .highcharts-container {
+            overflow: visible !important;
         }
 
         .analysis-box {
@@ -881,7 +890,11 @@
 
 @push('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof AOS !== 'undefined') {
@@ -892,8 +905,11 @@
                 });
             }
 
-            // ApexCharts Rendering for Section 03
+            // Data for Highcharts
             const datesLabels = {!! json_encode($datesArrForChart) !!};
+            // Flatten 2D array datesLabels (e.g., ["Kamis 18", "Maret 2026"]) to single string separated by space
+            const categories = datesLabels.map(d => d.join(' '));
+
             const movPcts = {!! json_encode($movementPctChart) !!};
             const pplPcts = {!! json_encode($peoplePctChart) !!};
 
@@ -905,167 +921,149 @@
             const seriesIOHPpl = {!! json_encode($series04_ppl['IOH']) !!};
             const seriesTSELPpl = {!! json_encode($series04_ppl['TSEL']) !!};
 
+            // Common Exporting options matching Dashboard
+            const exportConfig = {
+                enabled: true,
+                buttons: {
+                    contextButton: {
+                        menuItems: [
+                            "downloadPNG", "downloadJPEG", "downloadSVG",
+                            "separator",
+                            "downloadCSV", "downloadXLS",
+                            "separator",
+                            "viewFullscreen"
+                        ]
+                    }
+                }
+            };
+
             const commonOptions = {
                 chart: {
-                    type: 'bar',
-                    height: 260,
-                    toolbar: {
-                        show: true,
-                        tools: {
-                            download: true,
-                            selection: false,
-                            zoom: false,
-                            zoomin: false,
-                            zoomout: false,
-                            pan: false,
-                            reset: false
-                        }
-                    },
-                    animations: {
-                        enabled: true
-                    }
+                    type: 'column',
+                    height: 260
                 },
-                plotOptions: {
-                    bar: {
-                        dataLabels: {
-                            position: 'top'
-                        },
-                        columnWidth: '55%'
-                    }
+                title: {
+                    text: null
                 },
-                dataLabels: {
-                    enabled: true,
-                    formatter: function(val) {
-                        return val + "%";
-                    },
-                    offsetY: -22,
-                    style: {
-                        fontSize: '12px',
-                        colors: ["#555"]
-                    }
-                },
-                stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ['transparent']
-                },
-                xaxis: {
-                    categories: datesLabels,
+                xAxis: {
+                    categories: categories,
                     labels: {
                         style: {
-                            fontSize: '10.5px',
-                            colors: '#666'
+                            fontSize: '10.5px'
                         }
-                    }
+                    },
+                    crosshair: true
                 },
-                yaxis: {
-                    max: function(max) {
-                        return max + 2;
-                    }, // give some top padding
+                yAxis: {
+                    title: {
+                        text: null
+                    },
                     labels: {
-                        formatter: function(val) {
-                            return val.toFixed(2) + "%";
+                        format: '{value}%'
+                    },
+                    min: 0
+                },
+                tooltip: {
+                    pointFormat: '{series.name}: <b>{point.y:.2f}%</b>'
+                },
+                plotOptions: {
+                    column: {
+                        dataLabels: {
+                            enabled: true,
+                            format: '{y:.2f}%',
+                            style: {
+                                color: '#555',
+                                fontSize: '11px',
+                                textOutline: 'none'
+                            }
                         }
                     }
                 },
-                fill: {
-                    opacity: 1
+                credits: {
+                    enabled: false
                 },
-                grid: {
-                    borderColor: '#e0e0e0',
-                    strokeDashArray: 4
-                },
-                colors: ['#1e6082']
+                exporting: exportConfig,
+                legend: {
+                    enabled: false
+                }
             };
 
             if (document.querySelector("#chart-movement")) {
-                new ApexCharts(document.querySelector("#chart-movement"), {
-                    ...commonOptions,
+                Highcharts.chart('chart-movement', Highcharts.merge(commonOptions, {
+                    colors: ['#1e6082'],
                     series: [{
                         name: 'Pergerakan',
                         data: movPcts
                     }]
-                }).render();
+                }));
             }
 
             if (document.querySelector("#chart-people")) {
-                new ApexCharts(document.querySelector("#chart-people"), {
-                    ...commonOptions,
+                Highcharts.chart('chart-people', Highcharts.merge(commonOptions, {
+                    colors: ['#1e6082'],
                     series: [{
                         name: 'Orang',
                         data: pplPcts
                     }]
-                }).render();
+                }));
             }
 
-            // ApexCharts Rendering for Section 04
+            // Section 04
             const commonOptions04 = {
                 chart: {
-                    type: 'bar',
-                    height: 260,
-                    toolbar: {
-                        show: true,
-                        tools: {
-                            download: true,
-                            selection: false,
-                            zoom: false,
-                            zoomin: false,
-                            zoomout: false,
-                            pan: false,
-                            reset: false
-                        }
-                    },
-                    stacked: false
+                    type: 'column',
+                    height: 260
                 },
-                plotOptions: {
-                    bar: {
-                        columnWidth: '60%',
-                        dataLabels: {
-                            position: 'top'
-                        }
-                    }
+                title: {
+                    text: null
                 },
-                dataLabels: {
-                    enabled: false
-                },
-                stroke: {
-                    show: true,
-                    width: 2,
-                    colors: ['transparent']
-                },
-                xaxis: {
-                    categories: datesLabels,
+                xAxis: {
+                    categories: categories,
                     labels: {
                         style: {
-                            fontSize: '10px',
-                            colors: '#666'
+                            fontSize: '10.5px'
                         }
-                    }
+                    },
+                    crosshair: true
                 },
-                yaxis: {
+                yAxis: {
+                    title: {
+                        text: null
+                    },
                     labels: {
-                        formatter: function(val) {
-                            return val.toLocaleString('id-ID');
+                        formatter: function() {
+                            return this.value.toLocaleString('id-ID');
                         }
                     }
                 },
-                fill: {
-                    opacity: 1
+                tooltip: {
+                    shared: true,
+                    pointFormatter: function() {
+                        return '<br/><span style="color:' + this.color + '">\u25CF</span> ' + this.series
+                            .name + ': <b>' + this.y.toLocaleString('id-ID') + '</b>';
+                    }
                 },
-                grid: {
-                    borderColor: '#e0e0e0',
-                    strokeDashArray: 4
+                plotOptions: {
+                    column: {
+                        dataLabels: {
+                            enabled: false
+                        }
+                    }
                 },
                 colors: ['#2a3042', '#f59e0b', '#ef4444'], // XL, IOH, TSEL
+                credits: {
+                    enabled: false
+                },
                 legend: {
-                    position: 'right',
-                    offsetY: 40
-                }
+                    align: 'right',
+                    verticalAlign: 'middle',
+                    layout: 'vertical'
+                },
+                exporting: exportConfig
             };
 
             if (document.querySelector("#chart-movement-04")) {
-                new ApexCharts(document.querySelector("#chart-movement-04"), {
-                    ...commonOptions04,
+                Highcharts.chart('chart-movement-04', Highcharts.merge(commonOptions04, {
                     series: [{
                             name: 'XLSmart',
                             data: seriesXLMov
@@ -1079,12 +1077,11 @@
                             data: seriesTSELMov
                         }
                     ]
-                }).render();
+                }));
             }
 
             if (document.querySelector("#chart-people-04")) {
-                new ApexCharts(document.querySelector("#chart-people-04"), {
-                    ...commonOptions04,
+                Highcharts.chart('chart-people-04', Highcharts.merge(commonOptions04, {
                     series: [{
                             name: 'XLSmart',
                             data: seriesXLPpl
@@ -1098,7 +1095,7 @@
                             data: seriesTSELPpl
                         }
                     ]
-                }).render();
+                }));
             }
         });
     </script>
