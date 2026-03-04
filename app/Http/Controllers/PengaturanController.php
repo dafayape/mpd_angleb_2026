@@ -25,10 +25,9 @@ class PengaturanController extends Controller
             'wa_recipients',
             'wa_schedule_time',
             'wa_auto_send',
-            'qontak_access_token',
-            'qontak_refresh_token',
-            'qontak_channel_id',
-            'qontak_message_template_id',
+            'wa_cloud_token',
+            'wa_cloud_phone_id',
+            'wa_cloud_template_name',
         ];
 
         foreach ($fields as $key) {
@@ -68,13 +67,14 @@ class PengaturanController extends Controller
                 ->where('group', 'whatsapp')
                 ->pluck('value', 'key');
 
-            $token   = $settings->get('qontak_access_token', '');
+            $token   = $settings->get('wa_cloud_token', '');
+            $phoneId   = $settings->get('wa_cloud_phone_id', '');
             $phone   = $request->input('phone', '');
 
-            if (empty($token) || empty($phone)) {
+            if (empty($token) || empty($phoneId) || empty($phone)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Token atau nomor WhatsApp belum diisi.'
+                    'message' => 'Token, Phone ID, atau nomor WhatsApp tujuan belum diisi.'
                 ]);
             }
 
@@ -83,19 +83,23 @@ class PengaturanController extends Controller
                 $phone = '62' . substr($phone, 1);
             }
 
+            // Hit Official Meta WhatsApp Cloud API
             $response = \Illuminate\Support\Facades\Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Content-Type'  => 'application/json',
-            ])->post('https://service-chat.qontak.com/api/open/v1/broadcasts/whatsapp/direct', [
-                'to_number' => $phone,
-                'to_name'   => 'Test',
-                'body'      => '✅ Test koneksi WhatsApp dari *Sistem MPD Angleb 2026* berhasil!',
+            ])->post("https://graph.facebook.com/v19.0/{$phoneId}/messages", [
+                'messaging_product' => 'whatsapp',
+                'to' => $phone,
+                'type' => 'text',
+                'text' => [
+                    'body' => '✅ Test koneksi dari *Sistem MPD Angleb 2026* menggunakan Meta Cloud API berhasil!'
+                ]
             ]);
 
             return response()->json([
                 'success' => $response->successful(),
                 'message' => $response->successful()
-                    ? 'Pesan test berhasil dikirim!'
+                    ? 'Pesan test berhasil dikirim ke ' . $phone
                     : 'Gagal: ' . $response->body(),
                 'status'  => $response->status(),
             ]);

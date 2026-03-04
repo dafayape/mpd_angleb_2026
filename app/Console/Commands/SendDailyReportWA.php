@@ -27,10 +27,10 @@ class SendDailyReportWA extends Command
             return 0;
         }
 
-        $token = $settings->get('qontak_access_token', '');
+        $token = $settings->get('wa_cloud_token', '');
+        $phoneId = $settings->get('wa_cloud_phone_id', '');
+        $templateName = $settings->get('wa_cloud_template_name', '');
         $numbers = $settings->get('wa_recipients', '');
-        $channelId = $settings->get('qontak_channel_id', '');
-        $templateId = $settings->get('qontak_message_template_id', '');
 
         if (empty($token) || empty($numbers)) {
             $this->error('Token atau nomor penerima belum dikonfigurasi.');
@@ -38,8 +38,8 @@ class SendDailyReportWA extends Command
             return 1;
         }
 
-        if (empty($channelId) || empty($templateId)) {
-            $this->error('Channel Integration ID atau Message Template ID belum dikonfigurasi.');
+        if (empty($phoneId) || empty($templateName)) {
+            $this->error('Phone Number ID atau Message Template Name belum dikonfigurasi.');
 
             return 1;
         }
@@ -72,21 +72,25 @@ class SendDailyReportWA extends Command
                 $response = Http::withHeaders([
                     'Authorization' => 'Bearer '.$token,
                     'Content-Type' => 'application/json',
-                ])->timeout(30)->post('https://service-chat.qontak.com/api/open/v1/broadcasts/whatsapp/direct', [
-                    'to_number' => $phone,
-                    'to_name' => 'Penerima Laporan',
-                    'message_template_id' => $templateId,
-                    'channel_integration_id' => $channelId,
-                    'language' => ['code' => 'id'],
-                    'parameters' => [
-                        'body' => [
+                ])->timeout(30)->post("https://graph.facebook.com/v19.0/{$phoneId}/messages", [
+                    'messaging_product' => 'whatsapp',
+                    'to' => $phone,
+                    'type' => 'template',
+                    'template' => [
+                        'name' => $templateName,
+                        'language' => ['code' => 'id'],
+                        'components' => [
                             [
-                                'key' => '1',
-                                'value' => 'body_text',
-                                'value_text' => $reportText,
-                            ],
-                        ],
-                    ],
+                                'type' => 'body',
+                                'parameters' => [
+                                    [
+                                        'type' => 'text',
+                                        'text' => $reportText
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
                 ]);
 
                 if ($response->successful()) {

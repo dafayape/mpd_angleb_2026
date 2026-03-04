@@ -110,15 +110,14 @@ class DailyReportController extends Controller
     }
 
     /**
-     * Send report via WhatsApp (Qontak Broadcast API)
+     * Send report via WhatsApp (Official Meta Cloud API)
      *
-     * Qontak broadcast/direct requires:
-     *  - message_template_id (approved WhatsApp template UUID)
-     *  - channel_integration_id (WhatsApp channel UUID)
-     *  - to_number, to_name
-     *  - parameters: { header: {}, body: [ {key, value} ] }
+     * Meta API requires:
+     *  - wa_cloud_phone_id
+     *  - wa_cloud_template_name (approved WhatsApp template string)
+     *  - to
      *
-     * If template is not configured, falls back to building a wa.me link.
+     * If template is not configured, falls back to building a wa.me link manual copy.
      */
     public function sendWhatsApp(Request $request)
     {
@@ -134,9 +133,9 @@ class DailyReportController extends Controller
             // Get settings from DB
             $settings = DB::table('app_settings')->pluck('value', 'key');
             $waNumbers = $settings->get('wa_recipients', '');
-            $token = $settings->get('qontak_access_token', '');
-            $channelId = $settings->get('qontak_channel_id', '');
-            $templateId = $settings->get('qontak_message_template_id', '');
+            $token = $settings->get('wa_cloud_token', '');
+            $phoneId = $settings->get('wa_cloud_phone_id', '');
+            $templateName = $settings->get('wa_cloud_template_name', '');
 
             if (empty($waNumbers)) {
                 return response()->json([
@@ -145,19 +144,19 @@ class DailyReportController extends Controller
                 ]);
             }
 
-            // Check Qontak readiness
-            $qontakReady = !empty($token) && !empty($channelId) && !empty($templateId);
+            // Check Meta Cloud API readiness
+            $metaReady = !empty($token) && !empty($phoneId) && !empty($templateName);
 
-            if (!$qontakReady) {
+            if (!$metaReady) {
                 // Fallback: return the text for manual sending
                 $missing = [];
                 if (empty($token)) $missing[] = 'Access Token';
-                if (empty($channelId)) $missing[] = 'Channel Integration ID';
-                if (empty($templateId)) $missing[] = 'Message Template ID';
+                if (empty($phoneId)) $missing[] = 'Phone Number ID';
+                if (empty($templateName)) $missing[] = 'Message Template Name';
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Konfigurasi Qontak belum lengkap ('.implode(', ', $missing).'). Silakan lengkapi di menu Pengaturan, atau gunakan tombol Salin Teks untuk kirim manual.',
+                    'message' => 'Konfigurasi WhatsApp Cloud API belum lengkap ('.implode(', ', $missing).'). Silakan lengkapi di menu Pengaturan, atau gunakan tombol Salin Teks untuk kirim manual.',
                     'fallback' => true,
                     'report_text' => $reportText,
                 ]);
@@ -174,30 +173,34 @@ class DailyReportController extends Controller
                 }
 
                 try {
-                    // Qontak Broadcast Direct API
+                    // Meta Cloud API Request
                     $response = Http::withHeaders([
                         'Authorization' => 'Bearer '.$token,
                         'Content-Type' => 'application/json',
-                    ])->timeout(30)->post('https://service-chat.qontak.com/api/open/v1/broadcasts/whatsapp/direct', [
-                        'to_number' => $phone,
-                        'to_name' => 'Penerima Laporan',
-                        'message_template_id' => $templateId,
-                        'channel_integration_id' => $channelId,
-                        'language' => ['code' => 'id'],
-                        'parameters' => [
-                            'body' => [
+                    ])->timeout(30)->post("https://graph.facebook.com/v19.0/{$phoneId}/messages", [
+                        'messaging_product' => 'whatsapp',
+                        'to' => $phone,
+                        'type' => 'template',
+                        'template' => [
+                            'name' => $templateName,
+                            'language' => ['code' => 'id'],
+                            'components' => [
                                 [
-                                    'key' => '1',
-                                    'value' => 'body_text',
-                                    'value_text' => $reportText,
-                                ],
-                            ],
-                        ],
+                                    'type' => 'body',
+                                    'parameters' => [
+                                        [
+                                            'type' => 'text',
+                                            'text' => $reportText
+                                        ]
+                                    ]
+                                ]
+                            ]
+                        ]
                     ]);
 
                     if ($response->successful()) {
                         $sent++;
-                        Log::info("WA terkirim ke {$phone}");
+                        Log::info("WA terkirim ke {$phone} via Meta API");
                     } else {
                         $errBody = $response->body();
                         $errors[] = $phone.': '.$errBody;

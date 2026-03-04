@@ -227,11 +227,11 @@
 
             {{-- RIGHT COLUMN --}}
             <div class="col-lg-6 col-12">
-                {{-- Qontak API Tokens --}}
+                {{-- WhatsApp Cloud API Tokens --}}
                 <div class="card settings-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span class="badge-section badge-token"><i class="bx bx-key"></i> Qontak API</span>
-                        @if (!empty($settings->get('qontak_access_token', '')))
+                        <span class="badge-section badge-token"><i class="bx bx-cloud"></i> WhatsApp Cloud API</span>
+                        @if (!empty($settings->get('wa_cloud_token', '')))
                             <span class="status-indicator status-active"><i class="bx bxs-check-circle"></i> Token
                                 Tersedia</span>
                         @else
@@ -241,34 +241,27 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label class="form-label-custom">Access Token</label>
-                            <input type="text" name="qontak_access_token" class="form-control token-field"
-                                value="{{ $settings->get('qontak_access_token', '') }}"
-                                placeholder="Bearer access token dari Qontak">
+                            <label class="form-label-custom">Permanent Access Token</label>
+                            <input type="text" name="wa_cloud_token" class="form-control token-field"
+                                value="{{ $settings->get('wa_cloud_token', '') }}"
+                                placeholder="Bearer access token dari Meta">
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label-custom">Refresh Token</label>
-                            <input type="text" name="qontak_refresh_token" class="form-control token-field"
-                                value="{{ $settings->get('qontak_refresh_token', '') }}"
-                                placeholder="Refresh token dari Qontak">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label-custom">Channel Integration ID</label>
-                            <input type="text" name="qontak_channel_id" class="form-control token-field"
-                                value="{{ $settings->get('qontak_channel_id', '') }}"
-                                placeholder="ID channel WhatsApp di Qontak">
-                            <div class="help-text">Dapatkan dari menu Integrations di dashboard Qontak</div>
+                            <label class="form-label-custom">Phone Number ID</label>
+                            <input type="text" name="wa_cloud_phone_id" class="form-control token-field"
+                                value="{{ $settings->get('wa_cloud_phone_id', '') }}"
+                                placeholder="ID Telepon terdaftar di Meta">
+                            <div class="help-text">Dapatkan dari menu API Setup di dashboard Meta Developer</div>
                         </div>
 
                         <div class="mb-0">
-                            <label class="form-label-custom">Message Template ID</label>
-                            <input type="text" name="qontak_message_template_id" class="form-control token-field"
-                                value="{{ $settings->get('qontak_message_template_id', '') }}"
-                                placeholder="UUID template pesan WhatsApp">
-                            <div class="help-text">Buat template pesan di dashboard Qontak → Message Templates. Gunakan 1
-                                variabel body <code>{{ 1 }}</code> untuk isi laporan.</div>
+                            <label class="form-label-custom">Message Template Name</label>
+                            <input type="text" name="wa_cloud_template_name" class="form-control token-field"
+                                value="{{ $settings->get('wa_cloud_template_name', '') }}"
+                                placeholder="Nama template pesan yang approved">
+                            <div class="help-text">Gunakan 2 variabel body (tanggal & link laporan) jika dibutuhkan.
+                                Template harus berstatus Approved di WhatsApp Manager.</div>
                         </div>
                     </div>
                 </div>
