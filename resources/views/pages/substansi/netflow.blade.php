@@ -480,26 +480,6 @@
                                     </tbody>
                                 </table>
                             </div>
-
-                            <!-- Box below table 1 -->
-                            <div class="mt-3 p-3" style="background-color: #dbeafe; border-radius: 8px;">
-                                <p class="mb-0" style="font-size: 13px;">
-                                    Hasil perhitungan NFR menunjukkan bahwa wilayah dengan nilai netflow negatif juga
-                                    memiliki nilai NFR negatif, yang mengonfirmasi perannya sebagai daerah asal pergerakan.
-                                </p>
-                            </div>
-                            <div class="mt-3 p-3"
-                                style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                                <p class="mb-0" style="font-size: 13px;">
-                                    Dapat dilihat bahwa
-                                    <strong>{{ isset($top_origin_nfr[0]) ? $top_origin_nfr[0]['name'] : 'Kota Administrasi Jakarta Utara' }}</strong>
-                                    mencatat nilai NFR paling rendah, yaitu sebesar
-                                    <strong>{{ isset($top_origin_nfr[0]) ? number_format($top_origin_nfr[0]['nfr'], 2, ',', '.') : '0,19' }}</strong>.
-                                    nilai ini mengindikasikan bahwa <strong>arus pergerakan keluar dari wilayah ini secara
-                                        relatif lebih dominan</strong> dibandingkan arus pergerakan masuk, sehingga
-                                    cenderung berperan sebagain daerah asal pergerakan.
-                                </p>
-                            </div>
                         </div>
 
                         <!-- Right Table -->
@@ -547,7 +527,33 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
 
+                    <div class="row mt-4">
+                        <div class="col-lg-6 mb-4 mb-lg-0">
+                            <!-- Box below table 1 -->
+                            <div class="mt-3 p-3" style="background-color: #dbeafe; border-radius: 8px;">
+                                <p class="mb-0" style="font-size: 13px;">
+                                    Hasil perhitungan NFR menunjukkan bahwa wilayah dengan nilai netflow negatif juga
+                                    memiliki nilai NFR negatif, yang mengonfirmasi perannya sebagai daerah asal pergerakan.
+                                </p>
+                            </div>
+                            <div class="mt-3 p-3"
+                                style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <p class="mb-0" style="font-size: 13px;">
+                                    Dapat dilihat bahwa
+                                    <strong>{{ isset($top_origin_nfr[0]) ? $top_origin_nfr[0]['name'] : 'Kota Administrasi Jakarta Utara' }}</strong>
+                                    mencatat nilai NFR paling rendah, yaitu sebesar
+                                    <strong>{{ isset($top_origin_nfr[0]) ? number_format($top_origin_nfr[0]['nfr'], 2, ',', '.') : '0,19' }}</strong>.
+                                    nilai ini mengindikasikan bahwa <strong>arus pergerakan keluar dari wilayah ini secara
+                                        relatif lebih dominan</strong> dibandingkan arus pergerakan masuk, sehingga
+                                    cenderung berperan sebagain daerah asal pergerakan.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
                             <!-- Box below table 2 -->
                             <div class="mt-3 p-3"
                                 style="background-color: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
