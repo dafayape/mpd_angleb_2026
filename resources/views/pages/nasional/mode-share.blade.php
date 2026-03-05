@@ -94,6 +94,78 @@
             .text-navy {
                 color: #2a3042 !important;
             }
+
+            .export-dropdown {
+                position: relative;
+                display: inline-block;
+                margin-left: auto;
+            }
+
+            .export-dropdown .export-btn {
+                background-color: #2a3042;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s ease;
+            }
+
+            .export-dropdown .export-btn:hover {
+                background-color: #1e2230;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(42, 48, 66, 0.3);
+            }
+
+            .export-dropdown .export-menu {
+                display: none;
+                position: absolute;
+                right: 0;
+                top: 100%;
+                margin-top: 4px;
+                min-width: 180px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                z-index: 9999;
+                overflow: hidden;
+                border: 1px solid #e2e8f0;
+            }
+
+            .export-dropdown .export-menu.show {
+                display: block;
+            }
+
+            .export-dropdown .export-menu-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                color: #334155;
+                cursor: pointer;
+                transition: background 0.15s ease;
+                border: none;
+                background: none;
+                width: 100%;
+                text-align: left;
+            }
+
+            .export-dropdown .export-menu-item:hover {
+                background-color: #f1f5f9;
+                color: #2a3042;
+            }
+
+            .export-dropdown .export-menu-item i {
+                font-size: 1.1rem;
+                width: 20px;
+                text-align: center;
+            }
         </style>
     @endpush
 
@@ -105,8 +177,23 @@
                     <span class="section-badge">01</span>
                     <h5 class="fw-bold text-navy mb-0">Mode share (pemilihan moda transportasi) berdasarkan jumlah
                         pergerakan dan jumlah orang</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-ms01')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-ms01">
+                            <button class="export-menu-item"
+                                onclick="exportSectionPNG('section-ms01-content','Mode_Share_Distribusi','export-menu-ms01')">
+                                <i class="bx bx-image text-primary"></i> PNG
+                            </button>
+                            <button class="export-menu-item" onclick="exportMS01CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-light" style="padding: 1.5rem; border-radius: 0 0 12px 12px;">
+                <div class="card-body bg-light" id="section-ms01-content"
+                    style="padding: 1.5rem; border-radius: 0 0 12px 12px;">
                     <div class="row g-3">
                         <!-- 1. Distribusi Angkutan (Pergerakan) -->
                         <div class="col-lg-6 d-flex">
@@ -146,8 +233,23 @@
                     <span class="section-badge">02</span>
                     <h5 class="fw-bold text-navy mb-0">Pergerakan harian berdasarkan mode share (pemilihan moda
                         transportasi)</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-ms02')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-ms02">
+                            <button class="export-menu-item"
+                                onclick="exportSectionPNG('section-ms02-content','Mode_Share_Harian','export-menu-ms02')">
+                                <i class="bx bx-image text-primary"></i> PNG
+                            </button>
+                            <button class="export-menu-item" onclick="exportMS02CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-light" style="padding: 1.5rem; border-radius: 0 0 12px 12px;">
+                <div class="card-body bg-light" id="section-ms02-content"
+                    style="padding: 1.5rem; border-radius: 0 0 12px 12px;">
                     @php
                         $chartCategories = [];
                         foreach ($dates as $d) {
@@ -208,7 +310,8 @@
         <script src="https://code.highcharts.com/highcharts.js"></script>
         <script src="https://code.highcharts.com/modules/exporting.js"></script>
         <script src="https://code.highcharts.com/modules/export-data.js"></script>
-        <!-- Highcharts accessibility module might be useful but sticking to core is fine -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
         <script>
             $(document).ready(function() {
                 var formatNum = function(num) {
@@ -270,9 +373,7 @@
                                         fontSize: '10px'
                                     },
                                     formatter: function() {
-                                        // Only show labels for slices > 1% to prevent overlap, or let Highcharts manage it.
-                                        // Based on mockup, it shows name, value and percentage on new lines.
-                                        if (this.point.pct < 1) return null; // hide small labels to be safe
+                                        if (this.point.pct < 1) return null;
 
                                         return '<div style="text-align:center;">' +
                                             '<span style="font-weight:bold; color:#333;">' + this.point
@@ -298,7 +399,6 @@
                     });
 
                     // Build Custom Legend
-                    // To ensure color match, we'll iterate through the chart data points
                     var legendHtml = '';
                     var points = chart.series[0].points;
                     for (var i = 0; i < points.length; i++) {
@@ -369,7 +469,6 @@
                         },
                         tooltip: {
                             formatter: function() {
-                                // Extract plain text from HTML category
                                 var plainCat = this.x.replace(/<[^>]*>?/gm, ' ');
                                 return '<b>' + plainCat + '</b><br/>' +
                                     modeData.name + ': <b>' + formatNum(this.y) + '</b>';
@@ -404,6 +503,180 @@
                         }
                     });
                 });
+
+                // =========================================
+                // Export Helpers
+                // =========================================
+                window.toggleExportMenu = function(menuId) {
+                    const menu = document.getElementById(menuId);
+                    document.querySelectorAll('.export-menu').forEach(m => {
+                        if (m.id !== menuId) m.classList.remove('show');
+                    });
+                    menu.classList.toggle('show');
+                };
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.export-dropdown')) {
+                        document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                    }
+                });
+
+                // Unified PNG capture (clone-based)
+                function captureAsPNG(targetEl, filename, btnMenuId) {
+                    const btn = document.querySelector('#' + btnMenuId).previousElementSibling;
+                    const origText = btn.innerHTML;
+                    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
+                    btn.disabled = true;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.style.cssText =
+                        'position:fixed;left:-99999px;top:0;z-index:-1;background:#fff;padding:20px;';
+                    document.body.appendChild(wrapper);
+
+                    const clone = targetEl.cloneNode(true);
+                    clone.querySelectorAll('.table-responsive').forEach(el => {
+                        el.style.overflow = 'visible';
+                        el.style.maxWidth = 'none';
+                        el.style.width = 'auto';
+                    });
+                    clone.querySelectorAll('[class*="col-xl-"], [class*="col-lg-"], [class*="col-md-"]').forEach(el => {
+                        el.style.flex = '0 0 auto';
+                        el.style.maxWidth = 'none';
+                        el.style.width = 'auto';
+                    });
+                    clone.querySelectorAll('table').forEach(t => {
+                        t.style.minWidth = '0';
+                        t.style.width = 'auto';
+                        t.style.tableLayout = 'auto';
+                    });
+                    clone.querySelectorAll('.highcharts-container').forEach(hc => {
+                        hc.style.width = '100%';
+                        hc.style.overflow = 'visible';
+                    });
+                    wrapper.appendChild(clone);
+
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            const naturalW = wrapper.scrollWidth;
+                            wrapper.style.width = naturalW + 'px';
+                            html2canvas(clone, {
+                                scale: 2,
+                                backgroundColor: '#ffffff',
+                                useCORS: true,
+                                logging: false,
+                                windowWidth: naturalW,
+                                scrollX: 0,
+                                scrollY: 0
+                            }).then(canvas => {
+                                const link = document.createElement('a');
+                                link.download = filename;
+                                link.href = canvas.toDataURL('image/png');
+                                link.click();
+                            }).catch(err => {
+                                console.error('PNG Export Error:', err);
+                                alert('Gagal export PNG.');
+                            }).finally(() => {
+                                document.body.removeChild(wrapper);
+                                btn.innerHTML = origText;
+                                btn.disabled = false;
+                            });
+                        }, 200);
+                    });
+                }
+
+                // Generic section PNG export
+                window.exportSectionPNG = function(sectionId, filename, menuId) {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                    const section = document.querySelector('#' + sectionId);
+                    if (!section) {
+                        alert('Section tidak ditemukan.');
+                        return;
+                    }
+                    captureAsPNG(section, filename + '.png', menuId);
+                };
+
+                // =========================================
+                // CSV Exports
+                // =========================================
+
+                // Section 01 CSV — Mode Share Distribution (2 sheets: Pergerakan & Orang)
+                window.exportMS01CSV = function() {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                    const wb = XLSX.utils.book_new();
+
+                    // Sheet 1: Pergerakan
+                    const rowsMov = [
+                        ['Moda Transportasi', 'Total Pergerakan', 'Persen (%)']
+                    ];
+                    dataPergerakan.forEach(r => {
+                        if (r.y > 0) rowsMov.push([r.name, r.y, (r.pct || 0).toFixed(2) + '%']);
+                    });
+                    const wsMov = XLSX.utils.aoa_to_sheet(rowsMov);
+                    wsMov['!cols'] = [{
+                        wch: 25
+                    }, {
+                        wch: 18
+                    }, {
+                        wch: 12
+                    }];
+                    XLSX.utils.book_append_sheet(wb, wsMov, 'Pergerakan');
+
+                    // Sheet 2: Orang
+                    const rowsOrg = [
+                        ['Moda Transportasi', 'Total Orang', 'Persen (%)']
+                    ];
+                    dataOrang.forEach(r => {
+                        if (r.y > 0) rowsOrg.push([r.name, r.y, (r.pct || 0).toFixed(2) + '%']);
+                    });
+                    const wsOrg = XLSX.utils.aoa_to_sheet(rowsOrg);
+                    wsOrg['!cols'] = [{
+                        wch: 25
+                    }, {
+                        wch: 18
+                    }, {
+                        wch: 12
+                    }];
+                    XLSX.utils.book_append_sheet(wb, wsOrg, 'Orang');
+
+                    XLSX.writeFile(wb, 'Mode_Share_Distribusi.xlsx');
+                };
+
+                // Section 02 CSV — Daily per mode (1 sheet per mode)
+                window.exportMS02CSV = function() {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                    const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                    ];
+
+                    function fmtDateID(d) {
+                        const dt = new Date(d);
+                        return dayNames[dt.getDay()] + ', ' + dt.getDate() + ' ' + monthNames[dt.getMonth()] + ' ' +
+                            dt.getFullYear();
+                    }
+
+                    const wb = XLSX.utils.book_new();
+                    Object.keys(dailyData).forEach(code => {
+                        const mode = dailyData[code];
+                        const rows = [
+                            ['Tanggal', 'Total Pergerakan']
+                        ];
+                        const sortedDates = Object.keys(mode.daily).sort();
+                        sortedDates.forEach(d => {
+                            rows.push([fmtDateID(d), mode.daily[d]]);
+                        });
+                        rows.push(['Total', mode.total_pergerakan]);
+                        const ws = XLSX.utils.aoa_to_sheet(rows);
+                        ws['!cols'] = [{
+                            wch: 30
+                        }, {
+                            wch: 18
+                        }];
+                        const sheetName = (mode.name || code).substring(0, 31);
+                        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                    });
+                    XLSX.writeFile(wb, 'Mode_Share_Harian.xlsx');
+                };
+
             });
         </script>
     @endpush

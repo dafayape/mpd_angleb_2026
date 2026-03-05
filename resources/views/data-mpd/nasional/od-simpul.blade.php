@@ -66,6 +66,78 @@
                 z-index: 1;
             }
 
+            .export-dropdown {
+                position: relative;
+                display: inline-block;
+                margin-left: auto;
+            }
+
+            .export-dropdown .export-btn {
+                background-color: #2a3042;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s ease;
+            }
+
+            .export-dropdown .export-btn:hover {
+                background-color: #1e2230;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(42, 48, 66, 0.3);
+            }
+
+            .export-dropdown .export-menu {
+                display: none;
+                position: absolute;
+                right: 0;
+                top: 100%;
+                margin-top: 4px;
+                min-width: 180px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                z-index: 9999;
+                overflow: hidden;
+                border: 1px solid #e2e8f0;
+            }
+
+            .export-dropdown .export-menu.show {
+                display: block;
+            }
+
+            .export-dropdown .export-menu-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                color: #334155;
+                cursor: pointer;
+                transition: background 0.15s ease;
+                border: none;
+                background: none;
+                width: 100%;
+                text-align: left;
+            }
+
+            .export-dropdown .export-menu-item:hover {
+                background-color: #f1f5f9;
+                color: #2a3042;
+            }
+
+            .export-dropdown .export-menu-item i {
+                font-size: 1.1rem;
+                width: 20px;
+                text-align: center;
+            }
+
             .table-custom th {
                 background-color: #c8d9e8 !important;
                 font-weight: 600;
@@ -89,8 +161,22 @@
                     <span class="section-badge">01</span>
                     <h5 class="fw-bold text-navy mb-0">O-D Provinsi Asal (10 besar provinsi asal favorit Nasional) & Desire
                         line</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-od01')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-od01">
+                            <button class="export-menu-item"
+                                onclick="exportSectionPNG('section-od01-content','OD_Provinsi_Asal','export-menu-od01')">
+                                <i class="bx bx-image text-primary"></i> PNG
+                            </button>
+                            <button class="export-menu-item" onclick="exportOD01CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-od01-content" style="padding: 2.5rem 1.5rem;">
 
                     <div class="row align-items-stretch">
                         <!-- Left: Sankey -->
@@ -172,8 +258,22 @@
                     <span class="section-badge">02</span>
                     <h5 class="fw-bold text-navy mb-0">O-D Provinsi Tujuan (10 besar provinsi tujuan favorit Nasional) &
                         Desire line</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-od02')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-od02">
+                            <button class="export-menu-item"
+                                onclick="exportSectionPNG('section-od02-content','OD_Provinsi_Tujuan','export-menu-od02')">
+                                <i class="bx bx-image text-primary"></i> PNG
+                            </button>
+                            <button class="export-menu-item" onclick="exportOD02CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-od02-content" style="padding: 2.5rem 1.5rem;">
 
                     <div class="row align-items-stretch">
                         <!-- Left: Sankey -->
@@ -253,8 +353,22 @@
                     <span class="section-badge">03</span>
                     <h5 class="fw-bold text-navy mb-0">Top 10 Kab/Kota (10 besar kab/kota asal dan tujuan favorit Nasional)
                     </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-od03')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-od03">
+                            <button class="export-menu-item"
+                                onclick="exportSectionPNG('section-od03-content','Top10_KabKota','export-menu-od03')">
+                                <i class="bx bx-image text-primary"></i> PNG
+                            </button>
+                            <button class="export-menu-item" onclick="exportOD03CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-od03-content" style="padding: 2.5rem 1.5rem;">
 
                     <div class="row align-items-stretch">
                         <!-- Left: Sankey -->
@@ -359,7 +473,8 @@
     <script src="https://code.highcharts.com/modules/sankey.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
@@ -482,6 +597,197 @@
                     enabled: false
                 }
             });
+
+            // =========================================
+            // Export Helpers
+            // =========================================
+            window.toggleExportMenu = function(menuId) {
+                const menu = document.getElementById(menuId);
+                document.querySelectorAll('.export-menu').forEach(m => {
+                    if (m.id !== menuId) m.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            };
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.export-dropdown')) {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                }
+            });
+
+            // Unified PNG capture (clone-based)
+            function captureAsPNG(targetEl, filename, btnMenuId) {
+                const btn = document.querySelector('#' + btnMenuId).previousElementSibling;
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
+                btn.disabled = true;
+
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText =
+                    'position:fixed;left:-99999px;top:0;z-index:-1;background:#fff;padding:20px;';
+                document.body.appendChild(wrapper);
+
+                const clone = targetEl.cloneNode(true);
+                clone.querySelectorAll('.table-responsive').forEach(el => {
+                    el.style.overflow = 'visible';
+                    el.style.maxWidth = 'none';
+                    el.style.width = 'auto';
+                });
+                clone.querySelectorAll('[class*="col-xl-"], [class*="col-lg-"], [class*="col-md-"]').forEach(el => {
+                    el.style.flex = '0 0 auto';
+                    el.style.maxWidth = 'none';
+                    el.style.width = 'auto';
+                });
+                clone.querySelectorAll('table').forEach(t => {
+                    t.style.minWidth = '0';
+                    t.style.width = 'auto';
+                    t.style.tableLayout = 'auto';
+                });
+                clone.querySelectorAll('.highcharts-container').forEach(hc => {
+                    hc.style.width = '100%';
+                    hc.style.overflow = 'visible';
+                });
+                wrapper.appendChild(clone);
+
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        const naturalW = wrapper.scrollWidth;
+                        wrapper.style.width = naturalW + 'px';
+                        html2canvas(clone, {
+                            scale: 2,
+                            backgroundColor: '#ffffff',
+                            useCORS: true,
+                            logging: false,
+                            windowWidth: naturalW,
+                            scrollX: 0,
+                            scrollY: 0
+                        }).then(canvas => {
+                            const link = document.createElement('a');
+                            link.download = filename;
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                        }).catch(err => {
+                            console.error('PNG Export Error:', err);
+                            alert('Gagal export PNG.');
+                        }).finally(() => {
+                            document.body.removeChild(wrapper);
+                            btn.innerHTML = origText;
+                            btn.disabled = false;
+                        });
+                    }, 200);
+                });
+            }
+
+            // Generic section PNG export
+            window.exportSectionPNG = function(sectionId, filename, menuId) {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const section = document.querySelector('#' + sectionId);
+                if (!section) {
+                    alert('Section tidak ditemukan.');
+                    return;
+                }
+                captureAsPNG(section, filename + '.png', menuId);
+            };
+
+            // =========================================
+            // CSV Exports
+            // =========================================
+            // Section 01 CSV — Top 10 Provinsi Asal
+            window.exportOD01CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const data = @json($top_origin);
+                const wb = XLSX.utils.book_new();
+                const rows = [
+                    ['Rank', 'Kode', 'Provinsi Asal', 'Total Pergerakan', 'Persen (%)']
+                ];
+                data.forEach((r, i) => {
+                    rows.push([i + 1, r.code, r.name, r.total, (r.pct || 0).toFixed(2) + '%']);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{
+                    wch: 6
+                }, {
+                    wch: 8
+                }, {
+                    wch: 30
+                }, {
+                    wch: 18
+                }, {
+                    wch: 12
+                }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Top 10 Provinsi Asal');
+                XLSX.writeFile(wb, 'OD_Provinsi_Asal_Top10.xlsx');
+            };
+
+            // Section 02 CSV — Top 10 Provinsi Tujuan
+            window.exportOD02CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const data = @json($top_dest);
+                const wb = XLSX.utils.book_new();
+                const rows = [
+                    ['Rank', 'Kode', 'Provinsi Tujuan', 'Total Pergerakan', 'Persen (%)']
+                ];
+                data.forEach((r, i) => {
+                    rows.push([i + 1, r.code, r.name, r.total, (r.pct || 0).toFixed(2) + '%']);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{
+                    wch: 6
+                }, {
+                    wch: 8
+                }, {
+                    wch: 30
+                }, {
+                    wch: 18
+                }, {
+                    wch: 12
+                }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Top 10 Provinsi Tujuan');
+                XLSX.writeFile(wb, 'OD_Provinsi_Tujuan_Top10.xlsx');
+            };
+
+            // Section 03 CSV — Top 10 Kab/Kota (2 sheets: Asal & Tujuan)
+            window.exportOD03CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const originData = @json($top_origin_kab);
+                const destData = @json($top_dest_kab);
+                const wb = XLSX.utils.book_new();
+
+                // Sheet 1: Asal
+                const rowsAsal = [
+                    ['Rank', 'Kabupaten/Kota Asal', 'Total Pergerakan']
+                ];
+                originData.forEach((r, i) => {
+                    rowsAsal.push([i + 1, r.name, r.total]);
+                });
+                const wsAsal = XLSX.utils.aoa_to_sheet(rowsAsal);
+                wsAsal['!cols'] = [{
+                    wch: 6
+                }, {
+                    wch: 30
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsAsal, 'Kab-Kota Asal');
+
+                // Sheet 2: Tujuan
+                const rowsTujuan = [
+                    ['Rank', 'Kabupaten/Kota Tujuan', 'Total Pergerakan']
+                ];
+                destData.forEach((r, i) => {
+                    rowsTujuan.push([i + 1, r.name, r.total]);
+                });
+                const wsTujuan = XLSX.utils.aoa_to_sheet(rowsTujuan);
+                wsTujuan['!cols'] = [{
+                    wch: 6
+                }, {
+                    wch: 30
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsTujuan, 'Kab-Kota Tujuan');
+
+                XLSX.writeFile(wb, 'Top10_KabKota_Asal_Tujuan.xlsx');
+            };
 
         });
     </script>
