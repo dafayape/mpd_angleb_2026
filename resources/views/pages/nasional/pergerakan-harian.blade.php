@@ -1075,16 +1075,12 @@
             const seriesIOHPpl = {!! json_encode($series04_ppl['IOH']) !!};
             const seriesTSELPpl = {!! json_encode($series04_ppl['TSEL']) !!};
 
-            // Common Exporting options - PNG & CSV only
+            // Common Exporting options - PNG & CSV only, no hamburger menu
             const exportConfig = {
                 enabled: true,
                 buttons: {
                     contextButton: {
-                        menuItems: [
-                            "downloadPNG",
-                            "separator",
-                            "downloadCSV"
-                        ]
+                        enabled: false
                     }
                 }
             };
@@ -1728,14 +1724,20 @@
                 }
 
                 setTimeout(() => {
-                    const captureWidth = Math.max(section.scrollWidth, 2400);
+                    // Measure actual content width after expanding
+                    const tables = section.querySelectorAll('table');
+                    let maxTableWidth = 0;
+                    tables.forEach(t => {
+                        maxTableWidth = Math.max(maxTableWidth, t.scrollWidth);
+                    });
+                    const captureWidth = Math.max(section.scrollWidth, maxTableWidth + 80);
+
                     html2canvas(section, {
                         scale: 2,
                         backgroundColor: '#ffffff',
                         useCORS: true,
                         logging: false,
                         windowWidth: captureWidth,
-                        width: captureWidth,
                         scrollX: 0,
                         scrollY: -window.scrollY
                     }).then(canvas => {
