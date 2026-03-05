@@ -152,7 +152,7 @@
                         </button>
                         <div class="export-menu" id="export-menu-nf01">
                             <button class="export-menu-item"
-                                onclick="captureAsPNG('section-nf01-content', 'Netflow_KabKota_Asal')">
+                                onclick="captureAsPNG('nf01-table-wrapper', 'Netflow_KabKota_Asal')">
                                 <i class="bx bx-image text-primary"></i> Download PNG
                             </button>
                             <button class="export-menu-item" onclick="exportNF01CSV()">
@@ -207,7 +207,8 @@
 
                         <!-- Table Right -->
                         <div class="col-lg-8">
-                            <div class="table-responsive border rounded border-custom-thick">
+                            <div class="table-responsive border rounded border-custom-thick bg-white"
+                                id="nf01-table-wrapper">
                                 <table class="table table-bordered table-striped table-custom mb-0 text-center">
                                     <thead>
                                         <tr>
@@ -279,7 +280,7 @@
                         </button>
                         <div class="export-menu" id="export-menu-nf02">
                             <button class="export-menu-item"
-                                onclick="captureAsPNG('section-nf02-content', 'Netflow_KabKota_Tujuan')">
+                                onclick="captureAsPNG('nf02-table-wrapper', 'Netflow_KabKota_Tujuan')">
                                 <i class="bx bx-image text-primary"></i> Download PNG
                             </button>
                             <button class="export-menu-item" onclick="exportNF02CSV()">
@@ -292,7 +293,8 @@
                     <div class="row">
                         <!-- Table Left -->
                         <div class="col-lg-8 mb-4">
-                            <div class="table-responsive border rounded border-custom-thick">
+                            <div class="table-responsive border rounded border-custom-thick bg-white"
+                                id="nf02-table-wrapper">
                                 <table class="table table-bordered table-striped table-custom mb-0 text-center">
                                     <thead>
                                         <tr>
@@ -422,7 +424,7 @@
                         </button>
                         <div class="export-menu" id="export-menu-nf03">
                             <button class="export-menu-item"
-                                onclick="captureAsPNG('section-nf03-content', 'Perbandingan_NFR')">
+                                onclick="captureAsPNG('nf03-tables-wrapper', 'Perbandingan_NFR')">
                                 <i class="bx bx-image text-primary"></i> Download PNG
                             </button>
                             <button class="export-menu-item" onclick="exportNF03CSV()">
@@ -432,7 +434,7 @@
                     </div>
                 </div>
                 <div class="card-body bg-white" id="section-nf03-content" style="padding: 2.5rem 1.5rem;">
-                    <div class="row">
+                    <div class="row" id="nf03-tables-wrapper" style="background-color: white;">
                         <!-- Left Table -->
                         <div class="col-lg-6 mb-4 mb-lg-0">
                             <h6 class="fw-bold text-center mb-3">20 Besar Kabupaten/Kota Asal Nasional berdasarkan kekuatan
