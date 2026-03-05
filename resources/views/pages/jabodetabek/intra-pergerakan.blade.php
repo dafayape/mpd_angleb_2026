@@ -104,6 +104,78 @@
                 justify-content: center;
                 height: 100%;
             }
+
+            .export-dropdown {
+                position: relative;
+                display: inline-block;
+                margin-left: auto;
+            }
+
+            .export-dropdown .export-btn {
+                background-color: #2a3042;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s ease;
+            }
+
+            .export-dropdown .export-btn:hover {
+                background-color: #1e2230;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(42, 48, 66, 0.3);
+            }
+
+            .export-dropdown .export-menu {
+                display: none;
+                position: absolute;
+                right: 0;
+                top: 100%;
+                margin-top: 4px;
+                min-width: 180px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                z-index: 9999;
+                overflow: hidden;
+                border: 1px solid #e2e8f0;
+            }
+
+            .export-dropdown .export-menu.show {
+                display: block;
+            }
+
+            .export-dropdown .export-menu-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                color: #334155;
+                cursor: pointer;
+                transition: background 0.15s ease;
+                border: none;
+                background: none;
+                width: 100%;
+                text-align: left;
+            }
+
+            .export-dropdown .export-menu-item:hover {
+                background-color: #f1f5f9;
+                color: #2a3042;
+            }
+
+            .export-dropdown .export-menu-item i {
+                font-size: 1.1rem;
+                width: 20px;
+                text-align: center;
+            }
         </style>
     @endpush
 
@@ -172,8 +244,18 @@
                     <span class="section-badge">01</span>
                     <h5 class="fw-bold text-navy mb-0">Persandingan pergerakan harian total berdasarkan masing-masing opsel
                         (Intra Jabodetabek)</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-jab01')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-jab01">
+                            <button class="export-menu-item" onclick="exportJab01CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-light" style="padding: 1.5rem;">
+                <div class="card-body bg-light" id="section-jab01-content" style="padding: 1.5rem;">
                     <div class="row g-3">
                         @foreach ($opselsConfig as $opKey => $conf)
                             <div class="col-xl-4 col-lg-12 d-flex">
@@ -281,8 +363,18 @@
                     <h5 class="fw-bold text-navy mb-0">Akumulasi pergerakan harian dari seluruh opsel dan jumlah unique
                         subscribernya (Intra Jabodetabek)
                     </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-jab02')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-jab02">
+                            <button class="export-menu-item" onclick="exportJab02CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-light" style="padding: 1.5rem;">
+                <div class="card-body bg-light" id="section-jab02-content" style="padding: 1.5rem;">
                     <div class="card w-100 shadow-sm border-0 d-flex flex-column mb-4">
                         <div class="table-responsive flex-grow-1">
                             <table class="table table-bordered border-dark table-hover mb-0 text-center align-middle"
@@ -464,8 +556,18 @@
                     <h5 class="fw-bold text-navy mb-0">Pergerakan Harian Total (Pergerakan per hari dan orang per hari)
                         Intra Jabodetabek
                     </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-jab03')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-jab03">
+                            <button class="export-menu-item" onclick="exportJab03CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-jab03-content" style="padding: 2.5rem 1.5rem;">
 
                     <!-- BLOCK 1: PERGERAKAN PER HARI -->
                     <div class="position-relative border rounded p-3 mb-5"
@@ -604,8 +706,18 @@
                     <h5 class="fw-bold text-navy mb-0">Persandingan pergerakan harian total berdasarkan masing-masing opsel
                         (Pergerakan per hari dan orang per hari) Intra Jabodetabek
                     </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-jab04')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-jab04">
+                            <button class="export-menu-item" onclick="exportJab04CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-jab04-content" style="padding: 2.5rem 1.5rem;">
 
                     <!-- BLOCK 1: PERGERAKAN PER HARI -->
                     <div class="position-relative border rounded p-3 mb-5"
@@ -820,6 +932,7 @@
 @push('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof AOS !== 'undefined') {
@@ -840,7 +953,16 @@
                     type: 'bar',
                     height: 260,
                     toolbar: {
-                        show: false
+                        show: true,
+                        tools: {
+                            download: true,
+                            selection: false,
+                            zoom: false,
+                            zoomin: false,
+                            zoomout: false,
+                            pan: false,
+                            reset: false
+                        }
                     },
                     animations: {
                         enabled: true
@@ -933,7 +1055,16 @@
                     type: 'bar',
                     height: 260,
                     toolbar: {
-                        show: false
+                        show: true,
+                        tools: {
+                            download: true,
+                            selection: false,
+                            zoom: false,
+                            zoomin: false,
+                            zoomout: false,
+                            pan: false,
+                            reset: false
+                        }
                     },
                     stacked: false
                 },
@@ -1020,6 +1151,229 @@
                     ]
                 }).render();
             }
+            // =========================================
+            // Export Helpers
+            // =========================================
+            window.toggleExportMenu = function(menuId) {
+                const menu = document.getElementById(menuId);
+                document.querySelectorAll('.export-menu').forEach(m => {
+                    if (m.id !== menuId) m.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            };
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.export-dropdown')) {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                }
+            });
+
+            // =========================================
+            // CSV Exports
+            // =========================================
+            const jabDates = @json($dates);
+            const jabData = @json($data);
+            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+
+            function fmtDateID(d) {
+                const dt = new Date(d);
+                return dayNames[dt.getDay()] + ', ' + dt.getDate() + ' ' + monthNames[dt.getMonth()] + ' ' + dt
+                    .getFullYear();
+            }
+
+            function fmtNum(v) {
+                return v ? v.toLocaleString('id-ID') : '0';
+            }
+
+            function fmtPct(v) {
+                return v ? v.toFixed(2).replace('.', ',') + '%' : '0,00%';
+            }
+
+            // Section 01 CSV — 3 sheets (XL, IOH, TSEL)
+            window.exportJab01CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                ['XL', 'IOH', 'TSEL'].forEach(op => {
+                    const rows = [
+                        ['Hari, Tanggal', 'Jumlah Pergerakan', '% Pergerakan', 'Jumlah Orang',
+                            '% Orang'
+                        ]
+                    ];
+                    jabDates.forEach(d => {
+                        const r = jabData.daily[d] && jabData.daily[d][op] ? jabData.daily[d][
+                            op
+                        ] : {};
+                        rows.push([
+                            fmtDateID(d),
+                            r.pergerakan || 0,
+                            fmtPct(r.pct_pergerakan),
+                            r.orang || 0,
+                            fmtPct(r.pct_orang)
+                        ]);
+                    });
+                    const tot = jabData.totals && jabData.totals[op] ? jabData.totals[op] : {};
+                    rows.push(['Total', tot.pergerakan || 0, '100,00%', tot.orang || 0, '100,00%']);
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+                    ws['!cols'] = [{
+                        wch: 30
+                    }, {
+                        wch: 18
+                    }, {
+                        wch: 14
+                    }, {
+                        wch: 18
+                    }, {
+                        wch: 14
+                    }];
+                    XLSX.utils.book_append_sheet(wb, ws, op);
+                });
+                XLSX.writeFile(wb, 'Persandingan_Opsel_IntraJabodetabek.xlsx');
+            };
+
+            // Section 02 CSV — Akumulasi
+            window.exportJab02CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                const rows = [
+                    ['Tanggal', 'Jumlah Pergerakan', '% Pergerakan', 'Jumlah Orang', '% Orang']
+                ];
+                jabDates.forEach(d => {
+                    const r = jabData.akumulasi.daily[d] || {};
+                    rows.push([
+                        fmtDateID(d),
+                        r.movement || 0,
+                        fmtPct(r.movement_pct),
+                        r.people || 0,
+                        fmtPct(r.people_pct)
+                    ]);
+                });
+                rows.push(['Total', jabData.akumulasi.total_movement || 0, '100%', jabData.akumulasi
+                    .total_people || 0, '100%'
+                ]);
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 18
+                }, {
+                    wch: 14
+                }, {
+                    wch: 18
+                }, {
+                    wch: 14
+                }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Akumulasi');
+                XLSX.writeFile(wb, 'Akumulasi_IntraJabodetabek.xlsx');
+            };
+
+            // Section 03 CSV — 2 sheets (Pergerakan, Orang)
+            window.exportJab03CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                // Sheet 1: Pergerakan
+                const rowsMov = [
+                    ['Tanggal', 'Jumlah Pergerakan']
+                ];
+                jabDates.forEach(d => {
+                    const r = jabData.akumulasi.daily[d] || {};
+                    rowsMov.push([fmtDateID(d), r.movement || 0]);
+                });
+                rowsMov.push(['Total', jabData.akumulasi.total_movement || 0]);
+                const wsMov = XLSX.utils.aoa_to_sheet(rowsMov);
+                wsMov['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsMov, 'Pergerakan Per Hari');
+                // Sheet 2: Orang
+                const rowsPpl = [
+                    ['Tanggal', 'Jumlah Orang']
+                ];
+                jabDates.forEach(d => {
+                    const r = jabData.akumulasi.daily[d] || {};
+                    rowsPpl.push([fmtDateID(d), r.people || 0]);
+                });
+                rowsPpl.push(['Total', jabData.akumulasi.total_people || 0]);
+                const wsPpl = XLSX.utils.aoa_to_sheet(rowsPpl);
+                wsPpl['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsPpl, 'Orang Per Hari');
+                XLSX.writeFile(wb, 'Pergerakan_Harian_IntraJabodetabek.xlsx');
+            };
+
+            // Section 04 CSV — 2 sheets (Pergerakan per opsel, Orang per opsel)
+            window.exportJab04CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                // Sheet 1: Pergerakan per opsel
+                const headerMov = ['Tanggal', 'XL', 'IOH', 'TSEL', 'Total'];
+                const rowsMov = [headerMov];
+                jabDates.forEach(d => {
+                    const dd = jabData.daily[d] || {};
+                    const xl = dd.XL ? dd.XL.pergerakan || 0 : 0;
+                    const ioh = dd.IOH ? dd.IOH.pergerakan || 0 : 0;
+                    const tsel = dd.TSEL ? dd.TSEL.pergerakan || 0 : 0;
+                    const total = (jabData.akumulasi.daily[d] || {}).movement || 0;
+                    rowsMov.push([fmtDateID(d), xl, ioh, tsel, total]);
+                });
+                rowsMov.push(['Total',
+                    (jabData.totals.XL || {}).pergerakan || 0,
+                    (jabData.totals.IOH || {}).pergerakan || 0,
+                    (jabData.totals.TSEL || {}).pergerakan || 0,
+                    jabData.akumulasi.total_movement || 0
+                ]);
+                const wsMov = XLSX.utils.aoa_to_sheet(rowsMov);
+                wsMov['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsMov, 'Pergerakan Per Opsel');
+                // Sheet 2: Orang per opsel
+                const headerPpl = ['Tanggal', 'XL', 'IOH', 'TSEL', 'Total'];
+                const rowsPpl = [headerPpl];
+                jabDates.forEach(d => {
+                    const dd = jabData.daily[d] || {};
+                    const xl = dd.XL ? dd.XL.orang || 0 : 0;
+                    const ioh = dd.IOH ? dd.IOH.orang || 0 : 0;
+                    const tsel = dd.TSEL ? dd.TSEL.orang || 0 : 0;
+                    const total = (jabData.akumulasi.daily[d] || {}).people || 0;
+                    rowsPpl.push([fmtDateID(d), xl, ioh, tsel, total]);
+                });
+                rowsPpl.push(['Total',
+                    (jabData.totals.XL || {}).orang || 0,
+                    (jabData.totals.IOH || {}).orang || 0,
+                    (jabData.totals.TSEL || {}).orang || 0,
+                    jabData.akumulasi.total_people || 0
+                ]);
+                const wsPpl = XLSX.utils.aoa_to_sheet(rowsPpl);
+                wsPpl['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsPpl, 'Orang Per Opsel');
+                XLSX.writeFile(wb, 'Persandingan_PerOpsel_IntraJabodetabek.xlsx');
+            };
+
         });
     </script>
 @endpush

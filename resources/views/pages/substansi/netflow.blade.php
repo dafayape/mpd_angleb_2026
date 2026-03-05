@@ -62,6 +62,78 @@
                 border-width: 2px !important;
                 border-color: #aab5c3 !important;
             }
+
+            .export-dropdown {
+                position: relative;
+                display: inline-block;
+                margin-left: auto;
+            }
+
+            .export-dropdown .export-btn {
+                background-color: #2a3042;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s ease;
+            }
+
+            .export-dropdown .export-btn:hover {
+                background-color: #1e2230;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(42, 48, 66, 0.3);
+            }
+
+            .export-dropdown .export-menu {
+                display: none;
+                position: absolute;
+                right: 0;
+                top: 100%;
+                margin-top: 4px;
+                min-width: 180px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                z-index: 9999;
+                overflow: hidden;
+                border: 1px solid #e2e8f0;
+            }
+
+            .export-dropdown .export-menu.show {
+                display: block;
+            }
+
+            .export-dropdown .export-menu-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                color: #334155;
+                cursor: pointer;
+                transition: background 0.15s ease;
+                border: none;
+                background: none;
+                width: 100%;
+                text-align: left;
+            }
+
+            .export-dropdown .export-menu-item:hover {
+                background-color: #f1f5f9;
+                color: #2a3042;
+            }
+
+            .export-dropdown .export-menu-item i {
+                font-size: 1.1rem;
+                width: 20px;
+                text-align: center;
+            }
         </style>
     @endpush
 
@@ -74,8 +146,18 @@
                     <span class="section-badge">01</span>
                     <h5 class="fw-bold text-navy mb-0">20 Besar Kabupaten/Kota Asal Nasional berdasarkan kekuatan Netflow
                         MPD</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-nf01')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-nf01">
+                            <button class="export-menu-item" onclick="exportNF01CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-nf01-content" style="padding: 2.5rem 1.5rem;">
                     <div class="row">
                         <!-- Text Left -->
                         <div class="col-lg-4 mb-4">
@@ -187,8 +269,18 @@
                     <span class="section-badge">02</span>
                     <h5 class="fw-bold text-navy mb-0">20 Besar Kabupaten/Kota Tujuan Nasional berdasarkan kekuatan Netflow
                         MPD</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-nf02')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-nf02">
+                            <button class="export-menu-item" onclick="exportNF02CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-nf02-content" style="padding: 2.5rem 1.5rem;">
                     <div class="row">
                         <!-- Table Left -->
                         <div class="col-lg-8 mb-4">
@@ -315,8 +407,18 @@
                     style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
                     <span class="section-badge">03</span>
                     <h5 class="fw-bold text-navy mb-0">Perbandingan 20 Besar Asal dan Tujuan Berdasarkan Kekuatan NFR</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-nf03')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-nf03">
+                            <button class="export-menu-item" onclick="exportNF03CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-nf03-content" style="padding: 2.5rem 1.5rem;">
                     <div class="row">
                         <!-- Left Table -->
                         <div class="col-lg-6 mb-4 mb-lg-0">
@@ -469,6 +571,7 @@
 
 @push('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof AOS !== 'undefined') {
@@ -478,6 +581,145 @@
                     duration: 600
                 });
             }
+
+            // Export Helpers
+            window.toggleExportMenu = function(menuId) {
+                const menu = document.getElementById(menuId);
+                document.querySelectorAll('.export-menu').forEach(m => {
+                    if (m.id !== menuId) m.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            };
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.export-dropdown')) {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                }
+            });
+
+            // Data
+            const topOriginNetflow = @json($top_origin_netflow);
+            const topDestNetflow = @json($top_dest_netflow);
+            const topOriginNfr = @json($top_origin_nfr);
+            const topDestNfr = @json($top_dest_nfr);
+
+            // Section 01 CSV — Top 20 Kab/Kota Asal Netflow
+            window.exportNF01CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                const rows = [
+                    ['Rank', 'Kabupaten/Kota', 'Pergerakan Keluar (Outflow)', 'Pergerakan Masuk (Inflow)',
+                        'Netflow', 'Keterangan'
+                    ]
+                ];
+                topOriginNetflow.forEach((r, i) => {
+                    rows.push([i + 1, r.name, r.outflow, r.inflow, r.netflow, r.keterangan]);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{
+                    wch: 6
+                }, {
+                    wch: 30
+                }, {
+                    wch: 22
+                }, {
+                    wch: 22
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Kab Kota Asal');
+                XLSX.writeFile(wb, 'Netflow_KabKota_Asal.xlsx');
+            };
+
+            // Section 02 CSV — Top 20 Kab/Kota Tujuan Netflow
+            window.exportNF02CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                const rows = [
+                    ['Rank', 'Kabupaten/Kota', 'Pergerakan Keluar (Outflow)', 'Pergerakan Masuk (Inflow)',
+                        'Netflow', 'Keterangan'
+                    ]
+                ];
+                topDestNetflow.forEach((r, i) => {
+                    rows.push([i + 1, r.name, r.outflow, r.inflow, r.netflow, r.keterangan]);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{
+                    wch: 6
+                }, {
+                    wch: 30
+                }, {
+                    wch: 22
+                }, {
+                    wch: 22
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Kab Kota Tujuan');
+                XLSX.writeFile(wb, 'Netflow_KabKota_Tujuan.xlsx');
+            };
+
+            // Section 03 CSV — 2 sheets (Asal NFR + Tujuan NFR)
+            window.exportNF03CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                // Sheet 1: Asal NFR
+                const rowsAsal = [
+                    ['Rank', 'Kabupaten/Kota', 'Pergerakan Keluar (Outflow)', 'Pergerakan Masuk (Inflow)',
+                        'Netflow', 'NFR', 'Keterangan'
+                    ]
+                ];
+                topOriginNfr.forEach((r, i) => {
+                    rowsAsal.push([i + 1, r.name, r.outflow, r.inflow, r.netflow, r.nfr, r.keterangan]);
+                });
+                const wsAsal = XLSX.utils.aoa_to_sheet(rowsAsal);
+                wsAsal['!cols'] = [{
+                    wch: 6
+                }, {
+                    wch: 30
+                }, {
+                    wch: 22
+                }, {
+                    wch: 22
+                }, {
+                    wch: 16
+                }, {
+                    wch: 8
+                }, {
+                    wch: 14
+                }];
+                XLSX.utils.book_append_sheet(wb, wsAsal, 'Asal NFR');
+                // Sheet 2: Tujuan NFR
+                const rowsTuj = [
+                    ['Rank', 'Kabupaten/Kota', 'Pergerakan Keluar (Outflow)', 'Pergerakan Masuk (Inflow)',
+                        'Netflow', 'NFR', 'Keterangan'
+                    ]
+                ];
+                topDestNfr.forEach((r, i) => {
+                    rowsTuj.push([i + 1, r.name, r.outflow, r.inflow, r.netflow, r.nfr, r.keterangan]);
+                });
+                const wsTuj = XLSX.utils.aoa_to_sheet(rowsTuj);
+                wsTuj['!cols'] = [{
+                    wch: 6
+                }, {
+                    wch: 30
+                }, {
+                    wch: 22
+                }, {
+                    wch: 22
+                }, {
+                    wch: 16
+                }, {
+                    wch: 8
+                }, {
+                    wch: 14
+                }];
+                XLSX.utils.book_append_sheet(wb, wsTuj, 'Tujuan NFR');
+                XLSX.writeFile(wb, 'Perbandingan_NFR.xlsx');
+            };
         });
     </script>
 @endpush

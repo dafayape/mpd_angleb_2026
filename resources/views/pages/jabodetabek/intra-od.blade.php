@@ -69,6 +69,78 @@
                 font-size: 12px;
                 border-color: #ccc;
             }
+
+            .export-dropdown {
+                position: relative;
+                display: inline-block;
+                margin-left: auto;
+            }
+
+            .export-dropdown .export-btn {
+                background-color: #2a3042;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                transition: all 0.2s ease;
+            }
+
+            .export-dropdown .export-btn:hover {
+                background-color: #1e2230;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(42, 48, 66, 0.3);
+            }
+
+            .export-dropdown .export-menu {
+                display: none;
+                position: absolute;
+                right: 0;
+                top: 100%;
+                margin-top: 4px;
+                min-width: 180px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                z-index: 9999;
+                overflow: hidden;
+                border: 1px solid #e2e8f0;
+            }
+
+            .export-dropdown .export-menu.show {
+                display: block;
+            }
+
+            .export-dropdown .export-menu-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                color: #334155;
+                cursor: pointer;
+                transition: background 0.15s ease;
+                border: none;
+                background: none;
+                width: 100%;
+                text-align: left;
+            }
+
+            .export-dropdown .export-menu-item:hover {
+                background-color: #f1f5f9;
+                color: #2a3042;
+            }
+
+            .export-dropdown .export-menu-item i {
+                font-size: 1.1rem;
+                width: 20px;
+                text-align: center;
+            }
         </style>
     @endpush
 
@@ -80,8 +152,18 @@
                     style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
                     <span class="section-badge">01</span>
                     <h5 class="fw-bold text-navy mb-0">O-D Intra Jabodetabek (Top 10 kota/kab asal favorit Jabodetabek)</h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-iod01')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-iod01">
+                            <button class="export-menu-item" onclick="exportIOD01CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-iod01-content" style="padding: 2.5rem 1.5rem;">
 
                     <div class="row align-items-stretch">
                         <!-- Left: Sankey -->
@@ -155,8 +237,18 @@
                     <span class="section-badge">02</span>
                     <h5 class="fw-bold text-navy mb-0">O-D Intra Jabodetabek (Top 10 kota/kab tujuan favorit Jabodetabek)
                     </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-iod02')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-iod02">
+                            <button class="export-menu-item" onclick="exportIOD02CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-white" style="padding: 2.5rem 1.5rem;">
+                <div class="card-body bg-white" id="section-iod02-content" style="padding: 2.5rem 1.5rem;">
 
                     <div class="row align-items-stretch">
                         <!-- Left: Sankey -->
@@ -229,6 +321,7 @@
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof AOS !== 'undefined') {
@@ -280,6 +373,13 @@
                     title: {
                         text: null
                     },
+                    exporting: {
+                        buttons: {
+                            contextButton: {
+                                menuItems: ['downloadPNG']
+                            }
+                        }
+                    },
                     tooltip: {
                         formatter: function() {
                             if (this.point.isNode) {
@@ -319,6 +419,13 @@
                         title: {
                             text: null
                         },
+                        exporting: {
+                            buttons: {
+                                contextButton: {
+                                    menuItems: ['downloadPNG']
+                                }
+                            }
+                        },
                         tooltip: {
                             formatter: function() {
                                 if (this.point.isNode) {
@@ -347,6 +454,70 @@
                     });
                 }
             }
+
+            // =========================================
+            // Export Helpers
+            // =========================================
+            window.toggleExportMenu = function(menuId) {
+                const menu = document.getElementById(menuId);
+                document.querySelectorAll('.export-menu').forEach(m => {
+                    if (m.id !== menuId) m.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            };
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.export-dropdown')) {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                }
+            });
+
+            // CSV Exports
+            const topOrigin = @json($top_origin);
+            const topDest = @json($top_dest);
+
+            // Section 01 CSV — Top 10 Kota Asal
+            window.exportIOD01CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                const rows = [
+                    ['Kota/Kabupaten Asal', 'Jumlah Pergerakan', 'Rank']
+                ];
+                topOrigin.forEach((r, i) => {
+                    rows.push([r.name.toUpperCase(), r.total, i + 1]);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 20
+                }, {
+                    wch: 8
+                }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Kota Asal');
+                XLSX.writeFile(wb, 'OD_IntraJabodetabek_KotaAsal.xlsx');
+            };
+
+            // Section 02 CSV — Top 10 Kota Tujuan
+            window.exportIOD02CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                const rows = [
+                    ['Kota/Kabupaten Tujuan', 'Jumlah Pergerakan', 'Rank']
+                ];
+                topDest.forEach((r, i) => {
+                    rows.push([r.name.toUpperCase(), r.total, i + 1]);
+                });
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 20
+                }, {
+                    wch: 8
+                }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Kota Tujuan');
+                XLSX.writeFile(wb, 'OD_IntraJabodetabek_KotaTujuan.xlsx');
+            };
 
         });
     </script>
