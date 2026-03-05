@@ -1208,7 +1208,7 @@
                 }
             });
 
-            // Export Section 01 as PNG (all 3 opsel tables in 1 image)
+            // Export Section 01 as PNG (all 3 opsel tables in 1 image, WITHOUT kesimpulan)
             window.exportSection01PNG = function() {
                 document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
                 const section = document.querySelector('#section-01-content');
@@ -1223,25 +1223,81 @@
                 btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
                 btn.disabled = true;
 
-                html2canvas(section, {
-                    scale: 2,
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    logging: false,
-                    windowWidth: section.scrollWidth
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'Persandingan_Pergerakan_Harian_Opsel.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
-                }).catch(err => {
-                    console.error('PNG Export Error:', err);
-                    alert('Gagal export PNG. Silakan coba lagi.');
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
+                // 1. Hide all analysis/kesimpulan boxes
+                const analysisBoxes = section.querySelectorAll('.analysis-box');
+                const analysisParents = [];
+                analysisBoxes.forEach(box => {
+                    const parent = box.closest('.px-3.pb-3.pt-3');
+                    if (parent) {
+                        analysisParents.push({
+                            el: parent,
+                            display: parent.style.display
+                        });
+                        parent.style.display = 'none';
+                    }
                 });
+
+                // 2. Force symmetric layout: all columns equal width in a row
+                const columns = section.querySelectorAll('.row.g-3 > .col-xl-4');
+                const savedStyles = [];
+                columns.forEach(col => {
+                    savedStyles.push({
+                        el: col,
+                        flex: col.style.flex,
+                        maxWidth: col.style.maxWidth,
+                        width: col.style.width
+                    });
+                    col.style.flex = '0 0 33.333%';
+                    col.style.maxWidth = '33.333%';
+                    col.style.width = '33.333%';
+                });
+
+                // 3. Ensure cards have equal height (no stretch by kesimpulan)
+                const cards = section.querySelectorAll('.row.g-3 > .col-xl-4 > .card');
+                const savedCardStyles = [];
+                cards.forEach(card => {
+                    savedCardStyles.push({
+                        el: card,
+                        height: card.style.height
+                    });
+                    card.style.height = 'auto';
+                });
+
+                // Small delay to let layout recalculate
+                setTimeout(() => {
+                    html2canvas(section, {
+                        scale: 2,
+                        backgroundColor: '#ffffff',
+                        useCORS: true,
+                        logging: false,
+                        windowWidth: 1600
+                    }).then(canvas => {
+                        const link = document.createElement('a');
+                        link.download = 'Persandingan_Pergerakan_Harian_Opsel.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }).catch(err => {
+                        console.error('PNG Export Error:', err);
+                        alert('Gagal export PNG. Silakan coba lagi.');
+                    }).finally(() => {
+                        // Restore analysis boxes
+                        analysisParents.forEach(item => {
+                            item.el.style.display = item.display || '';
+                        });
+                        // Restore column styles
+                        savedStyles.forEach(item => {
+                            item.el.style.flex = item.flex || '';
+                            item.el.style.maxWidth = item.maxWidth || '';
+                            item.el.style.width = item.width || '';
+                        });
+                        // Restore card styles
+                        savedCardStyles.forEach(item => {
+                            item.el.style.height = item.height || '';
+                        });
+                        btn.innerHTML = origText;
+                        btn.disabled = false;
+                    });
+                }, 100);
             };
 
             // Export Section 01 as XLSX with 3 sheets (XL, IOH, TSEL)
