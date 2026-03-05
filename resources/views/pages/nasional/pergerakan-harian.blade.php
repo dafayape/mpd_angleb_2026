@@ -379,8 +379,21 @@
                     <span class="section-badge">02</span>
                     <h5 class="fw-bold text-navy mb-0">Akumulasi Pergerakan Harian
                     </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-02')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-02">
+                            <button class="export-menu-item" onclick="exportSection02PNG()">
+                                <i class="bx bx-image text-primary"></i> Download PNG
+                            </button>
+                            <button class="export-menu-item" onclick="exportSection02CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-light" style="padding: 1.5rem;">
+                <div class="card-body bg-light" id="section-02-content" style="padding: 1.5rem;">
                     <div class="card w-100 shadow-sm border-0 d-flex flex-column mb-4">
                         <div class="table-responsive flex-grow-1">
                             <table class="table table-bordered border-dark table-hover mb-0 text-center align-middle"
@@ -388,7 +401,8 @@
                                 <thead class="text-dark">
                                     <tr>
                                         <th rowspan="3" class="align-middle border-dark text-start px-4"
-                                            style="width: 25%; background-color: #dbe4eb; font-weight: bold;">AKUMULASI</th>
+                                            style="width: 25%; background-color: #dbe4eb; font-weight: bold;">AKUMULASI
+                                        </th>
                                         <th colspan="4" class="py-2 text-center border-dark"
                                             style="background-color: #dbe4eb; font-weight: bold;">Akumulasi</th>
                                     </tr>
@@ -1434,6 +1448,169 @@
                 });
 
                 XLSX.writeFile(wb, 'Persandingan_Pergerakan_Harian_Opsel.xlsx');
+            };
+
+            // =========================================
+            // Section 02 Custom Export Functions
+            // =========================================
+
+            // Export Section 02 as PNG (table + summary dashboard)
+            window.exportSection02PNG = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const section = document.querySelector('#section-02-content');
+                if (!section) {
+                    alert('Section 02 tidak ditemukan.');
+                    return;
+                }
+
+                const btn = document.querySelector('#export-menu-02').previousElementSibling;
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
+                btn.disabled = true;
+
+                html2canvas(section, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: 1400
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'Akumulasi_Pergerakan_Harian.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }).catch(err => {
+                    console.error('PNG Export Error:', err);
+                    alert('Gagal export PNG. Silakan coba lagi.');
+                }).finally(() => {
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                });
+            };
+
+            // Export Section 02 as XLSX
+            window.exportSection02CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+
+                const dates = {!! json_encode($dates) !!};
+                const akumulasiDaily = {!! json_encode($data['akumulasi']['daily'] ?? []) !!};
+                const totalMovement = {!! json_encode($data['akumulasi']['total_movement'] ?? 0) !!};
+                const totalPeople = {!! json_encode($data['akumulasi']['total_people'] ?? 0) !!};
+
+                const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                ];
+
+                function formatDateID(dateStr) {
+                    const d = new Date(dateStr);
+                    return dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] + ' ' + d
+                        .getFullYear();
+                }
+
+                function fmtNum(val) {
+                    if (!val || val === 0) return '0';
+                    return val.toLocaleString('id-ID');
+                }
+
+                function fmtPct(val) {
+                    if (!val || val === 0) return '0,00%';
+                    return val.toLocaleString('id-ID', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + '%';
+                }
+
+                const rows = [];
+                // Header rows
+                rows.push(['AKUMULASI', 'Akumulasi', '', '', '']);
+                rows.push(['', 'Jumlah Pergerakan', '', 'Jumlah Orang Harian', '']);
+                rows.push(['', 'Jumlah', '%', 'Jumlah', '%']);
+
+                // Data rows
+                dates.forEach(dateStr => {
+                    const row = akumulasiDaily[dateStr] || null;
+                    const mov = row ? (row.movement || 0) : 0;
+                    const movPct = row ? (row.movement_pct || 0) : 0;
+                    const ppl = row ? (row.people || 0) : 0;
+                    const pplPct = row ? (row.people_pct || 0) : 0;
+
+                    rows.push([
+                        formatDateID(dateStr),
+                        fmtNum(mov),
+                        fmtPct(movPct),
+                        fmtNum(ppl),
+                        fmtPct(pplPct)
+                    ]);
+                });
+
+                // Total row
+                rows.push(['Total', fmtNum(totalMovement), '100%', fmtNum(totalPeople), '100%']);
+
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+
+                ws['!cols'] = [{
+                        wch: 30
+                    },
+                    {
+                        wch: 18
+                    },
+                    {
+                        wch: 10
+                    },
+                    {
+                        wch: 18
+                    },
+                    {
+                        wch: 10
+                    }
+                ];
+
+                ws['!merges'] = [{
+                        s: {
+                            r: 0,
+                            c: 0
+                        },
+                        e: {
+                            r: 2,
+                            c: 0
+                        }
+                    },
+                    {
+                        s: {
+                            r: 0,
+                            c: 1
+                        },
+                        e: {
+                            r: 0,
+                            c: 4
+                        }
+                    },
+                    {
+                        s: {
+                            r: 1,
+                            c: 1
+                        },
+                        e: {
+                            r: 1,
+                            c: 2
+                        }
+                    },
+                    {
+                        s: {
+                            r: 1,
+                            c: 3
+                        },
+                        e: {
+                            r: 1,
+                            c: 4
+                        }
+                    },
+                ];
+
+                XLSX.utils.book_append_sheet(wb, ws, 'Akumulasi');
+                XLSX.writeFile(wb, 'Akumulasi_Pergerakan_Harian.xlsx');
             };
 
         });
