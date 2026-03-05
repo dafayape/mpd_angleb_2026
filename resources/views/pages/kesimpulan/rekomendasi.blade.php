@@ -102,10 +102,24 @@
     <div class="row" data-aos="fade-up" data-aos-delay="100">
         <div class="col-12">
             <div class="card content-card w-100 flex-column">
-                <div class="card-header bg-white"
-                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center;">
-                    <i class="bx bxs-magic-wand text-warning fs-4 me-2"></i>
-                    <h5 class="fw-bold text-navy mb-0">Gagasan & Solusi Strategis</h5>
+                <div class="card-header bg-white d-flex justify-content-between align-items-center"
+                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <div class="d-flex align-items-center">
+                        <i class="bx bxs-magic-wand text-warning fs-4 me-2"></i>
+                        <h5 class="fw-bold text-navy mb-0">Gagasan & Solusi Strategis</h5>
+                    </div>
+                    <div class="d-flex gap-2" style="font-size: 0.875rem;">
+                        <button id="copyAiBtn"
+                            class="btn btn-sm btn-outline-primary shadow-sm d-flex align-items-center gap-1"
+                            title="Copy Text">
+                            <i class="bx bx-copy"></i> Copy Text
+                        </button>
+                        <button id="exportAiBtn"
+                            class="btn btn-sm btn-outline-success shadow-sm d-flex align-items-center gap-1"
+                            title="Export .txt">
+                            <i class="bx bx-download"></i> Export .txt
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body bg-white ai-content">
                     {!! $ai_html !!}
@@ -124,6 +138,44 @@
                     once: true,
                     offset: 50,
                     duration: 600
+                });
+            }
+
+            const aiContent = document.querySelector('.ai-content');
+            const copyBtn = document.getElementById('copyAiBtn');
+            const exportBtn = document.getElementById('exportAiBtn');
+
+            if (aiContent && copyBtn) {
+                copyBtn.addEventListener('click', function() {
+                    const textToCopy = aiContent.innerText;
+                    navigator.clipboard.writeText(textToCopy).then(function() {
+                        const originalHtml = copyBtn.innerHTML;
+                        copyBtn.innerHTML = '<i class="bx bx-check"></i> Copied!';
+                        copyBtn.classList.replace('btn-outline-primary', 'btn-primary');
+                        setTimeout(() => {
+                            copyBtn.innerHTML = originalHtml;
+                            copyBtn.classList.replace('btn-primary', 'btn-outline-primary');
+                        }, 2000);
+                    }).catch(function(err) {
+                        console.error('Could not copy text: ', err);
+                    });
+                });
+            }
+
+            if (aiContent && exportBtn) {
+                exportBtn.addEventListener('click', function() {
+                    const textToExport = aiContent.innerText;
+                    const blob = new Blob([textToExport], {
+                        type: 'text/plain;charset=utf-8'
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'Rekomendasi_Kebijakan_AI.txt';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
                 });
             }
         });
