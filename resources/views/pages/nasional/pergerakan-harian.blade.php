@@ -1684,26 +1684,91 @@
                 btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
                 btn.disabled = true;
 
-                html2canvas(section, {
-                    scale: 2,
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    logging: false,
-                    windowWidth: 1600
-                }).then(canvas => {
-                    const scopeLabel = scope === 'chart' ? 'Chart' : (scope === 'table' ? 'Tabel' :
-                        'Chart_Tabel');
-                    const link = document.createElement('a');
-                    link.download = `Pergerakan_Harian_Total_${label}_${scopeLabel}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                }).catch(err => {
-                    console.error('PNG Export Error:', err);
-                    alert('Gagal export PNG. Silakan coba lagi.');
-                }).finally(() => {
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
+                // Temporarily expand table-responsive to prevent clipping
+                const tableResponsives = section.querySelectorAll('.table-responsive');
+                const savedOverflow = [];
+                tableResponsives.forEach(el => {
+                    savedOverflow.push({
+                        el: el,
+                        overflow: el.style.overflow,
+                        minWidth: el.style.minWidth
+                    });
+                    el.style.overflow = 'visible';
+                    el.style.minWidth = 'max-content';
                 });
+
+                // Also expand parent containers to full width
+                const savedParentStyles = [];
+                const parents = section.querySelectorAll('.col-xl-9, .col-lg-8');
+                parents.forEach(el => {
+                    savedParentStyles.push({
+                        el: el,
+                        flex: el.style.flex,
+                        maxWidth: el.style.maxWidth,
+                        width: el.style.width
+                    });
+                    el.style.flex = '0 0 100%';
+                    el.style.maxWidth = '100%';
+                    el.style.width = '100%';
+                });
+
+                // Hide summary box for cleaner table-only export
+                const summaryBoxes = section.querySelectorAll('.col-xl-3, .col-lg-4');
+                const savedSummary = [];
+                if (scope === 'table') {
+                    summaryBoxes.forEach(el => {
+                        if (el.querySelector('.summary-box-03')) {
+                            savedSummary.push({
+                                el: el,
+                                display: el.style.display
+                            });
+                            el.style.display = 'none';
+                        }
+                    });
+                }
+
+                setTimeout(() => {
+                    const captureWidth = Math.max(section.scrollWidth, 2400);
+                    html2canvas(section, {
+                        scale: 2,
+                        backgroundColor: '#ffffff',
+                        useCORS: true,
+                        logging: false,
+                        windowWidth: captureWidth,
+                        width: captureWidth,
+                        scrollX: 0,
+                        scrollY: -window.scrollY
+                    }).then(canvas => {
+                        const scopeLabel = scope === 'chart' ? 'Chart' : (scope === 'table' ?
+                            'Tabel' :
+                            'Chart_Tabel');
+                        const link = document.createElement('a');
+                        link.download = `Pergerakan_Harian_Total_${label}_${scopeLabel}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }).catch(err => {
+                        console.error('PNG Export Error:', err);
+                        alert('Gagal export PNG. Silakan coba lagi.');
+                    }).finally(() => {
+                        // Restore table-responsive
+                        savedOverflow.forEach(item => {
+                            item.el.style.overflow = item.overflow || '';
+                            item.el.style.minWidth = item.minWidth || '';
+                        });
+                        // Restore parent styles
+                        savedParentStyles.forEach(item => {
+                            item.el.style.flex = item.flex || '';
+                            item.el.style.maxWidth = item.maxWidth || '';
+                            item.el.style.width = item.width || '';
+                        });
+                        // Restore summary boxes
+                        savedSummary.forEach(item => {
+                            item.el.style.display = item.display || '';
+                        });
+                        btn.innerHTML = origText;
+                        btn.disabled = false;
+                    });
+                }, 150);
             };
 
             // Export Section 03 as XLSX (type: 'movement'|'people')
