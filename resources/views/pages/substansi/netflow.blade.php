@@ -151,8 +151,12 @@
                             <i class="bx bx-download"></i> Export
                         </button>
                         <div class="export-menu" id="export-menu-nf01">
+                            <button class="export-menu-item"
+                                onclick="captureAsPNG('section-nf01-content', 'Netflow_KabKota_Asal')">
+                                <i class="bx bx-image text-primary"></i> Download PNG
+                            </button>
                             <button class="export-menu-item" onclick="exportNF01CSV()">
-                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
                             </button>
                         </div>
                     </div>
@@ -274,8 +278,12 @@
                             <i class="bx bx-download"></i> Export
                         </button>
                         <div class="export-menu" id="export-menu-nf02">
+                            <button class="export-menu-item"
+                                onclick="captureAsPNG('section-nf02-content', 'Netflow_KabKota_Tujuan')">
+                                <i class="bx bx-image text-primary"></i> Download PNG
+                            </button>
                             <button class="export-menu-item" onclick="exportNF02CSV()">
-                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
                             </button>
                         </div>
                     </div>
@@ -301,7 +309,8 @@
                                             <tr>
                                                 <td>{{ $index + 1 }}</td>
                                                 <td class="text-start">{{ $row['name'] }}</td>
-                                                <td class="text-end">{{ number_format($row['outflow'], 0, ',', '.') }}</td>
+                                                <td class="text-end">{{ number_format($row['outflow'], 0, ',', '.') }}
+                                                </td>
                                                 <td class="text-end">{{ number_format($row['inflow'], 0, ',', '.') }}</td>
                                                 <td class="text-end">
                                                     @if ($row['netflow'] < 0)
@@ -412,8 +421,12 @@
                             <i class="bx bx-download"></i> Export
                         </button>
                         <div class="export-menu" id="export-menu-nf03">
+                            <button class="export-menu-item"
+                                onclick="captureAsPNG('section-nf03-content', 'Perbandingan_NFR')">
+                                <i class="bx bx-image text-primary"></i> Download PNG
+                            </button>
                             <button class="export-menu-item" onclick="exportNF03CSV()">
-                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
                             </button>
                         </div>
                     </div>
@@ -572,6 +585,7 @@
 @push('scripts')
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof AOS !== 'undefined') {
@@ -583,6 +597,23 @@
             }
 
             // Export Helpers
+            window.captureAsPNG = function(elementId, filename) {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                html2canvas(el, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: -window.scrollY
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = filename + '.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            };
             window.toggleExportMenu = function(menuId) {
                 const menu = document.getElementById(menuId);
                 document.querySelectorAll('.export-menu').forEach(m => {

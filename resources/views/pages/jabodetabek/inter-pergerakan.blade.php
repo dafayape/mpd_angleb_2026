@@ -249,8 +249,12 @@
                             <i class="bx bx-download"></i> Export
                         </button>
                         <div class="export-menu" id="export-menu-int01">
+                            <button class="export-menu-item"
+                                onclick="captureAsPNG('section-int01-content', 'Persandingan_Opsel_InterJabodetabek')">
+                                <i class="bx bx-image text-primary"></i> Download PNG
+                            </button>
                             <button class="export-menu-item" onclick="exportInt01CSV()">
-                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
                             </button>
                         </div>
                     </div>
@@ -368,8 +372,12 @@
                             <i class="bx bx-download"></i> Export
                         </button>
                         <div class="export-menu" id="export-menu-int02">
+                            <button class="export-menu-item"
+                                onclick="captureAsPNG('section-int02-content', 'Akumulasi_InterJabodetabek')">
+                                <i class="bx bx-image text-primary"></i> Download PNG
+                            </button>
                             <button class="export-menu-item" onclick="exportInt02CSV()">
-                                <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
                             </button>
                         </div>
                     </div>
@@ -382,7 +390,8 @@
                                 <thead class="text-dark">
                                     <tr>
                                         <th rowspan="3" class="align-middle border-dark text-start px-4"
-                                            style="width: 25%; background-color: #dbe4eb; font-weight: bold;">AKUMULASI</th>
+                                            style="width: 25%; background-color: #dbe4eb; font-weight: bold;">AKUMULASI
+                                        </th>
                                         <th colspan="4" class="py-2 text-center border-dark"
                                             style="background-color: #dbe4eb; font-weight: bold;">DATA REAL</th>
                                     </tr>
@@ -560,7 +569,7 @@
                                     </button>
                                     <div class="export-menu" id="export-menu-int03">
                                         <button class="export-menu-item" onclick="exportInt03CSV()">
-                                            <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                                            <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
                                         </button>
                                     </div>
                                 </div>
@@ -720,7 +729,7 @@
                                     </button>
                                     <div class="export-menu" id="export-menu-int04">
                                         <button class="export-menu-item" onclick="exportInt04CSV()">
-                                            <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
+                                            <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
                                         </button>
                                     </div>
                                 </div>
@@ -955,6 +964,7 @@
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
                 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
                 <script>
                     document.addEventListener("DOMContentLoaded", function() {
                         if (typeof AOS !== 'undefined') {
@@ -1176,6 +1186,23 @@
                         // =========================================
                         // Export Helpers
                         // =========================================
+                        window.captureAsPNG = function(elementId, filename) {
+                            document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                            const el = document.getElementById(elementId);
+                            if (!el) return;
+                            html2canvas(el, {
+                                scale: 2,
+                                useCORS: true,
+                                backgroundColor: '#ffffff',
+                                scrollX: 0,
+                                scrollY: -window.scrollY
+                            }).then(canvas => {
+                                const link = document.createElement('a');
+                                link.download = filename + '.png';
+                                link.href = canvas.toDataURL('image/png');
+                                link.click();
+                            });
+                        };
                         window.toggleExportMenu = function(menuId) {
                             const menu = document.getElementById(menuId);
                             document.querySelectorAll('.export-menu').forEach(m => {
@@ -1225,7 +1252,8 @@
                                 ];
                                 intDates.forEach(d => {
                                     const r = intData.daily[d] && intData.daily[d][op] ? intData.daily[d][
-                                        op] : {};
+                                        op
+                                    ] : {};
                                     rows.push([
                                         fmtDateID(d),
                                         r.pergerakan || 0,
