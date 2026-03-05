@@ -182,10 +182,6 @@
                             <i class="bx bx-download"></i> Export
                         </button>
                         <div class="export-menu" id="export-menu-ms01">
-                            <button class="export-menu-item"
-                                onclick="exportSectionPNG('section-ms01-content','Mode_Share_Distribusi','export-menu-ms01')">
-                                <i class="bx bx-image text-primary"></i> PNG
-                            </button>
                             <button class="export-menu-item" onclick="exportMS01CSV()">
                                 <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
                             </button>
@@ -238,10 +234,6 @@
                             <i class="bx bx-download"></i> Export
                         </button>
                         <div class="export-menu" id="export-menu-ms02">
-                            <button class="export-menu-item"
-                                onclick="exportSectionPNG('section-ms02-content','Mode_Share_Harian','export-menu-ms02')">
-                                <i class="bx bx-image text-primary"></i> PNG
-                            </button>
                             <button class="export-menu-item" onclick="exportMS02CSV()">
                                 <i class="bx bx-spreadsheet text-success"></i> CSV (XLSX)
                             </button>
@@ -310,7 +302,6 @@
         <script src="https://code.highcharts.com/highcharts.js"></script>
         <script src="https://code.highcharts.com/modules/exporting.js"></script>
         <script src="https://code.highcharts.com/modules/export-data.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
         <script>
             $(document).ready(function() {
@@ -352,6 +343,13 @@
                         colors: commonColors,
                         title: {
                             text: ''
+                        },
+                        exporting: {
+                            buttons: {
+                                contextButton: {
+                                    menuItems: ['downloadPNG']
+                                }
+                            }
                         },
                         tooltip: {
                             formatter: function() {
@@ -441,6 +439,13 @@
                         title: {
                             text: null
                         },
+                        exporting: {
+                            buttons: {
+                                contextButton: {
+                                    menuItems: ['downloadPNG']
+                                }
+                            }
+                        },
                         xAxis: {
                             categories: chartCategories,
                             labels: {
@@ -520,79 +525,7 @@
                     }
                 });
 
-                // Unified PNG capture (clone-based)
-                function captureAsPNG(targetEl, filename, btnMenuId) {
-                    const btn = document.querySelector('#' + btnMenuId).previousElementSibling;
-                    const origText = btn.innerHTML;
-                    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
-                    btn.disabled = true;
 
-                    const wrapper = document.createElement('div');
-                    wrapper.style.cssText =
-                        'position:fixed;left:-99999px;top:0;z-index:-1;background:#fff;padding:20px;';
-                    document.body.appendChild(wrapper);
-
-                    const clone = targetEl.cloneNode(true);
-                    clone.querySelectorAll('.table-responsive').forEach(el => {
-                        el.style.overflow = 'visible';
-                        el.style.maxWidth = 'none';
-                        el.style.width = 'auto';
-                    });
-                    clone.querySelectorAll('[class*="col-xl-"], [class*="col-lg-"], [class*="col-md-"]').forEach(el => {
-                        el.style.flex = '0 0 auto';
-                        el.style.maxWidth = 'none';
-                        el.style.width = 'auto';
-                    });
-                    clone.querySelectorAll('table').forEach(t => {
-                        t.style.minWidth = '0';
-                        t.style.width = 'auto';
-                        t.style.tableLayout = 'auto';
-                    });
-                    clone.querySelectorAll('.highcharts-container').forEach(hc => {
-                        hc.style.width = '100%';
-                        hc.style.overflow = 'visible';
-                    });
-                    wrapper.appendChild(clone);
-
-                    requestAnimationFrame(() => {
-                        setTimeout(() => {
-                            const naturalW = wrapper.scrollWidth;
-                            wrapper.style.width = naturalW + 'px';
-                            html2canvas(clone, {
-                                scale: 2,
-                                backgroundColor: '#ffffff',
-                                useCORS: true,
-                                logging: false,
-                                windowWidth: naturalW,
-                                scrollX: 0,
-                                scrollY: 0
-                            }).then(canvas => {
-                                const link = document.createElement('a');
-                                link.download = filename;
-                                link.href = canvas.toDataURL('image/png');
-                                link.click();
-                            }).catch(err => {
-                                console.error('PNG Export Error:', err);
-                                alert('Gagal export PNG.');
-                            }).finally(() => {
-                                document.body.removeChild(wrapper);
-                                btn.innerHTML = origText;
-                                btn.disabled = false;
-                            });
-                        }, 200);
-                    });
-                }
-
-                // Generic section PNG export
-                window.exportSectionPNG = function(sectionId, filename, menuId) {
-                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-                    const section = document.querySelector('#' + sectionId);
-                    if (!section) {
-                        alert('Section tidak ditemukan.');
-                        return;
-                    }
-                    captureAsPNG(section, filename + '.png', menuId);
-                };
 
                 // =========================================
                 // CSV Exports
