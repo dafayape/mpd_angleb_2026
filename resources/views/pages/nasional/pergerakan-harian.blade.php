@@ -1304,6 +1304,86 @@
             });
 
             // Export Section 01 as PNG (all 3 opsel tables in 1 image, WITHOUT kesimpulan)
+            // =========================================
+            // Unified PNG Export Helper (clone-based, no clipping)
+            // =========================================
+            function captureAsPNG(targetEl, filename, btnMenuId) {
+                const btn = document.querySelector('#' + btnMenuId).previousElementSibling;
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
+                btn.disabled = true;
+
+                // Clone the target into an off-screen container at full natural width
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText =
+                    'position:fixed;left:-99999px;top:0;z-index:-1;background:#fff;padding:20px;';
+                document.body.appendChild(wrapper);
+
+                const clone = targetEl.cloneNode(true);
+
+                // Remove all overflow constraints on the clone
+                clone.querySelectorAll('.table-responsive').forEach(el => {
+                    el.style.overflow = 'visible';
+                    el.style.maxWidth = 'none';
+                    el.style.width = 'auto';
+                });
+
+                // Expand all grid columns to auto
+                clone.querySelectorAll('[class*="col-xl-"], [class*="col-lg-"], [class*="col-md-"]').forEach(el => {
+                    el.style.flex = '0 0 auto';
+                    el.style.maxWidth = 'none';
+                    el.style.width = 'auto';
+                });
+
+                // Remove all min-width constraints from tables to let them size naturally
+                clone.querySelectorAll('table').forEach(t => {
+                    t.style.minWidth = '0';
+                    t.style.width = 'auto';
+                    t.style.tableLayout = 'auto';
+                });
+
+                // Ensure Highcharts SVGs render at their natural size
+                clone.querySelectorAll('.highcharts-container').forEach(hc => {
+                    hc.style.width = '100%';
+                    hc.style.overflow = 'visible';
+                });
+
+                wrapper.appendChild(clone);
+
+                // Let the browser reflow
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        const naturalW = wrapper.scrollWidth;
+                        wrapper.style.width = naturalW + 'px';
+
+                        html2canvas(clone, {
+                            scale: 2,
+                            backgroundColor: '#ffffff',
+                            useCORS: true,
+                            logging: false,
+                            windowWidth: naturalW,
+                            scrollX: 0,
+                            scrollY: 0
+                        }).then(canvas => {
+                            const link = document.createElement('a');
+                            link.download = filename;
+                            link.href = canvas.toDataURL('image/png');
+                            link.click();
+                        }).catch(err => {
+                            console.error('PNG Export Error:', err);
+                            alert('Gagal export PNG. Silakan coba lagi.');
+                        }).finally(() => {
+                            document.body.removeChild(wrapper);
+                            btn.innerHTML = origText;
+                            btn.disabled = false;
+                        });
+                    }, 200);
+                });
+            }
+
+            // =========================================
+            // Section 01 PNG — Persandingan per Opsel
+            // =========================================
             window.exportSection01PNG = function() {
                 document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
                 const section = document.querySelector('#section-01-content');
@@ -1312,13 +1392,7 @@
                     return;
                 }
 
-                // Show loading
-                const btn = document.querySelector('#export-menu-01').previousElementSibling;
-                const origText = btn.innerHTML;
-                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
-                btn.disabled = true;
-
-                // 1. Hide all analysis/kesimpulan boxes
+                // Prepare: hide analysis/kesimpulan boxes
                 const analysisBoxes = section.querySelectorAll('.analysis-box');
                 const analysisParents = [];
                 analysisBoxes.forEach(box => {
@@ -1332,67 +1406,59 @@
                     }
                 });
 
-                // 2. Force symmetric layout: all columns equal width in a row
-                const columns = section.querySelectorAll('.row.g-3 > .col-xl-4');
-                const savedStyles = [];
-                columns.forEach(col => {
-                    savedStyles.push({
-                        el: col,
-                        flex: col.style.flex,
-                        maxWidth: col.style.maxWidth,
-                        width: col.style.width
-                    });
-                    col.style.flex = '0 0 33.333%';
-                    col.style.maxWidth = '33.333%';
-                    col.style.width = '33.333%';
-                });
+                captureAsPNG(section, 'Persandingan_Pergerakan_Harian_Opsel.png', 'export-menu-01');
 
-                // 3. Ensure cards have equal height (no stretch by kesimpulan)
-                const cards = section.querySelectorAll('.row.g-3 > .col-xl-4 > .card');
-                const savedCardStyles = [];
-                cards.forEach(card => {
-                    savedCardStyles.push({
-                        el: card,
-                        height: card.style.height
-                    });
-                    card.style.height = 'auto';
-                });
-
-                // Small delay to let layout recalculate
+                // Restore analysis boxes after a delay
                 setTimeout(() => {
-                    html2canvas(section, {
-                        scale: 2,
-                        backgroundColor: '#ffffff',
-                        useCORS: true,
-                        logging: false,
-                        windowWidth: 1600
-                    }).then(canvas => {
-                        const link = document.createElement('a');
-                        link.download = 'Persandingan_Pergerakan_Harian_Opsel.png';
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                    }).catch(err => {
-                        console.error('PNG Export Error:', err);
-                        alert('Gagal export PNG. Silakan coba lagi.');
-                    }).finally(() => {
-                        // Restore analysis boxes
-                        analysisParents.forEach(item => {
-                            item.el.style.display = item.display || '';
-                        });
-                        // Restore column styles
-                        savedStyles.forEach(item => {
-                            item.el.style.flex = item.flex || '';
-                            item.el.style.maxWidth = item.maxWidth || '';
-                            item.el.style.width = item.width || '';
-                        });
-                        // Restore card styles
-                        savedCardStyles.forEach(item => {
-                            item.el.style.height = item.height || '';
-                        });
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
+                    analysisParents.forEach(item => {
+                        item.el.style.display = item.display || '';
                     });
-                }, 100);
+                }, 1000);
+            };
+
+            // =========================================
+            // Section 02 PNG — Akumulasi Pergerakan
+            // =========================================
+            window.exportSection02PNG = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const section = document.querySelector('#section-02-content');
+                if (!section) {
+                    alert('Section 02 tidak ditemukan.');
+                    return;
+                }
+                captureAsPNG(section, 'Akumulasi_Pergerakan_Harian.png', 'export-menu-02');
+            };
+
+            // =========================================
+            // Section 03 PNG — Pergerakan Harian Total
+            // =========================================
+            window.exportSection03PNG = function(type, scope) {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const label = type === 'movement' ? 'Pergerakan' : 'Orang';
+                const scopeLabel = scope === 'chart' ? 'Chart' : 'Tabel';
+                const targetId = `section-03-${type}-${scope}`;
+                const section = document.querySelector(`#${targetId}`);
+                if (!section) {
+                    alert(`Section tidak ditemukan: ${targetId}`);
+                    return;
+                }
+                captureAsPNG(section, `Pergerakan_Harian_Total_${label}_${scopeLabel}.png`, 'export-menu-03');
+            };
+
+            // =========================================
+            // Section 04 PNG — Persandingan Opsel
+            // =========================================
+            window.exportSection04PNG = function(type, scope) {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const label = type === 'movement' ? 'Pergerakan' : 'Orang';
+                const scopeLabel = scope === 'chart' ? 'Chart' : 'Tabel';
+                const targetId = `section-04-${type}-${scope}`;
+                const section = document.querySelector(`#${targetId}`);
+                if (!section) {
+                    alert(`Section tidak ditemukan: ${targetId}`);
+                    return;
+                }
+                captureAsPNG(section, `Persandingan_Opsel_${label}_${scopeLabel}.png`, 'export-menu-04');
             };
 
             // Export Section 01 as XLSX with 3 sheets (XL, IOH, TSEL)
@@ -1413,7 +1479,8 @@
 
                 function formatDateID(dateStr) {
                     const d = new Date(dateStr);
-                    return dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] + ' ' + d
+                    return dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] +
+                        ' ' + d
                         .getFullYear();
                 }
 
@@ -1442,7 +1509,8 @@
 
                     // Data rows
                     dates.forEach(dateStr => {
-                        const row = dailyData[dateStr] ? dailyData[dateStr][opKey] : null;
+                        const row = dailyData[dateStr] ? dailyData[dateStr][opKey] :
+                            null;
                         const mov = row ? (row.movement || 0) : 0;
                         const movPct = row ? (row.movement_pct || 0) : 0;
                         const ppl = row ? (row.people || 0) : 0;
@@ -1531,43 +1599,6 @@
                 XLSX.writeFile(wb, 'Persandingan_Pergerakan_Harian_Opsel.xlsx');
             };
 
-            // =========================================
-            // Section 02 Custom Export Functions
-            // =========================================
-
-            // Export Section 02 as PNG (table + summary dashboard)
-            window.exportSection02PNG = function() {
-                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-                const section = document.querySelector('#section-02-content');
-                if (!section) {
-                    alert('Section 02 tidak ditemukan.');
-                    return;
-                }
-
-                const btn = document.querySelector('#export-menu-02').previousElementSibling;
-                const origText = btn.innerHTML;
-                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
-                btn.disabled = true;
-
-                html2canvas(section, {
-                    scale: 2,
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    logging: false,
-                    windowWidth: 1400
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = 'Akumulasi_Pergerakan_Harian.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                }).catch(err => {
-                    console.error('PNG Export Error:', err);
-                    alert('Gagal export PNG. Silakan coba lagi.');
-                }).finally(() => {
-                    btn.innerHTML = origText;
-                    btn.disabled = false;
-                });
-            };
 
             // Export Section 02 as XLSX
             window.exportSection02CSV = function() {
@@ -1585,7 +1616,8 @@
 
                 function formatDateID(dateStr) {
                     const d = new Date(dateStr);
-                    return dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] + ' ' + d
+                    return dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] +
+                        ' ' + d
                         .getFullYear();
                 }
 
@@ -1694,120 +1726,6 @@
                 XLSX.writeFile(wb, 'Akumulasi_Pergerakan_Harian.xlsx');
             };
 
-            // =========================================
-            // Section 03 Custom Export Functions
-            // =========================================
-
-            // Export Section 03 as PNG (type: 'movement'|'people', scope: 'chart'|'table'|'both')
-            window.exportSection03PNG = function(type, scope) {
-                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-
-                const label = type === 'movement' ? 'Pergerakan' : 'Orang';
-                const targetId = `section-03-${type}-${scope}`;
-                const section = document.querySelector(`#${targetId}`);
-
-                if (!section) {
-                    alert(`Section tidak ditemukan: ${targetId}`);
-                    return;
-                }
-
-                const btn = document.querySelector('#export-menu-03').previousElementSibling;
-                const origText = btn.innerHTML;
-                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
-                btn.disabled = true;
-
-                // Temporarily expand table-responsive to prevent clipping
-                const tableResponsives = section.querySelectorAll('.table-responsive');
-                const savedOverflow = [];
-                tableResponsives.forEach(el => {
-                    savedOverflow.push({
-                        el: el,
-                        overflow: el.style.overflow,
-                        minWidth: el.style.minWidth
-                    });
-                    el.style.overflow = 'visible';
-                    el.style.minWidth = 'max-content';
-                });
-
-                // Also expand parent containers to full width
-                const savedParentStyles = [];
-                const parents = section.querySelectorAll('.col-xl-9, .col-lg-8');
-                parents.forEach(el => {
-                    savedParentStyles.push({
-                        el: el,
-                        flex: el.style.flex,
-                        maxWidth: el.style.maxWidth,
-                        width: el.style.width
-                    });
-                    el.style.flex = '0 0 100%';
-                    el.style.maxWidth = '100%';
-                    el.style.width = '100%';
-                });
-
-                // Hide summary box for cleaner table-only export
-                const summaryBoxes = section.querySelectorAll('.col-xl-3, .col-lg-4');
-                const savedSummary = [];
-                if (scope === 'table') {
-                    summaryBoxes.forEach(el => {
-                        if (el.querySelector('.summary-box-03')) {
-                            savedSummary.push({
-                                el: el,
-                                display: el.style.display
-                            });
-                            el.style.display = 'none';
-                        }
-                    });
-                }
-
-                setTimeout(() => {
-                    // Measure actual content width after expanding
-                    const tables = section.querySelectorAll('table');
-                    let maxTableWidth = 0;
-                    tables.forEach(t => {
-                        maxTableWidth = Math.max(maxTableWidth, t.scrollWidth);
-                    });
-                    const captureWidth = Math.max(section.scrollWidth, maxTableWidth + 80);
-
-                    html2canvas(section, {
-                        scale: 2,
-                        backgroundColor: '#ffffff',
-                        useCORS: true,
-                        logging: false,
-                        windowWidth: captureWidth,
-                        scrollX: 0,
-                        scrollY: -window.scrollY
-                    }).then(canvas => {
-                        const scopeLabel = scope === 'chart' ? 'Chart' : (scope === 'table' ?
-                            'Tabel' :
-                            'Chart_Tabel');
-                        const link = document.createElement('a');
-                        link.download = `Pergerakan_Harian_Total_${label}_${scopeLabel}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                    }).catch(err => {
-                        console.error('PNG Export Error:', err);
-                        alert('Gagal export PNG. Silakan coba lagi.');
-                    }).finally(() => {
-                        // Restore table-responsive
-                        savedOverflow.forEach(item => {
-                            item.el.style.overflow = item.overflow || '';
-                            item.el.style.minWidth = item.minWidth || '';
-                        });
-                        // Restore parent styles
-                        savedParentStyles.forEach(item => {
-                            item.el.style.flex = item.flex || '';
-                            item.el.style.maxWidth = item.maxWidth || '';
-                            item.el.style.width = item.width || '';
-                        });
-                        // Restore summary boxes
-                        savedSummary.forEach(item => {
-                            item.el.style.display = item.display || '';
-                        });
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
-                    });
-                }, 150);
-            };
 
             // Export Section 03 as XLSX (type: 'movement'|'people')
             // Sheet 1: Chart data (percentage per day), Sheet 2: Table data (absolute numbers)
@@ -1828,7 +1746,8 @@
 
                 function formatDateID(dateStr) {
                     const d = new Date(dateStr);
-                    return dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] + ' ' + d
+                    return dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] +
+                        ' ' + d
                         .getFullYear();
                 }
 
@@ -1864,7 +1783,8 @@
                 const headerRow1 = ['Tanggal'];
                 dates.forEach(d => {
                     const dt = new Date(d);
-                    headerRow1.push(dt.getDate() + '-' + monthNames[dt.getMonth()].substring(0, 3) +
+                    headerRow1.push(dt.getDate() + '-' + monthNames[dt.getMonth()].substring(0,
+                            3) +
                         '-' + String(dt.getFullYear()).substring(2));
                 });
                 headerRow1.push('Total');
@@ -1903,114 +1823,6 @@
                 XLSX.writeFile(wb, `Pergerakan_Harian_Total_${label}.xlsx`);
             };
 
-            // =========================================
-            // Section 04 Custom Export Functions
-            // =========================================
-
-            // Export Section 04 as PNG (type: 'movement'|'people', scope: 'chart'|'table')
-            window.exportSection04PNG = function(type, scope) {
-                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-
-                const label = type === 'movement' ? 'Pergerakan' : 'Orang';
-                const targetId = `section-04-${type}-${scope}`;
-                const section = document.querySelector(`#${targetId}`);
-
-                if (!section) {
-                    alert(`Section tidak ditemukan: ${targetId}`);
-                    return;
-                }
-
-                const btn = document.querySelector('#export-menu-04').previousElementSibling;
-                const origText = btn.innerHTML;
-                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
-                btn.disabled = true;
-
-                // Temporarily expand table-responsive to prevent clipping
-                const tableResponsives = section.querySelectorAll('.table-responsive');
-                const savedOverflow = [];
-                tableResponsives.forEach(el => {
-                    savedOverflow.push({
-                        el: el,
-                        overflow: el.style.overflow,
-                        minWidth: el.style.minWidth
-                    });
-                    el.style.overflow = 'visible';
-                    el.style.minWidth = 'max-content';
-                });
-
-                const savedParentStyles = [];
-                const parents = section.querySelectorAll('.col-xl-9, .col-lg-8');
-                parents.forEach(el => {
-                    savedParentStyles.push({
-                        el: el,
-                        flex: el.style.flex,
-                        maxWidth: el.style.maxWidth,
-                        width: el.style.width
-                    });
-                    el.style.flex = '0 0 100%';
-                    el.style.maxWidth = '100%';
-                    el.style.width = '100%';
-                });
-
-                // Hide summary boxes for cleaner table export
-                const summaryBoxes = section.querySelectorAll('.col-xl-3, .col-lg-4');
-                const savedSummary = [];
-                if (scope === 'table') {
-                    summaryBoxes.forEach(el => {
-                        if (el.querySelector('.summary-box-03') || el.querySelector(
-                                '.d-flex.flex-column')) {
-                            savedSummary.push({
-                                el: el,
-                                display: el.style.display
-                            });
-                            el.style.display = 'none';
-                        }
-                    });
-                }
-
-                setTimeout(() => {
-                    const tables = section.querySelectorAll('table');
-                    let maxTableWidth = 0;
-                    tables.forEach(t => {
-                        maxTableWidth = Math.max(maxTableWidth, t.scrollWidth);
-                    });
-                    const captureWidth = Math.max(section.scrollWidth, maxTableWidth + 80);
-
-                    html2canvas(section, {
-                        scale: 2,
-                        backgroundColor: '#ffffff',
-                        useCORS: true,
-                        logging: false,
-                        windowWidth: captureWidth,
-                        scrollX: 0,
-                        scrollY: -window.scrollY
-                    }).then(canvas => {
-                        const scopeLabel = scope === 'chart' ? 'Chart' : 'Tabel';
-                        const link = document.createElement('a');
-                        link.download = `Persandingan_Opsel_${label}_${scopeLabel}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
-                    }).catch(err => {
-                        console.error('PNG Export Error:', err);
-                        alert('Gagal export PNG. Silakan coba lagi.');
-                    }).finally(() => {
-                        savedOverflow.forEach(item => {
-                            item.el.style.overflow = item.overflow || '';
-                            item.el.style.minWidth = item.minWidth || '';
-                        });
-                        savedParentStyles.forEach(item => {
-                            item.el.style.flex = item.flex || '';
-                            item.el.style.maxWidth = item.maxWidth || '';
-                            item.el.style.width = item.width || '';
-                        });
-                        savedSummary.forEach(item => {
-                            item.el.style.display = item.display || '';
-                        });
-                        btn.innerHTML = origText;
-                        btn.disabled = false;
-                    });
-                }, 150);
-            };
 
             // Export Section 04 as XLSX (type: 'movement'|'people')
             window.exportSection04CSV = function(type) {
@@ -2044,11 +1856,13 @@
                 const chartRows = [];
                 chartRows.push(['Tanggal', 'XL', 'IOH', 'TSEL']);
                 dates.forEach(dateStr => {
-                    const row = [new Date(dateStr).getDate() + '-' + monthNames[new Date(dateStr)
+                    const row = [new Date(dateStr).getDate() + '-' + monthNames[new Date(
+                            dateStr)
                         .getMonth()].substring(0, 3)];
                     opsels.forEach(op => {
-                        const val = dailyData[dateStr] && dailyData[dateStr][op] ? (dailyData[
-                            dateStr][op][dataKey] || 0) : 0;
+                        const val = dailyData[dateStr] && dailyData[dateStr][op] ? (
+                            dailyData[
+                                dateStr][op][dataKey] || 0) : 0;
                         row.push(fmtNum(val));
                     });
                     chartRows.push(row);
@@ -2079,7 +1893,8 @@
                 const headerRow2 = [''];
                 dates.forEach(d => {
                     const dt = new Date(d);
-                    headerRow2.push(dt.getDate() + '-' + monthNames[dt.getMonth()].substring(0, 3) +
+                    headerRow2.push(dt.getDate() + '-' + monthNames[dt.getMonth()].substring(0,
+                            3) +
                         '-' + String(dt.getFullYear()).substring(2));
                 });
                 headerRow2.push('');
@@ -2089,8 +1904,10 @@
                 opsels.forEach(op => {
                     const dataRow = [op];
                     dates.forEach(d => {
-                        const val = dailyData[d] && dailyData[d][op] ? (dailyData[d][op][
-                            dataKey] || 0) : 0;
+                        const val = dailyData[d] && dailyData[d][op] ? (dailyData[d][op]
+                            [
+                                dataKey
+                            ] || 0) : 0;
                         dataRow.push(fmtNum(val));
                     });
                     dataRow.push(fmtNum(totalsData[op] ? (totalsData[op][dataKey] || 0) : 0));
