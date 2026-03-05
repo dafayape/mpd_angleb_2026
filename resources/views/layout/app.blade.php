@@ -115,7 +115,6 @@
             border-radius: 4px;
         }
 
-        /* Global Utilities */
         .bg-navy {
             background-color: #1a3353 !important;
         }
@@ -164,7 +163,6 @@
 
         .page-header-extra .breadcrumb-item a {
             color: rgba(255, 255, 255, 0.5);
-            /* Faded white for parent links */
             text-decoration: none;
             font-weight: 400;
         }
@@ -175,7 +173,6 @@
 
         .page-header-extra .breadcrumb-item.active {
             color: rgba(255, 255, 255, 0.7);
-            /* Slightly brighter for active link */
             font-weight: 400;
         }
 
@@ -196,7 +193,6 @@
             box-shadow: none !important;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 767.98px) {
             .page-header-container {
                 flex-direction: column !important;
@@ -554,7 +550,6 @@
     @stack('js')
 
     <script>
-        // Lazy-load SweetAlert2 only when needed
         var _swalLoaded = false;
         var _swalCallbacks = [];
 

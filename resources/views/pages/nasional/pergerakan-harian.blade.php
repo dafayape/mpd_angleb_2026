@@ -72,6 +72,79 @@
             overflow: visible !important;
         }
 
+        /* Export Dropdown Styling */
+        .export-dropdown {
+            position: relative;
+            display: inline-block;
+            margin-left: auto;
+        }
+
+        .export-dropdown .export-btn {
+            background-color: #2a3042;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .export-dropdown .export-btn:hover {
+            background-color: #1e2230;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(42, 48, 66, 0.3);
+        }
+
+        .export-dropdown .export-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 4px;
+            min-width: 180px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .export-dropdown .export-menu.show {
+            display: block;
+        }
+
+        .export-dropdown .export-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            color: #334155;
+            cursor: pointer;
+            transition: background 0.15s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .export-dropdown .export-menu-item:hover {
+            background-color: #f1f5f9;
+            color: #2a3042;
+        }
+
+        .export-dropdown .export-menu-item i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+
         .analysis-box {
             background: rgba(42, 48, 66, 0.03);
             border-left: 4px solid #f59e0b;
@@ -188,8 +261,21 @@
                     <span class="section-badge">01</span>
                     <h5 class="fw-bold text-navy mb-0">Persandingan pergerakan harian total berdasarkan masing-masing opsel
                     </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-01')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-01">
+                            <button class="export-menu-item" onclick="exportSection01PNG()">
+                                <i class="bx bx-image text-primary"></i> Download PNG
+                            </button>
+                            <button class="export-menu-item" onclick="exportSection01CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body bg-light" style="padding: 1.5rem;">
+                <div class="card-body bg-light" id="section-01-content" style="padding: 1.5rem;">
                     <div class="row g-3">
                         @foreach ($opselsConfig as $opKey => $conf)
                             <div class="col-xl-4 col-lg-12 d-flex">
@@ -337,7 +423,8 @@
                                             $labelHariTanggal = $carbonDate->isoFormat('dddd, D MMMM YYYY');
                                         @endphp
                                         <tr>
-                                            <td class="text-start text-dark border-dark" style="background-color: #fafafa;">
+                                            <td class="text-start text-dark border-dark"
+                                                style="background-color: #fafafa;">
                                                 {{ $labelHariTanggal }}</td>
                                             <td class="border-dark">{{ fmtNum($mov) }}</td>
                                             <td class="text-dark border-dark" style="background-color: #fafafa;">
@@ -895,6 +982,10 @@
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
     <script src="https://code.highcharts.com/modules/export-data.js"></script>
     <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <!-- html2canvas for PNG export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- SheetJS for XLSX export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             if (typeof AOS !== 'undefined') {
@@ -921,17 +1012,15 @@
             const seriesIOHPpl = {!! json_encode($series04_ppl['IOH']) !!};
             const seriesTSELPpl = {!! json_encode($series04_ppl['TSEL']) !!};
 
-            // Common Exporting options matching Dashboard
+            // Common Exporting options - PNG & CSV only
             const exportConfig = {
                 enabled: true,
                 buttons: {
                     contextButton: {
                         menuItems: [
-                            "downloadPNG", "downloadJPEG", "downloadSVG",
+                            "downloadPNG",
                             "separator",
-                            "downloadCSV", "downloadXLS",
-                            "separator",
-                            "viewFullscreen"
+                            "downloadCSV"
                         ]
                     }
                 }
@@ -1097,6 +1186,200 @@
                     ]
                 }));
             }
+
+            // =========================================
+            // Section 01 Custom Export Functions
+            // =========================================
+
+            // Toggle export dropdown menu
+            window.toggleExportMenu = function(menuId) {
+                const menu = document.getElementById(menuId);
+                // Close other menus first
+                document.querySelectorAll('.export-menu').forEach(m => {
+                    if (m.id !== menuId) m.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            };
+
+            // Close menus when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.export-dropdown')) {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                }
+            });
+
+            // Export Section 01 as PNG (all 3 opsel tables in 1 image)
+            window.exportSection01PNG = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const section = document.querySelector('#section-01-content');
+                if (!section) {
+                    alert('Section 01 tidak ditemukan.');
+                    return;
+                }
+
+                // Show loading
+                const btn = document.querySelector('#export-menu-01').previousElementSibling;
+                const origText = btn.innerHTML;
+                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Processing...';
+                btn.disabled = true;
+
+                html2canvas(section, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: section.scrollWidth
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'Persandingan_Pergerakan_Harian_Opsel.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                }).catch(err => {
+                    console.error('PNG Export Error:', err);
+                    alert('Gagal export PNG. Silakan coba lagi.');
+                    btn.innerHTML = origText;
+                    btn.disabled = false;
+                });
+            };
+
+            // Export Section 01 as XLSX with 3 sheets (XL, IOH, TSEL)
+            window.exportSection01CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+
+                // Data already available from PHP
+                const dates = {!! json_encode($dates) !!};
+                const dailyData = {!! json_encode($data['daily'] ?? []) !!};
+                const totalsData = {!! json_encode($data['totals'] ?? []) !!};
+                const opsels = ['XL', 'IOH', 'TSEL'];
+
+                // Indonesian day/month names
+                const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+                const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                ];
+
+                function formatDateID(dateStr) {
+                    const d = new Date(dateStr);
+                    return dayNames[d.getDay()] + ', ' + d.getDate() + ' ' + monthNames[d.getMonth()] + ' ' + d
+                        .getFullYear();
+                }
+
+                function fmtNum(val) {
+                    if (!val || val === 0) return '0';
+                    return val.toLocaleString('id-ID');
+                }
+
+                function fmtPct(val) {
+                    if (!val || val === 0) return '0,00%';
+                    return val.toLocaleString('id-ID', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    }) + '%';
+                }
+
+                const wb = XLSX.utils.book_new();
+
+                opsels.forEach(opKey => {
+                    const rows = [];
+
+                    // Header rows
+                    rows.push(['Hari, Tanggal', opKey, '', '', '']);
+                    rows.push(['', 'Jumlah Pergerakan', '', 'Jumlah Orang', '']);
+                    rows.push(['', 'Jumlah', '%', 'Jumlah', '%']);
+
+                    // Data rows
+                    dates.forEach(dateStr => {
+                        const row = dailyData[dateStr] ? dailyData[dateStr][opKey] : null;
+                        const mov = row ? (row.movement || 0) : 0;
+                        const movPct = row ? (row.movement_pct || 0) : 0;
+                        const ppl = row ? (row.people || 0) : 0;
+                        const pplPct = row ? (row.people_pct || 0) : 0;
+
+                        rows.push([
+                            formatDateID(dateStr),
+                            fmtNum(mov),
+                            fmtPct(movPct),
+                            fmtNum(ppl),
+                            fmtPct(pplPct)
+                        ]);
+                    });
+
+                    // Total row
+                    const totMov = totalsData[opKey] ? (totalsData[opKey].movement || 0) : 0;
+                    const totPpl = totalsData[opKey] ? (totalsData[opKey].people || 0) : 0;
+                    rows.push(['Total', fmtNum(totMov), '100%', fmtNum(totPpl), '100%']);
+
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+                    // Set column widths
+                    ws['!cols'] = [{
+                            wch: 30
+                        }, // Hari, Tanggal
+                        {
+                            wch: 18
+                        }, // Jumlah Pergerakan
+                        {
+                            wch: 10
+                        }, // %
+                        {
+                            wch: 18
+                        }, // Jumlah Orang
+                        {
+                            wch: 10
+                        } // %
+                    ];
+
+                    // Merge header cells
+                    ws['!merges'] = [{
+                            s: {
+                                r: 0,
+                                c: 0
+                            },
+                            e: {
+                                r: 2,
+                                c: 0
+                            }
+                        }, // Hari, Tanggal merged 3 rows
+                        {
+                            s: {
+                                r: 0,
+                                c: 1
+                            },
+                            e: {
+                                r: 0,
+                                c: 4
+                            }
+                        }, // Opsel name merged across
+                        {
+                            s: {
+                                r: 1,
+                                c: 1
+                            },
+                            e: {
+                                r: 1,
+                                c: 2
+                            }
+                        }, // Jumlah Pergerakan
+                        {
+                            s: {
+                                r: 1,
+                                c: 3
+                            },
+                            e: {
+                                r: 1,
+                                c: 4
+                            }
+                        }, // Jumlah Orang
+                    ];
+
+                    XLSX.utils.book_append_sheet(wb, ws, opKey);
+                });
+
+                XLSX.writeFile(wb, 'Persandingan_Pergerakan_Harian_Opsel.xlsx');
+            };
+
         });
     </script>
 @endpush

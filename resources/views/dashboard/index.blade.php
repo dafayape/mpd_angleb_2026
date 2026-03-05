@@ -674,6 +674,18 @@
             offset: 50
         });
 
+        // Global: Restrict Highcharts export menu to PNG & CSV only
+        Highcharts.setOptions({
+            exporting: {
+                enabled: true,
+                buttons: {
+                    contextButton: {
+                        menuItems: ["downloadPNG", "separator", "downloadCSV"]
+                    }
+                }
+            }
+        });
+
         const formatJuta = (num) => {
             if (num == null || isNaN(num)) return '0';
             if (num >= 1000000) return (num / 1000000).toLocaleString('id-ID', {
