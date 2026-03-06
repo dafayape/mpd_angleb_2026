@@ -320,7 +320,7 @@ Terima kasih.</textarea>
                         btn.innerHTML = '<i class="bx bxl-whatsapp me-1"></i> Kirim WA';
                         Swal.fire({
                             icon: 'warning',
-                            title: 'Konfigurasi WA Cloud API Belum Lengkap',
+                            title: 'Konfigurasi Twilio API Belum Lengkap',
                             html: '<p>' + data.message +
                                 '</p><p class="text-muted small mt-2">Teks laporan sudah disalin ke clipboard. Buka WhatsApp Web untuk kirim manual.</p>',
                             showCancelButton: true,

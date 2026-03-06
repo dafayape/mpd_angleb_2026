@@ -27,19 +27,20 @@ class SendDailyReportWA extends Command
             return 0;
         }
 
-        $token = $settings->get('wa_cloud_token', '');
-        $phoneId = $settings->get('wa_cloud_phone_id', '');
-        $templateName = $settings->get('wa_cloud_template_name', '');
+        $sid = $settings->get('twilio_account_sid', '');
+        $token = $settings->get('twilio_auth_token', '');
+        $fromNumber = $settings->get('twilio_from_number', '');
+        $contentSid = $settings->get('twilio_content_sid', '');
         $numbers = $settings->get('wa_recipients', '');
 
-        if (empty($token) || empty($numbers)) {
-            $this->error('Token atau nomor penerima belum dikonfigurasi.');
+        if (empty($sid) || empty($token) || empty($numbers)) {
+            $this->error('Twilio Credentials atau nomor penerima belum dikonfigurasi.');
 
             return 1;
         }
 
-        if (empty($phoneId) || empty($templateName)) {
-            $this->error('Phone Number ID atau Message Template Name belum dikonfigurasi.');
+        if (empty($fromNumber) || empty($contentSid)) {
+            $this->error('From Number atau Content SID belum dikonfigurasi.');
 
             return 1;
         }
@@ -69,29 +70,15 @@ class SendDailyReportWA extends Command
             }
 
             try {
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer '.$token,
-                    'Content-Type' => 'application/json',
-                ])->timeout(30)->post("https://graph.facebook.com/v19.0/{$phoneId}/messages", [
-                    'messaging_product' => 'whatsapp',
-                    'to' => $phone,
-                    'type' => 'template',
-                    'template' => [
-                        'name' => $templateName,
-                        'language' => ['code' => 'id'],
-                        'components' => [
-                            [
-                                'type' => 'body',
-                                'parameters' => [
-                                    [
-                                        'type' => 'text',
-                                        'text' => $reportText
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]);
+                $response = Http::withBasicAuth($sid, $token)
+                    ->asForm()
+                    ->timeout(30)
+                    ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
+                        'To' => 'whatsapp:+' . $phone,
+                        'From' => $fromNumber,
+                        'ContentSid' => $contentSid,
+                        'ContentVariables' => json_encode(['1' => $reportText]),
+                    ]);
 
                 if ($response->successful()) {
                     $sent++;

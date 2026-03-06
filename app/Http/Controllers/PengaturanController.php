@@ -25,9 +25,10 @@ class PengaturanController extends Controller
             'wa_recipients',
             'wa_schedule_time',
             'wa_auto_send',
-            'wa_cloud_token',
-            'wa_cloud_phone_id',
-            'wa_cloud_template_name',
+            'twilio_account_sid',
+            'twilio_auth_token',
+            'twilio_from_number',
+            'twilio_content_sid',
         ];
 
         foreach ($fields as $key) {
@@ -67,14 +68,15 @@ class PengaturanController extends Controller
                 ->where('group', 'whatsapp')
                 ->pluck('value', 'key');
 
-            $token   = $settings->get('wa_cloud_token', '');
-            $phoneId   = $settings->get('wa_cloud_phone_id', '');
+            $sid   = $settings->get('twilio_account_sid', '');
+            $token   = $settings->get('twilio_auth_token', '');
+            $fromNumber = $settings->get('twilio_from_number', '');
             $phone   = $request->input('phone', '');
 
-            if (empty($token) || empty($phoneId) || empty($phone)) {
+            if (empty($sid) || empty($token) || empty($fromNumber) || empty($phone)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Token, Phone ID, atau nomor WhatsApp tujuan belum diisi.'
+                    'message' => 'Twilio SID, Auth Token, From Number, atau nomor tujuan belum diisi.'
                 ]);
             }
 
@@ -83,23 +85,19 @@ class PengaturanController extends Controller
                 $phone = '62' . substr($phone, 1);
             }
 
-            // Hit Official Meta WhatsApp Cloud API
-            $response = \Illuminate\Support\Facades\Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Content-Type'  => 'application/json',
-            ])->post("https://graph.facebook.com/v19.0/{$phoneId}/messages", [
-                'messaging_product' => 'whatsapp',
-                'to' => $phone,
-                'type' => 'text',
-                'text' => [
-                    'body' => '✅ Test koneksi dari *Sistem MPD Angleb 2026* menggunakan Meta Cloud API berhasil!'
-                ]
-            ]);
+            // Hit Official Twilio API
+            $response = \Illuminate\Support\Facades\Http::withBasicAuth($sid, $token)
+                ->asForm()
+                ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
+                    'To' => 'whatsapp:+' . $phone,
+                    'From' => $fromNumber,
+                    'Body' => '✅ Test koneksi dari *Sistem MPD Angleb 2026* menggunakan Twilio API berhasil!'
+                ]);
 
             return response()->json([
                 'success' => $response->successful(),
                 'message' => $response->successful()
-                    ? 'Pesan test berhasil dikirim ke ' . $phone
+                    ? 'Pesan test berhasil dikirim ke +' . $phone
                     : 'Gagal: ' . $response->body(),
                 'status'  => $response->status(),
             ]);

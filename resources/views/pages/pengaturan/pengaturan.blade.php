@@ -240,29 +240,39 @@
                         @endif
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label-custom">Permanent Access Token</label>
-                            <input type="text" name="wa_cloud_token" class="form-control token-field"
-                                value="{{ $settings->get('wa_cloud_token', '') }}"
-                                placeholder="Bearer access token dari Meta">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label-custom">Phone Number ID</label>
-                            <input type="text" name="wa_cloud_phone_id" class="form-control token-field"
-                                value="{{ $settings->get('wa_cloud_phone_id', '') }}"
-                                placeholder="ID Telepon terdaftar di Meta">
-                            <div class="help-text">Dapatkan dari menu API Setup di dashboard Meta Developer</div>
-                        </div>
-
-                        <div class="mb-0">
-                            <label class="form-label-custom">Message Template Name</label>
-                            <input type="text" name="wa_cloud_template_name" class="form-control token-field"
-                                value="{{ $settings->get('wa_cloud_template_name', '') }}"
-                                placeholder="Nama template pesan yang approved">
-                            <div class="help-text">Gunakan 2 variabel body (tanggal & link laporan) jika dibutuhkan.
-                                Template harus berstatus Approved di WhatsApp Manager.</div>
-                        </div>
+                        <form action="{{ route('pengaturan.update') }}" method="POST">
+                            @csrf
+                            <div class="mb-3">
+                                <label class="form-label-custom">Account SID (Twilio)</label>
+                                <input type="text" class="form-control" name="twilio_account_sid"
+                                    value="{{ $settings->get('twilio_account_sid', '') }}" placeholder="contoh: AC1fa2eb..."
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label-custom">Auth Token (Twilio)</label>
+                                <input type="password" class="form-control" name="twilio_auth_token"
+                                    value="{{ $settings->get('twilio_auth_token', '') }}" placeholder="contoh: 8b1f76e..."
+                                    required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label-custom">Nomor Pengirim (Twilio From Number)</label>
+                                <input type="text" class="form-control" name="twilio_from_number"
+                                    value="{{ $settings->get('twilio_from_number', '') }}"
+                                    placeholder="contoh: whatsapp:+14155238886" required>
+                                <div class="help-text">Gunakan format whatsapp:+nomor</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label-custom">Content SID (Template Twilio)</label>
+                                <input type="text" class="form-control" name="twilio_content_sid"
+                                    value="{{ $settings->get('twilio_content_sid', '') }}" placeholder="contoh: HXb5b62..."
+                                    required>
+                                <div class="help-text">Dapatkan dari Twilio Content Template Builder</div>
+                            </div>
+                            <div class="mb-3">
+                                <button type="submit" class="btn btn-save w-100"><i class="bx bx-save me-1"></i> Simpan
+                                    Pengaturan Twilio</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
 

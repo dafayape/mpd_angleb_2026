@@ -110,11 +110,13 @@ class DailyReportController extends Controller
     }
 
     /**
-     * Send report via WhatsApp (Official Meta Cloud API)
+     * Send report via WhatsApp (Official Twilio API)
      *
-     * Meta API requires:
-     *  - wa_cloud_phone_id
-     *  - wa_cloud_template_name (approved WhatsApp template string)
+     * Twilio API requires:
+     *  - twilio_account_sid
+     *  - twilio_auth_token
+     *  - twilio_from_number
+     *  - twilio_content_sid (approved WhatsApp template string)
      *  - to
      *
      * If template is not configured, falls back to building a wa.me link manual copy.
@@ -133,9 +135,10 @@ class DailyReportController extends Controller
             // Get settings from DB
             $settings = DB::table('app_settings')->pluck('value', 'key');
             $waNumbers = $settings->get('wa_recipients', '');
-            $token = $settings->get('wa_cloud_token', '');
-            $phoneId = $settings->get('wa_cloud_phone_id', '');
-            $templateName = $settings->get('wa_cloud_template_name', '');
+            $sid = $settings->get('twilio_account_sid', '');
+            $token = $settings->get('twilio_auth_token', '');
+            $fromNumber = $settings->get('twilio_from_number', '');
+            $contentSid = $settings->get('twilio_content_sid', '');
 
             if (empty($waNumbers)) {
                 return response()->json([
@@ -144,25 +147,25 @@ class DailyReportController extends Controller
                 ]);
             }
 
-            // Check Meta Cloud API readiness
-            $metaReady = ! empty($token) && ! empty($phoneId) && ! empty($templateName);
+            // Check Twilio API readiness
+            $twilioReady = ! empty($sid) && ! empty($token) && ! empty($fromNumber) && ! empty($contentSid);
 
-            if (! $metaReady) {
+            if (! $twilioReady) {
                 // Fallback: return the text for manual sending
                 $missing = [];
-                if (empty($token)) {
-                    $missing[] = 'Access Token';
+                if (empty($sid) || empty($token)) {
+                    $missing[] = 'Account SID / Auth Token';
                 }
-                if (empty($phoneId)) {
-                    $missing[] = 'Phone Number ID';
+                if (empty($fromNumber)) {
+                    $missing[] = 'Twilio From Number';
                 }
-                if (empty($templateName)) {
-                    $missing[] = 'Message Template Name';
+                if (empty($contentSid)) {
+                    $missing[] = 'Content SID';
                 }
 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Konfigurasi WhatsApp Cloud API belum lengkap ('.implode(', ', $missing).'). Silakan lengkapi di menu Pengaturan, atau gunakan tombol Salin Teks untuk kirim manual.',
+                    'message' => 'Konfigurasi Twilio API belum lengkap ('.implode(', ', $missing).'). Silakan lengkapi di menu Pengaturan, atau gunakan tombol Salin Teks untuk kirim manual.',
                     'fallback' => true,
                     'report_text' => $reportText,
                 ]);
@@ -179,34 +182,20 @@ class DailyReportController extends Controller
                 }
 
                 try {
-                    // Meta Cloud API Request
-                    $response = Http::withHeaders([
-                        'Authorization' => 'Bearer '.$token,
-                        'Content-Type' => 'application/json',
-                    ])->timeout(30)->post("https://graph.facebook.com/v19.0/{$phoneId}/messages", [
-                        'messaging_product' => 'whatsapp',
-                        'to' => $phone,
-                        'type' => 'template',
-                        'template' => [
-                            'name' => $templateName,
-                            'language' => ['code' => 'id'],
-                            'components' => [
-                                [
-                                    'type' => 'body',
-                                    'parameters' => [
-                                        [
-                                            'type' => 'text',
-                                            'text' => $reportText,
-                                        ],
-                                    ],
-                                ],
-                            ],
-                        ],
-                    ]);
+                    // Twilio API Request
+                    $response = Http::withBasicAuth($sid, $token)
+                        ->asForm()
+                        ->timeout(30)
+                        ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
+                            'To' => 'whatsapp:+' . $phone,
+                            'From' => $fromNumber,
+                            'ContentSid' => $contentSid,
+                            'ContentVariables' => json_encode(['1' => $reportText]),
+                        ]);
 
                     if ($response->successful()) {
                         $sent++;
-                        Log::info("WA terkirim ke {$phone} via Meta API");
+                        Log::info("WA terkirim ke {$phone} via Twilio API");
                     } else {
                         $errBody = $response->body();
                         $errors[] = $phone.': '.$errBody;
