@@ -148,7 +148,7 @@ class DailyReportController extends Controller
             }
 
             // Check Twilio API readiness
-            $twilioReady = ! empty($sid) && ! empty($token) && ! empty($fromNumber) && ! empty($contentSid);
+            $twilioReady = ! empty($sid) && ! empty($token) && ! empty($fromNumber);
 
             if (! $twilioReady) {
                 // Fallback: return the text for manual sending
@@ -158,9 +158,6 @@ class DailyReportController extends Controller
                 }
                 if (empty($fromNumber)) {
                     $missing[] = 'Twilio From Number';
-                }
-                if (empty($contentSid)) {
-                    $missing[] = 'Content SID';
                 }
 
                 return response()->json([
@@ -182,15 +179,14 @@ class DailyReportController extends Controller
                 }
 
                 try {
-                    // Twilio API Request
+                    // Twilio API Request Custom Message
                     $response = Http::withBasicAuth($sid, $token)
                         ->asForm()
                         ->timeout(30)
                         ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
                             'To' => 'whatsapp:+' . $phone,
                             'From' => $fromNumber,
-                            'ContentSid' => $contentSid,
-                            'ContentVariables' => json_encode(['1' => $reportText]),
+                            'Body' => $reportText,
                         ]);
 
                     if ($response->successful()) {
@@ -303,12 +299,16 @@ class DailyReportController extends Controller
 
         $opselLabel = $opsel === 'ALL' ? '' : " (Opsel: {$opsel})";
 
-        return "1. Periode Pematauan: *{$periodStr}*\n"
+        return "Yth. *Bapak Kepala Badan Kebijakan Transportasi*\n\n"
+             ."Dengan hormat, izin melaporkan perkembangan pemantauan pergerakan orang pada periode Angleb 2026 "
+             ."dengan menggunakan _Mobile Positioning Data_ (MPD){$opselLabel} posisi dari *{$periodStr}* sebagai berikut:\n"
              ."A.\tPergerakan NASIONAL:\n"
              ."1. Total/akumulasi {$tipeTeks} pergerakan orang adalah sebanyak *{$nasTotal}* orang;\n"
              ."2. {$tipeTeksUc} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{$nasHighDate}* sebanyak *{$nasHighVal}* orang.\n\n"
              ."B.\tPergerakan JABODETABEK:\n"
              ."1. Total/akumulasi {$tipeTeks} pergerakan orang adalah sebanyak *{$jabTotal}* orang;\n"
-             ."2. {$tipeTeksUc} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{$jabHighDate}* sebanyak *{$jabHighVal}* orang.";
+             ."2. {$tipeTeksUc} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{$jabHighDate}* sebanyak *{$jabHighVal}* orang.\n\n"
+             ."Demikian disampaikan dan mohon arahannya.\n\n"
+             ."Terima kasih.";
     }
 }

@@ -74,7 +74,7 @@ class SendDailyReportWA extends Command
                     ->asForm()
                     ->timeout(30)
                     ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
-                        'To' => 'whatsapp:+' . $phone,
+                        'To' => 'whatsapp:+'.$phone,
                         'From' => $fromNumber,
                         'ContentSid' => $contentSid,
                         'ContentVariables' => json_encode(['1' => $reportText]),
