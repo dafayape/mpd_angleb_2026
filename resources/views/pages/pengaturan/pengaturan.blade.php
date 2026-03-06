@@ -230,8 +230,8 @@
                 {{-- WhatsApp Cloud API Tokens --}}
                 <div class="card settings-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <span class="badge-section badge-token"><i class="bx bx-cloud"></i> WhatsApp Cloud API</span>
-                        @if (!empty($settings->get('wa_cloud_token', '')))
+                        <span class="badge-section badge-token"><i class="bx bx-cloud"></i> Twilio API</span>
+                        @if (!empty($settings->get('twilio_account_sid', '')))
                             <span class="status-indicator status-active"><i class="bx bxs-check-circle"></i> Token
                                 Tersedia</span>
                         @else
@@ -240,39 +240,36 @@
                         @endif
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('pengaturan.update') }}" method="POST">
-                            @csrf
-                            <div class="mb-3">
-                                <label class="form-label-custom">Account SID (Twilio)</label>
-                                <input type="text" class="form-control" name="twilio_account_sid"
-                                    value="{{ $settings->get('twilio_account_sid', '') }}" placeholder="contoh: AC1fa2eb..."
-                                    required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label-custom">Auth Token (Twilio)</label>
-                                <input type="password" class="form-control" name="twilio_auth_token"
-                                    value="{{ $settings->get('twilio_auth_token', '') }}" placeholder="contoh: 8b1f76e..."
-                                    required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label-custom">Nomor Pengirim (Twilio From Number)</label>
-                                <input type="text" class="form-control" name="twilio_from_number"
-                                    value="{{ $settings->get('twilio_from_number', '') }}"
-                                    placeholder="contoh: whatsapp:+14155238886" required>
-                                <div class="help-text">Gunakan format whatsapp:+nomor</div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label-custom">Content SID (Template Twilio)</label>
-                                <input type="text" class="form-control" name="twilio_content_sid"
-                                    value="{{ $settings->get('twilio_content_sid', '') }}" placeholder="contoh: HXb5b62..."
-                                    required>
-                                <div class="help-text">Dapatkan dari Twilio Content Template Builder</div>
-                            </div>
-                            <div class="mb-3">
-                                <button type="submit" class="btn btn-save w-100"><i class="bx bx-save me-1"></i> Simpan
-                                    Pengaturan Twilio</button>
-                            </div>
-                        </form>
+                        <div class="mb-3">
+                            <label class="form-label-custom">Account SID (Twilio)</label>
+                            <input type="text" class="form-control" name="twilio_account_sid"
+                                value="{{ $settings->get('twilio_account_sid', '') }}" placeholder="contoh: AC1fa2eb..."
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-custom">Auth Token (Twilio)</label>
+                            <input type="password" class="form-control" name="twilio_auth_token"
+                                value="{{ $settings->get('twilio_auth_token', '') }}" placeholder="contoh: 8b1f76e..."
+                                required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-custom">Nomor Pengirim (Twilio From Number)</label>
+                            <input type="text" class="form-control" name="twilio_from_number"
+                                value="{{ $settings->get('twilio_from_number', '') }}"
+                                placeholder="contoh: whatsapp:+14155238886" required>
+                            <div class="help-text">Gunakan format whatsapp:+nomor</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-custom">Content SID (Template Twilio)</label>
+                            <input type="text" class="form-control" name="twilio_content_sid"
+                                value="{{ $settings->get('twilio_content_sid', '') }}" placeholder="contoh: HXb5b62..."
+                                required>
+                            <div class="help-text">Dapatkan dari Twilio Content Template Builder</div>
+                        </div>
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-save w-100"><i class="bx bx-save me-1"></i> Simpan
+                                Pengaturan Twilio</button>
+                        </div>
                     </div>
                 </div>
 
