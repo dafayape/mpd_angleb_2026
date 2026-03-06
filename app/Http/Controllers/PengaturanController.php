@@ -83,13 +83,19 @@ class PengaturanController extends Controller
                 $phone = '62'.substr($phone, 1);
             }
 
+            // Build actual report for testing (defaulting to 13 March - 30 March, Real)
+            $dailyCtrl = app(\App\Http\Controllers\DailyReportController::class);
+            $refMethod = new \ReflectionMethod($dailyCtrl, 'buildPlainText');
+            $refMethod->setAccessible(true);
+            $testBodyText = $refMethod->invoke($dailyCtrl, '2026-03-13', '2026-03-30', 'REAL', 'ALL');
+
             // Hit Official Twilio API
             $response = \Illuminate\Support\Facades\Http::withBasicAuth($sid, $token)
                 ->asForm()
                 ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
                     'To' => 'whatsapp:+'.$phone,
                     'From' => $fromNumber,
-                    'Body' => '✅ Test koneksi dari *Sistem MPD Angleb 2026* menggunakan Twilio API berhasil!',
+                    'Body' => $testBodyText,
                 ]);
 
             return response()->json([

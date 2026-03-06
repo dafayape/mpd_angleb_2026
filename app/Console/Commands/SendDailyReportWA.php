@@ -38,8 +38,8 @@ class SendDailyReportWA extends Command
             return 1;
         }
 
-        if (empty($fromNumber) || empty($contentSid)) {
-            $this->error('From Number atau Content SID belum dikonfigurasi.');
+        if (empty($fromNumber)) {
+            $this->error('From Number belum dikonfigurasi.');
 
             return 1;
         }
@@ -57,7 +57,7 @@ class SendDailyReportWA extends Command
         }
 
         $controller = app(\App\Http\Controllers\DailyReportController::class);
-        $reportText = $this->callMethod($controller, 'buildPlainText', [$startDate, $endDate, 'REAL']);
+        $reportText = $this->callMethod($controller, 'buildPlainText', [$startDate, $endDate, 'REAL', 'ALL']);
 
         $recipients = array_filter(array_map('trim', explode(',', $numbers)));
         $sent = 0;
@@ -75,8 +75,7 @@ class SendDailyReportWA extends Command
                     ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
                         'To' => 'whatsapp:+'.$phone,
                         'From' => $fromNumber,
-                        'ContentSid' => $contentSid,
-                        'ContentVariables' => json_encode(['1' => $reportText]),
+                        'Body' => $reportText,
                     ]);
 
                 if ($response->successful()) {
