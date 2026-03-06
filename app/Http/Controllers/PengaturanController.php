@@ -11,7 +11,6 @@ class PengaturanController extends Controller
     public function index()
     {
         $settings = DB::table('app_settings')
-            ->where('group', 'whatsapp')
             ->pluck('value', 'key');
 
         return view('pages.pengaturan.pengaturan', [
@@ -48,11 +47,11 @@ class PengaturanController extends Controller
 
         // Log
         DB::table('activity_logs')->insert([
-            'user_id'     => Auth::id(),
-            'action'      => 'update_settings',
+            'user_id' => Auth::id(),
+            'action' => 'update_settings',
             'description' => 'Mengubah pengaturan WhatsApp',
-            'created_at'  => now(),
-            'updated_at'  => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return redirect()->route('pengaturan')->with('success', 'Pengaturan berhasil disimpan!');
@@ -65,46 +64,45 @@ class PengaturanController extends Controller
     {
         try {
             $settings = DB::table('app_settings')
-                ->where('group', 'whatsapp')
                 ->pluck('value', 'key');
 
-            $sid   = $settings->get('twilio_account_sid', '');
-            $token   = $settings->get('twilio_auth_token', '');
+            $sid = $settings->get('twilio_account_sid', '');
+            $token = $settings->get('twilio_auth_token', '');
             $fromNumber = $settings->get('twilio_from_number', '');
-            $phone   = $request->input('phone', '');
+            $phone = $request->input('phone', '');
 
             if (empty($sid) || empty($token) || empty($fromNumber) || empty($phone)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Twilio SID, Auth Token, From Number, atau nomor tujuan belum diisi.'
+                    'message' => 'Twilio SID, Auth Token, From Number, atau nomor tujuan belum diisi.',
                 ]);
             }
 
             $phone = preg_replace('/[^0-9]/', '', $phone);
             if (substr($phone, 0, 1) === '0') {
-                $phone = '62' . substr($phone, 1);
+                $phone = '62'.substr($phone, 1);
             }
 
             // Hit Official Twilio API
             $response = \Illuminate\Support\Facades\Http::withBasicAuth($sid, $token)
                 ->asForm()
                 ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
-                    'To' => 'whatsapp:+' . $phone,
+                    'To' => 'whatsapp:+'.$phone,
                     'From' => $fromNumber,
-                    'Body' => '✅ Test koneksi dari *Sistem MPD Angleb 2026* menggunakan Twilio API berhasil!'
+                    'Body' => '✅ Test koneksi dari *Sistem MPD Angleb 2026* menggunakan Twilio API berhasil!',
                 ]);
 
             return response()->json([
                 'success' => $response->successful(),
                 'message' => $response->successful()
-                    ? 'Pesan test berhasil dikirim ke +' . $phone
-                    : 'Gagal: ' . $response->body(),
-                'status'  => $response->status(),
+                    ? 'Pesan test berhasil dikirim ke +'.$phone
+                    : 'Gagal: '.$response->body(),
+                'status' => $response->status(),
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'Error: '.$e->getMessage(),
             ]);
         }
     }

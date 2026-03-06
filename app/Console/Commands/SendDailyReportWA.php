@@ -17,7 +17,6 @@ class SendDailyReportWA extends Command
     public function handle()
     {
         $settings = DB::table('app_settings')
-            ->where('group', 'whatsapp')
             ->pluck('value', 'key');
 
         // Check if auto-send is enabled
