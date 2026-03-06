@@ -41,7 +41,7 @@ class PengaturanController extends Controller
             DB::table('app_settings')
                 ->updateOrInsert(
                     ['key' => $key],
-                    ['value' => $value, 'updated_at' => now()]
+                    ['value' => $value, 'group' => 'general', 'updated_at' => now()]
                 );
         }
 
