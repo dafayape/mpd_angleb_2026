@@ -418,18 +418,22 @@ class DatasourceController extends Controller
      */
     private function getSummary(): array
     {
+        $cacheKey = 'datasource:summary:v2';
+
         try {
-            return [
-                'total_rows' => (int) DB::table('raw_mpd_data')->count(),
-                'total_uploads' => ImportJob::whereIn('status', ['completed', 'completed_with_errors'])->count(),
-                'by_opsel' => DB::table('raw_mpd_data')
-                    ->select('opsel', DB::raw('COUNT(*) as total'))
-                    ->groupBy('opsel')
-                    ->pluck('total', 'opsel')
-                    ->toArray(),
-                'latest_date' => DB::table('raw_mpd_data')->max('tanggal'),
-            ];
-        } catch (\Exception $e) {
+            return Cache::remember($cacheKey, 300, function () {
+                return [
+                    'total_rows' => (int) DB::table('raw_mpd_data')->count(),
+                    'total_uploads' => ImportJob::whereIn('status', ['completed', 'completed_with_errors'])->count(),
+                    'by_opsel' => DB::table('raw_mpd_data')
+                        ->select('opsel', DB::raw('COUNT(*) as total'))
+                        ->groupBy('opsel')
+                        ->pluck('total', 'opsel')
+                        ->toArray(),
+                    'latest_date' => DB::table('raw_mpd_data')->max('tanggal'),
+                ];
+            });
+        } catch (\Throwable $e) {
             return ['total_rows' => 0, 'total_uploads' => 0, 'by_opsel' => [], 'latest_date' => null];
         }
     }
