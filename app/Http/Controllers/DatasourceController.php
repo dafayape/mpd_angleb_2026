@@ -418,19 +418,19 @@ class DatasourceController extends Controller
      */
     private function getSummary(): array
     {
-        $cacheKey = 'datasource:summary:v2';
+        $cacheKey = 'datasource:summary:v3';
 
         try {
-            return Cache::remember($cacheKey, 300, function () {
+            return Cache::remember($cacheKey, 60, function () {
                 return [
-                    'total_rows' => (int) DB::table('raw_mpd_data')->count(),
+                    'total_rows' => (int) ImportJob::whereIn('status', ['completed', 'completed_with_errors'])->sum('processed_rows'),
                     'total_uploads' => ImportJob::whereIn('status', ['completed', 'completed_with_errors'])->count(),
-                    'by_opsel' => DB::table('raw_mpd_data')
-                        ->select('opsel', DB::raw('COUNT(*) as total'))
+                    'by_opsel' => ImportJob::whereIn('status', ['completed', 'completed_with_errors'])
+                        ->select('opsel', DB::raw('SUM(processed_rows) as total'))
                         ->groupBy('opsel')
                         ->pluck('total', 'opsel')
                         ->toArray(),
-                    'latest_date' => DB::table('raw_mpd_data')->max('tanggal'),
+                    'latest_date' => ImportJob::whereIn('status', ['completed', 'completed_with_errors'])->max('tanggal_data'),
                 ];
             });
         } catch (\Throwable $e) {
