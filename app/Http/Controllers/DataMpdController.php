@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Simpul;
+use App\Traits\MpdHelpers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -11,24 +12,7 @@ use Illuminate\Support\Facades\Http;
 
 class DataMpdController extends Controller
 {
-    /**
-     * Get Jabodetabek City Codes
-     */
-    private function getJabodetabekCodes()
-    {
-        return [
-            // DKI Jakarta
-            '3171', '3172', '3173', '3174', '3175', '3101', // Kepulauan Seribu included? Usually yes for province. 3101 is Kep Seribu.
-            // Bogor
-            '3201', '3271',
-            // Depok
-            '3276',
-            // Tangerang
-            '3603', '3671', '3674', // Kab Tangerang, Kota Tangerang, Kota Tangsel
-            // Bekasi
-            '3216', '3275',
-        ];
-    }
+    use MpdHelpers;
 
     public function jabodetabekOdSimpul(Request $request)
     {
@@ -43,19 +27,9 @@ class DataMpdController extends Controller
             $curr->addDay();
         }
 
-        // 2. Caching Key
-        $cacheKey = 'mpd:jabodetabek:od-simpul:matrix:v2';
-
+        $cacheKey = 'mpd:jabodetabek:od-simpul:matrix:v3';
         $jabodetabekCodes = $this->getJabodetabekCodes();
-
-        try {
-            $matrix = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getOdSimpulData($startDate, $endDate, $jabodetabekCodes);
-            });
-        } catch (\Throwable $e) {
-            // Redis/DB Fallback
-            $matrix = $this->getOdSimpulData($startDate, $endDate, $jabodetabekCodes);
-        }
+        $matrix = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getOdSimpulData($startDate, $endDate, $jabodetabekCodes));
 
         return view('data-mpd.jabodetabek.od-simpul', [
             'title' => 'O-D Simpul Jabodetabek',
@@ -84,7 +58,7 @@ class DataMpdController extends Controller
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
                 return $this->getModeShareData($startDate, $endDate, $jabodetabekCodes);
             });
         } catch (\Throwable $e) {
@@ -112,7 +86,7 @@ class DataMpdController extends Controller
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
                 return $this->getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes);
             });
         } catch (\Throwable $e) {
@@ -292,7 +266,7 @@ class DataMpdController extends Controller
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
                 return $this->getJabodetabekIntraOdData($startDate, $endDate, $jabodetabekCodes);
             });
         } catch (\Throwable $e) {
@@ -397,7 +371,7 @@ class DataMpdController extends Controller
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
                 return $this->getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes);
             });
         } catch (\Throwable $e) {
@@ -490,7 +464,7 @@ class DataMpdController extends Controller
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
+            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
                 return $this->getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes);
             });
         } catch (\Throwable $e) {
@@ -668,13 +642,13 @@ class DataMpdController extends Controller
         $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v1:{$dString}";
 
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
                 return $this->getNasionalOdSimpulData($startDate, $endDate);
             });
-            $dataProv = Cache::remember($cacheKeyOdProv, 3600, function () use ($startDate, $endDate) {
+            $dataProv = Cache::remember($cacheKeyOdProv, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
                 return $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
             });
-            $dataKabKota = Cache::remember($cacheKeyOdKabKota, 3600, function () use ($startDate, $endDate) {
+            $dataKabKota = Cache::remember($cacheKeyOdKabKota, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
                 return $this->getNasionalOdKabKotaData($startDate, $endDate);
             });
         } catch (\Throwable $e) {
@@ -975,7 +949,7 @@ class DataMpdController extends Controller
         $cacheKey = 'mpd:nasional:mode-share:tables:v1';
 
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
                 return $this->getNasionalModeShareData($startDate, $endDate);
             });
         } catch (\Throwable $e) {
@@ -1130,7 +1104,7 @@ class DataMpdController extends Controller
         $cacheKey = "mpd:nasional:mode-share-page:v2:{$dString}";
 
         try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
+            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
                 return [
                     'summary' => $this->getModeSharePageData($startDate, $endDate),
                     'daily' => $this->getDailyModeShareData($startDate, $endDate),
@@ -1303,15 +1277,8 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:nasional:pergerakan-harian:v5';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getPergerakanHarianData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getPergerakanHarianData($startDate, $endDate);
-        }
+        $cacheKey = 'mpd:nasional:pergerakan-harian:v6';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getPergerakanHarianData($startDate, $endDate));
 
         return view('pages.nasional.pergerakan-harian', [
             'dates' => $dates,
@@ -1463,15 +1430,8 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v2';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getPergerakanDataTables($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getPergerakanDataTables($startDate, $endDate);
-        }
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v3';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
             'title' => 'Pergerakan Nasional',
@@ -1819,18 +1779,9 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         // 2. Caching Key
-        $cacheKey = 'mpd:jabodetabek:pergerakan:tables:v2';
-
+        $cacheKey = 'mpd:jabodetabek:pergerakan:tables:v3';
         $jabodetabekCodes = $this->getJabodetabekCodes();
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes);
-            });
-        } catch (\Throwable $e) {
-            // Redis/DB Fallback
-            $data = $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes));
 
         return view('data-mpd.jabodetabek.pergerakan', [
             'title' => 'Pergerakan Jabodetabek',
@@ -1923,18 +1874,9 @@ class DataMpdController extends Controller
         $isForecast = ($kategoriFilter === 'FORECAST');
 
         // 2. Caching Key
-        $cacheKey = "mpd:jabodetabek:pergerakan-orang:v2:{$isForecast}";
-
+        $cacheKey = "mpd:jabodetabek:pergerakan-orang:v3:{$isForecast}";
         $jabodetabekCodes = $this->getJabodetabekCodes();
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $jabodetabekCodes, $isForecast) {
-                return $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast);
-            });
-        } catch (\Throwable $e) {
-            // Fallback
-            $data = $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast));
 
         return view('data-mpd.jabodetabek.pergerakan-orang', [
             'title' => 'Akumulasi Pergerakan & Orang Jabodetabek',
@@ -1999,13 +1941,7 @@ class DataMpdController extends Controller
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:substansi:netflow:v1:{$dString}";
 
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getSubstansiNetflowData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getSubstansiNetflowData($startDate, $endDate);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getSubstansiNetflowData($startDate, $endDate));
 
         return view('pages.substansi.netflow', [
             'title' => 'Netflow Pergerakan Nasional',
@@ -2129,13 +2065,7 @@ class DataMpdController extends Controller
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:kesimpulan:nasional:v1:{$dString}";
 
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getKesimpulanNasionalData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getKesimpulanNasionalData($startDate, $endDate);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getKesimpulanNasionalData($startDate, $endDate));
 
         return view('pages.kesimpulan.nasional', [
             'title' => 'Kesimpulan Nasional',
@@ -2172,20 +2102,13 @@ class DataMpdController extends Controller
             ->sum('total');
 
         // 3. Kontribusi Operator (TSEL, IOH, XL)
-        $opselMovement = DB::table('spatial_movements')
-            ->select('opsel', DB::raw('SUM(total) as op_total'))
+        // Batched: Single query for both PERGERAKAN and ORANG opsel stats
+        $opselAll = DB::table('spatial_movements')
+            ->select('opsel', 'kategori', DB::raw('SUM(total) as op_total'))
             ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-            ->where('kategori', 'PERGERAKAN')
+            ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
             ->where('is_forecast', false)
-            ->groupBy('opsel')
-            ->get();
-
-        $opselOrang = DB::table('spatial_movements')
-            ->select('opsel', DB::raw('SUM(total) as op_total'))
-            ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-            ->where('kategori', 'ORANG')
-            ->where('is_forecast', false)
-            ->groupBy('opsel')
+            ->groupBy('opsel', 'kategori')
             ->get();
 
         $operatorStats = [
@@ -2193,28 +2116,11 @@ class DataMpdController extends Controller
             'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0],
         ];
 
-        foreach ($opselMovement as $row) {
-            $rawOpsel = strtoupper($row->opsel);
-            if (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                $operatorStats['PERGERAKAN']['TSEL'] += $row->op_total;
-            }
-            if (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                $operatorStats['PERGERAKAN']['IOH'] += $row->op_total;
-            }
-            if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS') || str_contains($rawOpsel, 'SMARTFREN')) {
-                $operatorStats['PERGERAKAN']['XL'] += $row->op_total;
-            }
-        }
-        foreach ($opselOrang as $row) {
-            $rawOpsel = strtoupper($row->opsel);
-            if (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                $operatorStats['ORANG']['TSEL'] += $row->op_total;
-            }
-            if (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                $operatorStats['ORANG']['IOH'] += $row->op_total;
-            }
-            if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS') || str_contains($rawOpsel, 'SMARTFREN')) {
-                $operatorStats['ORANG']['XL'] += $row->op_total;
+        foreach ($opselAll as $row) {
+            $cat = strtoupper($row->kategori);
+            $normalized = $this->normalizeOpsel($row->opsel);
+            if ($normalized !== 'OTHER' && isset($operatorStats[$cat][$normalized])) {
+                $operatorStats[$cat][$normalized] += $row->op_total;
             }
         }
 
@@ -2290,13 +2196,7 @@ class DataMpdController extends Controller
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:kesimpulan:jabodetabek:v1:{$dString}";
 
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getKesimpulanJabodetabekData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getKesimpulanJabodetabekData($startDate, $endDate);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getKesimpulanJabodetabekData($startDate, $endDate));
 
         return view('pages.kesimpulan.jabodetabek', [
             'title' => 'Kesimpulan Jabodetabek',
@@ -2311,10 +2211,7 @@ class DataMpdController extends Controller
         $startDateStr = $startDate->format('Y-m-d');
         $endDateStr = $endDate->format('Y-m-d');
 
-        $jabodetabekCodes = [
-            '3171', '3172', '3173', '3174', '3175', '3101', // DKI Jakarta
-            '3271', '3201', '3276', '3216', '3671', '3603', '3674', // Bodebek
-        ];
+        $jabodetabekCodes = $this->getJabodetabekCodes();
 
         // 1. INTRA JABODETABEK Peak Days
         $intraDaily = DB::table('spatial_movements as sm')
@@ -2423,7 +2320,7 @@ class DataMpdController extends Controller
         $subCat = $cfg['sub_category'];
         $cacheKey = "mpd:simpul:{$slug}:".$startDate->format('Ymd').'_'.$endDate->format('Ymd');
 
-        $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $category, $subCat) {
+        $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $category, $subCat) {
 
             // --- Build the base node query filter ---
             $nodeFilter = function ($query) use ($category, $subCat) {

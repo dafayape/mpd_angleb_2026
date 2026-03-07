@@ -44,8 +44,9 @@ return [
     */
 
     'cache_ttl' => [
-        'dashboard' => 3600,      // 1 jam
-        'data_page' => 3600,      // 1 jam
+        'dashboard' => 10800,      // 3 jam
+        'data_page' => 21600,      // 6 jam
+        'grafik' => 21600,         // 6 jam
         'ai_rekomendasi' => 86400, // 24 jam
     ],
 

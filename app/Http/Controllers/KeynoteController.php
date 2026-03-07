@@ -101,7 +101,7 @@ class KeynoteController extends Controller
             // Cache key
             $cacheKey = "keynote:table:v1:{$startDate}:{$endDate}:{$opselFilter}";
 
-            return Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $opselFilter) {
+            return Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $opselFilter) {
 
                 // Fetch Simpuls for names
                 $simpuls = Simpul::select('code', 'name')->get()->keyBy('code');

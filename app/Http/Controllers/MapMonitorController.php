@@ -63,7 +63,7 @@ class MapMonitorController extends Controller
             $cacheKey = "map_monitor:data:v6:{$startDate}:{$endDate}:{$opselFilter}";
 
             // Cache for 1 hour (3600s)
-            return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $opselFilter) {
+            return \Illuminate\Support\Facades\Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $opselFilter) {
 
                 \Illuminate\Support\Facades\Log::info("MapMonitor: Generating data for {$startDate} to {$endDate}");
 
@@ -246,7 +246,7 @@ class MapMonitorController extends Controller
 
             $cacheKey = "netflow:{$startDate}:{$endDate}:{$isForecast}";
 
-            $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $isForecast) {
+            $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $isForecast) {
                 // Inflow: sum(total) grouped by dest kab/kota
                 $inflow = DB::table('spatial_movements')
                     ->select('kode_dest_kabupaten_kota as code', DB::raw('SUM(total) as total'))

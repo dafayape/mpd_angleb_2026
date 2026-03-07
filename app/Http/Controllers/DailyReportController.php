@@ -30,7 +30,7 @@ class DailyReportController extends Controller
 
         // Cache data for report
         $cacheKey = "dailyreport:text:v4:{$startDate}:{$endDate}:{$isForecast}:{$opselFilter}";
-        $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate, $isForecast, $opselFilter) {
+        $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $isForecast, $opselFilter) {
 
             // Jabodetabek codes
             $jabodetabekCodes = config('mpd.jabodetabek_codes');

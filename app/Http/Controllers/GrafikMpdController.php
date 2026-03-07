@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\MpdHelpers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -9,6 +10,7 @@ use Carbon\Carbon;
 
 class GrafikMpdController extends Controller
 {
+    use MpdHelpers;
     /**
      * Display Nasional Pergerakan Dashboard
      */
@@ -18,15 +20,8 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
         
         // Cache Key
-        $cacheKey = 'grafik:nasional:pergerakan:v1';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getChartData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getChartData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:nasional:pergerakan:v2';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getChartData($startDate, $endDate));
 
         return view('grafik-mpd.nasional.pergerakan', [
             'title' => 'Dashboard Grafik Pergerakan Nasional',
@@ -144,14 +139,7 @@ class GrafikMpdController extends Controller
         ];
     }
 
-    private function normalizeOpsel(string $opsel): string
-    {
-        $raw = strtoupper($opsel);
-        if (str_contains($raw, 'XL') || str_contains($raw, 'AXIS')) return 'XL';
-        if (str_contains($raw, 'INDOSAT') || str_contains($raw, 'IOH') || str_contains($raw, 'TRI')) return 'IOH';
-        if (str_contains($raw, 'TELKOMSEL') || str_contains($raw, 'TSEL')) return 'TSEL';
-        return 'OTHER';
-    }
+    // normalizeOpsel() now provided by MpdHelpers trait
     
     // Placeholder methods for other routes to prevent errors
     public function nasionalOdProvinsi(Request $request) 
@@ -159,15 +147,8 @@ class GrafikMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
 
-        $cacheKey = 'grafik:nasional:od-provinsi:v1';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getOdProvinsiData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getOdProvinsiData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:nasional:od-provinsi:v2';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getOdProvinsiData($startDate, $endDate));
 
         return view('grafik-mpd.nasional.od-provinsi', [
             'title' => 'O-D Provinsi',
@@ -270,16 +251,8 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
-        $cacheKey = 'grafik:nasional:top-kabkota:v1';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getTopKabKotaData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Top KabKota Error: ' . $e->getMessage());
-            $data = $this->getTopKabKotaData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:nasional:top-kabkota:v2';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getTopKabKotaData($startDate, $endDate));
 
         return view('grafik-mpd.nasional.top-kabkota', [
             'title' => 'Top 10 Kabupaten/Kota',
@@ -369,17 +342,8 @@ class GrafikMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
 
-        $cacheKey = 'grafik:nasional:mode-share:v6';
-
-        try {
-            // \Illuminate\Support\Facades\Log::info("Generating Mode Share Data v5 for $startDate to $endDate");
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getModeShareData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-             \Illuminate\Support\Facades\Log::error('Mode Share Error: ' . $e->getMessage());
-            $data = $this->getModeShareData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:nasional:mode-share:v7';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getModeShareData($startDate, $endDate));
 
         return view('grafik-mpd.nasional.mode-share', [
             'title' => 'Mode Share Nasional',
@@ -545,16 +509,8 @@ class GrafikMpdController extends Controller
         $endDate = \Carbon\Carbon::create(2026, 3, 30);
 
         // Cache Key v6: Connected to Real Data Source (PostGIS/Spatial)
-        $cacheKey = 'grafik:nasional:simpul:v6';
-
-        try {
-            $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getSimpulDashboardData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Nasional Simpul Dashboard Error: ' . $e->getMessage());
-            $data = $this->getSimpulDashboardData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:nasional:simpul:v7';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getSimpulDashboardData($startDate, $endDate));
 
         return view('grafik-mpd.nasional.simpul', [
             'title' => 'Dashboard Simpul & Pergerakan',
@@ -566,17 +522,16 @@ class GrafikMpdController extends Controller
     private function getSimpulDashboardData($startDate, $endDate)
     {
         // Define Tabs with Sections
-        // Tab -> Sections -> Charts/Logic
         $tabs = [
             'DARAT' => [
                 'sections' => [
                     [
                         'title' => 'Simpul Darat',
                         'subtitle' => 'Kode 1.3.a.1',
-                        'modes' => ['A', 'B', 'I', 'J', 'K'], 
+                        'modes' => ['A', 'B', 'I', 'J', 'K'],
                         'daily_charts' => ['A' => 'Bus AKAP', 'B' => 'Bus AKDP'],
                         'show_top_10' => true,
-                        'show_top_od' => false // REMOVE per request
+                        'show_top_od' => false
                     ]
                 ]
             ],
@@ -585,7 +540,7 @@ class GrafikMpdController extends Controller
                     [
                         'title' => 'Pelabuhan Penyeberangan',
                         'subtitle' => 'Kode 1.3.d.1',
-                        'modes' => ['G'], 
+                        'modes' => ['G'],
                         'daily_charts' => ['G' => 'Kapal Penyeberangan'],
                         'show_top_10' => true,
                         'show_top_od' => true
@@ -608,26 +563,26 @@ class GrafikMpdController extends Controller
                         'modes' => ['H'],
                         'daily_charts' => ['H' => 'Angkutan Udara'],
                         'show_top_10' => true,
-                        'show_top_od' => false // REMOVE per request
+                        'show_top_od' => false
                     ]
                 ]
             ],
             'KERETA' => [
                 'sections' => [
-                     [
+                    [
                         'title' => 'Kereta Api (Antar Kota)',
                         'subtitle' => 'Kode 1.3.b.1',
                         'modes' => ['C'],
                         'daily_charts' => ['C' => 'K.A. Antar Kota'],
-                        'show_top_10' => true, // "tambahin top 10 stasiun antar kota"
-                        'show_top_od' => true  // "tambahin top 10 rute"
+                        'show_top_10' => true,
+                        'show_top_od' => true
                     ],
                     [
                         'title' => 'Kereta Api (Perkotaan)',
                         'subtitle' => 'Kode 1.3.b.2',
                         'modes' => ['E'],
                         'daily_charts' => ['E' => 'K.A. Perkotaan'],
-                        'show_top_10' => true, // "tambahin top 10 stasiun perkotaan"
+                        'show_top_10' => true,
                         'show_top_od' => true
                     ],
                     [
@@ -635,7 +590,7 @@ class GrafikMpdController extends Controller
                         'subtitle' => 'Kode 1.3.d.1',
                         'modes' => ['D'],
                         'daily_charts' => ['D' => 'K.A. Cepat Whoosh'],
-                        'show_top_10' => false, // Only "rute" requested for global, specific stasiun not mentioned for Whoosh
+                        'show_top_10' => false,
                         'show_top_od' => true
                     ]
                 ]
@@ -652,11 +607,80 @@ class GrafikMpdController extends Controller
             $curr->addDay();
         }
 
+        $startStr = $startDate->format('Y-m-d');
+        $endStr = $endDate->format('Y-m-d');
+
+        // ============================================================
+        // BATCHED QUERIES: Fetch ALL data in 4 queries instead of N+1
+        // ============================================================
+
+        // Collect all mode codes needed across all sections
+        $allModeCodes = [];
+        $allDailyChartCodes = [];
+        foreach ($tabs as $tabConfig) {
+            foreach ($tabConfig['sections'] as $section) {
+                $allModeCodes = array_merge($allModeCodes, $section['modes']);
+                $allDailyChartCodes = array_merge($allDailyChartCodes, array_keys($section['daily_charts']));
+            }
+        }
+        $allModeCodes = array_unique($allModeCodes);
+        $allDailyChartCodes = array_unique($allDailyChartCodes);
+
+        // BATCH 1: Daily chart data for ALL modes at once
+        $allDailyData = DB::table('spatial_movements')
+            ->select('kode_moda', 'tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+            ->whereIn('kode_moda', $allDailyChartCodes)
+            ->where('kategori', 'PERGERAKAN')
+            ->whereBetween('tanggal', [$startStr, $endStr])
+            ->groupBy('kode_moda', 'tanggal', 'is_forecast')
+            ->get()
+            ->groupBy('kode_moda');
+
+        // BATCH 2: Top 10 origin for ALL modes (will filter per-section in PHP)
+        $allTopOrigin = DB::table('spatial_movements as sm')
+            ->join('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
+            ->select('sm.kode_moda', 'n.name', DB::raw('SUM(sm.total) as total'))
+            ->whereIn('sm.kode_moda', $allModeCodes)
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->whereBetween('sm.tanggal', [$startStr, $endStr])
+            ->groupBy('sm.kode_moda', 'n.name')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('kode_moda');
+
+        // BATCH 3: Top 10 dest for ALL modes
+        $allTopDest = DB::table('spatial_movements as sm')
+            ->join('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
+            ->select('sm.kode_moda', 'n.name', DB::raw('SUM(sm.total) as total'))
+            ->whereIn('sm.kode_moda', $allModeCodes)
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->whereBetween('sm.tanggal', [$startStr, $endStr])
+            ->groupBy('sm.kode_moda', 'n.name')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('kode_moda');
+
+        // BATCH 4: Top OD pairs for ALL modes
+        $allTopOd = DB::table('spatial_movements as sm')
+            ->join('ref_transport_nodes as no', 'sm.kode_origin_simpul', '=', 'no.code')
+            ->join('ref_transport_nodes as nd', 'sm.kode_dest_simpul', '=', 'nd.code')
+            ->select('sm.kode_moda', 'no.name as origin', 'nd.name as dest', DB::raw('SUM(sm.total) as total'))
+            ->whereIn('sm.kode_moda', $allModeCodes)
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->whereBetween('sm.tanggal', [$startStr, $endStr])
+            ->groupBy('sm.kode_moda', 'no.name', 'nd.name')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('kode_moda');
+
+        // ============================================================
+        // ASSEMBLE: Split batched data per section (in-memory, no DB)
+        // ============================================================
         $result = ['dates' => $dates, 'tabs' => []];
 
         foreach ($tabs as $key => $tabConfig) {
             $tabData = ['sections' => []];
-            
+
             foreach ($tabConfig['sections'] as $section) {
                 $secData = [
                     'title' => $section['title'],
@@ -665,19 +689,13 @@ class GrafikMpdController extends Controller
                     'top_dest' => [],
                     'top_od' => []
                 ];
-                
+
                 $modeCodes = $section['modes'];
 
-                // 1. DAILY CHARTS
+                // 1. DAILY CHARTS — filter from batched data
                 foreach ($section['daily_charts'] as $code => $label) {
-                    $daily = DB::table('spatial_movements')
-                        ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
-                        ->where('kode_moda', $code)
-                        ->where('kategori', 'PERGERAKAN')
-                        ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                        ->groupBy('tanggal', 'is_forecast')
-                        ->get();
-                    
+                    $daily = $allDailyData->get($code, collect());
+
                     $realSeries = array_fill(0, count($dates), 0);
                     $fcSeries = array_fill(0, count($dates), 0);
                     $totalReal = 0;
@@ -705,51 +723,43 @@ class GrafikMpdController extends Controller
                     ];
                 }
 
-                // 2. TOP 10 ORIGIN
+                // 2. TOP 10 ORIGIN — merge & rank from batched data
                 if ($section['show_top_10']) {
-                    $secData['top_origin'] = DB::table('spatial_movements as sm')
-                        ->join('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
-                        ->select('n.name', DB::raw('SUM(sm.total) as total'))
-                        ->whereIn('sm.kode_moda', $modeCodes)
-                        ->where('sm.kategori', 'PERGERAKAN')
-                        ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                        ->groupBy('n.name')
-                        ->orderByDesc('total')
-                        ->limit(10)
-                        ->get();
+                    $merged = collect();
+                    foreach ($modeCodes as $mc) {
+                        $merged = $merged->merge($allTopOrigin->get($mc, collect()));
+                    }
+                    $secData['top_origin'] = $merged->groupBy('name')
+                        ->map(fn($rows) => (object) ['name' => $rows->first()->name, 'total' => $rows->sum('total')])
+                        ->sortByDesc('total')
+                        ->take(10)
+                        ->values();
 
-                    $secData['top_dest'] = DB::table('spatial_movements as sm')
-                        ->join('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
-                        ->select('n.name', DB::raw('SUM(sm.total) as total'))
-                        ->whereIn('sm.kode_moda', $modeCodes)
-                        ->where('sm.kategori', 'PERGERAKAN')
-                        ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                        ->groupBy('n.name')
-                        ->orderByDesc('total')
-                        ->limit(10)
-                        ->get();
+                    $merged = collect();
+                    foreach ($modeCodes as $mc) {
+                        $merged = $merged->merge($allTopDest->get($mc, collect()));
+                    }
+                    $secData['top_dest'] = $merged->groupBy('name')
+                        ->map(fn($rows) => (object) ['name' => $rows->first()->name, 'total' => $rows->sum('total')])
+                        ->sortByDesc('total')
+                        ->take(10)
+                        ->values();
                 }
 
-                // 3. TOP OD ROUTE (New Requirement)
+                // 3. TOP OD ROUTE — merge & rank from batched data
                 if ($section['show_top_od']) {
-                     // Join Origin Node AND Dest Node
-                     $secData['top_od'] = DB::table('spatial_movements as sm')
-                        ->join('ref_transport_nodes as no', 'sm.kode_origin_simpul', '=', 'no.code')
-                        ->join('ref_transport_nodes as nd', 'sm.kode_dest_simpul', '=', 'nd.code')
-                        ->select('no.name as origin', 'nd.name as dest', DB::raw('SUM(sm.total) as total'))
-                        ->whereIn('sm.kode_moda', $modeCodes)
-                        ->where('sm.kategori', 'PERGERAKAN')
-                        ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                        ->groupBy('no.name', 'nd.name')
-                        ->orderByDesc('total')
-                        ->limit(10)
-                        ->get()
-                        ->map(function($item) {
-                            return [
-                                'name' => '[' . $item->origin . '] -> [' . $item->dest . ']',
-                                'total' => $item->total
-                            ];
-                        });
+                    $merged = collect();
+                    foreach ($modeCodes as $mc) {
+                        $merged = $merged->merge($allTopOd->get($mc, collect()));
+                    }
+                    $secData['top_od'] = $merged->groupBy(fn($item) => $item->origin . '|||' . $item->dest)
+                        ->map(fn($rows) => [
+                            'name' => '[' . $rows->first()->origin . '] -> [' . $rows->first()->dest . ']',
+                            'total' => $rows->sum('total')
+                        ])
+                        ->sortByDesc('total')
+                        ->take(10)
+                        ->values();
                 }
 
                 $tabData['sections'][] = $secData;
@@ -766,16 +776,8 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
-        $cacheKey = 'grafik:jabodetabek:pergerakan-orang:v1';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getJabodetabekChartData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Jabodetabek Chart Error: ' . $e->getMessage());
-            $data = $this->getJabodetabekChartData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:jabodetabek:pergerakan-orang:v2';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getJabodetabekChartData($startDate, $endDate));
 
         return view('grafik-mpd.jabodetabek.pergerakan-orang', [
             'title' => 'Dashboard Pergerakan & Orang Jabodetabek',
@@ -786,12 +788,7 @@ class GrafikMpdController extends Controller
 
     private function getJabodetabekChartData($startDate, $endDate)
     {
-        $jabodetabekCodes = [
-            '3171', '3172', '3173', '3174', '3175', '3101',
-            '3201', '3271', '3276',
-            '3603', '3671', '3674',
-            '3216', '3275'
-        ];
+        $jabodetabekCodes = $this->getJabodetabekCodes();
 
         $dates = [];
         $curr = $startDate->copy();
@@ -892,16 +889,8 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
-        $cacheKey = 'grafik:jabodetabek:pergerakan-orang-opsel:v1';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getJabodetabekOpselData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Jabodetabek Opsel Error: ' . $e->getMessage());
-            $data = $this->getJabodetabekOpselData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:jabodetabek:pergerakan-orang-opsel:v2';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getJabodetabekOpselData($startDate, $endDate));
 
         return view('grafik-mpd.jabodetabek.pergerakan-orang-opsel', [
             'title' => 'Dashboard Pergerakan & Orang per Operator (Jabodetabek)',
@@ -912,12 +901,7 @@ class GrafikMpdController extends Controller
 
     private function getJabodetabekOpselData($startDate, $endDate)
     {
-        $jabodetabekCodes = [
-            '3171', '3172', '3173', '3174', '3175', '3101',
-            '3201', '3271', '3276',
-            '3603', '3671', '3674',
-            '3216', '3275'
-        ];
+        $jabodetabekCodes = $this->getJabodetabekCodes();
 
         $dates = [];
         $curr = $startDate->copy();
@@ -997,16 +981,8 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
-        $cacheKey = 'grafik:jabodetabek:od-kabkota:v2';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getJabodetabekOdData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Jabodetabek OD Error: ' . $e->getMessage());
-            $data = $this->getJabodetabekOdData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:jabodetabek:od-kabkota:v3';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getJabodetabekOdData($startDate, $endDate));
 
         return view('grafik-mpd.jabodetabek.od-kabkota', [
             'title' => 'O-D Kabupaten/Kota (Jabodetabek)',
@@ -1017,13 +993,7 @@ class GrafikMpdController extends Controller
 
     private function getJabodetabekOdData($startDate, $endDate)
     {
-        $jabodetabekCodes = [
-            '3171', '3172', '3173', '3174', '3175', '3101',
-            '3201', '3271',
-            '3276',
-            '3603', '3671', '3674',
-            '3216', '3275'
-        ];
+        $jabodetabekCodes = $this->getJabodetabekCodes();
 
         // 1. Query Top/Sankey: Sum Total by Origin City & Dest City (INTERNAL FLOW Only)
         try {
@@ -1129,16 +1099,8 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
-        $cacheKey = 'grafik:jabodetabek:mode-share:v2';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getJabodetabekModeShareData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Jabodetabek Mode Share Error: ' . $e->getMessage());
-            $data = $this->getJabodetabekModeShareData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:jabodetabek:mode-share:v3';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getJabodetabekModeShareData($startDate, $endDate));
 
         return view('grafik-mpd.jabodetabek.mode-share', [
             'title' => 'Mode Share (Jabodetabek)',
@@ -1149,13 +1111,7 @@ class GrafikMpdController extends Controller
 
     private function getJabodetabekModeShareData($startDate, $endDate)
     {
-        $jabodetabekCodes = [
-            '3171', '3172', '3173', '3174', '3175', '3101',
-            '3201', '3271',
-            '3276',
-            '3603', '3671', '3674',
-            '3216', '3275'
-        ];
+        $jabodetabekCodes = $this->getJabodetabekCodes();
 
         // 1. Get All Modes
         $allModes = DB::table('ref_transport_modes')->select('code', 'name')->orderBy('code')->get();
@@ -1236,16 +1192,8 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
-        $cacheKey = 'grafik:jabodetabek:simpul:v1';
-
-        try {
-            $data = Cache::remember($cacheKey, 3600, function () use ($startDate, $endDate) {
-                return $this->getJabodetabekSimpulData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Jabodetabek Simpul Error: ' . $e->getMessage());
-            $data = $this->getJabodetabekSimpulData($startDate, $endDate);
-        }
+        $cacheKey = 'grafik:jabodetabek:simpul:v2';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getJabodetabekSimpulData($startDate, $endDate));
 
         return view('grafik-mpd.jabodetabek.simpul', [
             'title' => 'Dashboard Simpul Transportasi (Jabodetabek)',
@@ -1257,13 +1205,7 @@ class GrafikMpdController extends Controller
     private function getJabodetabekSimpulData($startDate, $endDate)
     {
         // 1. Define Jabodetabek Cities
-        $jabodetabekCodes = [
-            '3171', '3172', '3173', '3174', '3175', '3101', // DKI
-            '3201', '3271', // Bogor
-            '3276', // Depok
-            '3603', '3671', '3674', // Tangerang
-            '3216', '3275' // Bekasi
-        ];
+        $jabodetabekCodes = $this->getJabodetabekCodes();
 
         // 2. Define Tabs & Categories
         $tabs = [
@@ -1282,87 +1224,134 @@ class GrafikMpdController extends Controller
 
         $result = ['dates' => $dates, 'tabs' => []];
 
-        // 3. Process Each Tab
+        $startStr = $startDate->format('Y-m-d');
+        $endStr = $endDate->format('Y-m-d');
+
+        // ============================================================
+        // BATCHED QUERIES: 4 queries for ALL tabs instead of N per tab
+        // ============================================================
+        $allModeCodes = array_unique(array_merge(...array_values($tabs)));
+
+        // BATCH 1: Daily data per mode (Jabo origin)
+        $allDailyData = DB::table('spatial_movements')
+            ->select('kode_moda', 'tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
+            ->where('kategori', 'PERGERAKAN')
+            ->whereBetween('tanggal', [$startStr, $endStr])
+            ->whereIn('kode_moda', $allModeCodes)
+            ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('kode_moda', 'tanggal', 'is_forecast')
+            ->get()
+            ->groupBy('kode_moda');
+
+        // BATCH 2: Top origin simpul (Real, Jabo origin)
+        $allTopOrigin = DB::table('spatial_movements as sm')
+            ->leftJoin('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
+            ->select('sm.kode_moda', 'sm.kode_origin_simpul as code', DB::raw('COALESCE(n.name, sm.kode_origin_simpul) as name'), DB::raw('SUM(sm.total) as total'))
+            ->whereBetween('sm.tanggal', [$startStr, $endStr])
+            ->whereIn('sm.kode_moda', $allModeCodes)
+            ->where('sm.is_forecast', false)
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('sm.kode_moda', 'sm.kode_origin_simpul', 'n.name')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('kode_moda');
+
+        // BATCH 3: Top dest simpul (Real, Jabo dest)
+        $allTopDest = DB::table('spatial_movements as sm')
+            ->leftJoin('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
+            ->select('sm.kode_moda', 'sm.kode_dest_simpul as code', DB::raw('COALESCE(n.name, sm.kode_dest_simpul) as name'), DB::raw('SUM(sm.total) as total'))
+            ->whereBetween('sm.tanggal', [$startStr, $endStr])
+            ->whereIn('sm.kode_moda', $allModeCodes)
+            ->where('sm.is_forecast', false)
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('sm.kode_moda', 'sm.kode_dest_simpul', 'n.name')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('kode_moda');
+
+        // BATCH 4: Top OD pairs (Real, Jabo origin)
+        $allTopOd = DB::table('spatial_movements as sm')
+            ->leftJoin('ref_transport_nodes as o', 'sm.kode_origin_simpul', '=', 'o.code')
+            ->leftJoin('ref_transport_nodes as d', 'sm.kode_dest_simpul', '=', 'd.code')
+            ->select(
+                'sm.kode_moda',
+                DB::raw("CONCAT(COALESCE(o.name, sm.kode_origin_simpul), ' -> ', COALESCE(d.name, sm.kode_dest_simpul)) as name"),
+                DB::raw('SUM(sm.total) as total')
+            )
+            ->whereBetween('sm.tanggal', [$startStr, $endStr])
+            ->whereIn('sm.kode_moda', $allModeCodes)
+            ->where('sm.is_forecast', false)
+            ->where('sm.kategori', 'PERGERAKAN')
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+            ->groupBy('sm.kode_moda', 'o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
+            ->orderByDesc('total')
+            ->get()
+            ->groupBy('kode_moda');
+
+        // ============================================================
+        // ASSEMBLE: Build per-tab result from batched data
+        // ============================================================
         foreach ($tabs as $tabName => $modes) {
-            
-            // Daily Chart Data
-            $dailyQuery = DB::table('spatial_movements')
-                ->select('tanggal', 'is_forecast', DB::raw('SUM(total) as total'))
-                ->where('kategori', 'PERGERAKAN')
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kode_moda', $modes)
-                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes) // Filter Jabo Origin
-                ->groupBy('tanggal', 'is_forecast')
-                ->get();
+            // Daily: merge modes for this tab
+            $mergedDaily = collect();
+            foreach ($modes as $mc) {
+                $mergedDaily = $mergedDaily->merge($allDailyData->get($mc, collect()));
+            }
 
             $seriesReal = array_fill_keys($dates, 0);
             $seriesForecast = array_fill_keys($dates, 0);
             $totalReal = 0;
             $totalForecast = 0;
 
-            foreach ($dailyQuery as $row) {
+            foreach ($mergedDaily as $row) {
                 if ($row->is_forecast) {
-                    $seriesForecast[$row->tanggal] = (int) $row->total;
+                    $seriesForecast[$row->tanggal] = ($seriesForecast[$row->tanggal] ?? 0) + (int) $row->total;
                     $totalForecast += (int) $row->total;
                 } else {
-                    $seriesReal[$row->tanggal] = (int) $row->total;
+                    $seriesReal[$row->tanggal] = ($seriesReal[$row->tanggal] ?? 0) + (int) $row->total;
                     $totalReal += (int) $row->total;
                 }
             }
 
-            // Top 10 Origin Simpul (Real Only)
-            $topOrigin = DB::table('spatial_movements as sm')
-                // Join to get Name (optional, or use code)
-                ->leftJoin('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
-                ->select('sm.kode_origin_simpul as code', DB::raw('COALESCE(n.name, sm.kode_origin_simpul) as name'), DB::raw('SUM(sm.total) as total'))
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kode_moda', $modes)
-                ->where('sm.is_forecast', false)
-                ->where('sm.kategori', 'PERGERAKAN')
-                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('sm.kode_origin_simpul', 'n.name')
-                ->orderByDesc('total')
-                ->limit(10)
-                ->get();
+            // Top origin: merge modes, re-rank
+            $mergedOrigin = collect();
+            foreach ($modes as $mc) {
+                $mergedOrigin = $mergedOrigin->merge($allTopOrigin->get($mc, collect()));
+            }
+            $topOrigin = $mergedOrigin->groupBy('name')
+                ->map(fn($rows) => (object) ['code' => $rows->first()->code, 'name' => $rows->first()->name, 'total' => $rows->sum('total')])
+                ->sortByDesc('total')
+                ->take(10)
+                ->values();
 
-            // Top 10 Dest Simpul (Real Only)
-            $topDest = DB::table('spatial_movements as sm')
-                ->leftJoin('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
-                ->select('sm.kode_dest_simpul as code', DB::raw('COALESCE(n.name, sm.kode_dest_simpul) as name'), DB::raw('SUM(sm.total) as total'))
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kode_moda', $modes)
-                ->where('sm.is_forecast', false)
-                ->where('sm.kategori', 'PERGERAKAN')
-                // Filter Dest Jabo? Probably yes for consistency "Simpul Jabo"
-                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('sm.kode_dest_simpul', 'n.name')
-                ->orderByDesc('total')
-                ->limit(10)
-                ->get();
+            // Top dest: merge modes, re-rank
+            $mergedDest = collect();
+            foreach ($modes as $mc) {
+                $mergedDest = $mergedDest->merge($allTopDest->get($mc, collect()));
+            }
+            $topDest = $mergedDest->groupBy('name')
+                ->map(fn($rows) => (object) ['code' => $rows->first()->code, 'name' => $rows->first()->name, 'total' => $rows->sum('total')])
+                ->sortByDesc('total')
+                ->take(10)
+                ->values();
 
-            // Top 10 OD Route
-             $topOD = DB::table('spatial_movements as sm')
-                ->leftJoin('ref_transport_nodes as o', 'sm.kode_origin_simpul', '=', 'o.code')
-                ->leftJoin('ref_transport_nodes as d', 'sm.kode_dest_simpul', '=', 'd.code')
-                ->select(
-                    DB::raw("CONCAT(COALESCE(o.name, sm.kode_origin_simpul), ' -> ', COALESCE(d.name, sm.kode_dest_simpul)) as name"),
-                    DB::raw('SUM(sm.total) as total')
-                )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kode_moda', $modes)
-                ->where('sm.is_forecast', false)
-                ->where('sm.kategori', 'PERGERAKAN')
-                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
-                ->orderByDesc('total')
-                ->limit(10)
-                ->get();
-
+            // Top OD: merge modes, re-rank
+            $mergedOd = collect();
+            foreach ($modes as $mc) {
+                $mergedOd = $mergedOd->merge($allTopOd->get($mc, collect()));
+            }
+            $topOD = $mergedOd->groupBy('name')
+                ->map(fn($rows) => (object) ['name' => $rows->first()->name, 'total' => $rows->sum('total')])
+                ->sortByDesc('total')
+                ->take(10)
+                ->values();
 
             $result['tabs'][$tabName] = [
                 'sections' => [
                     [
-                        'title' => 'Simpul ' . $tabName, // e.g. "Simpul DARAT"
+                        'title' => 'Simpul ' . $tabName,
                         'subtitle' => 'Periode 13-30 Maret 2026 (Jabodetabek)',
                         'daily_charts' => [
                             [
