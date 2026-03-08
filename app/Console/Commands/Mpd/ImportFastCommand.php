@@ -53,7 +53,7 @@ class ImportFastCommand extends Command
         
         $job = ImportJob::create([
             'filename' => $filename,
-            'original_filename' => $filename . ' (CLI Fast Copier)',
+            'original_filename' => $filename,
             'opsel' => $opsel,
             'kategori' => $kategori,
             'tanggal_data' => $tanggal,
@@ -81,37 +81,55 @@ class ImportFastCommand extends Command
 
         $this->info("✅ [2/4] Validasi Lolos! Memulai injeksi langsung ke Database...");
 
-        // 4. Proses Inti: PostgreSQL Native COPY
+        // 4. Proses Inti: PostgreSQL Native COPY via Temporary Table
         try {
             DB::disableQueryLog();
             $pdo = DB::connection()->getPdo();
             
-            // Kolom di tabel raw_mpd_data. (Pastikan urutan ini cocok dengan susunan di dalam CSV)
-            $dbColumns = "tanggal, opsel, kategori, kode_origin_provinsi, origin_provinsi, kode_origin_kabupaten_kota, origin_kabupaten_kota, kode_dest_provinsi, dest_provinsi, kode_dest_kabupaten_kota, dest_kabupaten_kota, kode_origin_simpul, origin_simpul, kode_dest_simpul, dest_simpul, kode_moda, moda, total";
+            $tempTable = "temp_csv_" . $job->id;
             
-            // Sintaks COPY native dari file csv murni, mengabaikan Header baris ke-1
-            $query = "COPY raw_mpd_data ({$dbColumns}) FROM '{$path}' WITH (FORMAT csv, HEADER true, DELIMITER ';', ENCODING 'UTF8')";
-            
-            // Eksekusi: Sedot data! (Hanya butuh sekian detik)
-            $pdo->exec($query);
-            $this->info("✅ [3/4] Eksekusi COPY PostgreSQL Selesai (Sangat Cepat!).");
+            // a. Prepare Temp Table
+            $pdo->exec("
+                CREATE TEMPORARY TABLE {$tempTable} (
+                    tanggal DATE, opsel VARCHAR, kategori VARCHAR,
+                    kode_origin_provinsi VARCHAR, origin_provinsi VARCHAR,
+                    kode_origin_kabupaten_kota VARCHAR, origin_kabupaten_kota VARCHAR,
+                    kode_dest_provinsi VARCHAR, dest_provinsi VARCHAR,
+                    kode_dest_kabupaten_kota VARCHAR, dest_kabupaten_kota VARCHAR,
+                    kode_origin_simpul VARCHAR, origin_simpul VARCHAR,
+                    kode_dest_simpul VARCHAR, dest_simpul VARCHAR,
+                    kode_moda VARCHAR, moda VARCHAR, total INTEGER
+                ) ON COMMIT PRESERVE ROWS;
+            ");
 
-            // Karena pakai metode kilat, kita hitung ulang row yang sukses masuk berdasarkan identitasnya
-            $totalInserted = DB::table('raw_mpd_data')
-                ->where('tanggal', $tanggal)
-                ->where('opsel', $opsel)
-                ->where('kategori', $kategori)
-                ->count();
+            // b. COPY Cepat langsung ke Temp Table (Sedot File Murni)
+            $dbColumns = "tanggal, opsel, kategori, kode_origin_provinsi, origin_provinsi, kode_origin_kabupaten_kota, origin_kabupaten_kota, kode_dest_provinsi, dest_provinsi, kode_dest_kabupaten_kota, dest_kabupaten_kota, kode_origin_simpul, origin_simpul, kode_dest_simpul, dest_simpul, kode_moda, moda, total";
+            $query = "COPY {$tempTable} ({$dbColumns}) FROM '{$path}' WITH (FORMAT csv, HEADER true, DELIMITER ';', ENCODING 'UTF8')";
+            $pdo->exec($query);
+
+            // c. Migrasi Internal dari Temp ke Tabel Asli + MetaData
+            $isForecastStr = ($kategori === 'FORECAST') ? 'true' : 'false';
+            $insertQuery = "
+                INSERT INTO raw_mpd_data (
+                    import_job_id, is_forecast, created_at, updated_at, {$dbColumns}
+                )
+                SELECT 
+                    {$job->id}, {$isForecastStr}, NOW(), NOW(), {$dbColumns}
+                FROM {$tempTable}
+            ";
+            
+            $insertedRows = $pdo->exec($insertQuery);
+            $this->info("✅ [3/4] Eksekusi COPY PostgreSQL Selesai (Sangat Cepat!).");
 
             // 5. Update Status History ke "Completed" dengan jumlah baris aslinya
             $job->update([
                 'status' => 'completed',
                 'progress' => 100,
-                'total_rows' => $totalInserted,
-                'processed_rows' => $totalInserted,
+                'total_rows' => $insertedRows,
+                'processed_rows' => $insertedRows,
             ]);
 
-            $this->info("✅ [4/4] {$totalInserted} Baris berhasil masuk & History Web diupdate!");
+            $this->info("✅ [4/4] {$insertedRows} Baris berhasil masuk & History Web diupdate!");
 
             // 6. Jalankan Proses ETL Spasial secara Background (Mirroring dengan Web)
             \App\Jobs\Mpd\TransformRawToSpatialJob::dispatch($job->id);
