@@ -36,7 +36,7 @@ class ValidateCsvAction
      * @param  string|null  $selectedOpsel OPSEL yang dipilih di dropdown form (TSEL/IOH/XL)
      * @return array        Validation result
      */
-    public function execute(string $filePath, ?string $selectedOpsel = null): array
+    public function execute(string $filePath, ?string $selectedOpsel = null, ?string $selectedDate = null): array
     {
         $handle = @fopen($filePath, 'r');
         if ($handle === false) {
@@ -85,6 +85,7 @@ class ValidateCsvAction
         $rowsChecked = 0;
         $totalErrorRows = 0;
         $csvOpselValues = []; // Collect unique OPSEL values found in CSV
+        $csvTanggalValues = []; // Collect unique TANGGAL values found in CSV
 
         while (($line = fgets($handle)) !== false) {
             $line = trim(str_replace("\r", '', $line));
@@ -96,8 +97,13 @@ class ValidateCsvAction
             $cols = str_getcsv($line, self::DELIMITER);
             $issues = $this->validateRow($cols, $rowNum);
 
-            // Track unique OPSEL values efficiently
+            // Track unique OPSEL and TANGGAL values efficiently
             if (count($cols) >= 2) {
+                $tanggalVal = trim($cols[0]);
+                if ($tanggalVal !== '' && ! isset($csvTanggalValues[$tanggalVal])) {
+                    $csvTanggalValues[$tanggalVal] = true;
+                }
+
                 $opselVal = trim($cols[1]);
                 if ($opselVal !== '' && ! isset($csvOpselValues[$opselVal])) {
                     $csvOpselValues[$opselVal] = true;
@@ -130,8 +136,23 @@ class ValidateCsvAction
             }
         }
 
+        // ─── 4.5. TANGGAL MISMATCH CHECK ───
+        $tanggalMismatch = null;
+        if ($selectedDate && ! empty($csvTanggalValues)) {
+            $formattedSelectedDate = date('Y-m-d', strtotime($selectedDate));
+            $csvTanggals = array_keys($csvTanggalValues);
+            $mismatchedTanggal = array_filter($csvTanggals, fn ($t) => $t !== $formattedSelectedDate);
+            if (! empty($mismatchedTanggal)) {
+                $tanggalMismatch = [
+                    'selected' => $formattedSelectedDate,
+                    'found_in_csv' => $csvTanggals,
+                    'mismatched' => array_values($mismatchedTanggal),
+                ];
+            }
+        }
+
         // ─── 5. COMPILE RESULT ───
-        $isValid = $totalErrorRows === 0 && $opselMismatch === null;
+        $isValid = $totalErrorRows === 0 && $opselMismatch === null && $tanggalMismatch === null;
 
         return [
             'is_valid' => $isValid,
@@ -143,6 +164,7 @@ class ValidateCsvAction
             'header' => $headerResult,
             'row_errors' => $rowErrors,
             'opsel_mismatch' => $opselMismatch,
+            'tanggal_mismatch' => $tanggalMismatch,
             'summary' => [
                 'header_ok' => true,
                 'rows_checked' => $rowsChecked,

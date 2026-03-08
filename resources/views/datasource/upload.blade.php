@@ -407,12 +407,12 @@
             }
             summary.innerHTML = summaryHtml;
 
-            // Opsel Mismatch Warning
-            var mismatchSection = document.getElementById('opselMismatchSection');
+            // Opsel & Tanggal Mismatch Warning
+            var mismatchSection = document.getElementById('mismatchSection');
             if (!mismatchSection) {
                 // Create it if it doesn't exist
                 mismatchSection = document.createElement('div');
-                mismatchSection.id = 'opselMismatchSection';
+                mismatchSection.id = 'mismatchSection';
                 mismatchSection.className = 'd-none mb-3 alert alert-warning';
                 summary.parentNode.insertBefore(mismatchSection, summary.nextSibling);
             }
@@ -421,22 +421,30 @@
             var footerHtml =
                 '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bx bx-arrow-back me-1"></i> Kembali ke Form</button>';
 
-            if (result.opsel_mismatch) {
-                mismatchSection.classList.remove('d-none');
-                mismatchSection.innerHTML =
-                    '<h6 class="fw-bold text-dark"><i class="bx bx-error text-warning me-1"></i> Peringatan OPSEL Tidak Sesuai</h6>' +
-                    '<div style="font-size: 13px;">Anda memilih OPSEL <span class="badge bg-primary">' + result
-                    .opsel_mismatch.selected + '</span> di form, ' +
-                    'namun di dalam file CSV ditemukan OPSEL <span class="badge bg-danger text-wrap text-break" style="line-height: 1.4; max-width: 100%; word-break: break-all; text-align: left;">' +
-                    result.opsel_mismatch
-                    .mismatched.join(', ') + '</span>.</div>' +
-                    '<div class="mt-2 fw-bold text-dark" style="font-size: 12px;">Apakah Anda yakin ingin tetap melanjutkan import data ini?</div>';
+            var hasMismatch = false;
+            var mismatchHtml = '';
 
-                if (isValidObj) {
-                    footerHtml += '<button type="button" class="btn btn-warning" onclick="window.forceProcessChunk(' +
-                        document.querySelector('input[name="history_id"]').value +
-                        ')"><i class="bx bx-check-circle me-1"></i> Ya, Lanjutkan Import</button>';
-                }
+            if (result.opsel_mismatch) {
+                hasMismatch = true;
+                mismatchHtml +=
+                    '<h6 class="fw-bold text-dark"><i class="bx bx-error text-warning me-1"></i> Peringatan OPSEL Tidak Sesuai</h6>' +
+                    '<div style="font-size: 13px;" class="mb-2">Anda memilih OPSEL <span class="badge bg-primary">' + result.opsel_mismatch.selected + '</span> di form, ' +
+                    'namun di dalam file CSV ditemukan OPSEL <span class="badge bg-danger text-wrap text-break" style="line-height: 1.4; max-width: 100%; word-break: break-all; text-align: left;">' +
+                    result.opsel_mismatch.mismatched.join(', ') + '</span>.</div>';
+            }
+
+            if (result.tanggal_mismatch) {
+                hasMismatch = true;
+                mismatchHtml +=
+                    '<h6 class="fw-bold text-dark"><i class="bx bx-error text-warning me-1"></i> Peringatan Tanggal Tidak Sesuai</h6>' +
+                    '<div style="font-size: 13px;">Anda memilih Tanggal <span class="badge bg-primary">' + result.tanggal_mismatch.selected + '</span> di form, ' +
+                    'namun isi CSV memiliki tanggal <span class="badge bg-danger text-wrap text-break" style="line-height: 1.4; max-width: 100%; word-break: break-all; text-align: left;">' +
+                    result.tanggal_mismatch.mismatched.join(', ') + '</span>.</div>';
+            }
+
+            if (hasMismatch) {
+                mismatchSection.classList.remove('d-none');
+                mismatchSection.innerHTML = mismatchHtml;
             }
 
             document.querySelector('#validationErrorModal .modal-footer').innerHTML = footerHtml;

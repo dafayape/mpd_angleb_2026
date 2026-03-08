@@ -85,7 +85,7 @@ class DatasourceController extends Controller
             return response()->json(['is_valid' => false, 'error' => 'File tidak ditemukan di storage.'], 404);
         }
 
-        $result = (new ValidateCsvAction())->execute($path, $job->opsel);
+        $result = (new ValidateCsvAction())->execute($path, $job->opsel, $job->tanggal_data);
 
         // Update job status based on validation result
         if (! $result['is_valid']) {
@@ -448,30 +448,21 @@ class DatasourceController extends Controller
     private function deleteSpatialMovements(int $importJobId): void
     {
         try {
-            $deleted = DB::affectingStatement('
-                DELETE FROM spatial_movements sm
-                USING (
-                    SELECT DISTINCT
-                        tanggal, opsel, kategori,
-                        kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
-                        kode_origin_simpul, kode_dest_simpul,
-                        kode_moda, is_forecast
-                    FROM raw_mpd_data
-                    WHERE import_job_id = ?
-                ) r
-                WHERE sm.tanggal = r.tanggal
-                  AND sm.opsel = r.opsel
-                  AND sm.kategori = r.kategori
-                  AND sm.kode_origin_kabupaten_kota = r.kode_origin_kabupaten_kota
-                  AND sm.kode_dest_kabupaten_kota = r.kode_dest_kabupaten_kota
-                  AND sm.kode_origin_simpul = r.kode_origin_simpul
-                  AND sm.kode_dest_simpul = r.kode_dest_simpul
-                  AND sm.kode_moda = r.kode_moda
-                  AND sm.is_forecast = r.is_forecast
-            ', [$importJobId]);
+            $job = ImportJob::find($importJobId);
+            if (!$job || !$job->tanggal_data || !$job->opsel || !$job->kategori) {
+                return;
+            }
+
+            $tanggalDate = \Carbon\Carbon::parse($job->tanggal_data)->format('Y-m-d');
+            
+            $deleted = DB::table('spatial_movements')
+                ->where('tanggal', $tanggalDate)
+                ->where('opsel', $job->opsel)
+                ->where('kategori', $job->kategori)
+                ->delete();
 
             if ($deleted > 0) {
-                Log::info("[Delete] Removed {$deleted} spatial_movements rows for import_job_id={$importJobId}");
+                Log::info("[Delete] Removed {$deleted} spatial_movements rows for import_job_id={$importJobId} (Date: {$tanggalDate}, Opsel: {$job->opsel})");
             }
         } catch (\Throwable $e) {
             Log::error("[Delete] Failed to delete spatial_movements for import_job_id={$importJobId}: ".$e->getMessage());
