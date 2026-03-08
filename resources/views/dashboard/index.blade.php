@@ -237,10 +237,10 @@
                     <div class="custom-toggle-group" role="group">
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_real" value="real"
                             autocomplete="off" checked>
-                        <label class="btn" for="dt_real" style="font-size: 0.95rem;">Realisasi</label>
+                        <label class="btn" for="dt_real" style="font-size: 0.95rem;">Real</label>
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_fore"
                             value="forecast" autocomplete="off">
-                        <label class="btn" for="dt_fore" style="font-size: 0.95rem;">Prakiraan</label>
+                        <label class="btn" for="dt_fore" style="font-size: 0.95rem;">Forecast</label>
                     </div>
                 </div>
                 <div class="d-flex flex-column">
@@ -248,7 +248,7 @@
                         Seluler</label>
                     <select class="form-select form-select-sm shadow-sm fw-medium" id="opselSelect"
                         style="width: auto; min-width: 200px; cursor: pointer; height: 38px;">
-                        <option value="">Semua Operator (Agregat)</option>
+                        <option value="">Semua Operator</option>
                         <option value="TSEL">Telkomsel</option>
                         <option value="IOH">Indosat Ooredoo</option>
                         <option value="XL">XL Axiata</option>
@@ -259,9 +259,9 @@
                         Data</label>
                     <select class="form-select form-select-sm shadow-sm fw-medium" id="satuanSelect"
                         style="width: auto; min-width: 150px; cursor: pointer; height: 38px;">
-                        <option value="auto">Auto (Angka & %)</option>
-                        <option value="angka">Angka Penuh</option>
-                        <option value="persen">Persentase (%)</option>
+                        <option value="auto">Auto</option>
+                        <option value="angka">Angka</option>
+                        <option value="persen">Persentase</option>
                     </select>
                 </div>
             </div>
