@@ -637,25 +637,13 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:od-simpul:split:v1:{$dString}";
-        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v1:{$dString}";
-        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v1:{$dString}";
+        $cacheKey = "mpd:nasional:od-simpul:split:v3:{$dString}";
+        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v3:{$dString}";
+        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v3:{$dString}";
 
-        try {
-            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
-                return $this->getNasionalOdSimpulData($startDate, $endDate);
-            });
-            $dataProv = Cache::remember($cacheKeyOdProv, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
-                return $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
-            });
-            $dataKabKota = Cache::remember($cacheKeyOdKabKota, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
-                return $this->getNasionalOdKabKotaData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getNasionalOdSimpulData($startDate, $endDate);
-            $dataProv = $this->getNasionalOdProvinsiAsalData($startDate, $endDate);
-            $dataKabKota = $this->getNasionalOdKabKotaData($startDate, $endDate);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalOdSimpulData($startDate, $endDate));
+        $dataProv = $this->cached($cacheKeyOdProv, $this->dataCacheTtl(), fn () => $this->getNasionalOdProvinsiAsalData($startDate, $endDate));
+        $dataKabKota = $this->cached($cacheKeyOdKabKota, $this->dataCacheTtl(), fn () => $this->getNasionalOdKabKotaData($startDate, $endDate));
 
         return view('data-mpd.nasional.od-simpul', [
             'title' => 'O-D Provinsi & Simpul Nasional',
@@ -692,7 +680,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
                 ->groupBy('oc.code', 'oc.name', 'dc.code', 'dc.name')
                 ->orderByRaw('total_volume DESC')
                 ->get();
@@ -766,7 +754,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
                 ->groupBy('op.code', 'op.name', 'dp.code', 'dp.name')
                 ->orderByRaw('total_volume DESC')
                 ->get();
@@ -896,7 +884,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.kategori', 'PERGERAKAN')
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'pergerakan'])
                 ->groupBy('simpul.category', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
                 ->get();
 
