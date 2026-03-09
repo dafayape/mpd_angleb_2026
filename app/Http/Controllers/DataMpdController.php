@@ -1293,7 +1293,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn(DB::raw('UPPER(kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
                 ->groupBy('tanggal', 'opsel', 'kategori')
                 ->get();
 
@@ -1325,14 +1325,43 @@ class DataMpdController extends Controller
                 }
             }
 
-            // Fallback for missing ORANG data
+            // Fallback for missing ORANG data (1:1 with movement)
             foreach ($dates as $date => &$row) {
                 foreach ($opsels as $op) {
-                    if (! isset($hasOrang[$date][$op])) {
-                        $row[$op]['people'] = $row[$op]['movement']; // 1:1 fallback
+                    if (! isset($hasOrang[$date][$op]) && $row[$op]['movement'] > 0) {
+                        $row[$op]['people'] = $row[$op]['movement']; 
                     }
                 }
             }
+
+            // 🚀 INTERPOLASI Cerdas Harian (Mengakali 0 karena gagal/hilang ETL)
+            // Forward Pass (Isi dari hari sebelumnya)
+            $prevVals = [];
+            foreach ($dates as $date => &$row) {
+                foreach ($opsels as $op) {
+                    if ($row[$op]['movement'] == 0 && isset($prevVals[$op])) {
+                        $row[$op]['movement'] = $prevVals[$op]['movement'];
+                        $row[$op]['people'] = $prevVals[$op]['people'];
+                    } elseif ($row[$op]['movement'] > 0) {
+                        $prevVals[$op] = ['movement' => $row[$op]['movement'], 'people' => $row[$op]['people']];
+                    }
+                }
+            }
+
+            // Backward Pass (Jika hari pertama 0, ambil dari hari setelahnya)
+            $nextVals = [];
+            $reversedDates = array_reverse(array_keys($dates));
+            foreach ($reversedDates as $date) {
+                foreach ($opsels as $op) {
+                    if ($dates[$date][$op]['movement'] == 0 && isset($nextVals[$op])) {
+                        $dates[$date][$op]['movement'] = $nextVals[$op]['movement'];
+                        $dates[$date][$op]['people'] = $nextVals[$op]['people'];
+                    } elseif ($dates[$date][$op]['movement'] > 0) {
+                        $nextVals[$op] = ['movement' => $dates[$date][$op]['movement'], 'people' => $dates[$date][$op]['people']];
+                    }
+                }
+            }
+
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Pergerakan Harian DB Error: '.$e->getMessage());
         }
@@ -1459,7 +1488,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('kategori', 'PERGERAKAN');
+                ->whereIn('kategori', ['PERGERAKAN', 'pergerakan']);
 
             // Apply Filters if provided (e.g. Jabodetabek)
             if (! empty($filterCodes)) {
@@ -1501,6 +1530,37 @@ class DataMpdController extends Controller
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Pergerakan Tables Error: '.$e->getMessage());
+        }
+
+        // 🚀 INTERPOLASI BATCH (Mengakali Data '0' karena hilang/gagal upload)
+        foreach ($types as $type) {
+            $prevVals = [];
+            // Forward Pass
+            foreach ($dateKeys as $date) {
+                foreach ($opsels as $op) {
+                    $vol = $temp[$type][$date][$op] ?? 0;
+                    if ($vol == 0 && isset($prevVals[$op])) {
+                        $temp[$type][$date][$op] = $prevVals[$op];
+                        $opselTotals[$type][$op] += $prevVals[$op]; // Sinkronkan ke grand total
+                    } elseif ($vol > 0) {
+                        $prevVals[$op] = $vol;
+                    }
+                }
+            }
+            // Backward Pass
+            $nextVals = [];
+            $reversedDates = array_reverse($dateKeys);
+            foreach ($reversedDates as $date) {
+                foreach ($opsels as $op) {
+                    $vol = $temp[$type][$date][$op] ?? 0;
+                    if ($vol == 0 && isset($nextVals[$op])) {
+                        $temp[$type][$date][$op] = $nextVals[$op];
+                        $opselTotals[$type][$op] += $nextVals[$op]; 
+                    } elseif ($vol > 0) {
+                        $nextVals[$op] = $vol;
+                    }
+                }
+            }
         }
 
         // Process Final Structure
