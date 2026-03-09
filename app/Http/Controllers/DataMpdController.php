@@ -667,23 +667,33 @@ class DataMpdController extends Controller
     private function getNasionalOdKabKotaData($startDate, $endDate)
     {
         try {
-            $query = DB::table('spatial_movements as sm')
-                // Join Origin City
-                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
-                // Join Dest City
-                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+            $baseQuery = DB::table('spatial_movements')
                 ->select(
-                    'oc.code as origin_code',
-                    'oc.name as origin_name',
-                    'dc.code as dest_code',
-                    'dc.name as dest_name',
-                    DB::raw('SUM(sm.total) as total_volume')
+                    'kode_origin_kabupaten_kota as origin_code',
+                    'kode_dest_kabupaten_kota as dest_code',
+                    DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
-                ->groupBy('oc.code', 'oc.name', 'dc.code', 'dc.name')
-                ->orderByRaw('total_volume DESC')
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
+
+            $cityCodes = $baseQuery->pluck('origin_code')->merge($baseQuery->pluck('dest_code'))->unique()->filter()->values();
+            $cityNames = DB::table('ref_cities')->whereIn('code', $cityCodes)->pluck('name', 'code');
+
+            $query = collect();
+            foreach ($baseQuery as $row) {
+                if (isset($cityNames[$row->origin_code]) && isset($cityNames[$row->dest_code])) {
+                    $query->push((object)[
+                        'origin_code' => $row->origin_code,
+                        'origin_name' => $cityNames[$row->origin_code],
+                        'dest_code' => $row->dest_code,
+                        'dest_name' => $cityNames[$row->dest_code],
+                        'total_volume' => $row->total_volume
+                    ]);
+                }
+            }
+            $query = $query->sortByDesc('total_volume')->values();
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('OD KabKota Query Error (DataMpd): '.$e->getMessage());
@@ -739,25 +749,46 @@ class DataMpdController extends Controller
     private function getNasionalOdProvinsiAsalData($startDate, $endDate)
     {
         try {
-            $query = DB::table('spatial_movements as sm')
-                // Join Origin City & Province
-                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
-                ->join('ref_provinces as op', 'oc.province_code', '=', 'op.code')
-                // Join Dest City & Province
-                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
-                ->join('ref_provinces as dp', 'dc.province_code', '=', 'dp.code')
+            $baseQuery = DB::table('spatial_movements')
                 ->select(
-                    'op.code as origin_code',
-                    'op.name as origin_name',
-                    'dp.code as dest_code',
-                    'dp.name as dest_name',
-                    DB::raw('SUM(sm.total) as total_volume')
+                    'kode_origin_kabupaten_kota as origin_city_code',
+                    'kode_dest_kabupaten_kota as dest_city_code',
+                    DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
-                ->groupBy('op.code', 'op.name', 'dp.code', 'dp.name')
-                ->orderByRaw('total_volume DESC')
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
+
+            $cityCodes = $baseQuery->pluck('origin_city_code')->merge($baseQuery->pluck('dest_city_code'))->unique()->filter()->values();
+            $cities = DB::table('ref_cities')
+                ->join('ref_provinces', 'ref_cities.province_code', '=', 'ref_provinces.code')
+                ->whereIn('ref_cities.code', $cityCodes)
+                ->select('ref_cities.code as city_code', 'ref_provinces.code as prov_code', 'ref_provinces.name as prov_name')
+                ->get()->keyBy('city_code');
+
+            $provGroups = [];
+            foreach ($baseQuery as $row) {
+                $originCode = $row->origin_city_code;
+                $destCode = $row->dest_city_code;
+                if (isset($cities[$originCode]) && isset($cities[$destCode])) {
+                    $originProv = $cities[$originCode];
+                    $destProv = $cities[$destCode];
+                    
+                    $key = $originProv->prov_code . '|' . $destProv->prov_code;
+                    if (!isset($provGroups[$key])) {
+                        $provGroups[$key] = (object)[
+                            'origin_code' => $originProv->prov_code,
+                            'origin_name' => $originProv->prov_name,
+                            'dest_code' => $destProv->prov_code,
+                            'dest_name' => $destProv->prov_name,
+                            'total_volume' => 0
+                        ];
+                    }
+                    $provGroups[$key]->total_volume += $row->total_volume;
+                }
+            }
+            $query = collect(array_values($provGroups))->sortByDesc('total_volume')->values();
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('OD Provinsi Query Error (DataMpd): '.$e->getMessage());
@@ -874,19 +905,34 @@ class DataMpdController extends Controller
         }
 
         try {
-            $query = DB::table('spatial_movements as sm')
-                ->join('ref_transport_nodes as simpul', 'sm.kode_origin_simpul', '=', 'simpul.code')
+            $baseQuery = DB::table('spatial_movements')
                 ->select(
-                    'simpul.category as kategori_simpul',
-                    'sm.tanggal',
-                    'sm.opsel',
-                    'sm.is_forecast',
-                    DB::raw('SUM(sm.total) as total_volume')
+                    'kode_origin_simpul',
+                    'tanggal',
+                    'opsel',
+                    'is_forecast',
+                    DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'pergerakan'])
-                ->groupBy('simpul.category', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
+                ->groupBy('kode_origin_simpul', 'tanggal', 'opsel', 'is_forecast')
                 ->get();
+
+            $simpulCodes = $baseQuery->pluck('kode_origin_simpul')->unique()->filter()->values();
+            $simpulCategories = DB::table('ref_transport_nodes')->whereIn('code', $simpulCodes)->pluck('category', 'code');
+
+            $query = collect();
+            foreach ($baseQuery as $row) {
+                if (isset($simpulCategories[$row->kode_origin_simpul])) {
+                    $query->push((object)[
+                        'kategori_simpul' => $simpulCategories[$row->kode_origin_simpul],
+                        'tanggal' => $row->tanggal,
+                        'opsel' => $row->opsel,
+                        'is_forecast' => $row->is_forecast,
+                        'total_volume' => $row->total_volume
+                    ]);
+                }
+            }
 
             foreach ($query as $row) {
                 $dbCat = $row->kategori_simpul;
