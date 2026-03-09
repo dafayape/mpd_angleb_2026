@@ -43,7 +43,8 @@ class EtlLogController extends Controller
         return response()->json([
             'etl_status'   => $meta['etl_status'] ?? 'pending',
             'etl_progress' => (int) ($meta['etl_progress'] ?? 0),
-            'etl_logs'     => $meta['etl_logs'] ?? []
+            'etl_logs'     => $meta['etl_logs'] ?? [],
+            'etl_stats'    => $meta['etl_stats'] ?? null
         ]);
     }
 

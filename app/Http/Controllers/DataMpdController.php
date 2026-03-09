@@ -697,9 +697,9 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:od-simpul:split:v3:{$dString}";
-        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v3:{$dString}";
-        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v3:{$dString}";
+        $cacheKey = "mpd:nasional:od-simpul:split:v4:{$dString}";
+        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v4:{$dString}";
+        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v4:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalOdSimpulData($startDate, $endDate));
         $dataProv = $this->cached($cacheKeyOdProv, $this->dataCacheTtl(), fn () => $this->getNasionalOdProvinsiAsalData($startDate, $endDate));
@@ -719,8 +719,8 @@ class DataMpdController extends Controller
             'top_origin_kab' => $dataKabKota['top_origin'],
             'top_dest_kab' => $dataKabKota['top_dest'],
             'sankey_kab' => $dataKabKota['sankey'],
-            'total_national' => $dataProv['total_national'],
-            'prov_coords' => $dataProv['prov_coords'],
+            'total_national' => $dataProv['total_national'] ?? 0,
+            'prov_coords' => $dataProv['prov_coords'] ?? [],
         ]);
     }
 
@@ -840,7 +840,7 @@ class DataMpdController extends Controller
             'top_origin' => $topOrigin,
             'top_dest' => $topDest,
             'sankey' => $sankeyData,
-            'coords' => $provCoordsMapping,
+            'prov_coords' => $provCoordsMapping,
             'total_national' => $totalNational,
         ];
     }

@@ -43,7 +43,9 @@ class TransformRawToSpatialJob implements ShouldQueue
         $this->updateEtlStatus('processing', 0, "Starting ETL transform for import_job_id={$this->importJobId}");
 
         try {
+            $this->calculateIntegrityMetrics('start');
             $this->transformData();
+            $this->calculateIntegrityMetrics('end');
             $this->refreshMaterializedViews();
             $this->invalidateCache();
 
@@ -91,6 +93,70 @@ class TransformRawToSpatialJob implements ShouldQueue
             }
         } catch (\Throwable $e) {
             Log::error("Failed to update ETL database metadata for job {$this->importJobId}: " . $e->getMessage());
+        }
+    }
+
+    private function calculateIntegrityMetrics(string $phase): void
+    {
+        try {
+            $job = ImportJob::find($this->importJobId);
+            if (!$job) return;
+
+            $meta = $job->metadata ?? [];
+            $stats = $meta['etl_stats'] ?? [
+                'raw_volume' => 0,
+                'mapped_volume' => 0,
+                'unmapped_volume' => 0,
+                'success_rate' => 0,
+                'missing_nodes' => []
+            ];
+
+            if ($phase === 'start') {
+                $stats['raw_volume'] = (float) DB::table('raw_mpd_data')
+                    ->where('import_job_id', $this->importJobId)
+                    ->sum('total');
+                
+                $this->updateEtlStatus('processing', 0, "Calculated raw volume: " . number_format($stats['raw_volume'], 0));
+            } else {
+                // Volume check: records that couldn't be mapped because nodes are missing from ref_transport_nodes
+                $unmappedVolume = (float) DB::table('raw_mpd_data as r')
+                    ->leftJoin('ref_transport_nodes as n1', 'r.kode_origin_simpul', '=', 'n1.code')
+                    ->leftJoin('ref_transport_nodes as n2', 'r.kode_dest_simpul', '=', 'n2.code')
+                    ->where('r.import_job_id', $this->importJobId)
+                    ->where(function($q) {
+                        $q->whereNull('n1.code')->orWhereNull('n2.code');
+                    })
+                    ->sum('r.total');
+
+                $stats['unmapped_volume'] = $unmappedVolume;
+                $stats['mapped_volume'] = $stats['raw_volume'] - $unmappedVolume;
+                $stats['success_rate'] = $stats['raw_volume'] > 0 
+                    ? round(($stats['mapped_volume'] / $stats['raw_volume']) * 100, 2) 
+                    : 100;
+
+                // Identification of top missing nodes causing unmapped data
+                $missingOrigins = DB::table('raw_mpd_data as r')
+                    ->leftJoin('ref_transport_nodes as n', 'r.kode_origin_simpul', '=', 'n.code')
+                    ->where('r.import_job_id', $this->importJobId)
+                    ->whereNull('n.code')
+                    ->select('r.kode_origin_simpul as code', DB::raw('SUM(total) as t'))
+                    ->groupBy('r.kode_origin_simpul')
+                    ->orderByDesc('t')
+                    ->take(5)
+                    ->get();
+
+                $stats['missing_nodes'] = $missingOrigins->map(fn($m) => ['code' => $m->code, 'vol' => $m->t])->toArray();
+
+                $msg = "Integrity Check: " . $stats['success_rate'] . "% data successfully mapped. " .
+                       number_format($unmappedVolume, 0) . " volume lost due to unmapped nodes.";
+                $this->updateEtlStatus('processing', 82, $msg, $stats['success_rate'] < 90 ? 'warning' : 'info');
+            }
+
+            $meta['etl_stats'] = $stats;
+            $job->metadata = $meta;
+            $job->save();
+        } catch (\Throwable $e) {
+            Log::error("Failed to calculate ETL integrity metrics: " . $e->getMessage());
         }
     }
 

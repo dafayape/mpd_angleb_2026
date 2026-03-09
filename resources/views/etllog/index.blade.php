@@ -51,6 +51,7 @@
                                     <th>Status Upload</th>
                                     <th>Status ETL</th>
                                     <th style="width: 25%;">Progress ETL</th>
+                                    <th>Integritas</th>
                                     <th style="width: 15%;">Aksi</th>
                                 </tr>
                             </thead>
@@ -90,6 +91,19 @@
                                                     {{ $etlProgress }}%
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td id="integrity-{{ $job->id }}">
+                                            @if(isset($meta['etl_stats']))
+                                                @php $stats = $meta['etl_stats']; @endphp
+                                                <div class="d-flex flex-column" style="font-size: 10px;">
+                                                    <span class="badge {{ $stats['success_rate'] >= 95 ? 'bg-success' : ($stats['success_rate'] >= 80 ? 'bg-info' : 'bg-danger') }} mb-1">
+                                                        {{ $stats['success_rate'] }}% Success
+                                                    </span>
+                                                    <span class="text-muted">Lost: {{ number_format($stats['unmapped_volume'] ?? 0, 0, ',', '.') }}</span>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
                                         </td>
                                         <td>
                                             <div class="d-flex gap-2">
@@ -215,6 +229,32 @@
         document.getElementById('termProgressText').innerText = res.etl_progress + '%';
         document.getElementById('termProgressBar').style.width = res.etl_progress + '%';
 
+        // Stats Summary inside terminal
+        if (res.etl_stats) {
+            const stats = res.etl_stats;
+            const lostFormatted = new Intl.NumberFormat('id-ID').format(stats.unmapped_volume || 0);
+            const rawFormatted = new Intl.NumberFormat('id-ID').format(stats.raw_volume || 0);
+            
+            let statsHtml = `
+                <div class="alert alert-soft-secondary d-flex justify-content-between mb-2 py-1 px-2 border-0" style="font-size: 11px;">
+                    <span><i class="bx bx-check-shield text-success"></i> Success: <b>${stats.success_rate}%</b></span>
+                    <span><i class="bx bx-package text-info"></i> Raw: <b>${rawFormatted}</b></span>
+                    <span><i class="bx bx-error text-danger"></i> Unmapped: <b>${lostFormatted}</b></span>
+                </div>
+            `;
+            
+            // Insertion point before logs
+            let existingAlert = document.getElementById('stats-alert-' + currentJobId);
+            if (!existingAlert) {
+                let div = document.createElement('div');
+                div.id = 'stats-alert-' + currentJobId;
+                div.innerHTML = statsHtml;
+                document.getElementById('terminalOutput').parentNode.insertBefore(div, document.getElementById('terminalOutput'));
+            } else {
+                existingAlert.innerHTML = statsHtml;
+            }
+        }
+
         // Logs
         const termOut = document.getElementById('terminalOutput');
         if (res.etl_logs && res.etl_logs.length > 0) {
@@ -257,6 +297,20 @@
             pb.className = 'progress-bar ' + 
                 (res.etl_status === 'processing' ? 'progress-bar-striped progress-bar-animated bg-warning' : 
                 (res.etl_status === 'failed' ? 'bg-danger' : 'bg-success'));
+        }
+
+        let integrity = document.getElementById('integrity-' + jobId);
+        if (integrity && res.etl_stats) {
+            let stats = res.etl_stats;
+            let badgeClass = stats.success_rate >= 95 ? 'bg-success' : (stats.success_rate >= 80 ? 'bg-info' : 'bg-danger');
+            let lostFormatted = new Intl.NumberFormat('id-ID').format(stats.unmapped_volume || 0);
+            
+            integrity.innerHTML = `
+                <div class="d-flex flex-column" style="font-size: 10px;">
+                    <span class="badge ${badgeClass} mb-1">${stats.success_rate}% Success</span>
+                    <span class="text-muted">Lost: ${lostFormatted}</span>
+                </div>
+            `;
         }
     }
 
