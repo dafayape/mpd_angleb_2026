@@ -485,13 +485,13 @@
                                     <span>Pengguna</span>
                                 </a>
                             </li>
-
+                            {{-- 
                             <li>
                                 <a href="{{ route('etllog') }}" class="waves-effect">
                                     <i class="bx bx-terminal"></i>
                                     <span>Log ETL</span>
                                 </a>
-                            </li>
+                            </li> --}}
 
                             <li>
                                 <a href="{{ route('log-aktivitas') }}" class="waves-effect">
