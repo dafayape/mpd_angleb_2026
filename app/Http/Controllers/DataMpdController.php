@@ -2109,50 +2109,50 @@ class DataMpdController extends Controller
             $endDateStr = $endDate->format('Y-m-d');
 
             // Outflow: origin is the city
-            $outflow = DB::table('spatial_movements as sm')
-                ->join('ref_cities as c', 'sm.kode_origin_kabupaten_kota', '=', 'c.code')
+            $outflowQuery = DB::table('spatial_movements')
                 ->select(
-                    'c.code as city_code',
-                    'c.name as city_name',
-                    DB::raw('SUM(sm.total) as total_outflow')
+                    'kode_origin_kabupaten_kota as city_code',
+                    DB::raw('SUM(total) as total_outflow')
                 )
-                ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-                ->where('sm.is_forecast', false)
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
-                ->groupBy('c.code', 'c.name')
+                ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+                ->where('is_forecast', false)
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->groupBy('kode_origin_kabupaten_kota')
                 ->get()
                 ->keyBy('city_code');
 
             // Inflow: dest is the city
-            $inflow = DB::table('spatial_movements as sm')
-                ->join('ref_cities as c', 'sm.kode_dest_kabupaten_kota', '=', 'c.code')
+            $inflowQuery = DB::table('spatial_movements')
                 ->select(
-                    'c.code as city_code',
-                    'c.name as city_name',
-                    DB::raw('SUM(sm.total) as total_inflow')
+                    'kode_dest_kabupaten_kota as city_code',
+                    DB::raw('SUM(total) as total_inflow')
                 )
-                ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-                ->where('sm.is_forecast', false)
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
-                ->groupBy('c.code', 'c.name')
+                ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+                ->where('is_forecast', false)
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->groupBy('kode_dest_kabupaten_kota')
                 ->get()
                 ->keyBy('city_code');
+
+            $allCityCodes = $outflowQuery->keys()->merge($inflowQuery->keys())->unique()->filter()->values();
+            $cityNames = DB::table('ref_cities')->whereIn('code', $allCityCodes)->pluck('name', 'code');
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Netflow DB Error: '.$e->getMessage());
-            $outflow = collect();
-            $inflow = collect();
+            $outflowQuery = collect();
+            $inflowQuery = collect();
+            $allCityCodes = collect();
+            $cityNames = collect();
         }
 
         $merged = [];
-        $allCityCodes = $outflow->keys()->merge($inflow->keys())->unique();
 
         foreach ($allCityCodes as $code) {
-            $outRecord = $outflow->get($code);
-            $inRecord = $inflow->get($code);
+            $outRecord = $outflowQuery->get($code);
+            $inRecord = $inflowQuery->get($code);
 
             $outVal = $outRecord ? (float) $outRecord->total_outflow : 0;
             $inVal = $inRecord ? (float) $inRecord->total_inflow : 0;
-            $cityName = $outRecord ? $outRecord->city_name : ($inRecord ? $inRecord->city_name : 'Unknown');
+            $cityName = $cityNames->get($code, 'Unknown');
 
             $netflow = $inVal - $outVal; // as requested: Inflow - Outflow
             $totalFlow = $inVal + $outVal;
