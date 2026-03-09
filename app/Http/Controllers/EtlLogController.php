@@ -29,8 +29,8 @@ class EtlLogController extends Controller
      */
     public function status($id)
     {
-        if (! in_array(Auth::user()->role, ['su', 'admin'])) {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if (!Auth::check() || !in_array(Auth::user()->role, ['su', 'admin'])) {
+            return response()->json(['error' => 'Unauthorized or Session Expired'], 403);
         }
 
         $job = ImportJob::find($id);

@@ -179,7 +179,7 @@
 
     function fetchStatus(jobId) {
         $.ajax({
-            url: `/etllog/${jobId}/status`,
+            url: `{{ url('/etllog') }}/${jobId}/status`,
             type: 'GET',
             success: function(res) {
                 updateTerminal(res);
@@ -196,8 +196,9 @@
                     }
                 }
             },
-            error: function() {
-                document.getElementById('terminalOutput').innerHTML += '<div class="log-entry"><span class="log-level error">[ERROR]</span> <span class="log-message text-danger">Lost connection to server.</span></div>';
+            error: function(xhr) {
+                const errMsg = xhr.responseJSON?.error || 'Lost connection to server';
+                document.getElementById('terminalOutput').innerHTML += `<div class="log-entry"><span class="log-level error">[ERROR]</span> <span class="log-message text-danger">${errMsg} (HTTP ${xhr.status}).</span></div>`;
                 stopPolling();
             }
         });
@@ -265,7 +266,7 @@
         }
 
         $.ajax({
-            url: `/etllog/${jobId}/retry`,
+            url: `{{ url('/etllog') }}/${jobId}/retry`,
             type: 'POST',
             data: {
                 _token: '{{ csrf_token() }}'

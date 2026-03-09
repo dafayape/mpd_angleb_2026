@@ -56,11 +56,19 @@ class TransformRawToSpatialJob implements ShouldQueue
 
     private function updateEtlStatus(string $status, int $progress, string $message, string $level = 'info'): void
     {
-        Log::channel('etl')->log($level, "[Job ID: {$this->importJobId}] {$message}");
+        // 1. Dedicated Logging (Safely handle channel failures)
+        try {
+            Log::channel('etl')->log($level, "[Job ID: {$this->importJobId}] {$message}");
+        } catch (\Throwable $logErr) {
+            // Fallback to default log if 'etl' channel is misconfigured
+            Log::log($level, "[ETL FALLBACK][Job ID: {$this->importJobId}] {$message}");
+        }
         
+        // 2. Database Metadata Update
         try {
             $job = ImportJob::find($this->importJobId);
             if ($job) {
+                // Ensure metadata is retrieved as array (Laravel cast should handle this)
                 $meta = $job->metadata ?? [];
                 $meta['etl_status'] = $status;
                 $meta['etl_progress'] = $progress;
@@ -71,7 +79,8 @@ class TransformRawToSpatialJob implements ShouldQueue
                     'level' => strtoupper($level),
                     'message' => $message,
                 ];
-                // Keep last 100 logs to avoid ballooning JSON
+                
+                // Keep last 100 log entries
                 if (count($logs) > 100) {
                     array_shift($logs);
                 }
@@ -81,7 +90,7 @@ class TransformRawToSpatialJob implements ShouldQueue
                 $job->save();
             }
         } catch (\Throwable $e) {
-            Log::error("Failed to update ETL metadata for job {$this->importJobId}: " . $e->getMessage());
+            Log::error("Failed to update ETL database metadata for job {$this->importJobId}: " . $e->getMessage());
         }
     }
 
