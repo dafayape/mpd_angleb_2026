@@ -188,6 +188,9 @@
                             Laporan Harian</h5>
                     </div>
                     <div class="d-flex gap-2">
+                        <a href="https://wa.me/14155238886?text=join%20student-weather" target="_blank" class="btn btn-outline-success" style="font-weight: 600;">
+                            <i class="bx bx-message-rounded-dots me-1"></i> Join Sandbox
+                        </a>
                         <button id="btnCopy" class="btn btn-copy" onclick="copyReport()">
                             <i class="bx bx-copy me-1"></i> Salin Teks
                         </button>
