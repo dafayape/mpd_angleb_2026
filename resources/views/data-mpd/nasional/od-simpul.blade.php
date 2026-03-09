@@ -363,7 +363,7 @@
                         <div class="col-xl-6 col-lg-12 mb-4 mb-xl-0 d-flex flex-column">
                             <div class="border rounded p-3 flex-grow-1"
                                 style="border-width:2px !important; border-color: #aab5c3 !important;">
-                                <h5 class="text-center fw-bold text-primary mb-3 mt-2" style="font-size: 1.25rem;">Top 20
+                                <h5 class="text-center fw-bold text-primary mb-3 mt-2" style="font-size: 1.25rem;">Top 10
                                     Kab/Kota (Asal - Tujuan)</h5>
                                 <div id="sankey-container-kabkota" class="w-100"></div>
                             </div>

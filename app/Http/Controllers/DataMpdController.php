@@ -1509,33 +1509,6 @@ class DataMpdController extends Controller
                 }
             }
 
-            // 🚀 INTERPOLASI Cerdas Harian (Mengakali 0 karena gagal/hilang ETL)
-            // Forward Pass (Isi dari hari sebelumnya)
-            $prevVals = [];
-            foreach ($dates as $date => &$row) {
-                foreach ($opsels as $op) {
-                    if ($row[$op]['movement'] == 0 && isset($prevVals[$op])) {
-                        $row[$op]['movement'] = $prevVals[$op]['movement'];
-                        $row[$op]['people'] = $prevVals[$op]['people'];
-                    } elseif ($row[$op]['movement'] > 0) {
-                        $prevVals[$op] = ['movement' => $row[$op]['movement'], 'people' => $row[$op]['people']];
-                    }
-                }
-            }
-
-            // Backward Pass (Jika hari pertama 0, ambil dari hari setelahnya)
-            $nextVals = [];
-            $reversedDates = array_reverse(array_keys($dates));
-            foreach ($reversedDates as $date) {
-                foreach ($opsels as $op) {
-                    if ($dates[$date][$op]['movement'] == 0 && isset($nextVals[$op])) {
-                        $dates[$date][$op]['movement'] = $nextVals[$op]['movement'];
-                        $dates[$date][$op]['people'] = $nextVals[$op]['people'];
-                    } elseif ($dates[$date][$op]['movement'] > 0) {
-                        $nextVals[$op] = ['movement' => $dates[$date][$op]['movement'], 'people' => $dates[$date][$op]['people']];
-                    }
-                }
-            }
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Pergerakan Harian DB Error: '.$e->getMessage());
