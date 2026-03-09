@@ -261,20 +261,40 @@ class ExecutiveSummaryService
     public function getForecastComparison(?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getForecastComparison:all:{$opsel}:nasional:v3:{$dateKey}";
+        $key = "executive_summary:getForecastComparison:all:{$opsel}:nasional:v4_static:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($opsel) {
             $real = $this->getDailyTrend('PERGERAKAN', 'real', $opsel);
-            $forecast = $this->getDailyTrend('PERGERAKAN', 'forecast', $opsel);
+            
+            // Menggunakan ketetapan konstanta proporsi hasil survei kemenhub (prakiraan)
+            $forecastConstants = [
+                '2026-03-13' => 3.32,
+                '2026-03-14' => 8.34,
+                '2026-03-15' => 4.12,
+                '2026-03-16' => 16.12,
+                '2026-03-17' => 9.34,
+                '2026-03-18' => 16.73,
+                '2026-03-19' => 7.15,
+                '2026-03-20' => 10.34,
+                '2026-03-21' => 6.10,
+                '2026-03-22' => 6.22,
+                '2026-03-23' => 3.91,
+                '2026-03-24' => 2.65,
+                '2026-03-25' => 2.22,
+                '2026-03-26' => 0.84,
+                '2026-03-27' => 0.79,
+                '2026-03-28' => 0.69,
+                '2026-03-29' => 0.79,
+                '2026-03-30' => 0.32,
+            ];
+
             $totReal = array_sum($real);
-            $totFore = array_sum($forecast);
             $res = [];
-            foreach (array_keys($real + $forecast) as $dt) {
+            foreach (array_keys($real) as $dt) {
                 $r = $real[$dt] ?? 0;
-                $f = $forecast[$dt] ?? 0;
                 $res[$dt] = [
                     'real_pct' => $totReal > 0 ? round(($r / $totReal) * 100, 1) : 0,
-                    'fore_pct' => $totFore > 0 ? round(($f / $totFore) * 100, 1) : 0,
+                    'fore_pct' => $forecastConstants[$dt] ?? 0,
                 ];
             }
             ksort($res);

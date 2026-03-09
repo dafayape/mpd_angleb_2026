@@ -29,7 +29,7 @@ class DataMpdController extends Controller
 
         $cacheKey = 'mpd:jabodetabek:od-simpul:matrix:v3';
         $jabodetabekCodes = $this->getJabodetabekCodes();
-        $matrix = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getOdSimpulData($startDate, $endDate, $jabodetabekCodes));
+        $matrix = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getOdSimpulData($startDate, $endDate, $jabodetabekCodes));
 
         return view('data-mpd.jabodetabek.od-simpul', [
             'title' => 'O-D Simpul Jabodetabek',
@@ -734,7 +734,8 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
+                ->where('is_forecast', false)
                 ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
 
@@ -744,12 +745,12 @@ class DataMpdController extends Controller
             $query = collect();
             foreach ($baseQuery as $row) {
                 if (isset($cityNames[$row->origin_code]) && isset($cityNames[$row->dest_code])) {
-                    $query->push((object)[
+                    $query->push((object) [
                         'origin_code' => $row->origin_code,
                         'origin_name' => $cityNames[$row->origin_code],
                         'dest_code' => $row->dest_code,
                         'dest_name' => $cityNames[$row->dest_code],
-                        'total_volume' => $row->total_volume
+                        'total_volume' => $row->total_volume,
                     ]);
                 }
             }
@@ -816,7 +817,8 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
+                ->where('is_forecast', false)
                 ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
 
@@ -834,15 +836,15 @@ class DataMpdController extends Controller
                 if (isset($cities[$originCode]) && isset($cities[$destCode])) {
                     $originProv = $cities[$originCode];
                     $destProv = $cities[$destCode];
-                    
-                    $key = $originProv->prov_code . '|' . $destProv->prov_code;
-                    if (!isset($provGroups[$key])) {
-                        $provGroups[$key] = (object)[
+
+                    $key = $originProv->prov_code.'|'.$destProv->prov_code;
+                    if (! isset($provGroups[$key])) {
+                        $provGroups[$key] = (object) [
                             'origin_code' => $originProv->prov_code,
                             'origin_name' => $originProv->prov_name,
                             'dest_code' => $destProv->prov_code,
                             'dest_name' => $destProv->prov_name,
-                            'total_volume' => 0
+                            'total_volume' => 0,
                         ];
                     }
                     $provGroups[$key]->total_volume += $row->total_volume;
@@ -975,6 +977,8 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
+                ->whereNotNull('kode_origin_simpul')
+                ->where('kode_origin_simpul', '!=', '')
                 ->groupBy('kode_origin_simpul', 'tanggal', 'opsel', 'is_forecast')
                 ->get();
 
@@ -984,12 +988,12 @@ class DataMpdController extends Controller
             $query = collect();
             foreach ($baseQuery as $row) {
                 if (isset($simpulCategories[$row->kode_origin_simpul])) {
-                    $query->push((object)[
+                    $query->push((object) [
                         'kategori_simpul' => $simpulCategories[$row->kode_origin_simpul],
                         'tanggal' => $row->tanggal,
                         'opsel' => $row->opsel,
                         'is_forecast' => $row->is_forecast,
-                        'total_volume' => $row->total_volume
+                        'total_volume' => $row->total_volume,
                     ]);
                 }
             }
@@ -1366,7 +1370,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $cacheKey = 'mpd:nasional:pergerakan-harian:v6';
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getPergerakanHarianData($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate));
 
         return view('pages.nasional.pergerakan-harian', [
             'dates' => $dates,
@@ -1435,7 +1439,7 @@ class DataMpdController extends Controller
             foreach ($dates as $date => &$row) {
                 foreach ($opsels as $op) {
                     if (! isset($hasOrang[$date][$op]) && $row[$op]['movement'] > 0) {
-                        $row[$op]['people'] = $row[$op]['movement']; 
+                        $row[$op]['people'] = $row[$op]['movement'];
                     }
                 }
             }
@@ -1548,7 +1552,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $cacheKey = 'mpd:nasional:pergerakan:tables:v3';
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getPergerakanDataTables($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
             'title' => 'Pergerakan Nasional',
@@ -1661,7 +1665,7 @@ class DataMpdController extends Controller
                     $vol = $temp[$type][$date][$op] ?? 0;
                     if ($vol == 0 && isset($nextVals[$op])) {
                         $temp[$type][$date][$op] = $nextVals[$op];
-                        $opselTotals[$type][$op] += $nextVals[$op]; 
+                        $opselTotals[$type][$op] += $nextVals[$op];
                     } elseif ($vol > 0) {
                         $nextVals[$op] = $vol;
                     }
@@ -1929,7 +1933,7 @@ class DataMpdController extends Controller
         // 2. Caching Key
         $cacheKey = 'mpd:jabodetabek:pergerakan:tables:v3';
         $jabodetabekCodes = $this->getJabodetabekCodes();
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes));
 
         return view('data-mpd.jabodetabek.pergerakan', [
             'title' => 'Pergerakan Jabodetabek',
@@ -2024,7 +2028,7 @@ class DataMpdController extends Controller
         // 2. Caching Key
         $cacheKey = "mpd:jabodetabek:pergerakan-orang:v3:{$isForecast}";
         $jabodetabekCodes = $this->getJabodetabekCodes();
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanOrangData($startDate, $endDate, $jabodetabekCodes, $isForecast));
 
         return view('data-mpd.jabodetabek.pergerakan-orang', [
             'title' => 'Akumulasi Pergerakan & Orang Jabodetabek',
@@ -2089,7 +2093,7 @@ class DataMpdController extends Controller
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:substansi:netflow:v1:{$dString}";
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getSubstansiNetflowData($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getSubstansiNetflowData($startDate, $endDate));
 
         return view('pages.substansi.netflow', [
             'title' => 'Netflow Pergerakan Nasional',
@@ -2213,7 +2217,7 @@ class DataMpdController extends Controller
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:kesimpulan:nasional:v1:{$dString}";
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getKesimpulanNasionalData($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanNasionalData($startDate, $endDate));
 
         return view('pages.kesimpulan.nasional', [
             'title' => 'Kesimpulan Nasional',
@@ -2344,7 +2348,7 @@ class DataMpdController extends Controller
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:kesimpulan:jabodetabek:v1:{$dString}";
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getKesimpulanJabodetabekData($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanJabodetabekData($startDate, $endDate));
 
         return view('pages.kesimpulan.jabodetabek', [
             'title' => 'Kesimpulan Jabodetabek',
