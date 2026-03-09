@@ -1101,21 +1101,14 @@ class DataMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:mode-share-page:v2:{$dString}";
+        $cacheKey = "mpd:nasional:mode-share-page:v3:{$dString}";
 
-        try {
-            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
-                return [
-                    'summary' => $this->getModeSharePageData($startDate, $endDate),
-                    'daily' => $this->getDailyModeShareData($startDate, $endDate),
-                ];
-            });
-        } catch (\Throwable $e) {
-            $data = [
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
+            return [
                 'summary' => $this->getModeSharePageData($startDate, $endDate),
                 'daily' => $this->getDailyModeShareData($startDate, $endDate),
             ];
-        }
+        });
 
         return view('pages.nasional.mode-share', [
             'data' => $data['summary'],
@@ -1127,6 +1120,7 @@ class DataMpdController extends Controller
     private function getModeSharePageData($startDate, $endDate)
     {
         try {
+            // Hilangkan UPPER() agar index PostgreSQL bisa bekerja. Kita normalisasi di level PHP.
             $query = DB::table('spatial_movements as sm')
                 ->select(
                     'sm.kode_moda',
@@ -1134,8 +1128,8 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.is_forecast', false) // As per image saying "Real"
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->where('sm.is_forecast', false)
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
                 ->groupBy('sm.kode_moda', 'sm.kategori')
                 ->get();
         } catch (\Throwable $e) {
@@ -1249,7 +1243,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false)
-                ->where(DB::raw('UPPER(sm.kategori)'), 'PERGERAKAN')
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'pergerakan'])
                 ->groupBy('sm.tanggal', 'sm.kode_moda')
                 ->get();
 
