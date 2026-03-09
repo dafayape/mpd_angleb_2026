@@ -345,7 +345,7 @@ class DatasourceController extends Controller
             $query->where('is_forecast', $request->is_forecast === '1');
         }
 
-        $data = $query->paginate(50)->withQueryString();
+        $data = $query->simplePaginate(50)->withQueryString();
 
         return view('datasource.raw', compact('data'));
     }
