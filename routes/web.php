@@ -171,5 +171,5 @@ Route::get('/sso-login', function (Request $request) {
         \Illuminate\Support\Facades\Log::warning('ActivityLog gagal: '.$e->getMessage());
     }
 
-    return redirect('/');
+    return redirect()->route('keynote');
 })->name('sso.login');
