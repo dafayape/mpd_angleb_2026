@@ -134,7 +134,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false) // Only REAL data
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), $categories)
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
@@ -162,6 +162,36 @@ class DataMpdController extends Controller
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Jabodetabek Intra Pergerakan DB Error: '.$e->getMessage());
+        }
+
+        // 🚀 INTERPOLASI BATCH (Mengakali Data '0' karena hilang/gagal upload)
+        $kats = ['pergerakan', 'orang'];
+        foreach ($kats as $kat) {
+            // Forward Pass
+            $prevVals = [];
+            foreach ($dateKeys as $date) {
+                foreach ($opsels as $op) {
+                    $vol = $result[$date][$op][$kat] ?? 0;
+                    if ($vol == 0 && isset($prevVals[$op])) {
+                        $result[$date][$op][$kat] = $prevVals[$op];
+                    } elseif ($vol > 0) {
+                        $prevVals[$op] = $vol;
+                    }
+                }
+            }
+            // Backward Pass
+            $nextVals = [];
+            $reversedDates = array_reverse($dateKeys);
+            foreach ($reversedDates as $date) {
+                foreach ($opsels as $op) {
+                    $vol = $result[$date][$op][$kat] ?? 0;
+                    if ($vol == 0 && isset($nextVals[$op])) {
+                        $result[$date][$op][$kat] = $nextVals[$op];
+                    } elseif ($vol > 0) {
+                        $nextVals[$op] = $vol;
+                    }
+                }
+            }
         }
 
         // Calculate Totals and Percentages
@@ -510,7 +540,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false)
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), $categories)
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
                 ->where(function ($q) use ($jabodetabekCodes) {
                     $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                         ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
@@ -543,6 +573,36 @@ class DataMpdController extends Controller
             }
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Jabodetabek Inter Pergerakan DB Error: '.$e->getMessage());
+        }
+
+        // 🚀 INTERPOLASI BATCH (Mengakali Data '0' karena hilang/gagal upload)
+        $kats = ['pergerakan', 'orang'];
+        foreach ($kats as $kat) {
+            // Forward Pass
+            $prevVals = [];
+            foreach ($dateKeys as $date) {
+                foreach ($opsels as $op) {
+                    $vol = $result[$date][$op][$kat] ?? 0;
+                    if ($vol == 0 && isset($prevVals[$op])) {
+                        $result[$date][$op][$kat] = $prevVals[$op];
+                    } elseif ($vol > 0) {
+                        $prevVals[$op] = $vol;
+                    }
+                }
+            }
+            // Backward Pass
+            $nextVals = [];
+            $reversedDates = array_reverse($dateKeys);
+            foreach ($reversedDates as $date) {
+                foreach ($opsels as $op) {
+                    $vol = $result[$date][$op][$kat] ?? 0;
+                    if ($vol == 0 && isset($nextVals[$op])) {
+                        $result[$date][$op][$kat] = $nextVals[$op];
+                    } elseif ($vol > 0) {
+                        $nextVals[$op] = $vol;
+                    }
+                }
+            }
         }
 
         $totals = [];
