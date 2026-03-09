@@ -38,12 +38,12 @@ Route::middleware(['auth'])->group(function () {
 
     // Substansi Tambahan
     Route::prefix('substansi')->name('pages.substansi.')->group(function () {
-        Route::get('/stasiun-ka-antar-kota', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'stasiun-ka-antar-kota'))->name('stasiun-ka-antar-kota');
-        Route::get('/pelabuhan-penyeberangan', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'pelabuhan-penyeberangan'))->name('pelabuhan-penyeberangan');
-        Route::get('/pelabuhan-laut', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'pelabuhan-laut'))->name('pelabuhan-laut');
-        Route::get('/bandara', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'bandara'))->name('bandara');
-        Route::get('/terminal', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'terminal'))->name('terminal');
-        Route::get('/od-simpul-pelabuhan', fn (\Illuminate\Http\Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'od-simpul-pelabuhan'))->name('od-simpul-pelabuhan');
+        Route::get('/stasiun-ka-antar-kota', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'stasiun-ka-antar-kota'))->name('stasiun-ka-antar-kota');
+        Route::get('/pelabuhan-penyeberangan', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'pelabuhan-penyeberangan'))->name('pelabuhan-penyeberangan');
+        Route::get('/pelabuhan-laut', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'pelabuhan-laut'))->name('pelabuhan-laut');
+        Route::get('/bandara', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'bandara'))->name('bandara');
+        Route::get('/terminal', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'terminal'))->name('terminal');
+        Route::get('/od-simpul-pelabuhan', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'od-simpul-pelabuhan'))->name('od-simpul-pelabuhan');
         Route::get('/netflow', [\App\Http\Controllers\DataMpdController::class, 'substansiNetflowPage'])->name('netflow');
     });
 
@@ -140,6 +140,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/log-aktivitas/export', [ActivityLogController::class, 'export'])->name('log-aktivitas.export');
 
     Route::get('/devlog', [\App\Http\Controllers\DevLogController::class, 'index'])->name('devlog');
+    
+    // Log ETL
+    Route::get('/etllog', [\App\Http\Controllers\EtlLogController::class, 'index'])->name('etllog');
+    Route::get('/etllog/{id}/status', [\App\Http\Controllers\EtlLogController::class, 'status'])->name('etllog.status');
+    Route::post('/etllog/{id}/retry', [\App\Http\Controllers\EtlLogController::class, 'retry'])->name('etllog.retry');
 });
 
 Route::get('/sso-login', function (Request $request) {

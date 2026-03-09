@@ -724,10 +724,15 @@ class DataMpdController extends Controller
         ]);
     }
 
+    /**
+     * @return array
+     */
     private function getNasionalOdKabKotaData($startDate, $endDate)
     {
         try {
-            $baseQuery = DB::table('spatial_movements')
+            /** @var \Illuminate\Database\Query\Builder $queryBuilder */
+            $queryBuilder = DB::table('spatial_movements');
+            $baseQuery = $queryBuilder
                 ->select(
                     'kode_origin_kabupaten_kota as origin_code',
                     'kode_dest_kabupaten_kota as dest_code',
@@ -763,8 +768,9 @@ class DataMpdController extends Controller
 
         $totalNational = $query->sum('total_volume');
 
+        /** @var \Illuminate\Support\Collection $topOrigin */
         $topOrigin = $query->groupBy('origin_code')
-            ->map(function ($rows) {
+            ->map(function (\Illuminate\Support\Collection $rows) {
                 $subTotal = $rows->sum('total_volume');
 
                 return [
@@ -777,8 +783,9 @@ class DataMpdController extends Controller
             ->take(10)
             ->values();
 
+        /** @var \Illuminate\Support\Collection $topDest */
         $topDest = $query->groupBy('dest_code')
-            ->map(function ($rows) {
+            ->map(function (\Illuminate\Support\Collection $rows) {
                 $subTotal = $rows->sum('total_volume');
 
                 return [
@@ -792,6 +799,7 @@ class DataMpdController extends Controller
             ->values();
 
         // Top 20 overall routes for Sankey diagram
+        /** @var \Illuminate\Support\Collection $sankeyData */
         $sankeyData = $query->take(20)->map(function ($row) {
             return [
                 'from' => '(O) '.$row->origin_name,
@@ -807,62 +815,106 @@ class DataMpdController extends Controller
         ];
     }
 
-    private function getNasionalOdProvinsiAsalData($startDate, $endDate)
+    /**
+     * @param Carbon $startDate
+     * @param Carbon $endDate
+     * @return array
+     */
+    private function getNasionalOdProvinsiAsalData(Carbon $startDate, Carbon $endDate)
     {
         try {
-            $baseQuery = DB::table('spatial_movements')
-                ->select(
-                    'kode_origin_kabupaten_kota as origin_city_code',
-                    'kode_dest_kabupaten_kota as dest_city_code',
-                    DB::raw('SUM(total) as total_volume')
-                )
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
-                ->where('is_forecast', false)
-                ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
-                ->get();
-
-            $cityCodes = $baseQuery->pluck('origin_city_code')->merge($baseQuery->pluck('dest_city_code'))->unique()->filter()->values();
-            $cities = DB::table('ref_cities')
-                ->join('ref_provinces', 'ref_cities.province_code', '=', 'ref_provinces.code')
-                ->whereIn('ref_cities.code', $cityCodes)
-                ->select('ref_cities.code as city_code', 'ref_provinces.code as prov_code', 'ref_provinces.name as prov_name')
-                ->get()->keyBy('city_code');
-
-            $provGroups = [];
-            foreach ($baseQuery as $row) {
-                $originCode = $row->origin_city_code;
-                $destCode = $row->dest_city_code;
-                if (isset($cities[$originCode]) && isset($cities[$destCode])) {
-                    $originProv = $cities[$originCode];
-                    $destProv = $cities[$destCode];
-
-                    $key = $originProv->prov_code.'|'.$destProv->prov_code;
-                    if (! isset($provGroups[$key])) {
-                        $provGroups[$key] = (object) [
-                            'origin_code' => $originProv->prov_code,
-                            'origin_name' => $originProv->prov_name,
-                            'dest_code' => $destProv->prov_code,
-                            'dest_name' => $destProv->prov_name,
-                            'total_volume' => 0,
-                        ];
-                    }
-                    $provGroups[$key]->total_volume += $row->total_volume;
-                }
-            }
-            $query = collect(array_values($provGroups))->sortByDesc('total_volume')->values();
-
+            $baseQueryResult = $this->fetchBaseOdProvinsiData($startDate, $endDate);
+            $query = $this->groupByProvincePairs($baseQueryResult);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('OD Provinsi Query Error (DataMpd): '.$e->getMessage());
             $query = collect();
         }
 
-        $totalNational = $query->sum('total_volume');
+        $totalNational = (float) $query->sum('total_volume');
+        $topOrigin = $this->calculateTopOriginProvinsi($query, $totalNational);
+        $topDest = $this->calculateTopDestProvinsi($query, $totalNational);
+        $sankeyData = $this->formatSankeyDataProvinsi($query);
+        $provCoordsMapping = $this->getProvinceCoordinates();
 
-        $topOrigin = $query->groupBy('origin_code')
-            ->map(function ($rows) use ($totalNational) {
-                $subTotal = $rows->sum('total_volume');
+        return [
+            'top_origin' => $topOrigin,
+            'top_dest' => $topDest,
+            'sankey' => $sankeyData,
+            'coords' => $provCoordsMapping,
+            'total_national' => $totalNational,
+        ];
+    }
 
+    /**
+     * Fetch raw OD data aggregated by city pairs.
+     */
+    private function fetchBaseOdProvinsiData(Carbon $startDate, Carbon $endDate): \Illuminate\Support\Collection
+    {
+        /** @var \Illuminate\Database\Query\Builder $queryBuilder */
+        $queryBuilder = DB::table('spatial_movements');
+
+        return $queryBuilder
+            ->select(
+                'kode_origin_kabupaten_kota as origin_city_code',
+                'kode_dest_kabupaten_kota as dest_city_code',
+                DB::raw('SUM(total) as total_volume')
+            )
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
+            ->where('is_forecast', false)
+            ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
+            ->get();
+    }
+
+    /**
+     * Group city-level data into province pairs.
+     */
+    private function groupByProvincePairs(\Illuminate\Support\Collection $baseQuery): \Illuminate\Support\Collection
+    {
+        $originCodes = $baseQuery->pluck('origin_city_code');
+        $destCodes = $baseQuery->pluck('dest_city_code');
+        $cityCodes = $originCodes->merge($destCodes)->unique()->filter()->values();
+
+        $cities = DB::table('ref_cities')
+            ->join('ref_provinces', 'ref_cities.province_code', '=', 'ref_provinces.code')
+            ->whereIn('ref_cities.code', $cityCodes)
+            ->select('ref_cities.code as city_code', 'ref_provinces.code as prov_code', 'ref_provinces.name as prov_name')
+            ->get()->keyBy('city_code');
+
+        $provGroups = [];
+        foreach ($baseQuery as $row) {
+            $originCode = $row->origin_city_code;
+            $destCode = $row->dest_city_code;
+
+            if (isset($cities[$originCode]) && isset($cities[$destCode])) {
+                $originProv = $cities[$originCode];
+                $destProv = $cities[$destCode];
+
+                $key = $originProv->prov_code.'|'.$destProv->prov_code;
+                if (! isset($provGroups[$key])) {
+                    $provGroups[$key] = (object) [
+                        'origin_code' => $originProv->prov_code,
+                        'origin_name' => $originProv->prov_name,
+                        'dest_code' => $destProv->prov_code,
+                        'dest_name' => $destProv->prov_name,
+                        'total_volume' => 0,
+                    ];
+                }
+                $provGroups[$key]->total_volume += $row->total_volume;
+            }
+        }
+
+        return collect(array_values($provGroups))->sortByDesc('total_volume')->values();
+    }
+
+    /**
+     * Calculate top origin provinces.
+     */
+    private function calculateTopOriginProvinsi(\Illuminate\Support\Collection $query, float $totalNational): \Illuminate\Support\Collection
+    {
+        return $query->groupBy('origin_code')
+            ->map(function (\Illuminate\Support\Collection $rows) use ($totalNational) {
+                $subTotal = (float) $rows->sum('total_volume');
                 return [
                     'code' => $rows->first()->origin_code,
                     'name' => $rows->first()->origin_name,
@@ -873,11 +925,16 @@ class DataMpdController extends Controller
             ->sortByDesc('total')
             ->take(10)
             ->values();
+    }
 
-        $topDest = $query->groupBy('dest_code')
-            ->map(function ($rows) use ($totalNational) {
-                $subTotal = $rows->sum('total_volume');
-
+    /**
+     * Calculate top destination provinces.
+     */
+    private function calculateTopDestProvinsi(\Illuminate\Support\Collection $query, float $totalNational): \Illuminate\Support\Collection
+    {
+        return $query->groupBy('dest_code')
+            ->map(function (\Illuminate\Support\Collection $rows) use ($totalNational) {
+                $subTotal = (float) $rows->sum('total_volume');
                 return [
                     'code' => $rows->first()->dest_code,
                     'name' => $rows->first()->dest_name,
@@ -888,30 +945,38 @@ class DataMpdController extends Controller
             ->sortByDesc('total')
             ->take(10)
             ->values();
+    }
 
-        $sankeyData = $query->map(function ($row) {
+    /**
+     * Format data for Sankey diagram.
+     */
+    private function formatSankeyDataProvinsi(\Illuminate\Support\Collection $query): \Illuminate\Support\Collection
+    {
+        return $query->map(function ($row) {
             return [
                 'from' => '(O) '.$row->origin_name,
                 'to' => '(D) '.$row->dest_name,
                 'weight' => (int) $row->total_volume,
             ];
         })->values();
+    }
 
+    /**
+     * Get province coordinates for mapping.
+     */
+    private function getProvinceCoordinates(): array
+    {
         $provCoordsDB = DB::table('ref_provinces')->get();
         $provCoordsMapping = [];
         foreach ($provCoordsDB as $prov) {
             if (! empty($prov->latitude) && ! empty($prov->longitude)) {
-                $provCoordsMapping[strtoupper($prov->name)] = [(float) $prov->latitude, (float) $prov->longitude];
+                $provCoordsMapping[$prov->code] = [
+                    'lat' => (float) $prov->latitude,
+                    'lng' => (float) $prov->longitude,
+                ];
             }
         }
-
-        return [
-            'top_origin' => $topOrigin,
-            'top_dest' => $topDest,
-            'sankey' => $sankeyData,
-            'total_national' => $totalNational,
-            'prov_coords' => $provCoordsMapping,
-        ];
+        return $provCoordsMapping;
     }
 
     private function getNasionalOdSimpulData($startDate, $endDate)
@@ -2106,14 +2171,19 @@ class DataMpdController extends Controller
         ]);
     }
 
-    private function getSubstansiNetflowData($startDate, $endDate)
+    /**
+     * @return array
+     */
+    private function getSubstansiNetflowData(Carbon $startDate, Carbon $endDate)
     {
         try {
             $startDateStr = $startDate->format('Y-m-d');
             $endDateStr = $endDate->format('Y-m-d');
 
-            // Outflow: origin is the city
-            $outflowQuery = DB::table('spatial_movements')
+            /** @var \Illuminate\Database\Query\Builder $outflowBuilder */
+            $outflowBuilder = DB::table('spatial_movements');
+            /** @var \Illuminate\Support\Collection $outflowQuery */
+            $outflowQuery = $outflowBuilder
                 ->select(
                     'kode_origin_kabupaten_kota as city_code',
                     DB::raw('SUM(total) as total_outflow')
@@ -2125,8 +2195,10 @@ class DataMpdController extends Controller
                 ->get()
                 ->keyBy('city_code');
 
-            // Inflow: dest is the city
-            $inflowQuery = DB::table('spatial_movements')
+            /** @var \Illuminate\Database\Query\Builder $inflowBuilder */
+            $inflowBuilder = DB::table('spatial_movements');
+            /** @var \Illuminate\Support\Collection $inflowQuery */
+            $inflowQuery = $inflowBuilder
                 ->select(
                     'kode_dest_kabupaten_kota as city_code',
                     DB::raw('SUM(total) as total_inflow')
@@ -2173,28 +2245,33 @@ class DataMpdController extends Controller
             ];
         }
 
+        /** @var \Illuminate\Support\Collection $mergedColl */
         $mergedColl = collect($merged);
 
         // Top 20 Origin Netflow (Lowest/Most Negative Netflow)
-        $topOriginNetflow = $mergedColl->filter(fn ($r) => $r['netflow'] <= 0)
+        /** @var \Illuminate\Support\Collection $topOriginNetflow */
+        $topOriginNetflow = $mergedColl->filter(fn (array $r) => $r['netflow'] <= 0)
             ->sortBy('netflow')
             ->take(20)
             ->values();
 
         // Top 20 Dest Netflow (Highest/Most Positive Netflow)
-        $topDestNetflow = $mergedColl->filter(fn ($r) => $r['netflow'] > 0)
+        /** @var \Illuminate\Support\Collection $topDestNetflow */
+        $topDestNetflow = $mergedColl->filter(fn (array $r) => $r['netflow'] > 0)
             ->sortByDesc('netflow')
             ->take(20)
             ->values();
 
         // Top 20 Origin NFR (Lowest NFR close to -1)
-        $topOriginNfr = $mergedColl->filter(fn ($r) => $r['nfr'] <= 0)
+        /** @var \Illuminate\Support\Collection $topOriginNfr */
+        $topOriginNfr = $mergedColl->filter(fn (array $r) => $r['nfr'] <= 0)
             ->sortBy('nfr')
             ->take(20)
             ->values();
 
         // Top 20 Dest NFR (Highest NFR close to +1)
-        $topDestNfr = $mergedColl->filter(fn ($r) => $r['nfr'] > 0)
+        /** @var \Illuminate\Support\Collection $topDestNfr */
+        $topDestNfr = $mergedColl->filter(fn (array $r) => $r['nfr'] > 0)
             ->sortByDesc('nfr')
             ->take(20)
             ->values();

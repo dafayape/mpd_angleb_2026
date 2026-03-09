@@ -2,6 +2,7 @@
 
 namespace App\Jobs\Mpd;
 
+use App\Models\ImportJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -39,17 +40,48 @@ class TransformRawToSpatialJob implements ShouldQueue
 
     public function handle(): void
     {
-        Log::info("[ETL] Starting transform for import_job_id={$this->importJobId}");
+        $this->updateEtlStatus('processing', 0, "Starting ETL transform for import_job_id={$this->importJobId}");
 
         try {
             $this->transformData();
             $this->refreshMaterializedViews();
             $this->invalidateCache();
 
-            Log::info("[ETL] Completed transform for import_job_id={$this->importJobId}");
+            $this->updateEtlStatus('completed', 100, "Completed ETL transform for import_job_id={$this->importJobId}");
         } catch (\Throwable $e) {
-            Log::error("[ETL] Failed for import_job_id={$this->importJobId}: ".$e->getMessage());
+            $this->updateEtlStatus('failed', 0, "Failed: " . $e->getMessage(), 'error');
             throw $e;
+        }
+    }
+
+    private function updateEtlStatus(string $status, int $progress, string $message, string $level = 'info'): void
+    {
+        Log::channel('etl')->log($level, "[Job ID: {$this->importJobId}] {$message}");
+        
+        try {
+            $job = ImportJob::find($this->importJobId);
+            if ($job) {
+                $meta = $job->metadata ?? [];
+                $meta['etl_status'] = $status;
+                $meta['etl_progress'] = $progress;
+                
+                $logs = $meta['etl_logs'] ?? [];
+                $logs[] = [
+                    'time' => now()->toDateTimeString(),
+                    'level' => strtoupper($level),
+                    'message' => $message,
+                ];
+                // Keep last 100 logs to avoid ballooning JSON
+                if (count($logs) > 100) {
+                    array_shift($logs);
+                }
+                $meta['etl_logs'] = $logs;
+                
+                $job->metadata = $meta;
+                $job->save();
+            }
+        } catch (\Throwable $e) {
+            Log::error("Failed to update ETL metadata for job {$this->importJobId}: " . $e->getMessage());
         }
     }
 
@@ -66,8 +98,19 @@ class TransformRawToSpatialJob implements ShouldQueue
             ->distinct()
             ->pluck('tanggal');
 
+        $totalDates = $dates->count();
+        if ($totalDates === 0) {
+            $this->updateEtlStatus('processing', 10, "No raw data found to process.");
+            return;
+        }
+
+        $processed = 0;
         foreach ($dates as $date) {
             $this->processDateBatch($date);
+            $processed++;
+            // Calculate progress up to 80% for this phase
+            $progress = (int) (($processed / $totalDates) * 80);
+            $this->updateEtlStatus('processing', $progress, "Processed date batch: {$date} ({$processed}/{$totalDates})");
         }
     }
 
@@ -132,13 +175,14 @@ class TransformRawToSpatialJob implements ShouldQueue
      */
     private function refreshMaterializedViews(): void
     {
+        $this->updateEtlStatus('processing', 85, "Refreshing materialized views...");
         try {
             DB::statement("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_summary;");
+            $this->updateEtlStatus('processing', 90, "Refreshed mv_daily_summary...");
             DB::statement("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_jabodetabek_daily;");
-            Log::info("[ETL] Materialized views refreshed.");
+            $this->updateEtlStatus('processing', 95, "Refreshed mv_jabodetabek_daily...");
         } catch (\Throwable $e) {
-            // Views might not exist yet (migration not run) — non-fatal
-            Log::warning("[ETL] Materialized view refresh skipped: " . $e->getMessage());
+            $this->updateEtlStatus('processing', 95, "Materialized view refresh skipped/failed: " . $e->getMessage(), 'warning');
         }
     }
 
@@ -147,11 +191,12 @@ class TransformRawToSpatialJob implements ShouldQueue
      */
     private function invalidateCache(): void
     {
+        $this->updateEtlStatus('processing', 98, "Flushing application cache...");
         try {
             Cache::flush();
-            Log::info('[ETL] Cache flushed (all keys cleared).');
+            $this->updateEtlStatus('processing', 99, "Cache flushed successfully.");
         } catch (\Throwable $e) {
-            Log::warning('[ETL] Cache flush failed: '.$e->getMessage());
+            $this->updateEtlStatus('processing', 99, "Cache flush failed: " . $e->getMessage(), 'warning');
         }
     }
 }

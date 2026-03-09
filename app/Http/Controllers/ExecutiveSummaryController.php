@@ -14,8 +14,8 @@ class ExecutiveSummaryController extends Controller
     public function index()
     {
         return view('dashboard.index', [
-            'periodStart' => ExecutiveSummaryService::PERIOD_START,
-            'periodEnd' => ExecutiveSummaryService::PERIOD_END
+            'startDate' => config('mpd.start_date', '2026-03-13'),
+            'endDate' => config('mpd.end_date', '2026-03-30')
         ]);
     }
 

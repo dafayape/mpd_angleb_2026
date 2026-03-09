@@ -961,8 +961,15 @@
             // Block 08: Forecast vs Real
             const fc = data.forecast || {};
             const fcCats = Object.keys(fc).map(formatDateShort);
-            const fcReal = Object.values(fc).map(i => i.real_pct);
-            const fcFore = Object.values(fc).map(i => i.fore_pct);
+            
+            let isFcAngka = (satuan === 'angka');
+            const fcReal = Object.values(fc).map(i => isFcAngka ? i.real_val : i.real_pct);
+            const fcFore = Object.values(fc).map(i => isFcAngka ? i.fore_val : i.fore_pct);
+            
+            let fcYAxisTitle = isFcAngka ? 'Jumlah Aktual & Prakiraan' : 'Distribusi / Proporsi Harian (%)';
+            let fcYAxisFormat = isFcAngka ? '{value:,.0f}' : '{value}%';
+            let fcTooltipSuffix = isFcAngka ? '' : '%';
+
             Highcharts.chart('chart_forecast_comparison', {
                 chart: {
                     type: 'line',
@@ -982,10 +989,10 @@
                 },
                 yAxis: {
                     title: {
-                        text: 'Distribusi / Proporsi Harian (%)'
+                        text: fcYAxisTitle
                     },
                     labels: {
-                        format: '{value}%'
+                        format: fcYAxisFormat
                     },
                     gridLineDashStyle: 'Dash'
                 },
@@ -1022,7 +1029,7 @@
                 },
                 tooltip: {
                     shared: true,
-                    valueSuffix: '%'
+                    valueSuffix: fcTooltipSuffix
                 }
             });
 
