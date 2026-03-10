@@ -27,29 +27,56 @@ class RetryMissingEtlCommand extends Command
         
         $this->info("🔍 Mendeteksi Data Mentah (Raw) yang belum masuk (missing) di Dashboard (Spatial)...");
 
-        // Cari import_job_id yang jumlah raw != spatial ATAU belum ada sama sekali di spatial
-        $query = DB::table('raw_mpd_data AS r')
-            ->selectRaw('
-                r.import_job_id,
-                r.tanggal,
-                r.opsel,
-                r.kategori,
-                MAX(i.original_filename) as filename
-            ')
-            ->leftJoin('spatial_movements AS s', function($join) {
-                $join->on('r.tanggal', '=', 's.tanggal')
-                     ->on('r.opsel', '=', 's.opsel')
-                     ->on('r.kategori', '=', 's.kategori');
-            })
-            ->join('import_jobs AS i', 'r.import_job_id', '=', 'i.id')
-            ->groupBy('r.import_job_id', 'r.tanggal', 'r.opsel', 'r.kategori')
-            ->havingRaw('SUM(r.total) != COALESCE(SUM(s.total), 0) OR SUM(s.total) IS NULL');
-
+        // 1. Ambil agregat RAW (Cepat karena ringan)
+        $rawQuery = DB::table('raw_mpd_data')
+            ->selectRaw('tanggal, opsel, kategori, SUM(total) as raw_sum, MAX(import_job_id) as import_job_id')
+            ->groupBy('tanggal', 'opsel', 'kategori');
+            
         if ($opselFilter) {
-            $query->where('r.opsel', $opselFilter);
+            $rawQuery->where('opsel', $opselFilter);
+        }
+        $rawSums = $rawQuery->get();
+
+        // 2. Ambil agregat SPATIAL (Cepat karena ringan)
+        $spatialQuery = DB::table('spatial_movements')
+            ->selectRaw('tanggal, opsel, kategori, SUM(total) as spatial_sum')
+            ->groupBy('tanggal', 'opsel', 'kategori');
+            
+        if ($opselFilter) {
+            $spatialQuery->where('opsel', $opselFilter);
+        }
+        $spatialSums = $spatialQuery->get()->keyBy(function ($item) {
+            return $item->tanggal . '|' . $item->opsel . '|' . $item->kategori;
+        });
+
+        // 3. Cocokkan di Memory PHP (Sangat cepat < 2 detik)
+        $missingJobs = collect();
+        $importJobIdsToFetch = [];
+
+        foreach ($rawSums as $raw) {
+            $key = $raw->tanggal . '|' . $raw->opsel . '|' . $raw->kategori;
+            $spatial = $spatialSums->get($key);
+            $spatialTotal = $spatial ? (int) $spatial->spatial_sum : 0;
+            $rawTotal = (int) $raw->raw_sum;
+            
+            if ($rawTotal !== $spatialTotal) {
+                $importJobIdsToFetch[] = $raw->import_job_id;
+            }
         }
 
-        $missingJobs = $query->get();
+        if (empty($importJobIdsToFetch)) {
+            $this->info("✨ Keren! Tidak ditemukan data yang selisih/hilang. Semuanya sudah sinkron.");
+            return Command::SUCCESS;
+        }
+
+        // 4. Tarik metadata job dari tabel import_jobs berdasarkan ID yang tertangkap selisih
+        $importJobIdsToFetch = array_unique($importJobIdsToFetch);
+        $missingJobs = DB::table('raw_mpd_data as r')
+            ->join('import_jobs as i', 'r.import_job_id', '=', 'i.id')
+            ->selectRaw('r.import_job_id, r.tanggal, r.opsel, r.kategori, MAX(i.original_filename) as filename')
+            ->whereIn('r.import_job_id', $importJobIdsToFetch)
+            ->groupBy('r.import_job_id', 'r.tanggal', 'r.opsel', 'r.kategori')
+            ->get();
 
         if ($missingJobs->isEmpty()) {
             $this->info("✨ Keren! Tidak ditemukan data yang selisih/hilang. Semuanya sudah sinkron.");
