@@ -11,7 +11,7 @@ class RetryMissingEtlCommand extends Command
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'mpd:retry-etl {--opsel= : Filter spesifik operator (misal TSEL/IOH/XL)}';
+    protected $signature = 'mpd:retry-etl {--opsel= : Filter spesifik operator (misal TSEL/IOH/XL)} {--force : Paksa jalankan tanpa prompt konfirmasi}';
 
     /**
      * The console command description.
@@ -101,7 +101,7 @@ class RetryMissingEtlCommand extends Command
 
         $this->table(['ID Job', 'Tanggal', 'Opsel', 'Kategori', 'Nama File Asli'], $tableData);
 
-        if ($this->confirm('Apakah Anda ingin memasukkan ulang job-job di atas ke dalam antrean (Re-dispatch)?')) {
+        if ($this->option('force') || $this->confirm('Apakah Anda ingin memasukkan ulang job-job di atas ke dalam antrean (Re-dispatch)?')) {
             $uniqueJobIds = array_unique($uniqueJobIds);
             $this->info("⚙️  Memproses Re-dispatching " . count($uniqueJobIds) . " Job...");
 
