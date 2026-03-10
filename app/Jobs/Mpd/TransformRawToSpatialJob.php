@@ -191,58 +191,98 @@ class TransformRawToSpatialJob implements ShouldQueue
 
     private function processDateBatch(string $date): void
     {
-        // Single SQL statement: aggregate + enrich + upsert
-        // This is the most efficient approach — pure SQL, no PHP loop
-        DB::statement('
-            INSERT INTO spatial_movements (
-                tanggal, opsel, kategori,
-                kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
-                kode_origin_simpul, kode_dest_simpul,
-                kode_moda, total, is_forecast,
-                origin_location, dest_location, distance_meters,
-                created_at, updated_at
-            )
-            SELECT
-                r.tanggal,
-                r.opsel,
-                r.kategori,
-                r.kode_origin_kabupaten_kota,
-                r.kode_dest_kabupaten_kota,
-                r.kode_origin_simpul,
-                r.kode_dest_simpul,
-                r.kode_moda,
-                SUM(r.total) as total,
-                r.is_forecast,
-                -- PostGIS enrichment: lookup coordinates from ref_transport_nodes
-                n_origin.location as origin_location,
-                n_dest.location as dest_location,
-                -- Calculate distance in meters using ST_Distance (geography)
-                CASE
-                    WHEN n_origin.location IS NOT NULL AND n_dest.location IS NOT NULL
-                    THEN ST_Distance(n_origin.location, n_dest.location)
-                    ELSE NULL
-                END as distance_meters,
-                NOW() as created_at,
-                NOW() as updated_at
-            FROM raw_mpd_data r
-            LEFT JOIN ref_transport_nodes n_origin ON r.kode_origin_simpul = n_origin.code
-            LEFT JOIN ref_transport_nodes n_dest ON r.kode_dest_simpul = n_dest.code
-            WHERE r.import_job_id = ?
-              AND r.tanggal = ?
-            GROUP BY
-                r.tanggal, r.opsel, r.kategori,
-                r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
-                r.kode_origin_simpul, r.kode_dest_simpul,
-                r.kode_moda, r.is_forecast,
-                n_origin.location, n_dest.location
-            ON CONFLICT (tanggal, opsel, kategori, kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, kode_origin_simpul, kode_dest_simpul, kode_moda, is_forecast)
-            DO UPDATE SET
-                total = EXCLUDED.total,
-                origin_location = EXCLUDED.origin_location,
-                dest_location = EXCLUDED.dest_location,
-                distance_meters = EXCLUDED.distance_meters,
-                updated_at = NOW()
-        ', [$this->importJobId, $date]);
+        // Temukan opsel apa saja yang terlibat di job ini untuk tanggal ini
+        $opsels = DB::table('raw_mpd_data')
+            ->where('import_job_id', $this->importJobId)
+            ->where('tanggal', $date)
+            ->distinct()
+            ->pluck('opsel')
+            ->toArray();
+
+        // Temukan kategori apa saja yang terlibat di job ini untuk tanggal ini
+        $kategoris = DB::table('raw_mpd_data')
+            ->where('import_job_id', $this->importJobId)
+            ->where('tanggal', $date)
+            ->distinct()
+            ->pluck('kategori')
+            ->toArray();
+
+        if (empty($opsels) || empty($kategoris)) return;
+
+        // Kami memecah Query RAKSASA menjadi kepingan kecil (per opsel, per is_forecast, per kategori)
+        // Ini adalah kunci agar VPS tidak memunculkan error "Killed" (Out of Memory/RAM Penuh)
+        $forecastTypes = [true, false]; // true = forecast, false = real
+
+        foreach ($opsels as $opsel) {
+            foreach ($kategoris as $kategori) {
+                foreach ($forecastTypes as $isForecast) {
+                    
+                    // Cek apakah data spesifik (opsel+kategori+forecast) ini ada di raw_mpd_data pada tanggal ini
+                    $exists = DB::table('raw_mpd_data')
+                        ->where('tanggal', $date)
+                        ->where('opsel', $opsel)
+                        ->where('kategori', $kategori)
+                        ->where('is_forecast', $isForecast)
+                        ->exists();
+
+                    if (!$exists) continue;
+
+                    // Eksekusi upsert dalam porsi kecil yang bersahabat dengan RAM
+                    $sql = "
+                        INSERT INTO spatial_movements (
+                            tanggal, opsel, kategori,
+                            kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
+                            kode_origin_simpul, kode_dest_simpul,
+                            kode_moda, total, is_forecast,
+                            origin_location, dest_location, distance_meters,
+                            created_at, updated_at
+                        )
+                        SELECT
+                            r.tanggal,
+                            r.opsel,
+                            r.kategori,
+                            r.kode_origin_kabupaten_kota,
+                            r.kode_dest_kabupaten_kota,
+                            r.kode_origin_simpul,
+                            r.kode_dest_simpul,
+                            r.kode_moda,
+                            SUM(r.total) as total,
+                            r.is_forecast,
+                            n_origin.location as origin_location,
+                            n_dest.location as dest_location,
+                            CASE
+                                WHEN n_origin.location IS NOT NULL AND n_dest.location IS NOT NULL
+                                THEN ST_Distance(n_origin.location, n_dest.location)
+                                ELSE NULL
+                            END as distance_meters,
+                            NOW() as created_at,
+                            NOW() as updated_at
+                        FROM raw_mpd_data r
+                        LEFT JOIN ref_transport_nodes n_origin ON r.kode_origin_simpul = n_origin.code
+                        LEFT JOIN ref_transport_nodes n_dest ON r.kode_dest_simpul = n_dest.code
+                        WHERE r.tanggal = ?
+                          AND r.opsel = ?
+                          AND r.kategori = ?
+                          AND r.is_forecast = ?
+                        GROUP BY
+                            r.tanggal, r.opsel, r.kategori,
+                            r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
+                            r.kode_origin_simpul, r.kode_dest_simpul,
+                            r.kode_moda, r.is_forecast,
+                            n_origin.location, n_dest.location
+                        ON CONFLICT (tanggal, opsel, kategori, kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, kode_origin_simpul, kode_dest_simpul, kode_moda, is_forecast)
+                        DO UPDATE SET
+                            total = EXCLUDED.total,
+                            origin_location = EXCLUDED.origin_location,
+                            dest_location = EXCLUDED.dest_location,
+                            distance_meters = EXCLUDED.distance_meters,
+                            updated_at = NOW()
+                    ";
+
+                    DB::statement($sql, [$date, $opsel, $kategori, $isForecast]);
+                }
+            }
+        }
     }
 
     /**
