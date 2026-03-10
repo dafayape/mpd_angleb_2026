@@ -32,8 +32,7 @@ class RetryMissingEtlCommand extends Command
             ->selectRaw('
                 r.import_job_id,
                 r.tanggal,
-                r.opsel,php artisan mpd:retry-etl
-
+                r.opsel,
                 r.kategori,
                 MAX(i.original_filename) as filename
             ')

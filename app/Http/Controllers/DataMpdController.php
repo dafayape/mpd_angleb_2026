@@ -17,15 +17,9 @@ class DataMpdController extends Controller
     public function jabodetabekOdSimpul(Request $request)
     {
         // 1. Date Range: 13 March 2026 - 30 March 2026
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
 
-        $dates = collect();
-        $curr = $startDate->copy();
-        while ($curr->lte($endDate)) {
-            $dates->push($curr->format('Y-m-d'));
-            $curr->addDay();
-        }
+        $dates = $this->getDatesCollection($startDate, $endDate);
 
         $cacheKey = 'mpd:jabodetabek:od-simpul:matrix:v3';
         $jabodetabekCodes = $this->getJabodetabekCodes();
@@ -42,29 +36,16 @@ class DataMpdController extends Controller
     public function jabodetabekModeShare(Request $request)
     {
         // 1. Date Range: 13 March 2026 - 30 March 2026
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
 
-        $dates = collect();
-        $curr = $startDate->copy();
-        while ($curr->lte($endDate)) {
-            $dates->push($curr->format('Y-m-d'));
-            $curr->addDay();
-        }
+        $dates = $this->getDatesCollection($startDate, $endDate);
 
         // 2. Caching Key
         $cacheKey = 'mpd:jabodetabek:mode-share:matrix:v2';
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
-        try {
-            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getModeShareData($startDate, $endDate, $jabodetabekCodes);
-            });
-        } catch (\Throwable $e) {
-            // Redis/DB Fallback
-            $data = $this->getModeShareData($startDate, $endDate, $jabodetabekCodes);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getModeShareData($startDate, $endDate, $jabodetabekCodes));
 
         return view('data-mpd.jabodetabek.mode-share', [
             'title' => 'Mode Share Jabodetabek',
@@ -77,21 +58,14 @@ class DataMpdController extends Controller
 
     public function jabodetabekIntraPergerakanPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:jabodetabek:intra-pergerakan:v1:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
-        try {
-            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes));
 
         return view('pages.jabodetabek.intra-pergerakan', [
             'dates' => $this->getDatesCollection($startDate, $endDate),
@@ -134,7 +108,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false) // Only REAL data
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
@@ -142,19 +116,9 @@ class DataMpdController extends Controller
 
             foreach ($query as $row) {
                 $date = $row->tanggal;
-                $rawOpsel = strtoupper($row->opsel);
                 $kat = strtoupper($row->kategori) === 'PERGERAKAN' ? 'pergerakan' : 'orang';
                 $vol = (int) $row->total_volume;
-
-                // Normalize Opsel
-                $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
-                    $opsel = 'XL';
-                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                    $opsel = 'IOH';
-                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                    $opsel = 'TSEL';
-                }
+                $opsel = $this->normalizeOpsel($row->opsel);
 
                 if ($opsel !== 'OTHER' && isset($result[$date][$opsel])) {
                     $result[$date][$opsel][$kat] += $vol;
@@ -286,8 +250,7 @@ class DataMpdController extends Controller
 
     public function jabodetabekIntraOdPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
@@ -295,13 +258,7 @@ class DataMpdController extends Controller
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
-        try {
-            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getJabodetabekIntraOdData($startDate, $endDate, $jabodetabekCodes);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getJabodetabekIntraOdData($startDate, $endDate, $jabodetabekCodes);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekIntraOdData($startDate, $endDate, $jabodetabekCodes));
 
         return view('pages.jabodetabek.intra-od', [
             'title' => 'O-D Intra Jabodetabek',
@@ -329,7 +286,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false)
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('oc.code', 'oc.name', 'dc.code', 'dc.name')
@@ -391,8 +348,7 @@ class DataMpdController extends Controller
 
     public function jabodetabekInterOdPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
@@ -400,13 +356,7 @@ class DataMpdController extends Controller
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
-        try {
-            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes));
 
         return view('pages.jabodetabek.inter-od', [
             'title' => 'O-D Inter Jabodetabek',
@@ -436,7 +386,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false)
-                ->whereIn(DB::raw('UPPER(sm.kategori)'), ['PERGERAKAN', 'ORANG'])
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 // Origin IS in Jabodetabek
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 // Destination IS NOT in Jabodetabek
@@ -485,21 +435,14 @@ class DataMpdController extends Controller
 
     public function jabodetabekInterPergerakanPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:jabodetabek:inter-pergerakan:v1:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
-        try {
-            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $jabodetabekCodes) {
-                return $this->getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes));
 
         return view('pages.jabodetabek.inter-pergerakan', [
             'dates' => $this->getDatesCollection($startDate, $endDate),
@@ -540,7 +483,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false)
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 ->where(function ($q) use ($jabodetabekCodes) {
                     $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                         ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
@@ -554,18 +497,9 @@ class DataMpdController extends Controller
 
             foreach ($query as $row) {
                 $date = $row->tanggal;
-                $rawOpsel = strtoupper($row->opsel);
                 $kat = strtoupper($row->kategori) === 'PERGERAKAN' ? 'pergerakan' : 'orang';
                 $vol = (int) $row->total_volume;
-
-                $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
-                    $opsel = 'XL';
-                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                    $opsel = 'IOH';
-                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                    $opsel = 'TSEL';
-                }
+                $opsel = $this->normalizeOpsel($row->opsel);
 
                 if ($opsel !== 'OTHER' && isset($result[$date][$opsel])) {
                     $result[$date][$opsel][$kat] += $vol;
@@ -692,8 +626,7 @@ class DataMpdController extends Controller
 
     public function nasionalOdSimpul(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
@@ -739,7 +672,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
+                ->where('kategori', 'PERGERAKAN')
                 ->where('is_forecast', false)
                 ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
@@ -860,7 +793,7 @@ class DataMpdController extends Controller
                 DB::raw('SUM(total) as total_volume')
             )
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
+            ->where('kategori', 'PERGERAKAN')
             ->where('is_forecast', false)
             ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
             ->get();
@@ -1041,7 +974,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'pergerakan'])
+                ->where('kategori', 'PERGERAKAN')
                 ->whereNotNull('kode_origin_simpul')
                 ->where('kode_origin_simpul', '!=', '')
                 ->groupBy('kode_origin_simpul', 'tanggal', 'opsel', 'is_forecast')
@@ -1072,16 +1005,7 @@ class DataMpdController extends Controller
                 $key = $catMap[$dbCat];
                 $date = $row->tanggal;
 
-                // Colors/Opsel Normalization
-                $rawOpsel = strtoupper($row->opsel);
-                $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
-                    $opsel = 'XL';
-                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                    $opsel = 'IOH';
-                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                    $opsel = 'TSEL';
-                }
+                $opsel = $this->normalizeOpsel($row->opsel);
 
                 if ($opsel === 'OTHER') {
                     continue;
@@ -1105,19 +1029,12 @@ class DataMpdController extends Controller
 
     public function nasionalModeShare(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $cacheKey = 'mpd:nasional:mode-share:tables:v1';
 
-        try {
-            $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate) {
-                return $this->getNasionalModeShareData($startDate, $endDate);
-            });
-        } catch (\Throwable $e) {
-            $data = $this->getNasionalModeShareData($startDate, $endDate);
-        }
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalModeShareData($startDate, $endDate));
 
         return view('data-mpd.nasional.mode-share', [
             'title' => 'Mode Share Nasional',
@@ -1218,16 +1135,7 @@ class DataMpdController extends Controller
                 $vol = $row->total_volume;
                 $type = $row->is_forecast ? 'FORECAST' : 'REAL';
 
-                // Normalize Opsel
-                $rawOpsel = strtoupper($row->opsel);
-                $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
-                    $opsel = 'XL';
-                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                    $opsel = 'IOH';
-                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                    $opsel = 'TSEL';
-                }
+                $opsel = $this->normalizeOpsel($row->opsel);
 
                 if ($opsel === 'OTHER') {
                     continue;
@@ -1260,8 +1168,7 @@ class DataMpdController extends Controller
 
     public function nasionalModeSharePage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:nasional:mode-share-page:v3:{$dString}";
@@ -1292,7 +1199,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false)
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 ->groupBy('sm.kode_moda', 'sm.kategori')
                 ->get();
         } catch (\Throwable $e) {
@@ -1406,7 +1313,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.is_forecast', false)
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'pergerakan'])
+                ->where('sm.kategori', 'PERGERAKAN')
                 ->groupBy('sm.tanggal', 'sm.kode_moda')
                 ->get();
 
@@ -1430,8 +1337,7 @@ class DataMpdController extends Controller
 
     public function nasionalPergerakanHarianPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $cacheKey = 'mpd:nasional:pergerakan-harian:v6';
@@ -1468,25 +1374,17 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
                 ->groupBy('tanggal', 'opsel', 'kategori')
                 ->get();
 
             $hasOrang = [];
             foreach ($query as $row) {
                 $date = substr($row->tanggal, 0, 10);
-                $rawOpsel = strtoupper($row->opsel);
                 $cat = strtoupper($row->kategori);
                 $vol = (int) $row->total_volume;
 
-                $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
-                    $opsel = 'XL';
-                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                    $opsel = 'IOH';
-                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                    $opsel = 'TSEL';
-                }
+                $opsel = $this->normalizeOpsel($row->opsel);
 
                 if ($opsel === 'OTHER' || ! isset($dates[$date])) {
                     continue;
@@ -1585,8 +1483,7 @@ class DataMpdController extends Controller
 
     public function nasionalPergerakan(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $cacheKey = 'mpd:nasional:pergerakan:tables:v3';
@@ -1636,7 +1533,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'pergerakan']);
+                ->where('kategori', 'PERGERAKAN');
 
             // Apply Filters if provided (e.g. Jabodetabek)
             if (! empty($filterCodes)) {
@@ -1649,16 +1546,7 @@ class DataMpdController extends Controller
                 $type = $row->is_forecast ? 'FORECAST' : 'REAL';
                 $date = $row->tanggal;
 
-                // Colors/Opsel Normalization
-                $rawOpsel = strtoupper($row->opsel);
-                $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
-                    $opsel = 'XL';
-                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                    $opsel = 'IOH';
-                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                    $opsel = 'TSEL';
-                }
+                $opsel = $this->normalizeOpsel($row->opsel);
 
                 if ($opsel === 'OTHER') {
                     continue;
@@ -1813,17 +1701,6 @@ class DataMpdController extends Controller
         return $final;
     }
 
-    private function getDatesCollection($startDate, $endDate)
-    {
-        $dates = collect();
-        $curr = $startDate->copy();
-        while ($curr->lte($endDate)) {
-            $dates->push($curr->format('Y-m-d'));
-            $curr->addDay();
-        }
-
-        return $dates;
-    }
 
     // --- REFACTORED HELPERS ---
 
@@ -1963,8 +1840,7 @@ class DataMpdController extends Controller
     public function jabodetabekPergerakan(Request $request)
     {
         // 1. Date Range: 13 March 2026 - 30 March 2026
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
 
         $dates = $this->getDatesCollection($startDate, $endDate);
 
@@ -2017,18 +1893,9 @@ class DataMpdController extends Controller
 
             foreach ($results as $row) {
                 $date = $row->tanggal;
-                $rawOpsel = strtoupper($row->opsel);
                 $vol = $row->total_volume;
 
-                // Normalize Opsel Name
-                $opsel = 'OTHER';
-                if (str_contains($rawOpsel, 'XL') || str_contains($rawOpsel, 'AXIS')) {
-                    $opsel = 'XL';
-                } elseif (str_contains($rawOpsel, 'INDOSAT') || str_contains($rawOpsel, 'IOH') || str_contains($rawOpsel, 'TRI')) {
-                    $opsel = 'IOH';
-                } elseif (str_contains($rawOpsel, 'TELKOMSEL') || str_contains($rawOpsel, 'TSEL') || str_contains($rawOpsel, 'SIMPATI')) {
-                    $opsel = 'TSEL';
-                }
+                $opsel = $this->normalizeOpsel($row->opsel);
 
                 if (isset($dates[$date]) && isset($dates[$date][$opsel])) {
                     $dates[$date][$opsel]['movement'] += $vol;
@@ -2050,15 +1917,9 @@ class DataMpdController extends Controller
     public function jabodetabekPergerakanOrang(Request $request)
     {
         // 1. Date Range: 13 March 2026 - 30 March 2026
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
 
-        $dates = collect();
-        $curr = $startDate->copy();
-        while ($curr->lte($endDate)) {
-            $dates->push($curr->format('Y-m-d'));
-            $curr->addDay();
-        }
+        $dates = $this->getDatesCollection($startDate, $endDate);
 
         $kategoriFilter = $request->input('kategori', 'REAL');
         $isForecast = ($kategoriFilter === 'FORECAST');
@@ -2124,8 +1985,7 @@ class DataMpdController extends Controller
     // --- SUBSTANSI NETFLOW ---
     public function substansiNetflowPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
@@ -2163,7 +2023,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
                 ->where('is_forecast', false)
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
                 ->groupBy('kode_origin_kabupaten_kota')
                 ->get()
                 ->keyBy('city_code');
@@ -2178,7 +2038,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
                 ->where('is_forecast', false)
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG', 'pergerakan', 'orang'])
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
                 ->groupBy('kode_dest_kabupaten_kota')
                 ->get()
                 ->keyBy('city_code');
@@ -2260,8 +2120,7 @@ class DataMpdController extends Controller
     // --- KESIMPULAN NASIONAL ---
     public function kesimpulanNasionalPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
@@ -2282,7 +2141,7 @@ class DataMpdController extends Controller
         $startDateStr = $startDate->format('Y-m-d');
         $endDateStr = $endDate->format('Y-m-d');
 
-        // 1. Total Pergerakan & Puncak
+        try {
         $dailyMovements = DB::table('spatial_movements')
             ->select('tanggal', DB::raw('SUM(total) as daily_total'))
             ->whereBetween('tanggal', [$startDateStr, $endDateStr])
@@ -2386,13 +2245,27 @@ class DataMpdController extends Controller
             'top_3_kota_asal' => $top3KotaAsal,
             'top_5_kota_tujuan' => $top5KotaTujuan,
         ];
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Kesimpulan Nasional DB Error: '.$e->getMessage());
+
+            return [
+                'total_pergerakan' => 0,
+                'total_orang' => 0,
+                'peak_days' => collect(),
+                'operator_stats' => ['PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0], 'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0]],
+                'top_5_prov_asal' => collect(),
+                'top_5_prov_tujuan' => collect(),
+                'top_3_kota_asal' => collect(),
+                'top_5_kota_tujuan' => collect(),
+            ];
+        }
     }
 
     // --- KESIMPULAN JABODETABEK ---
     public function kesimpulanJabodetabekPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
@@ -2499,8 +2372,7 @@ class DataMpdController extends Controller
     // --- GENERIC SIMPUL TRANSPORTASI PAGE ---
     public function substansiSimpulPage(Request $request, $slug)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
 
         // Map slug -> config (sub_category values verified from ref_simpul.csv)
         // Actual categories: Bandara(empty), Pelabuhan(Laut/Penyeberangan), Stasiun(Antar Kota only), Terminal(A/B)
@@ -2522,7 +2394,7 @@ class DataMpdController extends Controller
         $subCat = $cfg['sub_category'];
         $cacheKey = "mpd:simpul:{$slug}:".$startDate->format('Ymd').'_'.$endDate->format('Ymd');
 
-        $data = Cache::remember($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $category, $subCat) {
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $category, $subCat) {
 
             // --- Build the base node query filter ---
             $nodeFilter = function ($query) use ($category, $subCat) {
@@ -2631,8 +2503,7 @@ class DataMpdController extends Controller
     // --- REKOMENDASI KEBIJAKAN (AI) ---
     public function rekomendasiPage(Request $request)
     {
-        $startDate = Carbon::create(2026, 3, 13);
-        $endDate = Carbon::create(2026, 3, 30);
+        [$startDate, $endDate] = $this->getPeriodDates();
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:rekomendasi:gemini_v4:{$dString}";
 
