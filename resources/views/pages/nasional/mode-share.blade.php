@@ -322,17 +322,16 @@
                 });
 
                 var commonColors = [
-                    '#40B0FF', // Light Blue (Motor)
                     '#6A5ACD', // Purple (Mobil)
-                    '#00C97F', // Green (Kereta Perkotaan)
-                    '#FF7F50', // Orange (Udara)
-                    '#8190B5', // Grey/Blue (Laut)
-                    '#DA70D6', // Orchid (Bus AKDP)
-                    '#48D1CC', // Turquoise (Penyeberangan)
-                    '#DC143C', // Crimson (Kereta Antarkota)
+                    '#40B0FF', // Light Blue (Motor)
                     '#F4A460', // Sandy (Bus AKAP)
+                    '#DA70D6', // Orchid (Bus AKDP)
+                    '#DC143C', // Crimson (Kereta Api Antarkota)
                     '#AFEEEE', // Pale Turquoise (KCJB)
-                    '#D3D3D3' // Light Grey (Sepeda)
+                    '#00C97F', // Green (Kereta Api Perkotaan)
+                    '#FF7F50', // Orange (Pesawat Udara)
+                    '#8190B5', // Grey/Blue (Kapal Laut)
+                    '#48D1CC', // Turquoise (Kapal Penyeberangan)
                 ];
 
                 function renderChartAndLegend(containerId, legendId, seriesData) {

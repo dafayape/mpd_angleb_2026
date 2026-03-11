@@ -11,9 +11,9 @@ class MapMonitorController extends Controller
 {
     public function index()
     {
-        // Fixed Date Range: 13 March 2026 - 30 March 2026 (Angkutan Lebaran)
-        $startDate = \Carbon\Carbon::create(2026, 3, 13);
-        $endDate = \Carbon\Carbon::create(2026, 3, 30);
+        // Dynamic Date Range: Angkutan Lebaran
+        $startDate = \Carbon\Carbon::parse(config('mpd.start_date', '2026-03-13'));
+        $endDate = \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'));
 
         $dates = collect();
         while ($startDate->lte($endDate)) {
@@ -36,7 +36,7 @@ class MapMonitorController extends Controller
         try {
             // Periode (date range) support
             $startDate = $request->input('start_date', '2026-03-13');
-            $endDate = $request->input('end_date', '2026-03-30');
+            $endDate = $request->input('end_date', config('mpd.end_date', '2026-03-29'));
             $opselFilter = $request->input('opsel', ''); // '', 'TSEL', 'IOH', 'XL'
 
             // Validate dates
@@ -44,8 +44,8 @@ class MapMonitorController extends Controller
                 $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
                 $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
             } catch (\Throwable $e) {
-                $startDate = '2026-03-13';
-                $endDate = '2026-03-30';
+                $startDate = config('mpd.start_date', '2026-03-13');
+                $endDate = config('mpd.end_date', '2026-03-29');
             }
 
             // Ensure start <= end
@@ -231,14 +231,14 @@ class MapMonitorController extends Controller
     {
         try {
             $startDate = $request->input('start_date', '2026-03-13');
-            $endDate = $request->input('end_date', '2026-03-30');
+            $endDate = $request->input('end_date', config('mpd.end_date', '2026-03-29'));
 
             try {
                 $startDate = \Carbon\Carbon::parse($startDate)->format('Y-m-d');
                 $endDate = \Carbon\Carbon::parse($endDate)->format('Y-m-d');
             } catch (\Throwable $e) {
-                $startDate = '2026-03-13';
-                $endDate = '2026-03-30';
+                $startDate = config('mpd.start_date', '2026-03-13');
+                $endDate = config('mpd.end_date', '2026-03-29');
             }
 
             $kategoriFilter = $request->input('kategori', 'REAL');

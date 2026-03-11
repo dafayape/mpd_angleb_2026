@@ -428,7 +428,8 @@
                 hasMismatch = true;
                 mismatchHtml +=
                     '<h6 class="fw-bold text-dark"><i class="bx bx-error text-warning me-1"></i> Peringatan OPSEL Tidak Sesuai</h6>' +
-                    '<div style="font-size: 13px;" class="mb-2">Anda memilih OPSEL <span class="badge bg-primary">' + result.opsel_mismatch.selected + '</span> di form, ' +
+                    '<div style="font-size: 13px;" class="mb-2">Anda memilih OPSEL <span class="badge bg-primary">' + result
+                    .opsel_mismatch.selected + '</span> di form, ' +
                     'namun di dalam file CSV ditemukan OPSEL <span class="badge bg-danger text-wrap text-break" style="line-height: 1.4; max-width: 100%; word-break: break-all; text-align: left;">' +
                     result.opsel_mismatch.mismatched.join(', ') + '</span>.</div>';
             }
@@ -437,7 +438,8 @@
                 hasMismatch = true;
                 mismatchHtml +=
                     '<h6 class="fw-bold text-dark"><i class="bx bx-error text-warning me-1"></i> Peringatan Tanggal Tidak Sesuai</h6>' +
-                    '<div style="font-size: 13px;">Anda memilih Tanggal <span class="badge bg-primary">' + result.tanggal_mismatch.selected + '</span> di form, ' +
+                    '<div style="font-size: 13px;">Anda memilih Tanggal <span class="badge bg-primary">' + result
+                    .tanggal_mismatch.selected + '</span> di form, ' +
                     'namun isi CSV memiliki tanggal <span class="badge bg-danger text-wrap text-break" style="line-height: 1.4; max-width: 100%; word-break: break-all; text-align: left;">' +
                     result.tanggal_mismatch.mismatched.join(', ') + '</span>.</div>';
             }

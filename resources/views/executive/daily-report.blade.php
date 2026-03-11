@@ -121,12 +121,12 @@
                         <div class="col-lg-2 col-md-3">
                             <label class="filter-label">Tanggal Mulai</label>
                             <input type="date" name="start_date" class="form-control" value="{{ $start_date }}"
-                                min="2026-03-13" max="2026-03-30">
+                                min="{{ config('mpd.start_date', '2026-03-13') }}" max="{{ config('mpd.end_date', '2026-03-29') }}">
                         </div>
                         <div class="col-lg-2 col-md-3">
                             <label class="filter-label">Tanggal Akhir</label>
                             <input type="date" name="end_date" class="form-control" value="{{ $end_date }}"
-                                min="2026-03-13" max="2026-03-30">
+                                min="{{ config('mpd.start_date', '2026-03-13') }}" max="{{ config('mpd.end_date', '2026-03-29') }}">
                         </div>
                         <div class="col-lg-2 col-md-3">
                             <label class="filter-label">Tipe Data</label>

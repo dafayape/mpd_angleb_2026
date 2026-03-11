@@ -87,7 +87,7 @@ class PengaturanController extends Controller
             $dailyCtrl = app(\App\Http\Controllers\DailyReportController::class);
             $refMethod = new \ReflectionMethod($dailyCtrl, 'buildPlainText');
             $refMethod->setAccessible(true);
-            $testBodyText = $refMethod->invoke($dailyCtrl, '2026-03-13', '2026-03-30', 'REAL', 'ALL');
+            $testBodyText = $refMethod->invoke($dailyCtrl, config('mpd.start_date', '2026-03-13'), config('mpd.end_date', '2026-03-29'), 'REAL', 'ALL');
 
             // Hit Official Twilio API
             $response = \Illuminate\Support\Facades\Http::withBasicAuth($sid, $token)

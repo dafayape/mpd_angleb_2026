@@ -383,19 +383,7 @@ class GrafikMpdController extends Controller
         // 4. Structure Data
         
         // Detailed Occupancy Factors (Estimates for Orang -> Pergerakan conv)
-        $occupancy = [
-            'A' => 30,  // Bus AKAP
-            'B' => 25,  // Bus AKDP
-            'C' => 300, // KA Antarkota
-            'D' => 600, // KA KCJB
-            'E' => 100, // KA Perkotaan
-            'F' => 200, // Laut
-            'G' => 50,  // Penyeberangan
-            'H' => 100, // Udara
-            'I' => 3.5, // Mobil
-            'J' => 1.5, // Motor
-            'K' => 1,   // Sepeda
-        ];
+        $occupancy = config('mpd.occupancy_factors', []);
 
         // Init Totals
         $totals = [];
@@ -458,7 +446,7 @@ class GrafikMpdController extends Controller
         // Format Daily Charts
         $dailyCharts = [];
         // Only Mobil (I) and Motor (J) for Daily Charts as per request
-        $targetDailyModes = ['I', 'J'];
+        $targetDailyModes = ['A', 'B'];
 
         foreach ($targetDailyModes as $code) {
             // Check if exists in totals (it should if seeder has it)
@@ -522,14 +510,15 @@ class GrafikMpdController extends Controller
     private function getSimpulDashboardData($startDate, $endDate)
     {
         // Define Tabs with Sections
+        $modes = config('mpd.transport_modes', []);
         $tabs = [
             'DARAT' => [
                 'sections' => [
                     [
                         'title' => 'Simpul Darat',
                         'subtitle' => 'Kode 1.3.a.1',
-                        'modes' => ['A', 'B', 'I', 'J', 'K'],
-                        'daily_charts' => ['A' => 'Bus AKAP', 'B' => 'Bus AKDP'],
+                        'modes' => ['A', 'B', 'C', 'D'],
+                        'daily_charts' => ['C' => $modes['C'] ?? 'Bus AKAP', 'D' => $modes['D'] ?? 'Bus AKDP'],
                         'show_top_10' => true,
                         'show_top_od' => false
                     ]
@@ -540,16 +529,16 @@ class GrafikMpdController extends Controller
                     [
                         'title' => 'Pelabuhan Penyeberangan',
                         'subtitle' => 'Kode 1.3.d.1',
-                        'modes' => ['G'],
-                        'daily_charts' => ['G' => 'Kapal Penyeberangan'],
+                        'modes' => ['J'],
+                        'daily_charts' => ['J' => $modes['J'] ?? 'Kapal Penyeberangan'],
                         'show_top_10' => true,
                         'show_top_od' => true
                     ],
                     [
                         'title' => 'Pelabuhan Laut',
                         'subtitle' => 'Kode 1.3.f.1',
-                        'modes' => ['F'],
-                        'daily_charts' => ['F' => 'Kapal Laut'],
+                        'modes' => ['I'],
+                        'daily_charts' => ['I' => $modes['I'] ?? 'Kapal Laut'],
                         'show_top_10' => true,
                         'show_top_od' => true
                     ]
@@ -561,7 +550,7 @@ class GrafikMpdController extends Controller
                         'title' => 'Simpul Udara',
                         'subtitle' => 'Kode 1.3.e.1',
                         'modes' => ['H'],
-                        'daily_charts' => ['H' => 'Angkutan Udara'],
+                        'daily_charts' => ['H' => $modes['H'] ?? 'Pesawat Udara'],
                         'show_top_10' => true,
                         'show_top_od' => false
                     ]
@@ -572,24 +561,24 @@ class GrafikMpdController extends Controller
                     [
                         'title' => 'Kereta Api (Antar Kota)',
                         'subtitle' => 'Kode 1.3.b.1',
-                        'modes' => ['C'],
-                        'daily_charts' => ['C' => 'K.A. Antar Kota'],
+                        'modes' => ['E'],
+                        'daily_charts' => ['E' => $modes['E'] ?? 'Kereta Api Antarkota'],
                         'show_top_10' => true,
                         'show_top_od' => true
                     ],
                     [
                         'title' => 'Kereta Api (Perkotaan)',
                         'subtitle' => 'Kode 1.3.b.2',
-                        'modes' => ['E'],
-                        'daily_charts' => ['E' => 'K.A. Perkotaan'],
+                        'modes' => ['G'],
+                        'daily_charts' => ['G' => $modes['G'] ?? 'Kereta Api Perkotaan'],
                         'show_top_10' => true,
                         'show_top_od' => true
                     ],
                     [
                         'title' => 'Kereta Api Cepat (Whoosh)',
                         'subtitle' => 'Kode 1.3.d.1',
-                        'modes' => ['D'],
-                        'daily_charts' => ['D' => 'K.A. Cepat Whoosh'],
+                        'modes' => ['F'],
+                        'daily_charts' => ['F' => $modes['F'] ?? 'KCJB'],
                         'show_top_10' => false,
                         'show_top_od' => true
                     ]
@@ -1116,34 +1105,22 @@ class GrafikMpdController extends Controller
         // 1. Get All Modes
         $allModes = DB::table('ref_transport_modes')->select('code', 'name')->orderBy('code')->get();
 
-        // Occupancy Factors (Avg People per Vehicle)
-        $occupancy = [
-            'A' => 30,  // Bus AKAP
-            'B' => 25,  // Bus AKDP
-            'C' => 300, // KA Antarkota
-            'D' => 600, // KA KCJB
-            'E' => 100, // KA Perkotaan
-            'F' => 200, // Laut
-            'G' => 50,  // Penyeberangan
-            'H' => 100, // Udara
-            'I' => 3.5, // Mobil
-            'J' => 1.5, // Motor
-            'K' => 1,   // Sepeda
-        ];
+        // Occupancy Factors from centralized config
+        $occupancy = config('mpd.occupancy_factors', []);
 
-        // Mode Colors (approximate based on image/common usage)
+        // Mode Colors keyed by mode name
+        $modeNames = config('mpd.transport_modes', []);
         $colors = [
-            'Motor' => '#2caffe', // Blue
-            'Mobil' => '#00e396', // Green
-            'Angkutan Kereta Api Perkotaan' => '#546E7A', // Dark Grey/Blue
-            'Angkutan Jalan (Bus AKAP)' => '#ff3d60', // Red
-            'Angkutan Jalan (Bus AKDP)' => '#008ffb', // Light Blue
-            'Angkutan Kereta Api Antarkota' => '#feb019', // Orange
-            'Angkutan Udara' => '#775dd0', // Purple
-            'Angkutan Laut' => '#ff4560', 
-            'Angkutan Penyeberangan' => '#00D9E9',
-            'Angkutan Kereta Api KCJB' => '#A300D6',
-            'Sepeda' => '#4CAF50'
+            $modeNames['A'] ?? 'Mobil'                      => '#00e396', // Green
+            $modeNames['B'] ?? 'Motor'                      => '#2caffe', // Blue
+            $modeNames['C'] ?? 'Bus AKAP'                   => '#ff3d60', // Red
+            $modeNames['D'] ?? 'Bus AKDP'                   => '#008ffb', // Light Blue
+            $modeNames['E'] ?? 'Kereta Api Antarkota'       => '#feb019', // Orange
+            $modeNames['F'] ?? 'KCJB'                       => '#A300D6', // Purple Deep
+            $modeNames['G'] ?? 'Kereta Api Perkotaan'       => '#546E7A', // Dark Grey/Blue
+            $modeNames['H'] ?? 'Pesawat Udara'              => '#775dd0', // Purple
+            $modeNames['I'] ?? 'Kapal Laut'                 => '#ff4560', // Coral
+            $modeNames['J'] ?? 'Kapal Penyeberangan'        => '#00D9E9', // Turquoise
         ];
 
         // 2. Query Data (Real Only, Jabo Origin)
@@ -1209,10 +1186,10 @@ class GrafikMpdController extends Controller
 
         // 2. Define Tabs & Categories
         $tabs = [
-            'DARAT' => ['A', 'B'], // Bus AKAP, AKDP
-            'LAUT' => ['F', 'G'],  // Laut, Penyeberangan
-            'UDARA' => ['H'],      // Udara
-            'KERETA' => ['C', 'D', 'E'] // KA Antar, KCJB, KRL
+            'DARAT' => ['C', 'D'], // Bus AKAP, AKDP
+            'LAUT' => ['I', 'J'],  // Kapal Laut, Penyeberangan
+            'UDARA' => ['H'],      // Pesawat Udara
+            'KERETA' => ['E', 'F', 'G'] // KA Antarkota, KCJB, KA Perkotaan
         ];
 
         $dates = [];
@@ -1352,7 +1329,7 @@ class GrafikMpdController extends Controller
                 'sections' => [
                     [
                         'title' => 'Simpul ' . $tabName,
-                        'subtitle' => 'Periode 13-30 Maret 2026 (Jabodetabek)',
+                        'subtitle' => 'Periode ' . Carbon::parse(config('mpd.start_date', '2026-03-13'))->format('d') . '-' . Carbon::parse(config('mpd.end_date', '2026-03-29'))->translatedFormat('d F Y') . ' (Jabodetabek)',
                         'daily_charts' => [
                             [
                                 'label' => 'Total Pergerakan ' . $tabName,

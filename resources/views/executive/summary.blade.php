@@ -6,11 +6,11 @@
             <h4 class="mb-0 font-size-18">Executive Summary - Ringkasan Analisis</h4>
             <div class="d-flex flex-column flex-md-row gap-2">
                 <form class="d-flex align-items-center gap-2" id="filterForm">
-                    <input type="date" id="startDate" class="form-control" value="2026-03-13" min="2026-03-13"
-                        max="2026-03-30">
+                    <input type="date" id="startDate" class="form-control" value="{{ config('mpd.start_date', '2026-03-13') }}" min="{{ config('mpd.start_date', '2026-03-13') }}"
+                        max="{{ config('mpd.end_date', '2026-03-29') }}">
                     <span class="text-muted fw-bold">&mdash;</span>
-                    <input type="date" id="endDate" class="form-control" value="2026-03-30" min="2026-03-13"
-                        max="2026-03-30">
+                    <input type="date" id="endDate" class="form-control" value="{{ config('mpd.end_date', '2026-03-29') }}" min="{{ config('mpd.start_date', '2026-03-13') }}"
+                        max="{{ config('mpd.end_date', '2026-03-29') }}">
                     <button type="submit" class="btn btn-primary d-none d-md-block">Terapkan</button>
                     <button type="submit" class="btn btn-primary d-block d-md-none"><i
                             class="mdi mdi-magnify"></i></button>

@@ -19,7 +19,7 @@ class ExecutiveSummaryService
 
     private function getEndDate(): string
     {
-        return config('mpd.end_date', '2026-03-30');
+        return config('mpd.end_date', '2026-03-29');
     }
 
     private function cacheTtl(): int
@@ -285,7 +285,6 @@ class ExecutiveSummaryService
                 '2026-03-27' => 1136540,
                 '2026-03-28' => 996350,
                 '2026-03-29' => 1141547,
-                '2026-03-30' => 455618,
             ];
 
             $totReal = array_sum($real);

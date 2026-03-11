@@ -8,7 +8,7 @@ class DashboardController extends Controller
     {
         return view('dashboard.index', [
             'startDate' => config('mpd.start_date', '2026-03-13'),
-            'endDate' => config('mpd.end_date', '2026-03-30'),
+            'endDate' => config('mpd.end_date', '2026-03-29'),
         ]);
     }
 }

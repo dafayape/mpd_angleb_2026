@@ -82,7 +82,7 @@ trait MpdHelpers
     {
         return [
             Carbon::parse(config('mpd.start_date', '2026-03-13')),
-            Carbon::parse(config('mpd.end_date', '2026-03-30')),
+            Carbon::parse(config('mpd.end_date', '2026-03-29')),
         ];
     }
 

@@ -124,8 +124,8 @@ class DailyReportController extends Controller
     public function sendWhatsApp(Request $request)
     {
         try {
-            $startDate = $request->input('start_date', '2026-03-13');
-            $endDate = $request->input('end_date', '2026-03-30');
+            $startDate = $request->input('start_date', config('mpd.start_date', '2026-03-13'));
+            $endDate = $request->input('end_date', config('mpd.end_date', '2026-03-29'));
             $kategori = $request->input('kategori', 'REAL');
             $opsel = $request->input('opsel', 'ALL');
 

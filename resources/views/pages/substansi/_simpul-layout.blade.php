@@ -114,7 +114,7 @@
                     <div>
                         <h4 class="mb-1 fw-bold text-white">{{ strtoupper($title) }}</h4>
                         <p class="mb-0 text-white-50" style="font-size:1rem">Simpul Transportasi Terpadat — Asal dan Tujuan
-                            Terpadat (Periode 13 – 30 Maret 2026)</p>
+                            Terpadat (Periode 13 – {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }})</p>
                     </div>
                 </div>
             </div>

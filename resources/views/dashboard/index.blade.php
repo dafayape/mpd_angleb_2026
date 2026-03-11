@@ -267,7 +267,7 @@
             </div>
             <div class="d-flex align-items-center bg-light px-4 py-3 rounded-pill border shadow-sm">
                 <i class="bx bx-calendar-event fs-4 me-3 text-primary"></i>
-                <div class="fw-bold text-navy" style="font-size: 1rem;">Periode: {{ \Carbon\Carbon::parse($startDate ?? '2026-03-13')->translatedFormat('d F Y') }} – {{ \Carbon\Carbon::parse($endDate ?? '2026-03-30')->translatedFormat('d F Y') }}</div>
+                <div class="fw-bold text-navy" style="font-size: 1rem;">Periode: {{ \Carbon\Carbon::parse($startDate ?? config('mpd.start_date', '2026-03-13'))->translatedFormat('d F Y') }} – {{ \Carbon\Carbon::parse($endDate ?? config('mpd.end_date', '2026-03-29'))->translatedFormat('d F Y') }}</div>
             </div>
         </div>
 

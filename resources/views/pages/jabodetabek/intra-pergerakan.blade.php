@@ -340,7 +340,7 @@
                                                     Pada rentang waktu ini, belum terdapat rekaman observasi pergerakan
                                                     yang valid secara menyeluruh untuk operator {{ $conf['name'] }}.
                                                 @else
-                                                    Berdasarkan akumulasi tanggal 13 - 30 Maret 2026, total pergerakan
+                                                    Berdasarkan akumulasi tanggal 13 - {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}, total pergerakan
                                                     yang terekam oleh <strong>{{ $conf['name'] }}</strong> adalah
                                                     <strong>{{ fmtNumJab($totMov) }}</strong>, mencakup
                                                     <strong>{{ fmtNumJab($totPpl) }}</strong> target orang.
@@ -529,7 +529,7 @@
                                     style="font-size: 0.95rem; line-height: 1.6; padding-left: 2rem;">
                                     <li class="mb-2"><strong>Jumlah <em>unique subscriber</em></strong> yang
                                         melakukan pergerakan pada Periode Angkutan Lebaran 2026 di wilayah
-                                        <strong>Jabodetabek</strong> pada tanggal 13 - 30 Maret 2026 (realisasi) sebanyak
+                                        <strong>Jabodetabek</strong> pada tanggal 13 - {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }} (realisasi) sebanyak
                                         <strong>{{ fmtNumJab($data['akumulasi']['unique_subscriber']) }}
                                             orang.</strong>
                                     </li>
@@ -605,7 +605,7 @@
                                             <tr>
                                                 @foreach ($dates as $i => $d)
                                                     <th style="background-color: #5a7395; font-size: 0.7rem;">
-                                                        H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}</th>
+                                                        H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}</th>
                                                 @endforeach
                                             </tr>
                                         </thead>
@@ -629,7 +629,7 @@
                                 <div class="summary-box-03 border border-dark border-2 rounded">
                                     <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
                                         Total pergerakan pada periode<br>
-                                        <strong>13 Maret 2026 s/d 30 Maret 2026</strong> mencapai<br>
+                                        <strong>13 Maret 2026 s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong> mencapai<br>
                                         <span class="highlight text-dark"
                                             style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNumJab($totMovAll) }}
                                             Pergerakan</span>
@@ -666,7 +666,7 @@
                                             <tr>
                                                 @foreach ($dates as $i => $d)
                                                     <th style="background-color: #29769e; font-size: 0.7rem;">
-                                                        H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}</th>
+                                                        H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}</th>
                                                 @endforeach
                                             </tr>
                                         </thead>
@@ -690,7 +690,7 @@
                                 <div class="summary-box-03 border border-dark border-2 rounded">
                                     <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
                                         Total orang pada periode<br>
-                                        <strong>13 Maret 2026 s/d 30 Maret 2026</strong> mencapai<br>
+                                        <strong>13 Maret 2026 s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong> mencapai<br>
                                         <span class="highlight text-dark"
                                             style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNumJab($totPplAll) }}
                                             Orang</span>
@@ -747,7 +747,7 @@
                                                 @foreach ($dates as $i => $d)
                                                     <th style="background-color: #486284; color: white;">
                                                         <div style="font-size: 0.75rem;">
-                                                            H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}
+                                                            H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}
                                                         </div>
                                                     </th>
                                                 @endforeach
@@ -849,7 +849,7 @@
                                                 @foreach ($dates as $i => $d)
                                                     <th style="background-color: #1e6082; color: white;">
                                                         <div style="font-size: 0.75rem;">
-                                                            H{{ $i < 7 ? $i - 7 : ($i == 7 ? '' : '+' . ($i - 7)) }}
+                                                            H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}
                                                         </div>
                                                     </th>
                                                 @endforeach

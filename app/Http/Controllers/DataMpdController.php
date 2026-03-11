@@ -1051,7 +1051,7 @@ class DataMpdController extends Controller
         // 1. Definition & Initialization
         $opsels = ['XL', 'IOH', 'TSEL'];
         $types = ['REAL', 'FORECAST'];
-        $pribadiModes = ['Mobil Pribadi', 'Motor Pribadi', 'Sepeda'];
+        $pribadiModes = ['Mobil', 'Motor'];
 
         // Helper to check category
         $getCat = fn ($modeName) => in_array($modeName, $pribadiModes) ? 'PRIBADI' : 'UMUM';
@@ -1088,11 +1088,7 @@ class DataMpdController extends Controller
         // We need robust list of all modes first
         $allModes = DB::table('ref_transport_modes')->orderBy('code')->pluck('name')->toArray();
         if (empty($allModes)) {
-            $allModes = [
-                'Angkutan Jalan (Bus AKAP)', 'Angkutan Jalan (Bus AKDP)', 'Angkutan Kereta Api Antarkota',
-                'Angkutan Kereta Api KCJB', 'Angkutan Kereta Api Perkotaan', 'Angkutan Laut',
-                'Angkutan Penyeberangan', 'Angkutan Udara', 'Mobil Pribadi', 'Motor Pribadi', 'Sepeda',
-            ];
+            $allModes = array_values(config('mpd.transport_modes', []));
         }
 
         $detailRows = [];
@@ -1207,19 +1203,7 @@ class DataMpdController extends Controller
             $query = collect();
         }
 
-        $modes = [
-            'A' => 'Angkutan Jalan (Bus AKAP)',
-            'B' => 'Angkutan Jalan (Bus AKDP)',
-            'C' => 'Angkutan Kereta Api Antarkota',
-            'D' => 'Angkutan Kereta Api KCJB',
-            'E' => 'Angkutan Kereta Api Perkotaan',
-            'F' => 'Angkutan Laut',
-            'G' => 'Angkutan Penyeberangan',
-            'H' => 'Angkutan Udara',
-            'I' => 'Mobil Pribadi',
-            'J' => 'Motor Pribadi',
-            'K' => 'Sepeda',
-        ];
+        $modes = config('mpd.transport_modes', []);
 
         $pergerakanMap = [];
         $orangMap = [];
@@ -1272,19 +1256,7 @@ class DataMpdController extends Controller
 
     private function getDailyModeShareData($startDate, $endDate)
     {
-        $modes = [
-            'A' => 'Angkutan Jalan (Bus AKAP)',
-            'B' => 'Angkutan Jalan (Bus AKDP)',
-            'C' => 'Angkutan Kereta Api Antarkota',
-            'D' => 'Angkutan Kereta Api KCJB',
-            'E' => 'Angkutan Kereta Api Perkotaan',
-            'F' => 'Angkutan Laut',
-            'G' => 'Angkutan Penyeberangan',
-            'H' => 'Angkutan Udara',
-            'I' => 'Mobil Pribadi',
-            'J' => 'Motor Pribadi',
-            'K' => 'Sepeda',
-        ];
+        $modes = config('mpd.transport_modes', []);
 
         // Prepare date range collection (as string format Y-m-d)
         $dateKeys = [];
@@ -1778,11 +1750,7 @@ class DataMpdController extends Controller
 
         // Fallback if empty (ensure tables are never blank)
         if (empty($modes)) {
-            $modes = [
-                'Angkutan Jalan (Bus AKAP)', 'Angkutan Jalan (Bus AKDP)',
-                'Angkutan Kereta Api', 'Angkutan Laut', 'Angkutan Udara',
-                'Mobil Pribadi', 'Motor Pribadi',
-            ];
+            $modes = array_values(config('mpd.transport_modes', []));
         }
 
         // Initialize Pivot with All Modes

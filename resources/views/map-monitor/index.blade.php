@@ -135,11 +135,11 @@
     @component('layout.partials.page-header', ['number' => '22', 'title' => 'Map Monitor - Kepadatan Simpul'])
         <form class="d-flex align-items-center gap-2 m-0" id="periodForm">
             <label class="mb-0 fw-bold text-nowrap text-white">Periode:</label>
-            <input type="date" id="startDate" class="form-control form-control-sm" value="2026-03-13" min="2026-03-13"
-                max="2026-03-30" style="width: 140px;">
+            <input type="date" id="startDate" class="form-control form-control-sm" value="{{ config('mpd.start_date', '2026-03-13') }}" min="{{ config('mpd.start_date', '2026-03-13') }}"
+                max="{{ config('mpd.end_date', '2026-03-29') }}" style="width: 140px;">
             <span class="text-white fw-bold">&mdash;</span>
-            <input type="date" id="endDate" class="form-control form-control-sm" value="2026-03-30" min="2026-03-13"
-                max="2026-03-30" style="width: 140px;">
+            <input type="date" id="endDate" class="form-control form-control-sm" value="{{ config('mpd.end_date', '2026-03-29') }}" min="{{ config('mpd.start_date', '2026-03-13') }}"
+                max="{{ config('mpd.end_date', '2026-03-29') }}" style="width: 140px;">
 
             <label class="mb-0 fw-bold text-nowrap ms-2 text-white">Opsel:</label>
             <select id="opselFilter" class="form-select form-select-sm" style="width: 100px;">

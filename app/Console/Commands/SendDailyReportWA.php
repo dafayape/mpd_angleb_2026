@@ -46,14 +46,15 @@ class SendDailyReportWA extends Command
 
         // Build report for today's scope (up to yesterday or specified date)
         $endDate = $this->option('date') ?: Carbon::yesterday()->format('Y-m-d');
-        $startDate = '2026-03-13';
+        $startDate = config('mpd.start_date', '2026-03-13');
+        $configEndDate = config('mpd.end_date', '2026-03-29');
 
         // Clamp to valid range
-        if ($endDate > '2026-03-30') {
-            $endDate = '2026-03-30';
+        if ($endDate > $configEndDate) {
+            $endDate = $configEndDate;
         }
-        if ($endDate < '2026-03-13') {
-            $endDate = '2026-03-13';
+        if ($endDate < $startDate) {
+            $endDate = $startDate;
         }
 
         $controller = app(\App\Http\Controllers\DailyReportController::class);
