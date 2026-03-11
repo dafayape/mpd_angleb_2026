@@ -216,17 +216,30 @@
                 success: function(response) {
                     if (response.status === 'success') {
                         // ═══════════════════════════════════════════════════════
-                        // STEP 2: Validasi CSV terhadap standar database
+                        // Upload berhasil → Seluruh proses jalan di background
+                        // Langsung redirect ke History untuk monitoring
                         // ═══════════════════════════════════════════════════════
-                        statusTitle.innerText = 'Memvalidasi CSV...';
-                        statusText.innerText = 'Mengecek header, tipe data, dan kode referensi...';
-                        progressBar.classList.remove('bg-primary');
-                        progressBar.classList.add('bg-warning');
                         progressBar.style.width = '100%';
-                        progressBar.innerHTML = 'Validasi...';
+                        progressBar.innerHTML = '100%';
+                        progressBar.classList.remove('bg-primary');
+                        progressBar.classList.add('bg-success');
+                        statusTitle.innerText = '✅ File Berhasil Dikirim!';
+                        statusText.innerHTML =
+                            '<strong>' + new Intl.NumberFormat('id-ID').format(response.total_rows) + ' baris</strong> terdeteksi. ' +
+                            'Proses validasi, import, dan ETL berjalan di <strong>background server</strong>.<br>' +
+                            '<small class="text-muted">Browser bisa ditutup. Track progress di halaman History.</small>';
 
-                        validateCsv(response.history_id, modal, progressBar, statusTitle,
-                            statusText, btn);
+                        var etlDiv = document.getElementById('etlStatus');
+                        var etlText = document.getElementById('etlStatusText');
+                        etlDiv.classList.remove('d-none');
+                        etlDiv.style.background = '#d1ecf1';
+                        etlText.innerHTML =
+                            '<i class="bx bx-check-circle text-success me-2"></i> ' +
+                            'Anda akan diarahkan ke halaman <strong>History Upload</strong> untuk memantau progress...';
+
+                        setTimeout(function() {
+                            window.location.href = response.redirect || "{{ route('datasource.history') }}";
+                        }, 3000);
                     } else {
                         alert('Upload Gagal: ' + response.message);
                         btn.disabled = false;
@@ -341,22 +354,24 @@
                             progressBar.innerHTML = '100%';
                             progressBar.classList.remove('bg-info');
                             progressBar.classList.add('bg-success');
-                            statusTitle.innerText = '✅ Import + ETL Selesai!';
+                            statusTitle.innerText = '✅ Import CSV Selesai!';
                             statusText.innerText = 'Total ' + new Intl.NumberFormat('id-ID').format(
-                                response.rows_processed) + ' baris CSV diimport.';
+                                response.rows_processed) + ' baris CSV berhasil diimport.';
 
                             var etlDiv = document.getElementById('etlStatus');
                             var etlText = document.getElementById('etlStatusText');
                             etlDiv.classList.remove('d-none');
                             if (response.etl_dispatched) {
-                                etlDiv.style.background = '#e2e3e5';
+                                etlDiv.style.background = '#d1ecf1';
                                 etlText.innerHTML =
-                                    '<i class="bx bx-loader bx-spin text-primary me-2"></i> Proses ETL (agregasi spasial PostGIS) sedang berjalan di background server. Data akan muncul di dashboard beberapa saat lagi.';
+                                    '<i class="bx bx-loader bx-spin text-info me-2"></i> ' +
+                                    'Proses ETL (agregasi spasial PostGIS) sudah dikirim ke antrian server. ' +
+                                    'Progress ETL bisa dipantau di halaman <strong>History Upload</strong>.';
                             }
 
                             setTimeout(function() {
                                 window.location.href = "{{ route('datasource.history') }}";
-                            }, 3000);
+                            }, 4000);
                         } else if (response.status === 'error') {
                             progressBar.classList.remove('bg-info');
                             progressBar.classList.add('bg-danger');

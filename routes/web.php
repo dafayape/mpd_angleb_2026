@@ -132,6 +132,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/upload/validate', [DatasourceController::class, 'validateCsv'])->name('validate');
         Route::post('/upload/process-chunk', [DatasourceController::class, 'processChunk'])->name('process-chunk');
         Route::get('/history', [DatasourceController::class, 'history'])->name('history');
+        Route::get('/history/etl-status', [DatasourceController::class, 'etlStatus'])->name('etl-status');
         Route::post('/history/{id}/delete-chunk', [DatasourceController::class, 'destroyChunk'])->name('destroy-chunk');
         Route::get('/raw-data', [DatasourceController::class, 'rawData'])->name('raw-data');
         Route::get('/summary', [DatasourceController::class, 'summary'])->name('summary');

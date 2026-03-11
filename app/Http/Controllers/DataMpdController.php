@@ -1122,6 +1122,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.kode_moda', '!=', '') // Exclude forecast tanpa moda
                 ->groupBy('moda.name', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
                 ->get();
 

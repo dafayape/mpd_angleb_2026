@@ -148,15 +148,19 @@
                         <table class="table table-bordered table-hover dt-responsive nowrap w-100 align-middle">
                             <thead class="table-light">
                                 <tr class="text-uppercase text-muted" style="font-size: 11px;">
-                                    <th style="width: 5%;">No</th>
+                                    <th style="width: 4%;">No</th>
                                     <th>Tanggal Data</th>
                                     <th>Opsel</th>
                                     <th>Tipe</th>
-                                    <th>Frekuensi</th>
                                     <th>File Name</th>
-                                    <th>Waktu Upload</th>
-                                    <th>Status</th>
-                                    <th style="width: 10%;">Aksi</th>
+                                    <th>File Size</th>
+                                    <th>Rows</th>
+                                    <th>Skipped</th>
+                                    <th>Status File</th>
+                                    <th>Status ETL</th>
+                                    <th>Data Lost</th>
+                                    <th>Waktu</th>
+                                    <th style="width: 8%;">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody style="font-size: 12px;">
@@ -171,31 +175,87 @@
                                                 class="badge bg-primary bg-soft text-primary font-size-11">{{ $history->opsel ?? '-' }}</span>
                                         </td>
                                         <td>{{ $history->kategori ?? '-' }}</td>
-                                        <td>{{ number_format($history->total_rows ?: $history->processed_rows) }} Rows</td>
                                         <td><span
                                                 class="text-dark fw-medium">{{ $history->original_filename ?? $history->filename }}</span>
                                         </td>
-                                        <td>{{ $history->created_at->format('Y-m-d H:i:s') }}</td>
                                         <td>
-                                            @if ($history->status == 'completed')
-                                                <span
-                                                    class="badge badge-pill badge-soft-success font-size-11">Completed</span>
-                                            @elseif ($history->status == 'processing')
-                                                <span
-                                                    class="badge badge-pill badge-soft-warning font-size-11">Processing</span>
-                                            @elseif ($history->status == 'failed')
-                                                <span class="badge badge-pill badge-soft-danger font-size-11">Failed</span>
+                                            @php
+                                                $size = $history->file_size ?? 0;
+                                                if ($size >= 1073741824) {
+                                                    $sizeStr = number_format($size / 1073741824, 2) . ' GB';
+                                                } elseif ($size >= 1048576) {
+                                                    $sizeStr = number_format($size / 1048576, 1) . ' MB';
+                                                } elseif ($size >= 1024) {
+                                                    $sizeStr = number_format($size / 1024, 0) . ' KB';
+                                                } else {
+                                                    $sizeStr = $size . ' B';
+                                                }
+                                            @endphp
+                                            <span class="text-muted">{{ $sizeStr }}</span>
+                                        </td>
+                                        <td>{{ number_format($history->total_rows ?: $history->processed_rows) }}</td>
+                                        <td>
+                                            @if (($history->skipped_rows ?? 0) > 0)
+                                                <span class="badge bg-warning text-dark">{{ number_format($history->skipped_rows) }}</span>
                                             @else
-                                                <span
-                                                    class="badge badge-pill badge-soft-secondary font-size-11">{{ ucfirst($history->status) }}</span>
-                                            @endif
-                                            @if ($history->status == 'failed' && $history->error_message)
-                                                <div class="text-danger mt-1" style="font-size: 10px;">
-                                                    {{ Str::limit($history->error_message, 20) }}</div>
+                                                <span class="text-success">0</span>
                                             @endif
                                         </td>
                                         <td>
-                                            <div class="d-flex gap-2">
+                                            @php
+                                                $sf = $history->status_file ?? $history->status;
+                                            @endphp
+                                            @if (in_array($sf, ['completed', 'completed_with_errors']))
+                                                <span class="badge badge-pill badge-soft-success font-size-11">✅ Completed</span>
+                                            @elseif ($sf === 'importing')
+                                                <span class="badge badge-pill badge-soft-info font-size-11">🔄 Importing</span>
+                                            @elseif ($sf === 'validating')
+                                                <span class="badge badge-pill badge-soft-warning font-size-11">🔍 Validating</span>
+                                            @elseif ($sf === 'queued')
+                                                <span class="badge badge-pill badge-soft-info font-size-11">⏳ Queued</span>
+                                            @elseif ($sf === 'failed' || $sf === 'validation_failed')
+                                                <span class="badge badge-pill badge-soft-danger font-size-11">❌ Failed</span>
+                                            @else
+                                                <span class="badge badge-pill badge-soft-secondary font-size-11">{{ ucfirst($sf) }}</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @php
+                                                $se = $history->status_etl ?? 'pending';
+                                                $ep = $history->etl_progress ?? 0;
+                                            @endphp
+                                            @if ($se === 'completed')
+                                                <span class="badge badge-pill badge-soft-success font-size-11">✅ 100%</span>
+                                            @elseif ($se === 'processing')
+                                                <div style="min-width: 60px;">
+                                                    <div class="progress" style="height: 16px;">
+                                                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                                                            style="width: {{ $ep }}%; font-size: 10px;">
+                                                            {{ $ep }}%
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @elseif ($se === 'queued')
+                                                <span class="badge badge-pill badge-soft-info font-size-11">⏳ Queued</span>
+                                            @elseif ($se === 'failed')
+                                                <span class="badge badge-pill badge-soft-danger font-size-11">❌ Failed</span>
+                                            @else
+                                                <span class="badge badge-pill badge-soft-secondary font-size-11">⏸ Pending</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if (($history->data_lost ?? 0) > 0)
+                                                <span class="badge bg-danger text-white" data-bs-toggle="tooltip"
+                                                    title="Volume data yang tidak bisa di-mapping ke simpul transportasi">
+                                                    {{ number_format($history->data_lost) }}
+                                                </span>
+                                            @else
+                                                <span class="text-success">0</span>
+                                            @endif
+                                        </td>
+                                        <td style="font-size: 11px;">{{ $history->created_at->format('Y-m-d H:i') }}</td>
+                                        <td>
+                                            <div class="d-flex gap-1">
                                                 <a href="{{ route('datasource.raw-data', ['tanggal' => $history->tanggal_data, 'opsel' => $history->opsel]) }}"
                                                     class="btn btn-sm btn-primary" data-bs-toggle="tooltip"
                                                     title="View Raw Data">
@@ -211,7 +271,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center py-4">
+                                        <td colspan="13" class="text-center py-4">
                                             <div class="text-muted">Belum ada riwayat upload.</div>
                                         </td>
                                     </tr>
@@ -313,5 +373,53 @@
 
             deleteChunk();
         }
+
+        // ═══════════════════════════════════════════════════════
+        // Auto-refresh: Poll ETL status setiap 5 detik
+        // Jika ada job aktif (queued/processing), reload halaman
+        // ═══════════════════════════════════════════════════════
+        (function() {
+            var pollInterval = null;
+            var lastState = '';
+
+            function checkEtlStatus() {
+                $.ajax({
+                    url: "{{ route('datasource.etl-status') }}",
+                    type: "GET",
+                    timeout: 5000,
+                    success: function(data) {
+                        var currentState = JSON.stringify(data.jobs);
+                        if (data.has_active) {
+                            // Ada job aktif — jika state berubah, reload untuk update UI
+                            if (lastState !== '' && lastState !== currentState) {
+                                location.reload();
+                            }
+                            lastState = currentState;
+                        } else {
+                            // Semua job selesai — reload sekali lagi lalu stop polling
+                            if (lastState !== '' && lastState !== currentState) {
+                                location.reload();
+                            }
+                            clearInterval(pollInterval);
+                            pollInterval = null;
+                        }
+                    },
+                    error: function() {
+                        // Silently ignore polling errors
+                    }
+                });
+            }
+
+            // Mulai polling jika ada indikator job aktif di halaman
+            // Deteksi: progress bar animasi, badge info (queued/importing), badge warning (validating)
+            var hasActiveJob = document.querySelector('.progress-bar-animated') ||
+                               document.querySelector('.badge-soft-info') ||
+                               document.querySelector('.badge-soft-warning');
+            if (hasActiveJob) {
+                lastState = ''; // initial
+                checkEtlStatus(); // immediate check
+                pollInterval = setInterval(checkEtlStatus, 5000);
+            }
+        })();
     </script>
 @endpush

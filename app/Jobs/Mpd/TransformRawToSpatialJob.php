@@ -4,6 +4,7 @@ namespace App\Jobs\Mpd;
 
 use App\Models\ImportJob;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -22,8 +23,11 @@ use Illuminate\Support\Facades\Log;
  * 4. Hitung distance_meters menggunakan ST_Distance
  * 5. Upsert ke spatial_movements
  * 6. Invalidate cache
+ *
+ * ShouldBeUnique: Mencegah duplikasi ETL job untuk import_job_id yang sama.
+ * Jika user upload cepat 2x atau network retry, hanya 1 ETL yang jalan.
  */
-class TransformRawToSpatialJob implements ShouldQueue
+class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -32,6 +36,20 @@ class TransformRawToSpatialJob implements ShouldQueue
     public int $timeout = 3600; // 1 hour max
 
     public int $tries = 3;
+
+    /**
+     * Backoff: jeda antar retry agar tidak langsung menghantam server.
+     * Retry 1: tunggu 30 detik, Retry 2: tunggu 60 detik, Retry 3: tunggu 120 detik.
+     */
+    public array $backoff = [30, 60, 120];
+
+    /**
+     * Unique ID: memastikan hanya 1 job per import_job_id yang bisa masuk ke queue.
+     */
+    public function uniqueId(): string
+    {
+        return 'etl_' . $this->importJobId;
+    }
 
     public function __construct(int $importJobId)
     {
@@ -66,11 +84,15 @@ class TransformRawToSpatialJob implements ShouldQueue
             Log::log($level, "[ETL FALLBACK][Job ID: {$this->importJobId}] {$message}");
         }
         
-        // 2. Database Metadata Update
+        // 2. Database Update (dedicated columns + metadata JSON)
         try {
             $job = ImportJob::find($this->importJobId);
             if ($job) {
-                // Ensure metadata is retrieved as array (Laravel cast should handle this)
+                // Update dedicated columns for easy polling
+                $job->status_etl = $status;
+                $job->etl_progress = $progress;
+
+                // Update metadata JSON for detailed logs
                 $meta = $job->metadata ?? [];
                 $meta['etl_status'] = $status;
                 $meta['etl_progress'] = $progress;
@@ -118,26 +140,51 @@ class TransformRawToSpatialJob implements ShouldQueue
                 
                 $this->updateEtlStatus('processing', 0, "Calculated raw volume: " . number_format($stats['raw_volume'], 0));
             } else {
-                // Volume check: records that couldn't be mapped because nodes are missing from ref_transport_nodes
+                // Volume REAL saja: Data Forecast sengaja tidak punya simpul, jadi tidak boleh
+                // dihitung sebagai "unmapped" karena akan menghasilkan warning palsu.
+                $realVolume = (float) DB::table('raw_mpd_data')
+                    ->where('import_job_id', $this->importJobId)
+                    ->where('is_forecast', false)
+                    ->sum('total');
+
+                $forecastVolume = (float) DB::table('raw_mpd_data')
+                    ->where('import_job_id', $this->importJobId)
+                    ->where('is_forecast', true)
+                    ->sum('total');
+
+                // Hanya hitung unmapped untuk data REAL yang punya simpul non-kosong
                 $unmappedVolume = (float) DB::table('raw_mpd_data as r')
                     ->leftJoin('ref_transport_nodes as n1', 'r.kode_origin_simpul', '=', 'n1.code')
                     ->leftJoin('ref_transport_nodes as n2', 'r.kode_dest_simpul', '=', 'n2.code')
                     ->where('r.import_job_id', $this->importJobId)
+                    ->where('r.is_forecast', false) // Hanya data REAL
                     ->where(function($q) {
-                        $q->whereNull('n1.code')->orWhereNull('n2.code');
+                        $q->where(function($q2) {
+                            // Origin simpul diisi tapi tidak ditemukan di referensi
+                            $q2->where('r.kode_origin_simpul', '!=', '')
+                               ->whereNull('n1.code');
+                        })->orWhere(function($q2) {
+                            // Dest simpul diisi tapi tidak ditemukan di referensi
+                            $q2->where('r.kode_dest_simpul', '!=', '')
+                               ->whereNull('n2.code');
+                        });
                     })
                     ->sum('r.total');
 
                 $stats['unmapped_volume'] = $unmappedVolume;
-                $stats['mapped_volume'] = $stats['raw_volume'] - $unmappedVolume;
-                $stats['success_rate'] = $stats['raw_volume'] > 0 
-                    ? round(($stats['mapped_volume'] / $stats['raw_volume']) * 100, 2) 
+                $stats['forecast_volume'] = $forecastVolume;
+                $stats['real_volume'] = $realVolume;
+                $stats['mapped_volume'] = $realVolume - $unmappedVolume;
+                $stats['success_rate'] = $realVolume > 0 
+                    ? round(($stats['mapped_volume'] / $realVolume) * 100, 2) 
                     : 100;
 
-                // Identification of top missing nodes causing unmapped data
+                // Identifikasi node yang hilang (hanya dari data REAL)
                 $missingOrigins = DB::table('raw_mpd_data as r')
                     ->leftJoin('ref_transport_nodes as n', 'r.kode_origin_simpul', '=', 'n.code')
                     ->where('r.import_job_id', $this->importJobId)
+                    ->where('r.is_forecast', false)
+                    ->where('r.kode_origin_simpul', '!=', '')
                     ->whereNull('n.code')
                     ->select('r.kode_origin_simpul as code', DB::raw('SUM(total) as t'))
                     ->groupBy('r.kode_origin_simpul')
@@ -147,9 +194,21 @@ class TransformRawToSpatialJob implements ShouldQueue
 
                 $stats['missing_nodes'] = $missingOrigins->map(fn($m) => ['code' => $m->code, 'vol' => $m->t])->toArray();
 
-                $msg = "Integrity Check: " . $stats['success_rate'] . "% data successfully mapped. " .
-                       number_format($unmappedVolume, 0) . " volume lost due to unmapped nodes.";
+                $msg = "Integrity Check: " . $stats['success_rate'] . "% REAL data mapped. " .
+                       number_format($unmappedVolume, 0) . " volume unmapped. " .
+                       ($forecastVolume > 0 ? number_format($forecastVolume, 0) . " forecast volume (tanpa simpul, OK)." : '');
                 $this->updateEtlStatus('processing', 82, $msg, $stats['success_rate'] < 90 ? 'warning' : 'info');
+
+                // Write data_lost to dedicated column for display in history
+                try {
+                    $job = ImportJob::find($this->importJobId);
+                    if ($job) {
+                        $job->data_lost = (int) $unmappedVolume;
+                        $job->save();
+                    }
+                } catch (\Throwable $e) {
+                    Log::error("Failed to update data_lost: " . $e->getMessage());
+                }
             }
 
             $meta['etl_stats'] = $stats;

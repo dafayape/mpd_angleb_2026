@@ -37,8 +37,21 @@ class DatasourceController extends Controller
         $file = $request->file('file');
         $originalFilename = $file->getClientOriginalName();
         $filename = time().'_'.$originalFilename;
+        $fileSize = $file->getSize();
 
         $file->storeAs('mpd_uploads', $filename, 'local');
+        $fullPath = storage_path('app/mpd_uploads/'.$filename);
+
+        // Hitung total baris dengan cepat (tanpa membaca isi, hanya hitung newline)
+        $totalRows = 0;
+        $handle = @fopen($fullPath, 'r');
+        if ($handle) {
+            while (fgets($handle) !== false) {
+                $totalRows++;
+            }
+            fclose($handle);
+            $totalRows = max(0, $totalRows - 1); // minus header
+        }
 
         $job = ImportJob::create([
             'filename' => $filename,
@@ -47,16 +60,29 @@ class DatasourceController extends Controller
             'kategori' => $request->kategori,
             'tanggal_data' => $request->tanggal_data,
             'user_id' => Auth::id(),
-            'status' => 'uploaded',
+            'status' => 'queued',
+            'status_file' => 'queued',
+            'status_etl' => 'pending',
+            'etl_progress' => 0,
             'progress' => 0,
-            'total_rows' => 0,
+            'total_rows' => $totalRows,
             'processed_rows' => 0,
-            'metadata' => ['file_size' => $file->getSize()],
+            'skipped_rows' => 0,
+            'data_lost' => 0,
+            'file_size' => $fileSize,
+            'metadata' => ['file_size' => $fileSize, 'total_rows_estimated' => $totalRows],
         ]);
+
+        // ═══════════════════════════════════════════════════════
+        // Dispatch ke Background Queue: Validate → Import → ETL
+        // Seluruh proses jalan di background, browser bisa ditutup.
+        // ═══════════════════════════════════════════════════════
+        \App\Jobs\Mpd\ProcessMpdImportJob::dispatch($job->id);
+        Log::info("[Upload] File '{$originalFilename}' ({$totalRows} rows) dispatched to queue. Job #{$job->id}");
 
         // Catat log aktivitas (non-blocking)
         try {
-            ActivityLog::log('Upload CSV', $originalFilename, 'Success', "Opsel: {$request->opsel}, Kategori: {$request->kategori}");
+            ActivityLog::log('Upload CSV', $originalFilename, 'Success', "Opsel: {$request->opsel}, Kategori: {$request->kategori}, Rows: {$totalRows}");
         } catch (\Throwable $e) {
             Log::warning('ActivityLog gagal: '.$e->getMessage());
         }
@@ -64,7 +90,9 @@ class DatasourceController extends Controller
         return response()->json([
             'status' => 'success',
             'history_id' => $job->id,
-            'message' => 'File berhasil diupload.',
+            'total_rows' => $totalRows,
+            'message' => "File berhasil diterima ({$totalRows} baris). Proses validasi + import berjalan di background.",
+            'redirect' => route('datasource.history'),
         ]);
     }
 
@@ -229,19 +257,21 @@ class DatasourceController extends Controller
             $finalStatus = empty($errors) ? 'completed' : 'completed_with_errors';
             $job->update([
                 'status' => $finalStatus,
+                'status_file' => $finalStatus,
                 'progress' => 100,
                 'total_rows' => $job->processed_rows,
+                'skipped_rows' => DB::raw("skipped_rows + {$rowsSkipped}"),
                 'error_message' => ! empty($errors) ? implode(' | ', array_slice($errors, 0, 5)) : null,
             ]);
 
-            // Auto-trigger ETL: Transform raw_mpd_data → spatial_movements
-            // Using dispatchAfterResponse so the HTTP request finishes and returns "Completed" to the user immediately,
-            // while the heavy PostGIS aggregations safely run in the background PHP process without Nginx timeouts.
+            // Auto-trigger ETL via Queue (background worker)
             try {
-                \App\Jobs\Mpd\TransformRawToSpatialJob::dispatchAfterResponse($job->id);
-                Log::info("[Import] ETL dispatched to run after response for import_job_id: {$job->id}");
+                \App\Jobs\Mpd\TransformRawToSpatialJob::dispatch($job->id);
+                $job->update(['status_etl' => 'queued']);
+                Log::info("[Import] ETL dispatched to queue for import_job_id: {$job->id}");
             } catch (\Throwable $etlErr) {
                 Log::error('[Import] ETL dispatch failed: '.$etlErr->getMessage());
+                $job->update(['status_etl' => 'failed']);
             }
 
             return response()->json([
@@ -256,7 +286,12 @@ class DatasourceController extends Controller
         }
 
         // Masih ada data (progress)
-        $job->update(['status' => 'processing', 'progress' => $percentage]);
+        $job->update([
+            'status' => 'processing',
+            'status_file' => 'importing',
+            'progress' => $percentage,
+            'skipped_rows' => DB::raw("skipped_rows + {$rowsSkipped}"),
+        ]);
 
         return response()->json([
             'status' => 'progress',
@@ -274,26 +309,69 @@ class DatasourceController extends Controller
     private function insertBatch(array $batch, ImportJob $job, array &$errors): void
     {
         try {
-            DB::table('raw_mpd_data')->insert($batch);
+            // UPSERT: Jika data duplikat (unique key match), update total + updated_at
+            // Ini mencegah data ganda jika file yang sama di-upload ulang
+            DB::table('raw_mpd_data')->upsert(
+                $batch,
+                [
+                    'tanggal', 'opsel', 'kategori',
+                    'kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota',
+                    'kode_origin_simpul', 'kode_dest_simpul',
+                    'kode_moda', 'is_forecast',
+                ],
+                ['total', 'import_job_id', 'updated_at']
+            );
             $job->increment('processed_rows', count($batch));
         } catch (\Exception $e) {
             $errors[] = $e->getMessage();
-            Log::error('Batch insert failed: '.$e->getMessage());
+            Log::error('Batch upsert failed: '.$e->getMessage());
 
-            // Fallback: insert satu per satu
+            // Fallback: upsert satu per satu
             $saved = 0;
             foreach ($batch as $row) {
                 try {
-                    DB::table('raw_mpd_data')->insert($row);
+                    DB::table('raw_mpd_data')->upsert(
+                        [$row],
+                        [
+                            'tanggal', 'opsel', 'kategori',
+                            'kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota',
+                            'kode_origin_simpul', 'kode_dest_simpul',
+                            'kode_moda', 'is_forecast',
+                        ],
+                        ['total', 'import_job_id', 'updated_at']
+                    );
                     $saved++;
                 } catch (\Exception $rowErr) {
-                    Log::warning('Row failed: '.$rowErr->getMessage());
+                    Log::warning('Row upsert failed: '.$rowErr->getMessage());
                 }
             }
             if ($saved > 0) {
                 $job->increment('processed_rows', $saved);
             }
         }
+    }
+
+    /**
+     * API: Polling ETL status untuk auto-refresh di halaman History.
+     * Mengembalikan status ETL semua job yang belum selesai (untuk update progress bar tanpa reload).
+     */
+    public function etlStatus()
+    {
+        $activeJobs = ImportJob::where(function ($q) {
+                // ETL aktif (queued, processing)
+                $q->whereNotIn('status_etl', ['completed', 'pending', 'failed'])
+                // ATAU file masih diproses (queued, validating, importing)
+                  ->orWhereIn('status_file', ['queued', 'validating', 'importing']);
+            })
+            ->select('id', 'status_file', 'status_etl', 'etl_progress', 'progress', 'processed_rows', 'total_rows', 'skipped_rows', 'data_lost')
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'jobs' => $activeJobs,
+            'has_active' => $activeJobs->isNotEmpty(),
+        ]);
     }
 
     /**

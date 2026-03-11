@@ -2,7 +2,7 @@
 
 namespace App\Jobs\Mpd;
 
-use App\Actions\Mpd\EnrichSpatialMovementAction;
+use App\Actions\Mpd\ValidateCsvAction;
 use App\Models\ImportJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -10,91 +10,274 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
+/**
+ * Background Import Job: Validates + Imports CSV → raw_mpd_data, then dispatches ETL.
+ *
+ * Alur lengkap dalam 1 job (tanpa HTTP request berulang):
+ * 1. Validasi header CSV (cepat, <1 detik)
+ * 2. Import seluruh file via streaming UPSERT (batch 10K rows, memory <64MB)
+ * 3. Dispatch TransformRawToSpatialJob ke queue untuk ETL
+ *
+ * ShouldBeUnique: Hanya 1 import per import_job_id.
+ */
 class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $timeout = 3600;
+    public int $timeout = 7200; // 2 jam max (file besar)
+
+    public int $tries = 2;
+
+    public array $backoff = [60, 300]; // retry: 1 min, 5 min
+
+    public function __construct(
+        private readonly int $importJobId
+    ) {
+    }
 
     public function uniqueId(): string
     {
-        return (string) $this->importJobId;
-    }
-
-    public function __construct(
-        private readonly int $importJobId,
-        private readonly string $filePath,
-        private readonly ?bool $isForecast = null,
-        private readonly ?string $manualOpsel = null,
-        private readonly ?string $manualDate = null
-    ) {
+        return 'import_' . $this->importJobId;
     }
 
     public function handle(): void
     {
-        $jobModel = ImportJob::find($this->importJobId);
-        if (!$jobModel)
+        $job = ImportJob::find($this->importJobId);
+        if (!$job) {
+            Log::error("[Import] ImportJob #{$this->importJobId} not found");
             return;
-
-        $jobModel->update(['status' => 'processing', 'progress' => 0]);
-
-        $filename = basename($this->filePath);
-        $isForecast = $this->resolveForecastStatus($filename);
-        $date = $this->resolveDate($filename);
-
-        // Calculate Chunks provided file is huge
-        $fileSize = filesize($this->filePath);
-        $chunkSize = 50 * 1024 * 1024; // 50MB Chunks
-        $chunks = [];
-
-        for ($start = 0; $start < $fileSize; $start += $chunkSize) {
-            $end = min($start + $chunkSize, $fileSize);
-            $chunks[] = new ImportMpdChunkJob(
-                $this->importJobId,
-                $this->filePath,
-                $start,
-                $end,
-                $isForecast
-            );
         }
 
-        // Batch Dispatch
-        Bus::batch($chunks)
-            ->then(function ($batch) use ($date) {
-                // Enrichment runs after ALL chunks successfully complete
-                if ($date) {
-                    (new EnrichSpatialMovementAction())->execute($date);
+        $filePath = storage_path('app/mpd_uploads/' . $job->filename);
+        if (!file_exists($filePath)) {
+            $job->update([
+                'status' => 'failed',
+                'status_file' => 'failed',
+                'error_message' => 'File tidak ditemukan di storage.',
+            ]);
+            Log::error("[Import] File not found: {$filePath}");
+            return;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // PHASE 1: Quick Header Validation (<1 detik)
+        // ═══════════════════════════════════════════════════════
+        $job->update(['status' => 'validating', 'status_file' => 'validating']);
+        Log::info("[Import] Phase 1: Validating CSV for job #{$this->importJobId}");
+
+        try {
+            $validator = new ValidateCsvAction();
+            $validationResult = $validator->execute($filePath, $job->opsel, $job->tanggal_data);
+
+            if (!$validationResult['is_valid']) {
+                $errorMsg = $validationResult['error'] ?? 'CSV validation failed';
+                if (isset($validationResult['header']) && !$validationResult['header']['valid']) {
+                    $errorMsg = 'Header error: ' . ($validationResult['header']['message'] ?? 'Invalid');
                 }
-            })
-            ->finally(function ($batch) use ($jobModel) {
-                // Cleanup and Final Status Update
-                $jobModel->update(['status' => 'completed', 'progress' => 100]);
-                // We assume Success here for simplicity, ideally check batch failures
-                // Archival logic would go here if we passed the path differently or stored it in DB
-            })
-            ->name('Import MPD: ' . $filename)
-            ->dispatch();
+                $job->update([
+                    'status' => 'validation_failed',
+                    'status_file' => 'failed',
+                    'error_message' => $errorMsg,
+                    'metadata' => array_merge($job->metadata ?? [], ['validation' => $validationResult]),
+                ]);
+                Log::warning("[Import] Validation failed for job #{$this->importJobId}: {$errorMsg}");
+                return;
+            }
+
+            // Simpan jumlah baris dari validasi
+            $totalRows = $validationResult['summary']['total_data_rows'] ?? 0;
+            $job->update([
+                'status' => 'validated',
+                'status_file' => 'validated',
+                'total_rows' => $totalRows,
+                'metadata' => array_merge($job->metadata ?? [], [
+                    'validation' => [
+                        'rows_checked' => $validationResult['summary']['rows_checked'] ?? 0,
+                        'rows_with_errors' => $validationResult['summary']['rows_with_errors'] ?? 0,
+                    ],
+                ]),
+            ]);
+            Log::info("[Import] Validation OK: {$totalRows} rows for job #{$this->importJobId}");
+        } catch (\Throwable $e) {
+            $job->update([
+                'status' => 'validation_failed',
+                'status_file' => 'failed',
+                'error_message' => 'Validation error: ' . $e->getMessage(),
+            ]);
+            Log::error("[Import] Validation exception: " . $e->getMessage());
+            throw $e;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // PHASE 2: Streaming Import (batch 10K, memory <64MB)
+        // ═══════════════════════════════════════════════════════
+        $job->update(['status' => 'processing', 'status_file' => 'importing', 'progress' => 0]);
+        Log::info("[Import] Phase 2: Importing CSV for job #{$this->importJobId}");
+
+        $isForecast = $job->kategori === 'FORECAST';
+        $delimiter = ';';
+        $batchSize = 10000;
+        $batch = [];
+        $processedRows = 0;
+        $skippedRows = 0;
+        $timestamp = now();
+        $totalRows = $job->total_rows ?: 1; // avoid division by zero
+
+        $headers = [
+            'TANGGAL', 'OPSEL', 'KATEGORI',
+            'KODE_ORIGIN_PROVINSI', 'ORIGIN_PROVINSI',
+            'KODE_ORIGIN_KABUPATEN_KOTA', 'ORIGIN_KABUPATEN_KOTA',
+            'KODE_DEST_PROVINSI', 'DEST_PROVINSI',
+            'KODE_DEST_KABUPATEN_KOTA', 'DEST_KABUPATEN_KOTA',
+            'KODE_ORIGIN_SIMPUL', 'ORIGIN_SIMPUL',
+            'KODE_DEST_SIMPUL', 'DEST_SIMPUL',
+            'KODE_MODA', 'MODA', 'TOTAL',
+        ];
+        $expectedCount = count($headers);
+
+        try {
+            DB::statement('SET synchronous_commit TO OFF');
+            $handle = fopen($filePath, 'r');
+            if ($handle === false) {
+                throw new \RuntimeException("Cannot open file: {$filePath}");
+            }
+
+            // Skip BOM
+            $bom = fread($handle, 3);
+            if ($bom !== "\xEF\xBB\xBF") {
+                fseek($handle, 0);
+            }
+
+            // Skip header line
+            fgets($handle);
+
+            while (($line = fgets($handle)) !== false) {
+                $line = trim(str_replace("\r", '', $line));
+                if ($line === '') {
+                    continue;
+                }
+
+                $cols = str_getcsv($line, $delimiter);
+
+                if (count($cols) !== $expectedCount) {
+                    $skippedRows++;
+                    continue;
+                }
+
+                $batch[] = [
+                    'tanggal' => $cols[0],
+                    'opsel' => $cols[1],
+                    'kategori' => $cols[2],
+                    'kode_origin_kabupaten_kota' => $cols[5],
+                    'kode_dest_kabupaten_kota' => $cols[9],
+                    'kode_origin_simpul' => $cols[11],
+                    'kode_dest_simpul' => $cols[13],
+                    'kode_moda' => $cols[15],
+                    'total' => (int) $cols[17],
+                    'is_forecast' => $isForecast,
+                    'import_job_id' => $this->importJobId,
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ];
+
+                if (count($batch) >= $batchSize) {
+                    $this->upsertBatch($batch);
+                    $processedRows += count($batch);
+                    $batch = [];
+
+                    // Update progress setiap 10K baris
+                    $percent = min(99, (int) round(($processedRows / $totalRows) * 100));
+                    $job->update([
+                        'processed_rows' => $processedRows,
+                        'skipped_rows' => $skippedRows,
+                        'progress' => $percent,
+                    ]);
+
+                    // Memory management
+                    if (memory_get_usage() > 64 * 1024 * 1024) {
+                        gc_collect_cycles();
+                    }
+                }
+            }
+
+            // Flush remaining batch
+            if (!empty($batch)) {
+                $this->upsertBatch($batch);
+                $processedRows += count($batch);
+            }
+
+            fclose($handle);
+
+            // Final update: file import selesai
+            $job->update([
+                'status' => 'completed',
+                'status_file' => 'completed',
+                'progress' => 100,
+                'total_rows' => $processedRows,
+                'processed_rows' => $processedRows,
+                'skipped_rows' => $skippedRows,
+            ]);
+            Log::info("[Import] Phase 2 complete: {$processedRows} rows imported, {$skippedRows} skipped for job #{$this->importJobId}");
+
+        } catch (\Throwable $e) {
+            $job->update([
+                'status' => 'failed',
+                'status_file' => 'failed',
+                'processed_rows' => $processedRows,
+                'skipped_rows' => $skippedRows,
+                'error_message' => 'Import error: ' . $e->getMessage(),
+            ]);
+            Log::error("[Import] Phase 2 failed: " . $e->getMessage());
+            throw $e;
+        }
+
+        // ═══════════════════════════════════════════════════════
+        // PHASE 3: Auto-dispatch ETL ke Queue
+        // ═══════════════════════════════════════════════════════
+        try {
+            TransformRawToSpatialJob::dispatch($this->importJobId);
+            $job->update(['status_etl' => 'queued']);
+            Log::info("[Import] Phase 3: ETL dispatched to queue for job #{$this->importJobId}");
+        } catch (\Throwable $e) {
+            $job->update(['status_etl' => 'failed']);
+            Log::error("[Import] ETL dispatch failed: " . $e->getMessage());
+        }
     }
 
-    private function resolveForecastStatus(string $filename): bool
+    /**
+     * UPSERT batch ke raw_mpd_data.
+     * Anti-duplikasi: jika unique key match, update total + updated_at.
+     */
+    private function upsertBatch(array $batch): void
     {
-        if ($this->isForecast !== null) {
-            return $this->isForecast;
-        }
-        return Str::contains(Str::lower($filename), 'forecast');
+        DB::table('raw_mpd_data')->upsert(
+            $batch,
+            [
+                'tanggal', 'opsel', 'kategori',
+                'kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota',
+                'kode_origin_simpul', 'kode_dest_simpul',
+                'kode_moda', 'is_forecast',
+            ],
+            ['total', 'import_job_id', 'updated_at']
+        );
     }
 
-    private function resolveDate(string $filename): ?string
+    /**
+     * Handle job failure — update ImportJob status.
+     */
+    public function failed(\Throwable $exception): void
     {
-        if ($this->manualDate) {
-            return $this->manualDate;
+        $job = ImportJob::find($this->importJobId);
+        if ($job) {
+            $job->update([
+                'status' => 'failed',
+                'status_file' => 'failed',
+                'error_message' => 'Fatal: ' . $exception->getMessage(),
+            ]);
         }
-        if (preg_match('/(\d{8})\.csv$/i', $filename, $matches)) {
-            return \Carbon\Carbon::createFromFormat('Ymd', $matches[1])->toDateString();
-        }
-        return null;
+        Log::error("[Import] Job #{$this->importJobId} FAILED: " . $exception->getMessage());
     }
 }
