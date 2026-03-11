@@ -39,6 +39,8 @@ Route::middleware(['auth'])->group(function () {
     // Substansi Tambahan
     Route::prefix('substansi')->name('pages.substansi.')->group(function () {
         Route::get('/stasiun-ka-antar-kota', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'stasiun-ka-antar-kota'))->name('stasiun-ka-antar-kota');
+        Route::get('/stasiun-ka-regional', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'stasiun-ka-regional'))->name('stasiun-ka-regional');
+        Route::get('/stasiun-ka-cepat', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'stasiun-ka-cepat'))->name('stasiun-ka-cepat');
         Route::get('/pelabuhan-penyeberangan', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'pelabuhan-penyeberangan'))->name('pelabuhan-penyeberangan');
         Route::get('/pelabuhan-laut', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'pelabuhan-laut'))->name('pelabuhan-laut');
         Route::get('/bandara', fn (Request $r) => app(\App\Http\Controllers\DataMpdController::class)->substansiSimpulPage($r, 'bandara'))->name('bandara');
