@@ -429,13 +429,32 @@
 
         // Menampilkan detail error log dalam modal sweetalert
         function showErrorDetail(element) {
-            var message = atob(element.getAttribute('data-error'));
-            Swal.fire({
-                title: 'Data Error Log',
-                html: '<div style="text-align: left; max-height: 300px; overflow-y: auto; font-size: 13px;">' + message.replace(/\n|\\n/g, '<br>') + '</div>',
-                icon: 'error',
-                confirmButtonText: 'Tutup'
-            });
+            try {
+                // Decode base64 dan atasi karakter UTF-8
+                var raw = atob(element.getAttribute('data-error'));
+                var message = decodeURIComponent(escape(raw));
+            } catch (e) {
+                var message = "Gagal memproses detail error.";
+            }
+
+            var fireSwal = function() {
+                Swal.fire({
+                    title: 'Detail Error Log',
+                    html: '<div style="text-align: left; max-height: 300px; overflow-y: auto; font-size: 13px;">' + message.replace(/\n|\\n/g, '<br>') + '</div>',
+                    icon: 'error',
+                    confirmButtonText: 'Tutup',
+                    width: '600px'
+                });
+            };
+
+            // Menggunakan utilitas loadSwal global dari layout untuk lazy-load SweetAlert2
+            if (typeof loadSwal === 'function') {
+                loadSwal(fireSwal);
+            } else if (typeof Swal !== 'undefined') {
+                fireSwal();
+            } else {
+                alert(message.replace(/\n|\\n/g, '\n'));
+            }
         }
     </script>
 @endpush
