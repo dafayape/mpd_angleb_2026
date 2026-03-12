@@ -3,7 +3,7 @@
 @section('title', $title)
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '04', 'title' => $title])
+    @component('layout.partials.page-header', ['number' => '05', 'title' => $title])
         <ol class="breadcrumb m-0 mb-0">
             @foreach ($breadcrumb as $crumb)
                 @if ($loop->last)
@@ -226,8 +226,11 @@
                                 style="background-color: #e9f0f7; border: 1px solid #d2e0ed; min-height:100px;">
                                 @if (count($top_origin) > 0)
                                     <span class="text-navy fw-medium" style="font-size: 1.05rem; line-height:1.5;">
-                                        Pada periode <strong>{{ \Carbon\Carbon::parse(config('mpd.start_date', '2026-03-13'))->translatedFormat('d F Y') }} s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->translatedFormat('d F Y') }}</strong>, <strong
-                                            style="font-size:1.15rem; color:#1e3a8a;">Provinsi
+                                        Pada periode
+                                        <strong>{{ \Carbon\Carbon::parse(config('mpd.start_date', '2026-03-13'))->translatedFormat('d F Y') }}
+                                            s/d
+                                            {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->translatedFormat('d F Y') }}</strong>,
+                                        <strong style="font-size:1.15rem; color:#1e3a8a;">Provinsi
                                             {{ ucwords(strtolower($top_origin[0]['name'])) }}</strong> merupakan Provinsi
                                         Asal dengan jumlah pergerakan terbanyak, yaitu sekitar <strong
                                             style="font-size:1.15rem;">{{ number_format($top_origin[0]['total'] / 1000000, 2, ',', '.') }}
@@ -319,8 +322,11 @@
                                 style="background-color: #e9f0f7; border: 1px solid #d2e0ed; min-height:100px;">
                                 @if (count($top_dest) > 0)
                                     <span class="text-navy fw-medium" style="font-size: 1.05rem; line-height:1.5;">
-                                        Pada periode <strong>{{ \Carbon\Carbon::parse(config('mpd.start_date', '2026-03-13'))->translatedFormat('d F Y') }} s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->translatedFormat('d F Y') }}</strong>, <strong
-                                            style="font-size:1.15rem; color:#1e3a8a;">Provinsi
+                                        Pada periode
+                                        <strong>{{ \Carbon\Carbon::parse(config('mpd.start_date', '2026-03-13'))->translatedFormat('d F Y') }}
+                                            s/d
+                                            {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->translatedFormat('d F Y') }}</strong>,
+                                        <strong style="font-size:1.15rem; color:#1e3a8a;">Provinsi
                                             {{ ucwords(strtolower($top_dest[0]['name'])) }}</strong> merupakan Provinsi
                                         Tujuan dengan jumlah pergerakan terbanyak, yaitu sekitar <strong
                                             style="font-size:1.15rem;">{{ number_format($top_dest[0]['total'] / 1000000, 2, ',', '.') }}
@@ -432,7 +438,11 @@
                                 style="background-color: #e9f0f7; border: 1px solid #d2e0ed; min-height:100px;">
                                 @if (count($top_origin_kab) > 0 && count($top_dest_kab) > 0)
                                     <span class="text-navy fw-medium" style="font-size: 1.05rem; line-height:1.5;">
-                                        Pada periode <strong>{{ \Carbon\Carbon::parse(config('mpd.start_date', '2026-03-13'))->translatedFormat('d F Y') }} s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->translatedFormat('d F Y') }}</strong>, <strong
+                                        Pada periode
+                                        <strong>{{ \Carbon\Carbon::parse(config('mpd.start_date', '2026-03-13'))->translatedFormat('d F Y') }}
+                                            s/d
+                                            {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->translatedFormat('d F Y') }}</strong>,
+                                        <strong
                                             style="font-size:1.15rem; color:#1e3a8a;">{{ ucwords(strtolower($top_origin_kab[0]['name'])) }}</strong>
                                         merupakan Kab/Kota
                                         Asal terbanyak dengan <strong
