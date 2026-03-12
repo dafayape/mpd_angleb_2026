@@ -12,7 +12,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Background Import Job: Validates + Imports CSV → raw_mpd_data, then dispatches ETL.
@@ -24,7 +23,7 @@ use Illuminate\Support\Facades\Storage;
  *
  * ShouldBeUnique: Hanya 1 import per import_job_id.
  */
-class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
+class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -36,30 +35,31 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
 
     public function __construct(
         private readonly int $importJobId
-    ) {
-    }
+    ) {}
 
     public function uniqueId(): string
     {
-        return 'import_' . $this->importJobId;
+        return 'import_'.$this->importJobId;
     }
 
     public function handle(): void
     {
         $job = ImportJob::find($this->importJobId);
-        if (!$job) {
+        if (! $job) {
             Log::error("[Import] ImportJob #{$this->importJobId} not found");
+
             return;
         }
 
-        $filePath = storage_path('app/mpd_uploads/' . $job->filename);
-        if (!file_exists($filePath)) {
+        $filePath = storage_path('app/mpd_uploads/'.$job->filename);
+        if (! file_exists($filePath)) {
             $job->update([
                 'status' => 'failed',
                 'status_file' => 'failed',
                 'error_message' => 'File tidak ditemukan di storage.',
             ]);
             Log::error("[Import] File not found: {$filePath}");
+
             return;
         }
 
@@ -70,28 +70,28 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
         Log::info("[Import] Phase 1: Validating CSV for job #{$this->importJobId}");
 
         try {
-            $validator = new ValidateCsvAction();
+            $validator = new ValidateCsvAction;
             $validationResult = $validator->execute($filePath, $job->opsel, $job->tanggal_data);
 
-            if (!$validationResult['is_valid']) {
+            if (! $validationResult['is_valid']) {
                 $errorMsg = $validationResult['error'] ?? 'CSV validation failed.';
-                if (isset($validationResult['header']) && !$validationResult['header']['valid']) {
-                    $errorMsg = 'Header error: ' . ($validationResult['header']['message'] ?? 'Invalid Format Header CSV.');
-                } elseif (!empty($validationResult['opsel_mismatch'])) {
-                    $errorMsg = "OPSEL Mismatch: Data file berisi " . implode(', ', $validationResult['opsel_mismatch']['found_in_csv']) . " tetapi dipilih " . $validationResult['opsel_mismatch']['selected'] . ".";
-                } elseif (!empty($validationResult['tanggal_mismatch'])) {
-                    $errorMsg = "Tanggal Mismatch: Data file berisi tanggal " . implode(', ', $validationResult['tanggal_mismatch']['found_in_csv']) . " tetapi dipilih " . $validationResult['tanggal_mismatch']['selected'] . ".";
-                } elseif (!empty($validationResult['row_errors'])) {
-                    $errorMsg = "Ditemukan " . ($validationResult['summary']['rows_with_errors'] ?? count($validationResult['row_errors'])) . " baris error pada isi CSV.\\n";
-                    foreach(array_slice($validationResult['row_errors'], 0, 10) as $err) {
-                        $issueStrings = array_map(fn($i) => ($i['field'] ? $i['field'] . ': ' : '') . $i['detail'], $err['issues']);
-                        $errorMsg .= "Baris " . $err['row'] . ": " . implode(', ', $issueStrings) . "\\n";
+                if (isset($validationResult['header']) && ! $validationResult['header']['valid']) {
+                    $errorMsg = 'Header error: '.($validationResult['header']['message'] ?? 'Invalid Format Header CSV.');
+                } elseif (! empty($validationResult['opsel_mismatch'])) {
+                    $errorMsg = 'OPSEL Mismatch: Data file berisi '.implode(', ', $validationResult['opsel_mismatch']['found_in_csv']).' tetapi dipilih '.$validationResult['opsel_mismatch']['selected'].'.';
+                } elseif (! empty($validationResult['tanggal_mismatch'])) {
+                    $errorMsg = 'Tanggal Mismatch: Data file berisi tanggal '.implode(', ', $validationResult['tanggal_mismatch']['found_in_csv']).' tetapi dipilih '.$validationResult['tanggal_mismatch']['selected'].'.';
+                } elseif (! empty($validationResult['row_errors'])) {
+                    $errorMsg = 'Ditemukan '.($validationResult['summary']['rows_with_errors'] ?? count($validationResult['row_errors'])).' baris error pada isi CSV.\\n';
+                    foreach (array_slice($validationResult['row_errors'], 0, 10) as $err) {
+                        $issueStrings = array_map(fn ($i) => ($i['field'] ? $i['field'].': ' : '').$i['detail'], $err['issues']);
+                        $errorMsg .= 'Baris '.$err['row'].': '.implode(', ', $issueStrings).'\\n';
                     }
                     if (($validationResult['summary']['rows_with_errors'] ?? 0) > 10) {
-                        $errorMsg .= "...(dan error baris lainnya)\\n";
+                        $errorMsg .= '...(dan error baris lainnya)\\n';
                     }
                 }
-                
+
                 $job->update([
                     'status' => 'validation_failed',
                     'status_file' => 'failed',
@@ -99,6 +99,7 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
                     'metadata' => array_merge($job->metadata ?? [], ['validation' => $validationResult]),
                 ]);
                 Log::warning("[Import] Validation failed for job #{$this->importJobId}: {$errorMsg}");
+
                 return;
             }
 
@@ -120,9 +121,9 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
             $job->update([
                 'status' => 'validation_failed',
                 'status_file' => 'failed',
-                'error_message' => 'Validation error: ' . $e->getMessage(),
+                'error_message' => 'Validation error: '.$e->getMessage(),
             ]);
-            Log::error("[Import] Validation exception: " . $e->getMessage());
+            Log::error('[Import] Validation exception: '.$e->getMessage());
             throw $e;
         }
 
@@ -179,6 +180,7 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
 
                 if (count($cols) !== $expectedCount) {
                     $skippedRows++;
+
                     continue;
                 }
 
@@ -191,11 +193,20 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
                     'tanggal' => $dbTanggal,
                     'opsel' => $cols[1],
                     'kategori' => $cols[2],
+                    'kode_origin_provinsi' => $cols[3],
+                    'origin_provinsi' => $cols[4],
                     'kode_origin_kabupaten_kota' => $cols[5],
+                    'origin_kabupaten_kota' => $cols[6],
+                    'kode_dest_provinsi' => $cols[7],
+                    'dest_provinsi' => $cols[8],
                     'kode_dest_kabupaten_kota' => $cols[9],
+                    'dest_kabupaten_kota' => $cols[10],
                     'kode_origin_simpul' => $cols[11],
+                    'origin_simpul' => $cols[12],
                     'kode_dest_simpul' => $cols[13],
+                    'dest_simpul' => $cols[14],
                     'kode_moda' => $cols[15],
+                    'moda' => $cols[16],
                     'total' => (int) $cols[17],
                     'is_forecast' => $isForecast,
                     'import_job_id' => $this->importJobId,
@@ -224,7 +235,7 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
             }
 
             // Flush remaining batch
-            if (!empty($batch)) {
+            if (! empty($batch)) {
                 $this->upsertBatch($batch);
                 $processedRows += count($batch);
             }
@@ -248,9 +259,9 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
                 'status_file' => 'failed',
                 'processed_rows' => $processedRows,
                 'skipped_rows' => $skippedRows,
-                'error_message' => 'Import error: ' . $e->getMessage(),
+                'error_message' => 'Import error: '.$e->getMessage(),
             ]);
-            Log::error("[Import] Phase 2 failed: " . $e->getMessage());
+            Log::error('[Import] Phase 2 failed: '.$e->getMessage());
             throw $e;
         }
 
@@ -263,7 +274,7 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
             Log::info("[Import] Phase 3: ETL dispatched to queue for job #{$this->importJobId}");
         } catch (\Throwable $e) {
             $job->update(['status_etl' => 'failed']);
-            Log::error("[Import] ETL dispatch failed: " . $e->getMessage());
+            Log::error('[Import] ETL dispatch failed: '.$e->getMessage());
         }
     }
 
@@ -295,9 +306,9 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
             $job->update([
                 'status' => 'failed',
                 'status_file' => 'failed',
-                'error_message' => 'Fatal: ' . $exception->getMessage(),
+                'error_message' => 'Fatal: '.$exception->getMessage(),
             ]);
         }
-        Log::error("[Import] Job #{$this->importJobId} FAILED: " . $exception->getMessage());
+        Log::error("[Import] Job #{$this->importJobId} FAILED: ".$exception->getMessage());
     }
 }
