@@ -2261,13 +2261,13 @@ class DataMpdController extends Controller
         // Map slug -> config (sub_category values verified from ref_simpul.csv)
         // Actual categories: Bandara(empty), Pelabuhan(Laut/Penyeberangan), Stasiun(Antar Kota/Perkotaan/KCJB), Terminal(A/B)
         $map = [
-            'stasiun-ka-antar-kota' => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '14', 'kode_moda' => 'F'],
+            'stasiun-ka-antar-kota' => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '14', 'kode_moda' => 'E'],
             'stasiun-ka-regional' => ['category' => 'Stasiun', 'sub_category' => 'Perkotaan',       'title' => 'Stasiun KA Regional (Perkotaan)',  'view' => 'pages.substansi._simpul-layout',  'number' => '15', 'kode_moda' => 'G'],
-            'stasiun-ka-cepat' => ['category' => 'Stasiun', 'sub_category' => 'KCJB',            'title' => 'Stasiun KA Cepat (KCJB)',      'view' => 'pages.substansi._simpul-layout',  'number' => '16', 'kode_moda' => 'H'],
-            'pelabuhan-penyeberangan' => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '17', 'kode_moda' => 'E'],
-            'pelabuhan-laut' => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '18', 'kode_moda' => 'D'],
-            'bandara' => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '19', 'kode_moda' => 'C'],
-            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '20', 'kode_moda' => 'A'],
+            'stasiun-ka-cepat' => ['category' => 'Stasiun', 'sub_category' => 'KCJB',            'title' => 'Stasiun KA Cepat (KCJB)',      'view' => 'pages.substansi._simpul-layout',  'number' => '16', 'kode_moda' => 'F'],
+            'pelabuhan-penyeberangan' => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '17', 'kode_moda' => 'J'],
+            'pelabuhan-laut' => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '18', 'kode_moda' => 'I'],
+            'bandara' => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '19', 'kode_moda' => 'H'],
+            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '20', 'kode_moda' => ['C', 'D']], 
             'od-simpul-pelabuhan' => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '21'],
         ];
 
@@ -2293,7 +2293,11 @@ class DataMpdController extends Controller
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
                     if ($kodeModa) {
-                        $q->where('sm.kode_moda', $kodeModa);
+                        if (is_array($kodeModa)) {
+                            $q->whereIn('sm.kode_moda', $kodeModa);
+                        } else {
+                            $q->where('sm.kode_moda', $kodeModa);
+                        }
                     } else {
                         $q->where('n.category', $category);
                         if ($subCat) {
@@ -2316,7 +2320,11 @@ class DataMpdController extends Controller
                 ->where('sm.kode_dest_simpul', '!=', '')
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
                     if ($kodeModa) {
-                        $q->where('sm.kode_moda', $kodeModa);
+                        if (is_array($kodeModa)) {
+                            $q->whereIn('sm.kode_moda', $kodeModa);
+                        } else {
+                            $q->where('sm.kode_moda', $kodeModa);
+                        }
                     } else {
                         $q->where('n.category', $category);
                         if ($subCat) {
@@ -2344,7 +2352,11 @@ class DataMpdController extends Controller
                 ->where('sm.kode_dest_simpul', '!=', '')
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
                     if ($kodeModa) {
-                        $q->where('sm.kode_moda', $kodeModa);
+                        if (is_array($kodeModa)) {
+                            $q->whereIn('sm.kode_moda', $kodeModa);
+                        } else {
+                            $q->where('sm.kode_moda', $kodeModa);
+                        }
                     } else {
                         $q->where('o.category', $category);
                         if ($subCat) {
@@ -2353,6 +2365,7 @@ class DataMpdController extends Controller
                     }
                 })
                 ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
+
 
                 ->orderByDesc('total_volume')
                 ->take(10)
