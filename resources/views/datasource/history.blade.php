@@ -215,6 +215,11 @@
                                                 <span class="badge badge-pill badge-soft-info font-size-11">⏳ Queued</span>
                                             @elseif ($sf === 'failed' || $sf === 'validation_failed')
                                                 <span class="badge badge-pill badge-soft-danger font-size-11">❌ Failed</span>
+                                                @if($history->error_message)
+                                                    <a href="javascript:void(0);" onclick="showErrorDetail('{{ htmlspecialchars(addslashes($history->error_message)) }}')" class="text-danger ms-1" data-bs-toggle="tooltip" title="Lihat detail error">
+                                                        <i class="bx bx-info-circle"></i>
+                                                    </a>
+                                                @endif
                                             @else
                                                 <span class="badge badge-pill badge-soft-secondary font-size-11">{{ ucfirst($sf) }}</span>
                                             @endif
@@ -421,5 +426,15 @@
                 pollInterval = setInterval(checkEtlStatus, 5000);
             }
         })();
+
+        // Menampilkan detail error log dalam modal sweetalert
+        function showErrorDetail(message) {
+            Swal.fire({
+                title: 'Data Error Log',
+                html: '<div style="text-align: left; max-height: 300px; overflow-y: auto; font-size: 13px;">' + message.replace(/\\n/g, '<br>') + '</div>',
+                icon: 'error',
+                confirmButtonText: 'Tutup'
+            });
+        }
     </script>
 @endpush

@@ -73,10 +73,23 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
             $validationResult = $validator->execute($filePath, $job->opsel, $job->tanggal_data);
 
             if (!$validationResult['is_valid']) {
-                $errorMsg = $validationResult['error'] ?? 'CSV validation failed';
+                $errorMsg = $validationResult['error'] ?? 'CSV validation failed.';
                 if (isset($validationResult['header']) && !$validationResult['header']['valid']) {
-                    $errorMsg = 'Header error: ' . ($validationResult['header']['message'] ?? 'Invalid');
+                    $errorMsg = 'Header error: ' . ($validationResult['header']['message'] ?? 'Invalid Format Header CSV.');
+                } elseif (!empty($validationResult['opsel_mismatch'])) {
+                    $errorMsg = "OPSEL Mismatch: Data file berisi " . implode(', ', $validationResult['opsel_mismatch']['found_in_csv']) . " tetapi dipilih " . $validationResult['opsel_mismatch']['selected'] . ".";
+                } elseif (!empty($validationResult['tanggal_mismatch'])) {
+                    $errorMsg = "Tanggal Mismatch: Data file berisi tanggal " . implode(', ', $validationResult['tanggal_mismatch']['found_in_csv']) . " tetapi dipilih " . $validationResult['tanggal_mismatch']['selected'] . ".";
+                } elseif (!empty($validationResult['row_errors'])) {
+                    $errorMsg = "Ditemukan " . ($validationResult['summary']['rows_with_errors'] ?? count($validationResult['row_errors'])) . " baris error pada isi CSV.\\n";
+                    foreach(array_slice($validationResult['row_errors'], 0, 10) as $err) {
+                        $errorMsg .= "Baris " . $err['row'] . ": " . implode(', ', $err['issues']) . "\\n";
+                    }
+                    if (($validationResult['summary']['rows_with_errors'] ?? 0) > 10) {
+                        $errorMsg .= "...(dan error baris lainnya)\\n";
+                    }
                 }
+                
                 $job->update([
                     'status' => 'validation_failed',
                     'status_file' => 'failed',
