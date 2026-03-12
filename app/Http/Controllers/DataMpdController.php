@@ -2346,14 +2346,14 @@ class DataMpdController extends Controller
         // Map slug -> config (sub_category values verified from ref_simpul.csv)
         // Actual categories: Bandara(empty), Pelabuhan(Laut/Penyeberangan), Stasiun(Antar Kota/Perkotaan/KCJB), Terminal(A/B)
         $map = [
-            'stasiun-ka-antar-kota' => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '13'],
-            'stasiun-ka-regional' => ['category' => 'Stasiun', 'sub_category' => 'Perkotaan',       'title' => 'Stasiun KA Regional (Perkotaan)',  'view' => 'pages.substansi._simpul-layout',  'number' => '13'],
-            'stasiun-ka-cepat' => ['category' => 'Stasiun', 'sub_category' => 'KCJB',            'title' => 'Stasiun KA Cepat (KCJB)',      'view' => 'pages.substansi._simpul-layout',  'number' => '13'],
-            'pelabuhan-penyeberangan' => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '14'],
-            'pelabuhan-laut' => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '15'],
-            'bandara' => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '16'],
-            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '17'],
-            'od-simpul-pelabuhan' => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '18'],
+            'stasiun-ka-antar-kota' => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '14'],
+            'stasiun-ka-regional' => ['category' => 'Stasiun', 'sub_category' => 'Perkotaan',       'title' => 'Stasiun KA Regional (Perkotaan)',  'view' => 'pages.substansi._simpul-layout',  'number' => '15'],
+            'stasiun-ka-cepat' => ['category' => 'Stasiun', 'sub_category' => 'KCJB',            'title' => 'Stasiun KA Cepat (KCJB)',      'view' => 'pages.substansi._simpul-layout',  'number' => '16'],
+            'pelabuhan-penyeberangan' => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '17'],
+            'pelabuhan-laut' => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '18'],
+            'bandara' => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '19'],
+            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '20'],
+            'od-simpul-pelabuhan' => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '21'],
         ];
 
         if (! isset($map[$slug])) {

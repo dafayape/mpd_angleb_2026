@@ -103,7 +103,7 @@
 @endpush
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '23', 'title' => 'Daily Report'])
+    @component('layout.partials.page-header', ['number' => '24', 'title' => 'Daily Report'])
         <ol class="breadcrumb m-0 mb-0">
             <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="#">Executive Summary</a></li>

@@ -3,7 +3,7 @@
 @section('title', $title)
 
 @section('content')
-    @component('layout.partials.page-header', ['number' => '09', 'title' => $title])
+    @component('layout.partials.page-header', ['number' => '10', 'title' => $title])
         <ol class="breadcrumb m-0 mb-0">
             @foreach ($breadcrumb as $crumb)
                 @if ($loop->last)
