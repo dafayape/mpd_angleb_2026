@@ -8,6 +8,7 @@ class ValidateCsvAction
 {
     private const DELIMITER = ';';
     private const MAX_ERRORS_DISPLAYED = 50;
+
     private const VALID_OPSEL = ['TSEL', 'IOH', 'XLSMART'];
 
     private const EXPECTED_HEADERS = [
@@ -25,16 +26,19 @@ class ValidateCsvAction
 
     // In-memory reference lookup (O(1) per check)
     private array $refProvinces = [];
+
     private array $refCities = [];
+
     private array $refNodes = [];
+
     private array $refModes = [];
 
     /**
      * Validate a CSV file against the MPD schema and database reference tables.
      *
-     * @param  string       $filePath      Absolute path to the CSV file
-     * @param  string|null  $selectedOpsel OPSEL yang dipilih di dropdown form (TSEL/IOH/XL)
-     * @return array        Validation result
+     * @param  string  $filePath  Absolute path to the CSV file
+     * @param  string|null  $selectedOpsel  OPSEL yang dipilih di dropdown form (TSEL/IOH/XL)
+     * @return array Validation result
      */
     public function execute(string $filePath, ?string $selectedOpsel = null, ?string $selectedDate = null): array
     {
@@ -53,6 +57,7 @@ class ValidateCsvAction
         $headerLine = fgets($handle);
         if ($headerLine === false) {
             fclose($handle);
+
             return ['is_valid' => false, 'error' => 'File CSV kosong.'];
         }
 
@@ -61,6 +66,7 @@ class ValidateCsvAction
         // Jika header tidak valid, tidak perlu lanjut cek baris
         if (! $headerResult['valid']) {
             fclose($handle);
+
             return [
                 'is_valid' => false,
                 'file' => ['name' => basename($filePath), 'total_data_rows' => 0, 'rows_checked' => 0],
@@ -141,12 +147,13 @@ class ValidateCsvAction
         if ($selectedDate && ! empty($csvTanggalValues)) {
             $formattedSelectedDate = date('Y-m-d', strtotime($selectedDate));
             $csvTanggals = array_keys($csvTanggalValues);
-            
+
             // Normalize CSV Date format (Support both Y-m-d and d/m/Y variants)
-            $mismatchedTanggal = array_filter($csvTanggals, function($t) use ($formattedSelectedDate) {
+            $mismatchedTanggal = array_filter($csvTanggals, function ($t) use ($formattedSelectedDate) {
                 // If it contains slash like 13/03/2026 (DD/MM/YYYY), replace with dash so strtotime understands it's European format
                 $normalizedString = str_replace('/', '-', $t);
                 $csvDateParsed = date('Y-m-d', strtotime($normalizedString));
+
                 return $csvDateParsed !== $formattedSelectedDate;
             });
             if (! empty($mismatchedTanggal)) {
@@ -222,13 +229,13 @@ class ValidateCsvAction
 
         // ─── Column count ───
         if (count($cols) !== self::EXPECTED_COUNT) {
-            return [['field' => null, 'type' => 'COLUMN_COUNT', 'detail' => 'Diharapkan ' . self::EXPECTED_COUNT . ' kolom, ditemukan ' . count($cols)]];
+            return [['field' => null, 'type' => 'COLUMN_COUNT', 'detail' => 'Diharapkan '.self::EXPECTED_COUNT.' kolom, ditemukan '.count($cols)]];
         }
 
         // ─── TANGGAL (index 0): YYYY-MM-DD or DD/MM/YYYY ───
         $tanggal = trim($cols[0]);
         $normalizedTanggal = str_replace('/', '-', $tanggal);
-        if (!strtotime($normalizedTanggal)) {
+        if (! strtotime($normalizedTanggal)) {
             $issues[] = ['field' => 'TANGGAL', 'type' => 'INVALID_DATE', 'detail' => "Format tidak valid, ditemukan: \"{$tanggal}\""];
         }
 
@@ -237,7 +244,7 @@ class ValidateCsvAction
         if ($opsel === '') {
             $issues[] = ['field' => 'OPSEL', 'type' => 'EMPTY_REQUIRED', 'detail' => 'OPSEL tidak boleh kosong'];
         } elseif (! in_array($opsel, self::VALID_OPSEL, true)) {
-            $issues[] = ['field' => 'OPSEL', 'type' => 'INVALID_VALUE', 'detail' => "Harus " . implode('/', self::VALID_OPSEL) . ", ditemukan: \"{$opsel}\""];
+            $issues[] = ['field' => 'OPSEL', 'type' => 'INVALID_VALUE', 'detail' => 'Harus '.implode('/', self::VALID_OPSEL).", ditemukan: \"{$opsel}\""];
         }
 
         // ─── KATEGORI (index 2): wajib terisi (nilainya bebas, misal PERGERAKAN) ───
