@@ -216,7 +216,7 @@
                                             @elseif ($sf === 'failed' || $sf === 'validation_failed')
                                                 <span class="badge badge-pill badge-soft-danger font-size-11">❌ Failed</span>
                                                 @if($history->error_message)
-                                                    <a href="javascript:void(0);" onclick="showErrorDetail('{{ htmlspecialchars(addslashes($history->error_message)) }}')" class="text-danger ms-1" data-bs-toggle="tooltip" title="Lihat detail error">
+                                                    <a href="javascript:void(0);" onclick="showErrorDetail(this)" data-error="{{ base64_encode($history->error_message) }}" class="text-danger ms-1" data-bs-toggle="tooltip" title="Lihat detail error">
                                                         <i class="bx bx-info-circle"></i>
                                                     </a>
                                                 @endif
@@ -428,10 +428,11 @@
         })();
 
         // Menampilkan detail error log dalam modal sweetalert
-        function showErrorDetail(message) {
+        function showErrorDetail(element) {
+            var message = atob(element.getAttribute('data-error'));
             Swal.fire({
                 title: 'Data Error Log',
-                html: '<div style="text-align: left; max-height: 300px; overflow-y: auto; font-size: 13px;">' + message.replace(/\\n/g, '<br>') + '</div>',
+                html: '<div style="text-align: left; max-height: 300px; overflow-y: auto; font-size: 13px;">' + message.replace(/\n|\\n/g, '<br>') + '</div>',
                 icon: 'error',
                 confirmButtonText: 'Tutup'
             });
