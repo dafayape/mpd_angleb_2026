@@ -141,7 +141,14 @@ class ValidateCsvAction
         if ($selectedDate && ! empty($csvTanggalValues)) {
             $formattedSelectedDate = date('Y-m-d', strtotime($selectedDate));
             $csvTanggals = array_keys($csvTanggalValues);
-            $mismatchedTanggal = array_filter($csvTanggals, fn ($t) => $t !== $formattedSelectedDate);
+            
+            // Normalize CSV Date format (Support both Y-m-d and d/m/Y variants)
+            $mismatchedTanggal = array_filter($csvTanggals, function($t) use ($formattedSelectedDate) {
+                // If it contains slash like 13/03/2026 (DD/MM/YYYY), replace with dash so strtotime understands it's European format
+                $normalizedString = str_replace('/', '-', $t);
+                $csvDateParsed = date('Y-m-d', strtotime($normalizedString));
+                return $csvDateParsed !== $formattedSelectedDate;
+            });
             if (! empty($mismatchedTanggal)) {
                 $tanggalMismatch = [
                     'selected' => $formattedSelectedDate,
