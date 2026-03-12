@@ -19,8 +19,8 @@ trait MpdHelpers
     {
         $upper = strtoupper($raw);
 
-        if (str_contains($upper, 'XL') || str_contains($upper, 'AXIS') || str_contains($upper, 'SMARTFREN')) {
-            return 'XL';
+        if (str_contains($upper, 'XL') || str_contains($upper, 'AXIS') || str_contains($upper, 'SMARTFREN') || str_contains($upper, 'XLSMART')) {
+            return 'XLSMART';
         }
         if (str_contains($upper, 'INDOSAT') || str_contains($upper, 'IOH') || str_contains($upper, 'TRI')) {
             return 'IOH';

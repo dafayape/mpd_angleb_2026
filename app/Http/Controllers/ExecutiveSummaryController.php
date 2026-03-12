@@ -22,7 +22,7 @@ class ExecutiveSummaryController extends Controller
     public function getData(Request $request): JsonResponse
     {
         $request->validate([
-            'opsel' => 'nullable|in:TSEL,IOH,XL',
+            'opsel' => 'nullable|in:TSEL,IOH,XLSMART',
             'data_type' => 'nullable|in:real,forecast',
         ]);
         

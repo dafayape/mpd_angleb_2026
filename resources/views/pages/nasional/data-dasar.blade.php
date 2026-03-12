@@ -150,7 +150,7 @@
                             <h4 class="mb-2 fw-bold text-white">Arsitektur & Alur Pemrosesan Platform MPD Angleb 2026</h4>
                             <p class="mb-0 text-white-50" style="font-size: 1.05rem;">
                                 Platform ini dirancang untuk memproses jutaan baris data pergerakan masyarakat (MPD) dari
-                                Operator Seluler (TSEL, IOH, XL). Secara garis besar, ekosistem <strong>Data Dasar
+                                Operator Seluler (TSEL, IOH, XLSMART). Secara garis besar, ekosistem <strong>Data Dasar
                                     Nasional</strong> mengimplementasikan mekanisme Data Ingestion berbasis sinkron &
                                 asinkron agar beban <strong>PostgreSQL 18</strong> dan <strong>Apache 2.4</strong>
                                 terdistribusi optimal melalui manajemen <i>Message Broker & Streaming Layer</i>.

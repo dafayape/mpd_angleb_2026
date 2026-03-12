@@ -146,7 +146,7 @@
                 <option value="">Semua</option>
                 <option value="TSEL">Telkomsel</option>
                 <option value="IOH">Indosat</option>
-                <option value="XL">XL Axiata</option>
+                <option value="XLSMART">XLSMART</option>
             </select>
 
             <button type="submit" class="btn btn-sm btn-light text-primary text-nowrap fw-bold ms-1">

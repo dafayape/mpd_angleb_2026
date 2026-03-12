@@ -28,7 +28,7 @@ class DatasourceController extends Controller
     public function storeUpload(Request $request)
     {
         $request->validate([
-            'opsel' => 'required|string|in:TSEL,IOH,XL',
+            'opsel' => 'required|string|in:TSEL,IOH,XLSMART',
             'kategori' => 'required|string|in:REAL,FORECAST',
             'tanggal_data' => 'required|date',
             'file' => 'required|file|mimes:csv,txt|max:1048576',

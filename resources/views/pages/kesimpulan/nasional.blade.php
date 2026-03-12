@@ -90,8 +90,8 @@
                         $iohP_pct = $totalPergerakan > 0 ? ($opP['IOH'] / $totalPergerakan) * 100 : 0;
                         $iohO_pct = $totalOrang > 0 ? ($opO['IOH'] / $totalOrang) * 100 : 0;
 
-                        $xlP_pct = $totalPergerakan > 0 ? ($opP['XL'] / $totalPergerakan) * 100 : 0;
-                        $xlO_pct = $totalOrang > 0 ? ($opO['XL'] / $totalOrang) * 100 : 0;
+                        $xlP_pct = $totalPergerakan > 0 ? ($opP['XLSMART'] / $totalPergerakan) * 100 : 0;
+                        $xlO_pct = $totalOrang > 0 ? ($opO['XLSMART'] / $totalOrang) * 100 : 0;
 
                         // Origin
                         $topAsal = $data['top_5_prov_asal'];

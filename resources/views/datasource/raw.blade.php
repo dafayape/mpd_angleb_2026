@@ -36,7 +36,7 @@
                                     <option value="">Semua Opsel</option>
                                     <option value="TSEL" {{ request('opsel') == 'TSEL' ? 'selected' : '' }}>TSEL</option>
                                     <option value="IOH" {{ request('opsel') == 'IOH' ? 'selected' : '' }}>IOH</option>
-                                    <option value="XL" {{ request('opsel') == 'XL' ? 'selected' : '' }}>XL</option>
+                                    <option value="XLSMART" {{ request('opsel') == 'XLSMART' ? 'selected' : '' }}>XLSMART</option>
                                 </select>
                             </div>
                             <div class="col-md-2">

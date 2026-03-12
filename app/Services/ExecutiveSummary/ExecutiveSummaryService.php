@@ -104,7 +104,7 @@ class ExecutiveSummaryService
                 }
                 $sums = $q->select('opsel', DB::raw('SUM(total) as t'))->groupBy('opsel')->get()->pluck('t', 'opsel');
                 $total = $sums->sum();
-                foreach (['TSEL', 'IOH', 'XL'] as $op) {
+                foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
                     $val = $sums[$op] ?? 0;
                     $data[strtolower($kat)][$op] = ['total' => $val, 'pct' => $total > 0 ? round(($val / $total) * 100, 1) : 0];
                 }

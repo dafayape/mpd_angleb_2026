@@ -67,12 +67,12 @@
 
         echo '<tr>';
         // REAL Subheaders
-        foreach(['XL', 'IOH', 'TSEL'] as $op) {
+        foreach(['XLSMART', 'IOH', 'TSEL'] as $op) {
             echo '<th class="bg-success text-white bg-opacity-75 border-start">'.$op.'<br>Pergerakan</th>';
             echo '<th class="bg-success text-white bg-opacity-75">'.$op.'<br>Orang</th>';
         }
         // FORECAST Subheaders
-        foreach(['XL', 'IOH', 'TSEL'] as $op) {
+        foreach(['XLSMART', 'IOH', 'TSEL'] as $op) {
             echo '<th class="bg-warning text-dark bg-opacity-75 border-start">'.$op.'<br>Pergerakan</th>';
             echo '<th class="bg-warning text-dark bg-opacity-75">'.$op.'<br>Orang</th>';
         }
@@ -93,7 +93,7 @@
             echo '<td class="fw-bold text-start">'.$formattedDate.'</td>';
 
             // REAL Columns
-            foreach(['XL', 'IOH', 'TSEL'] as $op) {
+            foreach(['XLSMART', 'IOH', 'TSEL'] as $op) {
                 $val = $rowReal[$op]['mov'] ?? 0;
                 $ppl = $rowReal[$op]['ppl'] ?? 0;
                 $totalRow += $val; 
@@ -101,8 +101,8 @@
                 // Sample "TOTAL" implies sum of movements across all opsels/types? Or just sum of movements?
                 // User sample total: 3,837,878 (Kamis 18 Des). 
                 // Sum reals: 100460 + 34209 + 1684968 = 1,819,637. 
-                // Wait, sample columns: REAL (XL Mov, XL Ppl, IOH Mov, IOH Ppl, TSEL Mov, TSEL Ppl) FOREcast (...) 
-                // If I sum REAL XL Mov + IOH Mov + TSEL Mov + FORECAST XL Mov + ...
+                // Wait, sample columns: REAL (XLSMART Mov, XLSMART Ppl, IOH Mov, IOH Ppl, TSEL Mov, TSEL Ppl) FOREcast (...) 
+                // If I sum REAL XLSMART Mov + IOH Mov + TSEL Mov + FORECAST XLSMART Mov + ...
                 // Let's assume Total is sum of ALL Movement columns (Real + Forecast).
                 
                 echo '<td class="text-end border-start">'.number_format($val, 0, ',', '.').'</td>';
@@ -110,7 +110,7 @@
             }
             
             // FORECAST Columns
-            foreach(['XL', 'IOH', 'TSEL'] as $op) {
+            foreach(['XLSMART', 'IOH', 'TSEL'] as $op) {
                 $val = $rowFc[$op]['mov'] ?? 0;
                 $ppl = $rowFc[$op]['ppl'] ?? 0;
                 $totalRow += $val;

@@ -34,7 +34,7 @@ class ImportFastCommand extends Command
             $this->error("❌ File tidak ditemukan di: {$path}");
             return Command::FAILURE;
         }
-        if (!in_array($opsel, ['TSEL', 'IOH', 'XL'])) {
+        if (!in_array($opsel, ['TSEL', 'IOH', 'XLSMART'])) {
             $this->error("❌ Opsel tidak valid! Harus TSEL, IOH, atau XL.");
             return Command::FAILURE;
         }

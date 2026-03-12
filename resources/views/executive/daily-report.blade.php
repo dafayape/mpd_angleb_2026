@@ -141,7 +141,7 @@
                             <select name="opsel" class="form-select">
                                 <option value="ALL" {{ ($opsel ?? 'ALL') == 'ALL' ? 'selected' : '' }}>Semua Opsel
                                 </option>
-                                <option value="XL" {{ ($opsel ?? '') == 'XL' ? 'selected' : '' }}>XL Axiata</option>
+                                <option value="XLSMART" {{ ($opsel ?? '') == 'XLSMART' ? 'selected' : '' }}>XLSMART</option>
                                 <option value="TSEL" {{ ($opsel ?? '') == 'TSEL' ? 'selected' : '' }}>Telkomsel</option>
                                 <option value="IOH" {{ ($opsel ?? '') == 'IOH' ? 'selected' : '' }}>Indosat (IOH)
                                 </option>

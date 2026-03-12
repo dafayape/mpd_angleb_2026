@@ -75,7 +75,7 @@ class DataMpdController extends Controller
 
     private function getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes)
     {
-        $opsels = ['XL', 'TSEL', 'IOH'];
+        $opsels = ['XLSMART', 'TSEL', 'IOH'];
         $categories = ['PERGERAKAN', 'ORANG']; // We'll map to 'pergerakan' and 'orang'
 
         // Prepare Date Keys array
@@ -452,7 +452,7 @@ class DataMpdController extends Controller
 
     private function getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes)
     {
-        $opsels = ['XL', 'TSEL', 'IOH'];
+        $opsels = ['XLSMART', 'TSEL', 'IOH'];
         $categories = ['PERGERAKAN', 'ORANG'];
 
         $dateKeys = [];
@@ -923,7 +923,7 @@ class DataMpdController extends Controller
         ];
 
         // Opsel list
-        $opsels = ['XL', 'IOH', 'TSEL'];
+        $opsels = ['XLSMART', 'IOH', 'TSEL'];
         // Types
         $types = ['FORECAST', 'REAL'];
 
@@ -1049,7 +1049,7 @@ class DataMpdController extends Controller
     private function getNasionalModeShareData($startDate, $endDate)
     {
         // 1. Definition & Initialization
-        $opsels = ['XL', 'IOH', 'TSEL'];
+        $opsels = ['XLSMART', 'IOH', 'TSEL'];
         $types = ['REAL', 'FORECAST'];
         $pribadiModes = ['Mobil', 'Motor'];
 
@@ -1324,7 +1324,7 @@ class DataMpdController extends Controller
 
     private function getPergerakanHarianData($startDate, $endDate)
     {
-        $opsels = ['XL', 'IOH', 'TSEL'];
+        $opsels = ['XLSMART', 'IOH', 'TSEL'];
         $categories = ['PERGERAKAN', 'ORANG'];
         $dates = [];
 
@@ -1482,7 +1482,7 @@ class DataMpdController extends Controller
             $curr->addDay();
         }
 
-        $opsels = ['XL', 'IOH', 'TSEL'];
+        $opsels = ['XLSMART', 'IOH', 'TSEL'];
         $types = ['REAL', 'FORECAST'];
 
         // Temporary storage to calc totals first (for percentage)
@@ -1836,7 +1836,7 @@ class DataMpdController extends Controller
         while ($curr->lte($endDate)) {
             $d = $curr->format('Y-m-d');
             $dates[$d] = [
-                'XL' => ['movement' => 0, 'people' => 0],
+                'XLSMART' => ['movement' => 0, 'people' => 0],
                 'IOH' => ['movement' => 0, 'people' => 0],
                 'TSEL' => ['movement' => 0, 'people' => 0],
                 'Total' => ['movement' => 0, 'people' => 0],
@@ -2142,8 +2142,8 @@ class DataMpdController extends Controller
             ->get();
 
         $operatorStats = [
-            'PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0],
-            'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0],
+            'PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0],
+            'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0],
         ];
 
         foreach ($opselAll as $row) {
@@ -2222,7 +2222,7 @@ class DataMpdController extends Controller
                 'total_pergerakan' => 0,
                 'total_orang' => 0,
                 'peak_days' => collect(),
-                'operator_stats' => ['PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0], 'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XL' => 0]],
+                'operator_stats' => ['PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0], 'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0]],
                 'top_5_prov_asal' => collect(),
                 'top_5_prov_tujuan' => collect(),
                 'top_3_kota_asal' => collect(),

@@ -45,7 +45,7 @@
                                     <option value="" selected disabled>Pilih Opsel</option>
                                     <option value="TSEL">TSEL</option>
                                     <option value="IOH">IOH</option>
-                                    <option value="XL">XL</option>
+                                    <option value="XLSMART">XLSMART</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">

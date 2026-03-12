@@ -78,7 +78,7 @@ class KeynoteController extends Controller
             // Periode (date range) support
             $startDate = $request->input('start_date', config('mpd.start_date', '2026-03-13'));
             $endDate = $request->input('end_date', config('mpd.end_date', '2026-03-29'));
-            $opselFilter = $request->input('opsel', ''); // '', 'TSEL', 'IOH', 'XL'
+            $opselFilter = $request->input('opsel', ''); // '', 'TSEL', 'IOH', 'XLSMART'
 
             // Validate dates
             try {
@@ -95,7 +95,7 @@ class KeynoteController extends Controller
             }
 
             // Validate opsel
-            $validOpsels = ['TSEL', 'IOH', 'XL'];
+            $validOpsels = ['TSEL', 'IOH', 'XLSMART'];
             if ($opselFilter && ! in_array($opselFilter, $validOpsels)) {
                 $opselFilter = '';
             }

@@ -218,7 +218,7 @@
 
         // Setup Opsels
         $opselsConfig = [
-            'XL' => ['name' => 'XL', 'bg_class' => 'bg-navy', 'text_class' => 'text-primary'],
+            'XLSMART' => ['name' => 'XLSMART', 'bg_class' => 'bg-navy', 'text_class' => 'text-primary'],
             'IOH' => ['name' => 'IOH', 'bg_class' => 'bg-amber', 'text_class' => 'text-warning'],
             'TSEL' => ['name' => 'TSEL', 'bg_class' => 'bg-tsel', 'text_class' => 'text-danger'],
         ];
@@ -231,8 +231,8 @@
         $totPplAll = $data['akumulasi']['total_people'] ?? 0;
 
         // Setup chart data for Section 04
-        $series04_mov = ['XL' => [], 'IOH' => [], 'TSEL' => []];
-        $series04_ppl = ['XL' => [], 'IOH' => [], 'TSEL' => []];
+        $series04_mov = ['XLSMART' => [], 'IOH' => [], 'TSEL' => []];
+        $series04_ppl = ['XLSMART' => [], 'IOH' => [], 'TSEL' => []];
 
         foreach ($dates as $d) {
             $dt = \Carbon\Carbon::parse($d)->locale('id');
@@ -246,7 +246,7 @@
             $peoplePctChart[] = $totPplAll > 0 ? round(($ppDaily / $totPplAll) * 100, 2) : 0;
 
             // Data per opsel for Section 04
-            foreach (['XL', 'IOH', 'TSEL'] as $op) {
+            foreach (['XLSMART', 'IOH', 'TSEL'] as $op) {
                 $series04_mov[$op][] = $data['daily'][$d][$op]['movement'] ?? 0;
                 $series04_ppl[$op][] = $data['daily'][$d][$op]['people'] ?? 0;
             }
@@ -342,7 +342,7 @@
                                     </div>
                                     <div class="px-3 pb-3 pt-3 mt-auto bg-white border-top">
                                         <div class="analysis-box mt-0 border-0"
-                                            style="background: rgba(42, 48, 66, 0.03); border-left: 4px solid {{ $opKey === 'XL' ? '#2a3042' : ($opKey === 'IOH' ? '#f59e0b' : '#ef4444') }} !important; border-radius: 4px; padding: 1rem;">
+                                            style="background: rgba(42, 48, 66, 0.03); border-left: 4px solid {{ $opKey === 'XLSMART' ? '#2a3042' : ($opKey === 'IOH' ? '#f59e0b' : '#ef4444') }} !important; border-radius: 4px; padding: 1rem;">
                                             <h6 class="fw-bold fs-6 mb-2 {{ $conf['text_class'] }}">
                                                 <i class="bx bx-bar-chart-alt-2 me-1"></i> Kesimpulan Analisis
                                                 ({{ $conf['name'] }})
@@ -835,7 +835,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach (['XL', 'IOH', 'TSEL'] as $op)
+                                                @foreach (['XLSMART', 'IOH', 'TSEL'] as $op)
                                                     <tr>
                                                         <td class="fw-bold text-dark" style="background-color: #f8f9fa;">
                                                             {{ $op }}</td>
@@ -866,7 +866,7 @@
                                 <div class="col-xl-3 col-lg-4">
                                     <div class="d-flex flex-column justify-content-between h-100">
                                         @php
-                                            // Specific order: TSEL, IOH, XL
+                                            // Specific order: TSEL, IOH, XLSMART
                                             $orderBoxes = [
                                                 'TSEL' => [
                                                     'Total Pergerakan<br>MPD Tsel',
@@ -878,10 +878,10 @@
                                                     '#f59e0b',
                                                     $data['totals']['IOH']['movement'] ?? 0,
                                                 ],
-                                                'XL' => [
-                                                    'Total Pergerakan<br>MPD XL',
+                                                'XLSMART' => [
+                                                    'Total Pergerakan<br>MPD XLSMART',
                                                     '#2a3042',
-                                                    $data['totals']['XL']['movement'] ?? 0,
+                                                    $data['totals']['XLSMART']['movement'] ?? 0,
                                                 ],
                                             ];
                                         @endphp
@@ -939,7 +939,7 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @foreach (['XL', 'IOH', 'TSEL'] as $op)
+                                                @foreach (['XLSMART', 'IOH', 'TSEL'] as $op)
                                                     <tr>
                                                         <td class="fw-bold text-dark" style="background-color: #f8f9fa;">
                                                             {{ $op }}</td>
@@ -970,7 +970,7 @@
                                 <div class="col-xl-3 col-lg-4">
                                     <div class="d-flex flex-column justify-content-between h-100">
                                         @php
-                                            // Specific order: TSEL, IOH, XL
+                                            // Specific order: TSEL, IOH, XLSMART
                                             $orderBoxes = [
                                                 'TSEL' => [
                                                     'Total Orang<br>MPD Tsel',
@@ -982,10 +982,10 @@
                                                     '#f59e0b',
                                                     $data['totals']['IOH']['people'] ?? 0,
                                                 ],
-                                                'XL' => [
-                                                    'Total Orang<br>MPD XL',
+                                                'XLSMART' => [
+                                                    'Total Orang<br>MPD XLSMART',
                                                     '#2a3042',
-                                                    $data['totals']['XL']['people'] ?? 0,
+                                                    $data['totals']['XLSMART']['people'] ?? 0,
                                                 ],
                                             ];
                                         @endphp
@@ -1103,11 +1103,11 @@
             const movPcts = {!! json_encode($movementPctChart) !!};
             const pplPcts = {!! json_encode($peoplePctChart) !!};
 
-            const seriesXLMov = {!! json_encode($series04_mov['XL']) !!};
+            const seriesXLMov = {!! json_encode($series04_mov['XLSMART']) !!};
             const seriesIOHMov = {!! json_encode($series04_mov['IOH']) !!};
             const seriesTSELMov = {!! json_encode($series04_mov['TSEL']) !!};
 
-            const seriesXLPpl = {!! json_encode($series04_ppl['XL']) !!};
+            const seriesXLPpl = {!! json_encode($series04_ppl['XLSMART']) !!};
             const seriesIOHPpl = {!! json_encode($series04_ppl['IOH']) !!};
             const seriesTSELPpl = {!! json_encode($series04_ppl['TSEL']) !!};
 
@@ -1234,7 +1234,7 @@
                         }
                     }
                 },
-                colors: ['#2a3042', '#f59e0b', '#ef4444'], // XL, IOH, TSEL
+                colors: ['#2a3042', '#f59e0b', '#ef4444'], // XLSMART, IOH, TSEL
                 credits: {
                     enabled: false
                 },
@@ -1461,7 +1461,7 @@
                 captureAsPNG(section, `Persandingan_Opsel_${label}_${scopeLabel}.png`, 'export-menu-04');
             };
 
-            // Export Section 01 as XLSX with 3 sheets (XL, IOH, TSEL)
+            // Export Section 01 as XLSX with 3 sheets (XLSMART, IOH, TSEL)
             window.exportSection01CSV = function() {
                 document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
 
@@ -1469,7 +1469,7 @@
                 const dates = {!! json_encode($dates) !!};
                 const dailyData = {!! json_encode($data['daily'] ?? []) !!};
                 const totalsData = {!! json_encode($data['totals'] ?? []) !!};
-                const opsels = ['XL', 'IOH', 'TSEL'];
+                const opsels = ['XLSMART', 'IOH', 'TSEL'];
 
                 // Indonesian day/month names
                 const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -1848,13 +1848,13 @@
                 const label = type === 'movement' ? 'Pergerakan' : 'Orang';
                 const dataKey = type === 'movement' ? 'movement' : 'people';
                 const grandTotal = type === 'movement' ? totalMov : totalPpl;
-                const opsels = ['XL', 'IOH', 'TSEL'];
+                const opsels = ['XLSMART', 'IOH', 'TSEL'];
 
                 const wb = XLSX.utils.book_new();
 
                 // Sheet 1: Chart Data (series values per opsel)
                 const chartRows = [];
-                chartRows.push(['Tanggal', 'XL', 'IOH', 'TSEL']);
+                chartRows.push(['Tanggal', 'XLSMART', 'IOH', 'TSEL']);
                 dates.forEach(dateStr => {
                     const row = [new Date(dateStr).getDate() + '-' + monthNames[new Date(
                             dateStr)

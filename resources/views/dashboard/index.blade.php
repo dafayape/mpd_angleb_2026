@@ -251,7 +251,7 @@
                         <option value="">Semua Operator</option>
                         <option value="TSEL">Telkomsel</option>
                         <option value="IOH">Indosat Ooredoo</option>
-                        <option value="XL">XL Axiata</option>
+                        <option value="XLSMART">XLSMART</option>
                     </select>
                 </div>
                 <div class="d-flex flex-column">
@@ -307,7 +307,7 @@
                             <p class="text-muted mb-0" style="line-height: 1.8; text-align: justify; font-size: 1.05rem;">
                                 Pemantauan pergerakan masyarakat pada periode Lebaran (Angleb) 2026 dilakukan melalui
                                 pemanfaatan <strong>Mobile Positioning Data (MPD)</strong> yang diperoleh dari tiga operator
-                                seluler utama: Telkomsel, Indosat Ooredoo Hutchison, dan XL Axiata.<br /><br />
+                                seluler utama: Telkomsel, Indosat Ooredoo Hutchison, dan XLSMART.<br /><br />
                                 Analisis ini dirancang secara khusus untuk mendukung pengambilan kebijakan dan mitigasi
                                 strategis oleh Kementerian Perhubungan dalam rangka kesiapan infrastruktur, manajemen lalu
                                 lintas, dan logistik nasional secara aktual.
@@ -950,7 +950,7 @@
             // Block 06: Opsel Donut (Nasional)
             const opselRaw = data.opsel;
             $('#nar_nas_opsel').html(opselRaw.narrative);
-            const masterColors = ['#e11d48', '#f59e0b', '#2563eb']; // Red(TSEL), Yellow(IOH), Blue(XL) - approximations
+            const masterColors = ['#e11d48', '#f59e0b', '#2563eb']; // Red(TSEL), Yellow(IOH), Blue(XLSMART) - approximations
             createPieChart('chart_opsel_orang', 'Orang (Sub)', opselRaw.orang, masterColors, satuan);
             createPieChart('chart_opsel_pergerakan', 'Pergerakan', opselRaw.pergerakan, masterColors, satuan);
 

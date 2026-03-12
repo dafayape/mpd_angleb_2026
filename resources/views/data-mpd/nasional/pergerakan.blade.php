@@ -56,7 +56,7 @@
         echo '<th rowspan="2" class="bg-light" style="min-width: 80px;">TANGGAL</th>';
         
         // Opsel Headers
-        foreach(['XL', 'IOH', 'TSEL'] as $op) {
+        foreach(['XLSMART', 'IOH', 'TSEL'] as $op) {
             echo '<th colspan="3" class="'.$bgClass.' '.$textClass.' bg-opacity-75 border-start-thick">'.$op.'</th>';
         }
         // Total Header
@@ -89,8 +89,8 @@
             echo '<tr>';
             echo '<td class="fw-bold text-start">'.$formattedDate.'</td>';
 
-            // Opsels: XL, IOH, TSEL
-            foreach(['XL', 'IOH', 'TSEL'] as $op) {
+            // Opsels: XLSMART, IOH, TSEL
+            foreach(['XLSMART', 'IOH', 'TSEL'] as $op) {
                 // Determine Data Key
                 $dataKey = $op;
                 

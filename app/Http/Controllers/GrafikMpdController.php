@@ -90,7 +90,7 @@ class GrafikMpdController extends Controller
         }
 
         // Build Opsel series (PERGERAKAN)
-        $opselMov = ['XL' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
+        $opselMov = ['XLSMART' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
         foreach ($opselDaily as $row) {
             $name = $this->normalizeOpsel($row->opsel);
             if ($name === 'OTHER') continue;
@@ -98,7 +98,7 @@ class GrafikMpdController extends Controller
         }
 
         // Build Opsel series (ORANG)
-        $opselPpl = ['XL' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
+        $opselPpl = ['XLSMART' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
         foreach ($opselDailyOrang as $row) {
             $name = $this->normalizeOpsel($row->opsel);
             if ($name === 'OTHER') continue;
@@ -127,12 +127,12 @@ class GrafikMpdController extends Controller
                 ['name' => 'FORECAST', 'data' => array_values($pplSeries['FORECAST']), 'color' => '#fec107']
             ],
             'series_opsel' => [
-                ['name' => 'XL', 'data' => array_values($opselMov['XL']), 'color' => '#2caffe'],
+                ['name' => 'XLSMART', 'data' => array_values($opselMov['XLSMART']), 'color' => '#2caffe'],
                 ['name' => 'IOH', 'data' => array_values($opselMov['IOH']), 'color' => '#fec107'],
                 ['name' => 'TSEL', 'data' => array_values($opselMov['TSEL']), 'color' => '#ff3d60']
             ],
             'series_opsel_orang' => [
-                ['name' => 'XL', 'data' => array_values($opselPpl['XL']), 'color' => '#2caffe'],
+                ['name' => 'XLSMART', 'data' => array_values($opselPpl['XLSMART']), 'color' => '#2caffe'],
                 ['name' => 'IOH', 'data' => array_values($opselPpl['IOH']), 'color' => '#fec107'],
                 ['name' => 'TSEL', 'data' => array_values($opselPpl['TSEL']), 'color' => '#ff3d60']
             ]
@@ -916,7 +916,7 @@ class GrafikMpdController extends Controller
             ->get();
 
         // Init: Intra/Inter × Pergerakan/Orang × Opsel
-        $initOpsel = fn() => ['XL' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
+        $initOpsel = fn() => ['XLSMART' => array_fill_keys($dates, 0), 'IOH' => array_fill_keys($dates, 0), 'TSEL' => array_fill_keys($dates, 0)];
         $intraMovOpsel = $initOpsel(); $intraPplOpsel = $initOpsel();
         $interMovOpsel = $initOpsel(); $interPplOpsel = $initOpsel();
 
@@ -937,15 +937,15 @@ class GrafikMpdController extends Controller
         }
 
         $formatSeries = fn($data) => [
-            ['name' => 'XL', 'data' => array_values($data['XL']), 'color' => '#2caffe'],
+            ['name' => 'XLSMART', 'data' => array_values($data['XLSMART']), 'color' => '#2caffe'],
             ['name' => 'IOH', 'data' => array_values($data['IOH']), 'color' => '#fec107'],
             ['name' => 'TSEL', 'data' => array_values($data['TSEL']), 'color' => '#ff3d60']
         ];
 
         // Combine Intra + Inter per opsel for backward-compat
-        $totalMovOpsel = ['XL' => [], 'IOH' => [], 'TSEL' => []];
-        $totalPplOpsel = ['XL' => [], 'IOH' => [], 'TSEL' => []];
-        foreach (['XL', 'IOH', 'TSEL'] as $op) {
+        $totalMovOpsel = ['XLSMART' => [], 'IOH' => [], 'TSEL' => []];
+        $totalPplOpsel = ['XLSMART' => [], 'IOH' => [], 'TSEL' => []];
+        foreach (['XLSMART', 'IOH', 'TSEL'] as $op) {
             foreach ($dates as $d) {
                 $totalMovOpsel[$op][$d] = ($intraMovOpsel[$op][$d] ?? 0) + ($interMovOpsel[$op][$d] ?? 0);
                 $totalPplOpsel[$op][$d] = ($intraPplOpsel[$op][$d] ?? 0) + ($interPplOpsel[$op][$d] ?? 0);

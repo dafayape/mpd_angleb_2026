@@ -8,7 +8,7 @@ class ValidateCsvAction
 {
     private const DELIMITER = ';';
     private const MAX_ERRORS_DISPLAYED = 50;
-    private const VALID_OPSEL = ['TSEL', 'IOH', 'XL'];
+    private const VALID_OPSEL = ['TSEL', 'IOH', 'XLSMART'];
 
     private const EXPECTED_HEADERS = [
         'TANGGAL', 'OPSEL', 'KATEGORI',

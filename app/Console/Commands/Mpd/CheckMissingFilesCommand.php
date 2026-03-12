@@ -27,7 +27,7 @@ class CheckMissingFilesCommand extends Command
 
         $mulaiTgl = Carbon::parse('2026-03-13');
         $akhirTgl = Carbon::parse(config('mpd.end_date', '2026-03-29'));
-        $opselList = ['TSEL', 'IOH', 'XL'];
+        $opselList = ['TSEL', 'IOH', 'XLSMART'];
         $kategoriList = ['REAL', 'FORECAST'];
 
         // 1. Ambil data yang sudah SUKSES di upload
