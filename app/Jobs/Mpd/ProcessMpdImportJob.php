@@ -189,6 +189,25 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 $normalizedTanggal = str_replace('/', '-', $rawTanggal);
                 $dbTanggal = date('Y-m-d', strtotime($normalizedTanggal));
 
+                // ═══════════════════════════════════════════════════════
+                // FORECAST LOGIC: Force empty Simpul & Moda if category is FORECAST
+                // ═══════════════════════════════════════════════════════
+                $originSimpulCode = $cols[11];
+                $originSimpulName = $cols[12];
+                $destSimpulCode = $cols[13];
+                $destSimpulName = $cols[14];
+                $modaCode = $cols[15];
+                $modaName = $cols[16];
+
+                if ($isForecast) {
+                    $originSimpulCode = '';
+                    $originSimpulName = '';
+                    $destSimpulCode = '';
+                    $destSimpulName = '';
+                    $modaCode = '';
+                    $modaName = '';
+                }
+
                 $batch[] = [
                     'tanggal' => $dbTanggal,
                     'opsel' => $cols[1],
@@ -201,18 +220,19 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                     'dest_provinsi' => $cols[8],
                     'kode_dest_kabupaten_kota' => $cols[9],
                     'dest_kabupaten_kota' => $cols[10],
-                    'kode_origin_simpul' => $cols[11],
-                    'origin_simpul' => $cols[12],
-                    'kode_dest_simpul' => $cols[13],
-                    'dest_simpul' => $cols[14],
-                    'kode_moda' => $cols[15],
-                    'moda' => $cols[16],
+                    'kode_origin_simpul' => $originSimpulCode,
+                    'origin_simpul' => $originSimpulName,
+                    'kode_dest_simpul' => $destSimpulCode,
+                    'dest_simpul' => $destSimpulName,
+                    'kode_moda' => $modaCode,
+                    'moda' => $modaName,
                     'total' => (int) $cols[17],
                     'is_forecast' => $isForecast,
                     'import_job_id' => $this->importJobId,
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
                 ];
+
 
                 if (count($batch) >= $batchSize) {
                     $this->upsertBatch($batch);
