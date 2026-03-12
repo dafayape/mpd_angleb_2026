@@ -84,7 +84,8 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
                 } elseif (!empty($validationResult['row_errors'])) {
                     $errorMsg = "Ditemukan " . ($validationResult['summary']['rows_with_errors'] ?? count($validationResult['row_errors'])) . " baris error pada isi CSV.\\n";
                     foreach(array_slice($validationResult['row_errors'], 0, 10) as $err) {
-                        $errorMsg .= "Baris " . $err['row'] . ": " . implode(', ', $err['issues']) . "\\n";
+                        $issueStrings = array_map(fn($i) => ($i['field'] ? $i['field'] . ': ' : '') . $i['detail'], $err['issues']);
+                        $errorMsg .= "Baris " . $err['row'] . ": " . implode(', ', $issueStrings) . "\\n";
                     }
                     if (($validationResult['summary']['rows_with_errors'] ?? 0) > 10) {
                         $errorMsg .= "...(dan error baris lainnya)\\n";
@@ -181,8 +182,13 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
                     continue;
                 }
 
+                // Normalize Date for DB (must be YYYY-MM-DD)
+                $rawTanggal = trim($cols[0]);
+                $normalizedTanggal = str_replace('/', '-', $rawTanggal);
+                $dbTanggal = date('Y-m-d', strtotime($normalizedTanggal));
+
                 $batch[] = [
-                    'tanggal' => $cols[0],
+                    'tanggal' => $dbTanggal,
                     'opsel' => $cols[1],
                     'kategori' => $cols[2],
                     'kode_origin_kabupaten_kota' => $cols[5],

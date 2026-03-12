@@ -151,7 +151,7 @@ class ValidateCsvAction
             });
             if (! empty($mismatchedTanggal)) {
                 $tanggalMismatch = [
-                    'selected' => $formattedSelectedDate,
+                    'selected' => date('d/m/Y', strtotime($selectedDate)),
                     'found_in_csv' => $csvTanggals,
                     'mismatched' => array_values($mismatchedTanggal),
                 ];
@@ -225,10 +225,11 @@ class ValidateCsvAction
             return [['field' => null, 'type' => 'COLUMN_COUNT', 'detail' => 'Diharapkan ' . self::EXPECTED_COUNT . ' kolom, ditemukan ' . count($cols)]];
         }
 
-        // ─── TANGGAL (index 0): YYYY-MM-DD ───
+        // ─── TANGGAL (index 0): YYYY-MM-DD or DD/MM/YYYY ───
         $tanggal = trim($cols[0]);
-        if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal) || ! strtotime($tanggal)) {
-            $issues[] = ['field' => 'TANGGAL', 'type' => 'INVALID_DATE', 'detail' => "Format harus YYYY-MM-DD, ditemukan: \"{$tanggal}\""];
+        $normalizedTanggal = str_replace('/', '-', $tanggal);
+        if (!strtotime($normalizedTanggal)) {
+            $issues[] = ['field' => 'TANGGAL', 'type' => 'INVALID_DATE', 'detail' => "Format tidak valid, ditemukan: \"{$tanggal}\""];
         }
 
         // ─── OPSEL (index 1): wajib, harus TSEL/IOH/XL ───
@@ -236,7 +237,7 @@ class ValidateCsvAction
         if ($opsel === '') {
             $issues[] = ['field' => 'OPSEL', 'type' => 'EMPTY_REQUIRED', 'detail' => 'OPSEL tidak boleh kosong'];
         } elseif (! in_array($opsel, self::VALID_OPSEL, true)) {
-            $issues[] = ['field' => 'OPSEL', 'type' => 'INVALID_VALUE', 'detail' => "Harus TSEL/IOH/XL, ditemukan: \"{$opsel}\""];
+            $issues[] = ['field' => 'OPSEL', 'type' => 'INVALID_VALUE', 'detail' => "Harus " . implode('/', self::VALID_OPSEL) . ", ditemukan: \"{$opsel}\""];
         }
 
         // ─── KATEGORI (index 2): wajib terisi (nilainya bebas, misal PERGERAKAN) ───
