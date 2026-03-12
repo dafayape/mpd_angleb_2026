@@ -12,6 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Background Import Job: Validates + Imports CSV → raw_mpd_data, then dispatches ETL.
@@ -51,7 +52,7 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
             return;
         }
 
-        $filePath = storage_path('app/mpd_uploads/' . $job->filename);
+        $filePath = Storage::disk('local')->path('mpd_uploads/' . $job->filename);
         if (!file_exists($filePath)) {
             $job->update([
                 'status' => 'failed',
