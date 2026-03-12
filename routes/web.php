@@ -143,11 +143,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/log-aktivitas/export', [ActivityLogController::class, 'export'])->name('log-aktivitas.export');
 
     Route::get('/devlog', [\App\Http\Controllers\DevLogController::class, 'index'])->name('devlog');
-    
-    // Log ETL
-    Route::get('/etllog', [\App\Http\Controllers\EtlLogController::class, 'index'])->name('etllog');
-    Route::get('/etllog/{id}/status', [\App\Http\Controllers\EtlLogController::class, 'status'])->name('etllog.status');
-    Route::post('/etllog/{id}/retry', [\App\Http\Controllers\EtlLogController::class, 'retry'])->name('etllog.retry');
 });
 
 Route::get('/sso-login', function (Request $request) {
