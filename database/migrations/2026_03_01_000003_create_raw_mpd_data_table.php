@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         DB::statement("
@@ -32,9 +33,9 @@ return new class extends Migration {
             ) PARTITION BY RANGE (tanggal);
         ");
 
-        DB::statement("CREATE INDEX idx_raw_mpd_data_tanggal_brin ON raw_mpd_data USING BRIN (tanggal);");
-        DB::statement("CREATE INDEX idx_raw_mpd_data_opsel ON raw_mpd_data (opsel);");
-        DB::statement("CREATE INDEX idx_raw_mpd_data_origin_dest ON raw_mpd_data (kode_origin_kabupaten_kota, kode_dest_kabupaten_kota);");
+        DB::statement('CREATE INDEX idx_raw_mpd_data_tanggal_brin ON raw_mpd_data USING BRIN (tanggal);');
+        DB::statement('CREATE INDEX idx_raw_mpd_data_opsel ON raw_mpd_data (opsel);');
+        DB::statement('CREATE INDEX idx_raw_mpd_data_origin_dest ON raw_mpd_data (kode_origin_kabupaten_kota, kode_dest_kabupaten_kota);');
     }
 
     public function down(): void

@@ -442,8 +442,13 @@ class DatasourceController extends Controller
                 return response()->json(['status' => 'completed', 'deleted' => 0]);
             }
 
+            // Simpan metadata untuk pengecekan re-ETL nanti
+            $tanggalData = $job->tanggal_data;
+            $opsel = $job->opsel;
+            $kategori = $job->kategori;
+
             // STEP 1: Hapus spatial_movements yang terkait (idempotent, aman dipanggil tiap chunk)
-            // Harus dilakukan SEBELUM raw_mpd_data dihapus, karena butuh JOIN ke raw data
+            // Harus dilakukan SEBELUM raw_mpd_data dihapus
             $this->deleteSpatialMovements($job->id);
 
             // STEP 2: Hapus data dari raw_mpd_data berdasarkan import_job_id (chunked)
@@ -469,7 +474,22 @@ class DatasourceController extends Controller
 
             $job->delete();
 
-            // STEP 3: Refresh materialized views & invalidate cache
+            // STEP 3: RE-ETL Jika Masih Ada File Lain
+            // Jika ada file lain pada tanggal/opsel/tipe yang sama, 
+            // jalankan ETL ulang supaya data spatial ter-update dengan benar (tidak hilang semua).
+            $otherJob = ImportJob::where('tanggal_data', $tanggalData)
+                ->where('opsel', $opsel)
+                ->where('kategori', $kategori)
+                ->where('id', '!=', $id)
+                ->whereIn('status', ['completed', 'completed_with_errors'])
+                ->first();
+
+            if ($otherJob) {
+                \App\Jobs\Mpd\TransformRawToSpatialJob::dispatch($otherJob->id);
+                Log::info("[Delete] Re-dispatched ETL for Job #{$otherJob->id} after deletion of Job #{$id}");
+            }
+
+            // STEP 4: Refresh materialized views & invalidate cache
             $this->refreshAfterDelete();
 
             // Catat log aktivitas
@@ -532,15 +552,16 @@ class DatasourceController extends Controller
             }
 
             $tanggalDate = \Carbon\Carbon::parse($job->tanggal_data)->format('Y-m-d');
+            $isForecast = ($job->kategori === 'FORECAST');
             
             $deleted = DB::table('spatial_movements')
                 ->where('tanggal', $tanggalDate)
                 ->where('opsel', $job->opsel)
-                ->where('kategori', $job->kategori)
+                ->where('is_forecast', $isForecast)
                 ->delete();
 
             if ($deleted > 0) {
-                Log::info("[Delete] Removed {$deleted} spatial_movements rows for import_job_id={$importJobId} (Date: {$tanggalDate}, Opsel: {$job->opsel})");
+                Log::info("[Delete] Removed {$deleted} spatial_movements rows for import_job_id={$importJobId} (Date: {$tanggalDate}, Opsel: {$job->opsel}, Forecast: {$isForecast})");
             }
         } catch (\Throwable $e) {
             Log::error("[Delete] Failed to delete spatial_movements for import_job_id={$importJobId}: ".$e->getMessage());
