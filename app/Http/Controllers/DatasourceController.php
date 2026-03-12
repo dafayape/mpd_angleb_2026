@@ -39,8 +39,8 @@ class DatasourceController extends Controller
         $filename = time().'_'.$originalFilename;
         $fileSize = $file->getSize();
 
-        $file->storeAs('mpd_uploads', $filename, 'local');
-        $fullPath = Storage::disk('local')->path('mpd_uploads/'.$filename);
+        $file->move(storage_path('app/mpd_uploads'), $filename);
+        $fullPath = storage_path('app/mpd_uploads/'.$filename);
 
         // Hitung total baris dengan cepat (tanpa membaca isi, hanya hitung newline)
         $totalRows = 0;

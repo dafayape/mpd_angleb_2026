@@ -52,7 +52,7 @@ class ProcessMpdImportJob implements ShouldQueue, ShouldBeUnique
             return;
         }
 
-        $filePath = Storage::disk('local')->path('mpd_uploads/' . $job->filename);
+        $filePath = storage_path('app/mpd_uploads/' . $job->filename);
         if (!file_exists($filePath)) {
             $job->update([
                 'status' => 'failed',
