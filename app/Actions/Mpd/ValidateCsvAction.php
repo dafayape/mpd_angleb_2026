@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 class ValidateCsvAction
 {
     private const DELIMITER = ';';
+
     private const MAX_ERRORS_DISPLAYED = 50;
 
     private const VALID_OPSEL = ['TSEL', 'IOH', 'XLSMART'];
