@@ -2261,13 +2261,13 @@ class DataMpdController extends Controller
         // Map slug -> config (sub_category values verified from ref_simpul.csv)
         // Actual categories: Bandara(empty), Pelabuhan(Laut/Penyeberangan), Stasiun(Antar Kota/Perkotaan/KCJB), Terminal(A/B)
         $map = [
-            'stasiun-ka-antar-kota' => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '14'],
-            'stasiun-ka-regional' => ['category' => 'Stasiun', 'sub_category' => 'Perkotaan',       'title' => 'Stasiun KA Regional (Perkotaan)',  'view' => 'pages.substansi._simpul-layout',  'number' => '15'],
-            'stasiun-ka-cepat' => ['category' => 'Stasiun', 'sub_category' => 'KCJB',            'title' => 'Stasiun KA Cepat (KCJB)',      'view' => 'pages.substansi._simpul-layout',  'number' => '16'],
-            'pelabuhan-penyeberangan' => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '17'],
-            'pelabuhan-laut' => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '18'],
-            'bandara' => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '19'],
-            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '20'],
+            'stasiun-ka-antar-kota' => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '14', 'kode_moda' => 'F'],
+            'stasiun-ka-regional' => ['category' => 'Stasiun', 'sub_category' => 'Perkotaan',       'title' => 'Stasiun KA Regional (Perkotaan)',  'view' => 'pages.substansi._simpul-layout',  'number' => '15', 'kode_moda' => 'G'],
+            'stasiun-ka-cepat' => ['category' => 'Stasiun', 'sub_category' => 'KCJB',            'title' => 'Stasiun KA Cepat (KCJB)',      'view' => 'pages.substansi._simpul-layout',  'number' => '16', 'kode_moda' => 'H'],
+            'pelabuhan-penyeberangan' => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '17', 'kode_moda' => 'E'],
+            'pelabuhan-laut' => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '18', 'kode_moda' => 'D'],
+            'bandara' => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '19', 'kode_moda' => 'C'],
+            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '20', 'kode_moda' => 'A'],
             'od-simpul-pelabuhan' => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '21'],
         ];
 
@@ -2278,60 +2278,61 @@ class DataMpdController extends Controller
         $cfg = $map[$slug];
         $category = $cfg['category'];
         $subCat = $cfg['sub_category'];
+        $kodeModa = $cfg['kode_moda'] ?? null;
         $cacheKey = "mpd:simpul:{$slug}:".$startDate->format('Ymd').'_'.$endDate->format('Ymd');
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $category, $subCat) {
-
-            // --- Build the base node query filter ---
-            $nodeFilter = function ($query) use ($category, $subCat) {
-                $query->where('category', $category);
-                if ($subCat) {
-                    $query->where('sub_category', $subCat);
-                }
-            };
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $category, $subCat, $kodeModa) {
 
             // TOP 10 ORIGIN (Asal)
             $topOrigin = DB::table('spatial_movements as sm')
-                ->join('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
-                ->select('n.code', 'n.name', DB::raw('SUM(sm.total) as total_volume'))
+                ->leftJoin('ref_transport_nodes as n', 'sm.kode_origin_simpul', '=', 'n.code')
+                ->select(DB::raw('COALESCE(n.code, sm.kode_origin_simpul) as code'), DB::raw('COALESCE(n.name, sm.kode_origin_simpul) as name'), DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
                 ->where('sm.is_forecast', false)
-                ->where(function ($q) use ($category, $subCat) {
-                    $q->where('n.category', $category);
-                    if ($subCat) {
-                        $q->where('n.sub_category', $subCat);
+                ->where('sm.kode_origin_simpul', '!=', '')
+                ->where(function ($q) use ($category, $subCat, $kodeModa) {
+                    if ($kodeModa) {
+                        $q->where('sm.kode_moda', $kodeModa);
+                    } else {
+                        $q->where('n.category', $category);
+                        if ($subCat) {
+                            $q->where('n.sub_category', $subCat);
+                        }
                     }
                 })
-                ->where('sm.kode_origin_simpul', '!=', '')
-                ->groupBy('n.code', 'n.name')
+                ->groupBy('code', 'name')
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
 
             // TOP 10 DESTINATION (Tujuan)
             $topDest = DB::table('spatial_movements as sm')
-                ->join('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
-                ->select('n.code', 'n.name', DB::raw('SUM(sm.total) as total_volume'))
+                ->leftJoin('ref_transport_nodes as n', 'sm.kode_dest_simpul', '=', 'n.code')
+                ->select(DB::raw('COALESCE(n.code, sm.kode_dest_simpul) as code'), DB::raw('COALESCE(n.name, sm.kode_dest_simpul) as name'), DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
                 ->where('sm.is_forecast', false)
-                ->where(function ($q) use ($category, $subCat) {
-                    $q->where('n.category', $category);
-                    if ($subCat) {
-                        $q->where('n.sub_category', $subCat);
+                ->where('sm.kode_dest_simpul', '!=', '')
+                ->where(function ($q) use ($category, $subCat, $kodeModa) {
+                    if ($kodeModa) {
+                        $q->where('sm.kode_moda', $kodeModa);
+                    } else {
+                        $q->where('n.category', $category);
+                        if ($subCat) {
+                            $q->where('n.sub_category', $subCat);
+                        }
                     }
                 })
-                ->where('sm.kode_dest_simpul', '!=', '')
-                ->groupBy('n.code', 'n.name')
+                ->groupBy('code', 'name')
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
 
             // TOP 10 O-D PAIRS
             $topOd = DB::table('spatial_movements as sm')
-                ->join('ref_transport_nodes as o', 'sm.kode_origin_simpul', '=', 'o.code')
-                ->join('ref_transport_nodes as d', 'sm.kode_dest_simpul', '=', 'd.code')
+                ->leftJoin('ref_transport_nodes as o', 'sm.kode_origin_simpul', '=', 'o.code')
+                ->leftJoin('ref_transport_nodes as d', 'sm.kode_dest_simpul', '=', 'd.code')
                 ->select(
                     DB::raw("CONCAT(COALESCE(o.name, sm.kode_origin_simpul), ' - ', COALESCE(d.name, sm.kode_dest_simpul)) as od_name"),
                     DB::raw('SUM(sm.total) as total_volume')
@@ -2339,18 +2340,23 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
                 ->where('sm.is_forecast', false)
-                ->where(function ($q) use ($category, $subCat) {
-                    $q->where('o.category', $category);
-                    if ($subCat) {
-                        $q->where('o.sub_category', $subCat);
-                    }
-                })
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->where('sm.kode_dest_simpul', '!=', '')
+                ->where(function ($q) use ($category, $subCat, $kodeModa) {
+                    if ($kodeModa) {
+                        $q->where('sm.kode_moda', $kodeModa);
+                    } else {
+                        $q->where('o.category', $category);
+                        if ($subCat) {
+                            $q->where('o.sub_category', $subCat);
+                        }
+                    }
+                })
                 ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
+
 
             // Calculate totals for percentage
             $totalOrigin = $topOrigin->sum('total_volume');
