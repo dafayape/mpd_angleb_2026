@@ -2301,7 +2301,7 @@ class DataMpdController extends Controller
                         }
                     }
                 })
-                ->groupBy('code', 'name')
+                ->groupBy('n.code', 'n.name', 'sm.kode_origin_simpul')
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
@@ -2324,7 +2324,7 @@ class DataMpdController extends Controller
                         }
                     }
                 })
-                ->groupBy('code', 'name')
+                ->groupBy('n.code', 'n.name', 'sm.kode_dest_simpul')
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
@@ -2353,6 +2353,7 @@ class DataMpdController extends Controller
                     }
                 })
                 ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
+
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
