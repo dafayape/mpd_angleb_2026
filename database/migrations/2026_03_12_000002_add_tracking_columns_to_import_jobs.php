@@ -17,12 +17,24 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('import_jobs', function (Blueprint $table) {
-            $table->bigInteger('file_size')->default(0)->after('metadata');
-            $table->string('status_file', 20)->default('pending')->after('file_size');
-            $table->string('status_etl', 20)->default('pending')->after('status_file');
-            $table->integer('etl_progress')->default(0)->after('status_etl');
-            $table->integer('skipped_rows')->default(0)->after('processed_rows');
-            $table->integer('data_lost')->default(0)->after('skipped_rows');
+            if (!Schema::hasColumn('import_jobs', 'file_size')) {
+                $table->bigInteger('file_size')->default(0)->after('metadata');
+            }
+            if (!Schema::hasColumn('import_jobs', 'status_file')) {
+                $table->string('status_file', 20)->default('pending')->after('file_size');
+            }
+            if (!Schema::hasColumn('import_jobs', 'status_etl')) {
+                $table->string('status_etl', 20)->default('pending')->after('status_file');
+            }
+            if (!Schema::hasColumn('import_jobs', 'etl_progress')) {
+                $table->integer('etl_progress')->default(0)->after('status_etl');
+            }
+            if (!Schema::hasColumn('import_jobs', 'skipped_rows')) {
+                $table->integer('skipped_rows')->default(0)->after('processed_rows');
+            }
+            if (!Schema::hasColumn('import_jobs', 'data_lost')) {
+                $table->integer('data_lost')->default(0)->after('skipped_rows');
+            }
         });
     }
 
