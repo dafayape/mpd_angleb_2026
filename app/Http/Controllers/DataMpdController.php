@@ -128,35 +128,7 @@ class DataMpdController extends Controller
             \Illuminate\Support\Facades\Log::error('Jabodetabek Intra Pergerakan DB Error: '.$e->getMessage());
         }
 
-        // 🚀 INTERPOLASI BATCH (Mengakali Data '0' karena hilang/gagal upload)
-        $kats = ['pergerakan', 'orang'];
-        foreach ($kats as $kat) {
-            // Forward Pass
-            $prevVals = [];
-            foreach ($dateKeys as $date) {
-                foreach ($opsels as $op) {
-                    $vol = $result[$date][$op][$kat] ?? 0;
-                    if ($vol == 0 && isset($prevVals[$op])) {
-                        $result[$date][$op][$kat] = $prevVals[$op];
-                    } elseif ($vol > 0) {
-                        $prevVals[$op] = $vol;
-                    }
-                }
-            }
-            // Backward Pass
-            $nextVals = [];
-            $reversedDates = array_reverse($dateKeys);
-            foreach ($reversedDates as $date) {
-                foreach ($opsels as $op) {
-                    $vol = $result[$date][$op][$kat] ?? 0;
-                    if ($vol == 0 && isset($nextVals[$op])) {
-                        $result[$date][$op][$kat] = $nextVals[$op];
-                    } elseif ($vol > 0) {
-                        $nextVals[$op] = $vol;
-                    }
-                }
-            }
-        }
+
 
         // Calculate Totals and Percentages
         $totals = [];
@@ -509,35 +481,7 @@ class DataMpdController extends Controller
             \Illuminate\Support\Facades\Log::error('Jabodetabek Inter Pergerakan DB Error: '.$e->getMessage());
         }
 
-        // 🚀 INTERPOLASI BATCH (Mengakali Data '0' karena hilang/gagal upload)
-        $kats = ['pergerakan', 'orang'];
-        foreach ($kats as $kat) {
-            // Forward Pass
-            $prevVals = [];
-            foreach ($dateKeys as $date) {
-                foreach ($opsels as $op) {
-                    $vol = $result[$date][$op][$kat] ?? 0;
-                    if ($vol == 0 && isset($prevVals[$op])) {
-                        $result[$date][$op][$kat] = $prevVals[$op];
-                    } elseif ($vol > 0) {
-                        $prevVals[$op] = $vol;
-                    }
-                }
-            }
-            // Backward Pass
-            $nextVals = [];
-            $reversedDates = array_reverse($dateKeys);
-            foreach ($reversedDates as $date) {
-                foreach ($opsels as $op) {
-                    $vol = $result[$date][$op][$kat] ?? 0;
-                    if ($vol == 0 && isset($nextVals[$op])) {
-                        $result[$date][$op][$kat] = $nextVals[$op];
-                    } elseif ($vol > 0) {
-                        $nextVals[$op] = $vol;
-                    }
-                }
-            }
-        }
+
 
         $totals = [];
         foreach ($opsels as $opsel) {
@@ -1541,36 +1485,7 @@ class DataMpdController extends Controller
             \Illuminate\Support\Facades\Log::error('Pergerakan Tables Error: '.$e->getMessage());
         }
 
-        // 🚀 INTERPOLASI BATCH (Mengakali Data '0' karena hilang/gagal upload)
-        foreach ($types as $type) {
-            $prevVals = [];
-            // Forward Pass
-            foreach ($dateKeys as $date) {
-                foreach ($opsels as $op) {
-                    $vol = $temp[$type][$date][$op] ?? 0;
-                    if ($vol == 0 && isset($prevVals[$op])) {
-                        $temp[$type][$date][$op] = $prevVals[$op];
-                        $opselTotals[$type][$op] += $prevVals[$op]; // Sinkronkan ke grand total
-                    } elseif ($vol > 0) {
-                        $prevVals[$op] = $vol;
-                    }
-                }
-            }
-            // Backward Pass
-            $nextVals = [];
-            $reversedDates = array_reverse($dateKeys);
-            foreach ($reversedDates as $date) {
-                foreach ($opsels as $op) {
-                    $vol = $temp[$type][$date][$op] ?? 0;
-                    if ($vol == 0 && isset($nextVals[$op])) {
-                        $temp[$type][$date][$op] = $nextVals[$op];
-                        $opselTotals[$type][$op] += $nextVals[$op];
-                    } elseif ($vol > 0) {
-                        $nextVals[$op] = $vol;
-                    }
-                }
-            }
-        }
+
 
         // Process Final Structure
         $final = [
