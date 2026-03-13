@@ -219,7 +219,6 @@
 
         foreach ($dates as $d) {
             $dt = \Carbon\Carbon::parse($d)->locale('id');
-            // e.g "Kamis 18\nDesember 2025" -> we map to array for ApexCharts line breaks
             $datesArrForChart[] = [$dt->isoFormat('dddd D'), $dt->isoFormat('MMMM YYYY')];
 
             $mdDaily = $data['akumulasi']['daily'][$d]['movement'] ?? 0;
@@ -236,7 +235,8 @@
         }
     @endphp
 
-    <div class="row mb-5 pb-4" data-aos="fade-up" data-aos-duration="600">
+    <!-- 01 PERSANDINGAN OPSEL -->
+    <div class="row mb-4" data-aos="fade-up" data-aos-duration="600">
         <div class="col-12">
             <div class="card content-card w-100 flex-column" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
                 <div class="card-header d-flex align-items-center bg-white"
@@ -340,7 +340,9 @@
                                                     Pada rentang waktu ini, belum terdapat rekaman observasi pergerakan
                                                     yang valid secara menyeluruh untuk operator {{ $conf['name'] }}.
                                                 @else
-                                                    Berdasarkan akumulasi tanggal 13 - {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}, total pergerakan
+                                                    Berdasarkan akumulasi tanggal 13 -
+                                                    {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }},
+                                                    total pergerakan
                                                     yang terekam oleh <strong>{{ $conf['name'] }}</strong> adalah
                                                     <strong>{{ fmtNumJab($totMov) }}</strong>, mencakup
                                                     <strong>{{ fmtNumJab($totPpl) }}</strong> target orang.
@@ -529,7 +531,9 @@
                                     style="font-size: 0.95rem; line-height: 1.6; padding-left: 2rem;">
                                     <li class="mb-2"><strong>Jumlah <em>unique subscriber</em></strong> yang
                                         melakukan pergerakan pada Periode Angkutan Lebaran 2026 di wilayah
-                                        <strong>Jabodetabek</strong> pada tanggal 13 - {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }} (realisasi) sebanyak
+                                        <strong>Jabodetabek</strong> pada tanggal 13 -
+                                        {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}
+                                        (realisasi) sebanyak
                                         <strong>{{ fmtNumJab($data['akumulasi']['unique_subscriber']) }}
                                             orang.</strong>
                                     </li>
@@ -551,876 +555,857 @@
                     </div>
                 </div>
 
-                <!-- 03 PERGERAKAN HARIAN TOTAL -->
-                <div class="row mt-4 mb-5" data-aos="fade-up" data-aos-delay="200">
-                    <div class="col-12">
-                        <div class="card content-card w-100 flex-column"
-                            style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
-                            <div class="card-header d-flex align-items-center bg-white"
-                                style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                                <span class="section-badge">03</span>
-                                <h5 class="fw-bold text-navy mb-0">Pergerakan Harian Total (Pergerakan per hari dan orang
-                                    per hari)
-                                    Inter Jabodetabek
-                                </h5>
-                                <div class="export-dropdown ms-auto">
-                                    <button class="export-btn" onclick="toggleExportMenu('export-menu-int03')">
-                                        <i class="bx bx-download"></i> Export
-                                    </button>
-                                    <div class="export-menu" id="export-menu-int03">
-                                        <button class="export-menu-item" onclick="exportInt03CSV()">
-                                            <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-body bg-white" id="section-int03-content" style="padding: 2.5rem 1.5rem;">
+            </div>
+        </div>
+    </div>
 
-                                <!-- BLOCK 1: PERGERAKAN PER HARI -->
-                                <div class="position-relative border rounded p-3 mb-5"
-                                    style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
-                                    <div class="chart-title-badge">PERGERAKAN PER HARI</div>
-
-                                    <div id="chart-movement" style="min-height: 250px; margin-top: 20px;"></div>
-
-                                    <div class="row mt-3 g-0">
-                                        <div class="col-xl-9 col-lg-8 pe-2">
-                                            <div class="table-responsive">
-                                                <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 1300px;">
-                                                    <thead>
-                                                        <tr>
-                                                            <th rowspan="2" class="align-middle"
-                                                                style="background-color: #2a3042; width: 80px;">Tanggal
-                                                            </th>
-                                                            @foreach ($dates as $d)
-                                                                <th style="background-color: #486284;">
-                                                                    <div style="font-size: 0.75rem;">
-                                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</div>
-                                                                </th>
-                                                            @endforeach
-                                                            <th rowspan="2" class="align-middle"
-                                                                style="background-color: #2a3042; width: 100px;">Total</th>
-                                                        </tr>
-                                                        <tr>
-                                                            @foreach ($dates as $i => $d)
-                                                                <th style="background-color: #5a7395; font-size: 0.7rem;">
-                                                                    H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}
-                                                                </th>
-                                                            @endforeach
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td class="fw-bold text-dark"
-                                                                style="background-color: #f8f9fa;">Jumlah
-                                                            </td>
-                                                            @foreach ($dates as $d)
-                                                                <td class="fw-bold text-dark">
-                                                                    {{ fmtNumJab($data['akumulasi']['daily'][$d]['movement'] ?? 0) }}
-                                                                </td>
-                                                            @endforeach
-                                                            <td class="fw-bold text-dark" style="font-size:0.9rem;">
-                                                                {{ fmtNumJab($totMovAll) }}</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="col-xl-3 col-lg-4">
-                                            <div class="summary-box-03 border border-dark border-2 rounded">
-                                                <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
-                                                    Total pergerakan pada periode<br>
-                                                    <strong>13 Maret 2026 s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong> mencapai<br>
-                                                    <span class="highlight text-dark"
-                                                        style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNumJab($totMovAll) }}
-                                                        Pergerakan</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- BLOCK 2: ORANG PER HARI -->
-                                <div class="position-relative border rounded p-3 mt-4"
-                                    style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
-                                    <div class="chart-title-badge">ORANG PER HARI</div>
-
-                                    <div id="chart-people" style="min-height: 250px; margin-top: 20px;"></div>
-
-                                    <div class="row mt-3 g-0">
-                                        <div class="col-xl-9 col-lg-8 pe-2">
-                                            <div class="table-responsive">
-                                                <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 1300px;">
-                                                    <thead>
-                                                        <tr>
-                                                            <th rowspan="2" class="align-middle"
-                                                                style="background-color: #2a3042; width: 80px;">Tanggal
-                                                            </th>
-                                                            @foreach ($dates as $d)
-                                                                <th style="background-color: #1e6082;">
-                                                                    <div style="font-size: 0.75rem;">
-                                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</div>
-                                                                </th>
-                                                            @endforeach
-                                                            <th rowspan="2" class="align-middle"
-                                                                style="background-color: #2a3042; width: 100px;">Total</th>
-                                                        </tr>
-                                                        <tr>
-                                                            @foreach ($dates as $i => $d)
-                                                                <th style="background-color: #29769e; font-size: 0.7rem;">
-                                                                    H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}
-                                                                </th>
-                                                            @endforeach
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td class="fw-bold text-dark"
-                                                                style="background-color: #f8f9fa;">Jumlah
-                                                            </td>
-                                                            @foreach ($dates as $d)
-                                                                <td class="fw-bold text-dark">
-                                                                    {{ fmtNumJab($data['akumulasi']['daily'][$d]['people'] ?? 0) }}
-                                                                </td>
-                                                            @endforeach
-                                                            <td class="fw-bold text-dark" style="font-size:0.9rem;">
-                                                                {{ fmtNumJab($totPplAll) }}</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="col-xl-3 col-lg-4">
-                                            <div class="summary-box-03 border border-dark border-2 rounded">
-                                                <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
-                                                    Total orang pada periode<br>
-                                                    <strong>13 Maret 2026 s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong> mencapai<br>
-                                                    <span class="highlight text-dark"
-                                                        style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNumJab($totPplAll) }}
-                                                        Orang</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
+    <!-- 03 PERGERAKAN HARIAN TOTAL -->
+    <div class="row mt-4 mb-5" data-aos="fade-up" data-aos-delay="200">
+        <div class="col-12">
+            <div class="card content-card w-100 flex-column" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                <div class="card-header d-flex align-items-center bg-white"
+                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span class="section-badge">03</span>
+                    <h5 class="fw-bold text-navy mb-0">Pergerakan Harian Total (Pergerakan per hari dan orang per hari)
+                        Inter Jabodetabek
+                    </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-int03')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-int03">
+                            <button class="export-menu-item" onclick="exportInt03CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
+                            </button>
                         </div>
                     </div>
                 </div>
+                <div class="card-body bg-white" id="section-int03-content" style="padding: 2.5rem 1.5rem;">
 
-                <!-- 04 PERSANDINGAN PERGERAKAN OPSEL -->
-                <div class="row mt-4 mb-5" data-aos="fade-up" data-aos-delay="300">
-                    <div class="col-12">
-                        <div class="card content-card w-100 flex-column"
-                            style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
-                            <div class="card-header d-flex align-items-center bg-white"
-                                style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
-                                <span class="section-badge">04</span>
-                                <h5 class="fw-bold text-navy mb-0">Persandingan pergerakan harian total berdasarkan
-                                    masing-masing opsel
-                                    (Pergerakan per hari dan orang per hari) Inter Jabodetabek
-                                </h5>
-                                <div class="export-dropdown ms-auto">
-                                    <button class="export-btn" onclick="toggleExportMenu('export-menu-int04')">
-                                        <i class="bx bx-download"></i> Export
-                                    </button>
-                                    <div class="export-menu" id="export-menu-int04">
-                                        <button class="export-menu-item" onclick="exportInt04CSV()">
-                                            <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
-                                        </button>
-                                    </div>
+                    <!-- BLOCK 1: PERGERAKAN PER HARI -->
+                    <div class="position-relative border rounded p-3 mb-5"
+                        style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
+                        <div class="chart-title-badge">PERGERAKAN PER HARI</div>
+
+                        <div id="chart-movement" style="min-height: 250px; margin-top: 20px;"></div>
+
+                        <div class="row mt-3 g-0">
+                            <div class="col-xl-9 col-lg-8 pe-2">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0 table-03 text-center align-middle"
+                                        style="min-width: 1300px;">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2" class="align-middle"
+                                                    style="background-color: #2a3042; width: 80px;">Tanggal</th>
+                                                @foreach ($dates as $d)
+                                                    <th style="background-color: #486284;">
+                                                        <div style="font-size: 0.75rem;">{!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</div>
+                                                    </th>
+                                                @endforeach
+                                                <th rowspan="2" class="align-middle"
+                                                    style="background-color: #2a3042; width: 100px;">Total</th>
+                                            </tr>
+                                            <tr>
+                                                @foreach ($dates as $i => $d)
+                                                    <th style="background-color: #5a7395; font-size: 0.7rem;">
+                                                        H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="fw-bold text-dark" style="background-color: #f8f9fa;">Jumlah
+                                                </td>
+                                                @foreach ($dates as $d)
+                                                    <td class="fw-bold text-dark">
+                                                        {{ fmtNumJab($data['akumulasi']['daily'][$d]['movement'] ?? 0) }}
+                                                    </td>
+                                                @endforeach
+                                                <td class="fw-bold text-dark" style="font-size:0.9rem;">
+                                                    {{ fmtNumJab($totMovAll) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <div class="card-body bg-white" id="section-int04-content" style="padding: 2.5rem 1.5rem;">
-
-                                <!-- BLOCK 1: PERGERAKAN PER HARI -->
-                                <div class="position-relative border rounded p-3 mb-5"
-                                    style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
-                                    <div class="chart-title-badge">PERGERAKAN PER HARI</div>
-
-                                    <div id="chart-movement-04" style="min-height: 250px; margin-top: 20px;"></div>
-
-                                    <div class="row mt-3 g-0">
-                                        <div class="col-xl-9 col-lg-8 pe-2">
-                                            <div class="table-responsive">
-                                                <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 1400px;">
-                                                    <thead>
-                                                        <tr>
-                                                            <th rowspan="2" class="align-middle text-white"
-                                                                style="background-color: #2a3042; width: 80px;">Tanggal
-                                                            </th>
-                                                            @foreach ($dates as $i => $d)
-                                                                <th style="background-color: #486284; color: white;">
-                                                                    <div style="font-size: 0.75rem;">
-                                                                        H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}
-                                                                    </div>
-                                                                </th>
-                                                            @endforeach
-                                                            <th rowspan="2" class="align-middle text-white"
-                                                                style="background-color: #2a3042; width: 100px;">Total</th>
-                                                        </tr>
-                                                        <tr>
-                                                            @foreach ($dates as $d)
-                                                                <th
-                                                                    style="background-color: #5a7395; color: white; font-size: 0.7rem;">
-                                                                    {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-<br>MMM-YY') !!}</th>
-                                                            @endforeach
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach (['XLSMART', 'IOH', 'TSEL'] as $op)
-                                                            <tr>
-                                                                <td class="fw-bold text-dark"
-                                                                    style="background-color: #ffffff;">
-                                                                    {{ $op }}</td>
-                                                                @foreach ($dates as $d)
-                                                                    <td class="text-dark"
-                                                                        style="background-color: #ffffff;">
-                                                                        {{ fmtNumJab($data['daily'][$d][$op]['pergerakan'] ?? 0) }}
-                                                                    </td>
-                                                                @endforeach
-                                                                <td class="fw-bold text-dark"
-                                                                    style="font-size:0.9rem; background-color: #ffffff;">
-                                                                    {{ fmtNumJab($data['totals'][$op]['pergerakan'] ?? 0) }}
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
-                                                        <tr>
-                                                            <td class="fw-bold text-dark"
-                                                                style="background-color: #e0e0e0;">TOTAL
-                                                            </td>
-                                                            @foreach ($dates as $d)
-                                                                <td class="fw-bold text-dark"
-                                                                    style="background-color: #e0e0e0;">
-                                                                    {{ fmtNumJab($data['akumulasi']['daily'][$d]['movement'] ?? 0) }}
-                                                                </td>
-                                                            @endforeach
-                                                            <td class="fw-bold text-dark"
-                                                                style="background-color: #e0e0e0; font-size:0.9rem;">
-                                                                {{ fmtNumJab($totMovAll) }}</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="col-xl-3 col-lg-4">
-                                            <div class="d-flex flex-column justify-content-between h-100">
-                                                @php
-                                                    // Specific order: TSEL, IOH, XLSMART
-                                                    $orderBoxes = [
-                                                        'TSEL' => [
-                                                            'Total Pergerakan<br>MPD Tsel',
-                                                            '#ef4444',
-                                                            $data['totals']['TSEL']['pergerakan'] ?? 0,
-                                                        ],
-                                                        'IOH' => [
-                                                            'Total Pergerakan<br>MPD IOH',
-                                                            '#f59e0b',
-                                                            $data['totals']['IOH']['pergerakan'] ?? 0,
-                                                        ],
-                                                        'XLSMART' => [
-                                                            'Total Pergerakan<br>MPD XLSMART',
-                                                            '#2a3042',
-                                                            $data['totals']['XLSMART']['pergerakan'] ?? 0,
-                                                        ],
-                                                    ];
-                                                @endphp
-                                                @foreach ($orderBoxes as $idx => $box)
-                                                    <div
-                                                        class="summary-box-03 border border-dark border-2 rounded mb-2 py-2">
-                                                        <div style="font-size: 0.85rem; line-height: 1.3; color: #333;">
-                                                            {!! $box[0] !!}<br>
-                                                            <span class="highlight d-inline-block mt-1"
-                                                                style="color: {{ $box[1] }}; background-color: #fef08a !important; padding: 4px 12px; font-size: 1.15rem; font-weight: 800; border-radius: 4px;">{{ number_format($box[2] / 1000000, 2, ',', '.') }}
-                                                                Juta</span>
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
+                            <div class="col-xl-3 col-lg-4">
+                                <div class="summary-box-03 border border-dark border-2 rounded">
+                                    <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
+                                        Total pergerakan pada periode<br>
+                                        <strong>13 Maret 2026 s/d
+                                            {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong>
+                                        mencapai<br>
+                                        <span class="highlight text-dark"
+                                            style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNumJab($totMovAll) }}
+                                            Pergerakan</span>
                                     </div>
                                 </div>
-
-                                <!-- BLOCK 2: ORANG PER HARI -->
-                                <div class="position-relative border rounded p-3 mt-4"
-                                    style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
-                                    <div class="chart-title-badge">ORANG PER HARI</div>
-
-                                    <div id="chart-people-04" style="min-height: 250px; margin-top: 20px;"></div>
-
-                                    <div class="row mt-3 g-0">
-                                        <div class="col-xl-9 col-lg-8 pe-2">
-                                            <div class="table-responsive">
-                                                <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 1400px;">
-                                                    <thead>
-                                                        <tr>
-                                                            <th rowspan="2" class="align-middle text-white"
-                                                                style="background-color: #2a3042; width: 80px;">Tanggal
-                                                            </th>
-                                                            @foreach ($dates as $i => $d)
-                                                                <th style="background-color: #1e6082; color: white;">
-                                                                    <div style="font-size: 0.75rem;">
-                                                                        H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}
-                                                                    </div>
-                                                                </th>
-                                                            @endforeach
-                                                            <th rowspan="2" class="align-middle text-white"
-                                                                style="background-color: #2a3042; width: 100px;">Total</th>
-                                                        </tr>
-                                                        <tr>
-                                                            @foreach ($dates as $d)
-                                                                <th
-                                                                    style="background-color: #29769e; color: white; font-size: 0.7rem;">
-                                                                    {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-<br>MMM-YY') !!}</th>
-                                                            @endforeach
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach (['XLSMART', 'IOH', 'TSEL'] as $op)
-                                                            <tr>
-                                                                <td class="fw-bold text-dark"
-                                                                    style="background-color: #ffffff;">
-                                                                    {{ $op }}</td>
-                                                                @foreach ($dates as $d)
-                                                                    <td class="text-dark"
-                                                                        style="background-color: #ffffff;">
-                                                                        {{ fmtNumJab($data['daily'][$d][$op]['orang'] ?? 0) }}
-                                                                    </td>
-                                                                @endforeach
-                                                                <td class="fw-bold text-dark"
-                                                                    style="font-size:0.9rem; background-color: #ffffff;">
-                                                                    {{ fmtNumJab($data['totals'][$op]['orang'] ?? 0) }}
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
-                                                        <tr>
-                                                            <td class="fw-bold text-dark"
-                                                                style="background-color: #e0e0e0;">TOTAL
-                                                            </td>
-                                                            @foreach ($dates as $d)
-                                                                <td class="fw-bold text-dark"
-                                                                    style="background-color: #e0e0e0;">
-                                                                    {{ fmtNumJab($data['akumulasi']['daily'][$d]['people'] ?? 0) }}
-                                                                </td>
-                                                            @endforeach
-                                                            <td class="fw-bold text-dark"
-                                                                style="background-color: #e0e0e0; font-size:0.9rem;">
-                                                                {{ fmtNumJab($totPplAll) }}</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="col-xl-3 col-lg-4">
-                                            <div class="d-flex flex-column justify-content-between h-100">
-                                                @php
-                                                    // Specific order: TSEL, IOH, XLSMART
-                                                    $orderBoxes = [
-                                                        'TSEL' => [
-                                                            'Total Orang<br>MPD Tsel',
-                                                            '#ef4444',
-                                                            $data['totals']['TSEL']['orang'] ?? 0,
-                                                        ],
-                                                        'IOH' => [
-                                                            'Total Orang<br>MPD IOH',
-                                                            '#f59e0b',
-                                                            $data['totals']['IOH']['orang'] ?? 0,
-                                                        ],
-                                                        'XLSMART' => [
-                                                            'Total Orang<br>MPD XLSMART',
-                                                            '#2a3042',
-                                                            $data['totals']['XLSMART']['orang'] ?? 0,
-                                                        ],
-                                                    ];
-                                                @endphp
-                                                @foreach ($orderBoxes as $idx => $box)
-                                                    <div
-                                                        class="summary-box-03 border border-dark border-2 rounded mb-2 py-2">
-                                                        <div style="font-size: 0.85rem; line-height: 1.3; color: #333;">
-                                                            {!! $box[0] !!}<br>
-                                                            <span class="highlight d-inline-block mt-1"
-                                                                style="color: {{ $box[1] }}; background-color: #fef08a !important; padding: 4px 12px; font-size: 1.15rem; font-weight: 800; border-radius: 4px;">{{ number_format($box[2] / 1000000, 2, ',', '.') }}
-                                                                Juta Orang</span>
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                             </div>
                         </div>
                     </div>
+
+                    <!-- BLOCK 2: ORANG PER HARI -->
+                    <div class="position-relative border rounded p-3 mt-4"
+                        style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
+                        <div class="chart-title-badge">ORANG PER HARI</div>
+
+                        <div id="chart-people" style="min-height: 250px; margin-top: 20px;"></div>
+
+                        <div class="row mt-3 g-0">
+                            <div class="col-xl-9 col-lg-8 pe-2">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0 table-03 text-center align-middle"
+                                        style="min-width: 1300px;">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2" class="align-middle"
+                                                    style="background-color: #2a3042; width: 80px;">Tanggal</th>
+                                                @foreach ($dates as $d)
+                                                    <th style="background-color: #1e6082;">
+                                                        <div style="font-size: 0.75rem;">{!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-MMM-YY') !!}</div>
+                                                    </th>
+                                                @endforeach
+                                                <th rowspan="2" class="align-middle"
+                                                    style="background-color: #2a3042; width: 100px;">Total</th>
+                                            </tr>
+                                            <tr>
+                                                @foreach ($dates as $i => $d)
+                                                    <th style="background-color: #29769e; font-size: 0.7rem;">
+                                                        H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td class="fw-bold text-dark" style="background-color: #f8f9fa;">Jumlah
+                                                </td>
+                                                @foreach ($dates as $d)
+                                                    <td class="fw-bold text-dark">
+                                                        {{ fmtNumJab($data['akumulasi']['daily'][$d]['people'] ?? 0) }}
+                                                    </td>
+                                                @endforeach
+                                                <td class="fw-bold text-dark" style="font-size:0.9rem;">
+                                                    {{ fmtNumJab($totPplAll) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-4">
+                                <div class="summary-box-03 border border-dark border-2 rounded">
+                                    <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
+                                        Total orang pada periode<br>
+                                        <strong>13 Maret 2026 s/d
+                                            {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong>
+                                        mencapai<br>
+                                        <span class="highlight text-dark"
+                                            style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNumJab($totPplAll) }}
+                                            Orang</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
-            @endsection
+            </div>
+        </div>
+    </div>
 
-            @push('scripts')
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
-                <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-                <script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        if (typeof AOS !== 'undefined') {
-                            AOS.init({
-                                once: true,
-                                offset: 50,
-                                duration: 600
-                            });
+    <!-- 04 PERSANDINGAN PERGERAKAN OPSEL -->
+    <div class="row mt-4 mb-5" data-aos="fade-up" data-aos-delay="300">
+        <div class="col-12">
+            <div class="card content-card w-100 flex-column" style="box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);">
+                <div class="card-header d-flex align-items-center bg-white"
+                    style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
+                    <span class="section-badge">04</span>
+                    <h5 class="fw-bold text-navy mb-0">Persandingan pergerakan harian total berdasarkan masing-masing opsel
+                        (Pergerakan per hari dan orang per hari) Inter Jabodetabek
+                    </h5>
+                    <div class="export-dropdown ms-auto">
+                        <button class="export-btn" onclick="toggleExportMenu('export-menu-int04')">
+                            <i class="bx bx-download"></i> Export
+                        </button>
+                        <div class="export-menu" id="export-menu-int04">
+                            <button class="export-menu-item" onclick="exportInt04CSV()">
+                                <i class="bx bx-spreadsheet text-success"></i> Download CSV (XLSX)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body bg-white" id="section-int04-content" style="padding: 2.5rem 1.5rem;">
+
+                    <!-- BLOCK 1: PERGERAKAN PER HARI -->
+                    <div class="position-relative border rounded p-3 mb-5"
+                        style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
+                        <div class="chart-title-badge">PERGERAKAN PER HARI</div>
+
+                        <div id="chart-movement-04" style="min-height: 250px; margin-top: 20px;"></div>
+
+                        <div class="row mt-3 g-0">
+                            <div class="col-xl-9 col-lg-8 pe-2">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0 table-03 text-center align-middle"
+                                        style="min-width: 1400px;">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2" class="align-middle text-white"
+                                                    style="background-color: #2a3042; width: 80px;">Tanggal</th>
+                                                @foreach ($dates as $i => $d)
+                                                    <th style="background-color: #486284; color: white;">
+                                                        <div style="font-size: 0.75rem;">
+                                                            H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}
+                                                        </div>
+                                                    </th>
+                                                @endforeach
+                                                <th rowspan="2" class="align-middle text-white"
+                                                    style="background-color: #2a3042; width: 100px;">Total</th>
+                                            </tr>
+                                            <tr>
+                                                @foreach ($dates as $d)
+                                                    <th
+                                                        style="background-color: #5a7395; color: white; font-size: 0.7rem;">
+                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-<br>MMM-YY') !!}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (['XLSMART', 'IOH', 'TSEL'] as $op)
+                                                <tr>
+                                                    <td class="fw-bold text-dark" style="background-color: #ffffff;">
+                                                        {{ $op }}</td>
+                                                    @foreach ($dates as $d)
+                                                        <td class="text-dark" style="background-color: #ffffff;">
+                                                            {{ fmtNumJab($data['daily'][$d][$op]['pergerakan'] ?? 0) }}
+                                                        </td>
+                                                    @endforeach
+                                                    <td class="fw-bold text-dark"
+                                                        style="font-size:0.9rem; background-color: #ffffff;">
+                                                        {{ fmtNumJab($data['totals'][$op]['pergerakan'] ?? 0) }}</td>
+                                                </tr>
+                                            @endforeach
+                                            <tr>
+                                                <td class="fw-bold text-dark" style="background-color: #e0e0e0;">TOTAL
+                                                </td>
+                                                @foreach ($dates as $d)
+                                                    <td class="fw-bold text-dark" style="background-color: #e0e0e0;">
+                                                        {{ fmtNumJab($data['akumulasi']['daily'][$d]['movement'] ?? 0) }}
+                                                    </td>
+                                                @endforeach
+                                                <td class="fw-bold text-dark"
+                                                    style="background-color: #e0e0e0; font-size:0.9rem;">
+                                                    {{ fmtNumJab($totMovAll) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-4">
+                                <div class="d-flex flex-column justify-content-between h-100">
+                                    @php
+                                        $orderBoxes = [
+                                            'TSEL' => [
+                                                'Total Pergerakan<br>MPD Tsel',
+                                                '#ef4444',
+                                                $data['totals']['TSEL']['pergerakan'] ?? 0,
+                                            ],
+                                            'IOH' => [
+                                                'Total Pergerakan<br>MPD IOH',
+                                                '#f59e0b',
+                                                $data['totals']['IOH']['pergerakan'] ?? 0,
+                                            ],
+                                            'XLSMART' => [
+                                                'Total Pergerakan<br>MPD XLSMART',
+                                                '#2a3042',
+                                                $data['totals']['XLSMART']['pergerakan'] ?? 0,
+                                            ],
+                                        ];
+                                    @endphp
+                                    @foreach ($orderBoxes as $idx => $box)
+                                        <div class="summary-box-03 border border-dark border-2 rounded mb-2 py-2">
+                                            <div style="font-size: 0.85rem; line-height: 1.3; color: #333;">
+                                                {!! $box[0] !!}<br>
+                                                <span class="highlight d-inline-block mt-1"
+                                                    style="color: {{ $box[1] }}; background-color: #fef08a !important; padding: 4px 12px; font-size: 1.15rem; font-weight: 800; border-radius: 4px;">{{ number_format($box[2] / 1000000, 2, ',', '.') }}
+                                                    Juta</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BLOCK 2: ORANG PER HARI -->
+                    <div class="position-relative border rounded p-3 mt-4"
+                        style="border-color: #798797 !important; border-width: 2px !important; border-radius: 12px !important;">
+                        <div class="chart-title-badge">ORANG PER HARI</div>
+
+                        <div id="chart-people-04" style="min-height: 250px; margin-top: 20px;"></div>
+
+                        <div class="row mt-3 g-0">
+                            <div class="col-xl-9 col-lg-8 pe-2">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered mb-0 table-03 text-center align-middle"
+                                        style="min-width: 1400px;">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2" class="align-middle text-white"
+                                                    style="background-color: #2a3042; width: 80px;">Tanggal</th>
+                                                @foreach ($dates as $i => $d)
+                                                    <th style="background-color: #1e6082; color: white;">
+                                                        <div style="font-size: 0.75rem;">
+                                                            H{{ $i < 8 ? $i - 8 : ($i == 8 ? '' : '+' . ($i - 8)) }}
+                                                        </div>
+                                                    </th>
+                                                @endforeach
+                                                <th rowspan="2" class="align-middle text-white"
+                                                    style="background-color: #2a3042; width: 100px;">Total</th>
+                                            </tr>
+                                            <tr>
+                                                @foreach ($dates as $d)
+                                                    <th
+                                                        style="background-color: #29769e; color: white; font-size: 0.7rem;">
+                                                        {!! \Carbon\Carbon::parse($d)->locale('id')->isoFormat('D-<br>MMM-YY') !!}</th>
+                                                @endforeach
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (['XLSMART', 'IOH', 'TSEL'] as $op)
+                                                <tr>
+                                                    <td class="fw-bold text-dark" style="background-color: #ffffff;">
+                                                        {{ $op }}</td>
+                                                    @foreach ($dates as $d)
+                                                        <td class="text-dark" style="background-color: #ffffff;">
+                                                            {{ fmtNumJab($data['daily'][$d][$op]['orang'] ?? 0) }}</td>
+                                                    @endforeach
+                                                    <td class="fw-bold text-dark"
+                                                        style="font-size:0.9rem; background-color: #ffffff;">
+                                                        {{ fmtNumJab($data['totals'][$op]['orang'] ?? 0) }}</td>
+                                                </tr>
+                                            @endforeach
+                                            <tr>
+                                                <td class="fw-bold text-dark" style="background-color: #e0e0e0;">TOTAL
+                                                </td>
+                                                @foreach ($dates as $d)
+                                                    <td class="fw-bold text-dark" style="background-color: #e0e0e0;">
+                                                        {{ fmtNumJab($data['akumulasi']['daily'][$d]['people'] ?? 0) }}
+                                                    </td>
+                                                @endforeach
+                                                <td class="fw-bold text-dark"
+                                                    style="background-color: #e0e0e0; font-size:0.9rem;">
+                                                    {{ fmtNumJab($totPplAll) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-lg-4">
+                                <div class="d-flex flex-column justify-content-between h-100">
+                                    @php
+                                        $orderBoxes = [
+                                            'TSEL' => [
+                                                'Total Orang<br>MPD Tsel',
+                                                '#ef4444',
+                                                $data['totals']['TSEL']['orang'] ?? 0,
+                                            ],
+                                            'IOH' => [
+                                                'Total Orang<br>MPD IOH',
+                                                '#f59e0b',
+                                                $data['totals']['IOH']['orang'] ?? 0,
+                                            ],
+                                            'XLSMART' => [
+                                                'Total Orang<br>MPD XLSMART',
+                                                '#2a3042',
+                                                $data['totals']['XLSMART']['orang'] ?? 0,
+                                            ],
+                                        ];
+                                    @endphp
+                                    @foreach ($orderBoxes as $idx => $box)
+                                        <div class="summary-box-03 border border-dark border-2 rounded mb-2 py-2">
+                                            <div style="font-size: 0.85rem; line-height: 1.3; color: #333;">
+                                                {!! $box[0] !!}<br>
+                                                <span class="highlight d-inline-block mt-1"
+                                                    style="color: {{ $box[1] }}; background-color: #fef08a !important; padding: 4px 12px; font-size: 1.15rem; font-weight: 800; border-radius: 4px;">{{ number_format($box[2] / 1000000, 2, ',', '.') }}
+                                                    Juta Orang</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+@endsection
+
+@push('scripts')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof AOS !== 'undefined') {
+                AOS.init({
+                    once: true,
+                    offset: 50,
+                    duration: 600
+                });
+            }
+
+            // ApexCharts Rendering for Section 03
+            const datesLabels = {!! json_encode($datesArrForChart) !!};
+            const movPcts = {!! json_encode($movementPctChart) !!};
+            const pplPcts = {!! json_encode($peoplePctChart) !!};
+
+            const commonOptions = {
+                chart: {
+                    type: 'bar',
+                    height: 260,
+                    toolbar: {
+                        show: true,
+                        tools: {
+                            download: true,
+                            selection: false,
+                            zoom: false,
+                            zoomin: false,
+                            zoomout: false,
+                            pan: false,
+                            reset: false
                         }
-
-                        // ApexCharts Rendering for Section 03
-                        const datesLabels = {!! json_encode($datesArrForChart) !!};
-                        const movPcts = {!! json_encode($movementPctChart) !!};
-                        const pplPcts = {!! json_encode($peoplePctChart) !!};
-
-                        const commonOptions = {
-                            chart: {
-                                type: 'bar',
-                                height: 260,
-                                toolbar: {
-                                    show: true,
-                                    tools: {
-                                        download: true,
-                                        selection: false,
-                                        zoom: false,
-                                        zoomin: false,
-                                        zoomout: false,
-                                        pan: false,
-                                        reset: false
-                                    }
-                                },
-                                animations: {
-                                    enabled: true
-                                }
-                            },
-                            plotOptions: {
-                                bar: {
-                                    dataLabels: {
-                                        position: 'top'
-                                    },
-                                    columnWidth: '55%'
-                                }
-                            },
-                            dataLabels: {
-                                enabled: true,
-                                formatter: function(val) {
-                                    return val + "%";
-                                },
-                                offsetY: -22,
-                                style: {
-                                    fontSize: '12px',
-                                    colors: ["#555"]
-                                }
-                            },
-                            stroke: {
-                                show: true,
-                                width: 2,
-                                colors: ['transparent']
-                            },
-                            xaxis: {
-                                categories: datesLabels,
-                                labels: {
-                                    style: {
-                                        fontSize: '10.5px',
-                                        colors: '#666'
-                                    }
-                                }
-                            },
-                            yaxis: {
-                                max: function(max) {
-                                    return max + 2;
-                                }, // give some top padding
-                                labels: {
-                                    formatter: function(val) {
-                                        return val.toFixed(2) + "%";
-                                    }
-                                }
-                            },
-                            fill: {
-                                opacity: 1
-                            },
-                            grid: {
-                                borderColor: '#e0e0e0',
-                                strokeDashArray: 4
-                            },
-                            colors: ['#1e6082']
-                        };
-
-                        if (document.querySelector("#chart-movement")) {
-                            new ApexCharts(document.querySelector("#chart-movement"), {
-                                ...commonOptions,
-                                series: [{
-                                    name: 'Pergerakan',
-                                    data: movPcts
-                                }]
-                            }).render();
+                    },
+                    animations: {
+                        enabled: true
+                    }
+                },
+                plotOptions: {
+                    bar: {
+                        dataLabels: {
+                            position: 'top'
+                        },
+                        columnWidth: '55%'
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    formatter: function(val) {
+                        return val + "%";
+                    },
+                    offsetY: -22,
+                    style: {
+                        fontSize: '12px',
+                        colors: ["#555"]
+                    }
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: datesLabels,
+                    labels: {
+                        style: {
+                            fontSize: '10.5px',
+                            colors: '#666'
                         }
-
-                        if (document.querySelector("#chart-people")) {
-                            new ApexCharts(document.querySelector("#chart-people"), {
-                                ...commonOptions,
-                                series: [{
-                                    name: 'Orang',
-                                    data: pplPcts
-                                }]
-                            }).render();
+                    }
+                },
+                yaxis: {
+                    max: function(max) {
+                        return max + 2;
+                    },
+                    labels: {
+                        formatter: function(val) {
+                            return val.toFixed(2) + "%";
                         }
+                    }
+                },
+                fill: {
+                    opacity: 1
+                },
+                grid: {
+                    borderColor: '#e0e0e0',
+                    strokeDashArray: 4
+                },
+                colors: ['#1e6082']
+            };
 
-                        // ApexCharts Rendering for Section 04
-                        const seriesXLMov = {!! json_encode($series04_mov['XLSMART'] ?? []) !!};
-                        const seriesIOHMov = {!! json_encode($series04_mov['IOH'] ?? []) !!};
-                        const seriesTSELMov = {!! json_encode($series04_mov['TSEL'] ?? []) !!};
+            if (document.querySelector("#chart-movement")) {
+                new ApexCharts(document.querySelector("#chart-movement"), {
+                    ...commonOptions,
+                    series: [{
+                        name: 'Pergerakan',
+                        data: movPcts
+                    }]
+                }).render();
+            }
 
-                        const seriesXLPpl = {!! json_encode($series04_ppl['XLSMART'] ?? []) !!};
-                        const seriesIOHPpl = {!! json_encode($series04_ppl['IOH'] ?? []) !!};
-                        const seriesTSELPpl = {!! json_encode($series04_ppl['TSEL'] ?? []) !!};
+            if (document.querySelector("#chart-people")) {
+                new ApexCharts(document.querySelector("#chart-people"), {
+                    ...commonOptions,
+                    series: [{
+                        name: 'Orang',
+                        data: pplPcts
+                    }]
+                }).render();
+            }
 
-                        const commonOptions04 = {
-                            chart: {
-                                type: 'bar',
-                                height: 260,
-                                toolbar: {
-                                    show: true,
-                                    tools: {
-                                        download: true,
-                                        selection: false,
-                                        zoom: false,
-                                        zoomin: false,
-                                        zoomout: false,
-                                        pan: false,
-                                        reset: false
-                                    }
-                                },
-                                stacked: false
-                            },
-                            plotOptions: {
-                                bar: {
-                                    columnWidth: '60%',
-                                    dataLabels: {
-                                        position: 'top'
-                                    }
-                                }
-                            },
-                            dataLabels: {
-                                enabled: false
-                            },
-                            stroke: {
-                                show: true,
-                                width: 2,
-                                colors: ['transparent']
-                            },
-                            xaxis: {
-                                categories: datesLabels,
-                                labels: {
-                                    style: {
-                                        fontSize: '10px',
-                                        colors: '#666'
-                                    }
-                                }
-                            },
-                            yaxis: {
-                                labels: {
-                                    formatter: function(val) {
-                                        return val.toLocaleString('id-ID');
-                                    }
-                                }
-                            },
-                            fill: {
-                                opacity: 1
-                            },
-                            grid: {
-                                borderColor: '#e0e0e0',
-                                strokeDashArray: 4
-                            },
-                            colors: ['#2a3042', '#f59e0b', '#ef4444'], // XLSMART, IOH, TSEL
-                            legend: {
-                                position: 'right',
-                                offsetY: 40
-                            }
-                        };
+            // ApexCharts Rendering for Section 04
+            const seriesXLMov = {!! json_encode($series04_mov['XLSMART'] ?? []) !!};
+            const seriesIOHMov = {!! json_encode($series04_mov['IOH'] ?? []) !!};
+            const seriesTSELMov = {!! json_encode($series04_mov['TSEL'] ?? []) !!};
 
-                        if (document.querySelector("#chart-movement-04")) {
-                            new ApexCharts(document.querySelector("#chart-movement-04"), {
-                                ...commonOptions04,
-                                series: [{
-                                        name: 'XLSMART',
-                                        data: seriesXLMov
-                                    },
-                                    {
-                                        name: 'IOH',
-                                        data: seriesIOHMov
-                                    },
-                                    {
-                                        name: 'Tsel',
-                                        data: seriesTSELMov
-                                    }
-                                ]
-                            }).render();
+            const seriesXLPpl = {!! json_encode($series04_ppl['XLSMART'] ?? []) !!};
+            const seriesIOHPpl = {!! json_encode($series04_ppl['IOH'] ?? []) !!};
+            const seriesTSELPpl = {!! json_encode($series04_ppl['TSEL'] ?? []) !!};
+
+            const commonOptions04 = {
+                chart: {
+                    type: 'bar',
+                    height: 260,
+                    toolbar: {
+                        show: true,
+                        tools: {
+                            download: true,
+                            selection: false,
+                            zoom: false,
+                            zoomin: false,
+                            zoomout: false,
+                            pan: false,
+                            reset: false
                         }
-
-                        if (document.querySelector("#chart-people-04")) {
-                            new ApexCharts(document.querySelector("#chart-people-04"), {
-                                ...commonOptions04,
-                                series: [{
-                                        name: 'XLSMART',
-                                        data: seriesXLPpl
-                                    },
-                                    {
-                                        name: 'IOH',
-                                        data: seriesIOHPpl
-                                    },
-                                    {
-                                        name: 'Tsel',
-                                        data: seriesTSELPpl
-                                    }
-                                ]
-                            }).render();
+                    },
+                    stacked: false
+                },
+                plotOptions: {
+                    bar: {
+                        columnWidth: '60%',
+                        dataLabels: {
+                            position: 'top'
                         }
-                        // =========================================
-                        // Export Helpers
-                        // =========================================
-                        window.captureAsPNG = function(elementId, filename) {
-                            document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-                            const el = document.getElementById(elementId);
-                            if (!el) return;
-                            html2canvas(el, {
-                                scale: 2,
-                                useCORS: true,
-                                backgroundColor: '#ffffff',
-                                scrollX: 0,
-                                scrollY: -window.scrollY
-                            }).then(canvas => {
-                                const link = document.createElement('a');
-                                link.download = filename + '.png';
-                                link.href = canvas.toDataURL('image/png');
-                                link.click();
-                            });
-                        };
-                        window.toggleExportMenu = function(menuId) {
-                            const menu = document.getElementById(menuId);
-                            document.querySelectorAll('.export-menu').forEach(m => {
-                                if (m.id !== menuId) m.classList.remove('show');
-                            });
-                            menu.classList.toggle('show');
-                        };
-                        document.addEventListener('click', function(e) {
-                            if (!e.target.closest('.export-dropdown')) {
-                                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-                            }
-                        });
-
-                        // =========================================
-                        // CSV Exports
-                        // =========================================
-                        const intDates = @json($dates);
-                        const intData = @json($data);
-                        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-                        const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-                            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-                        ];
-
-                        function fmtDateID(d) {
-                            const dt = new Date(d);
-                            return dayNames[dt.getDay()] + ', ' + dt.getDate() + ' ' + monthNames[dt.getMonth()] + ' ' + dt
-                                .getFullYear();
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                stroke: {
+                    show: true,
+                    width: 2,
+                    colors: ['transparent']
+                },
+                xaxis: {
+                    categories: datesLabels,
+                    labels: {
+                        style: {
+                            fontSize: '10px',
+                            colors: '#666'
                         }
-
-                        function fmtNum(v) {
-                            return v ? v.toLocaleString('id-ID') : '0';
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function(val) {
+                            return val.toLocaleString('id-ID');
                         }
+                    }
+                },
+                fill: {
+                    opacity: 1
+                },
+                grid: {
+                    borderColor: '#e0e0e0',
+                    strokeDashArray: 4
+                },
+                colors: ['#2a3042', '#f59e0b', '#ef4444'], // XLSMART, IOH, TSEL
+                legend: {
+                    position: 'right',
+                    offsetY: 40
+                }
+            };
 
-                        function fmtPct(v) {
-                            return v ? v.toFixed(2).replace('.', ',') + '%' : '0,00%';
+            if (document.querySelector("#chart-movement-04")) {
+                new ApexCharts(document.querySelector("#chart-movement-04"), {
+                    ...commonOptions04,
+                    series: [{
+                            name: 'XLSMART',
+                            data: seriesXLMov
+                        },
+                        {
+                            name: 'IOH',
+                            data: seriesIOHMov
+                        },
+                        {
+                            name: 'Tsel',
+                            data: seriesTSELMov
                         }
+                    ]
+                }).render();
+            }
 
-                        // Section 01 CSV — 3 sheets (XLSMART, IOH, TSEL)
-                        window.exportInt01CSV = function() {
-                            document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-                            const wb = XLSX.utils.book_new();
-                            ['XLSMART', 'IOH', 'TSEL'].forEach(op => {
-                                const rows = [
-                                    ['Hari, Tanggal', 'Jumlah Pergerakan', '% Pergerakan', 'Jumlah Orang',
-                                        '% Orang'
-                                    ]
-                                ];
-                                intDates.forEach(d => {
-                                    const r = intData.daily[d] && intData.daily[d][op] ? intData.daily[d][
-                                        op
-                                    ] : {};
-                                    rows.push([
-                                        fmtDateID(d),
-                                        r.pergerakan || 0,
-                                        fmtPct(r.pct_pergerakan),
-                                        r.orang || 0,
-                                        fmtPct(r.pct_orang)
-                                    ]);
-                                });
-                                const tot = intData.totals && intData.totals[op] ? intData.totals[op] : {};
-                                rows.push(['Total', tot.pergerakan || 0, '100,00%', tot.orang || 0, '100,00%']);
-                                const ws = XLSX.utils.aoa_to_sheet(rows);
-                                ws['!cols'] = [{
-                                    wch: 30
-                                }, {
-                                    wch: 18
-                                }, {
-                                    wch: 14
-                                }, {
-                                    wch: 18
-                                }, {
-                                    wch: 14
-                                }];
-                                XLSX.utils.book_append_sheet(wb, ws, op);
-                            });
-                            XLSX.writeFile(wb, 'Persandingan_Opsel_InterJabodetabek.xlsx');
-                        };
+            if (document.querySelector("#chart-people-04")) {
+                new ApexCharts(document.querySelector("#chart-people-04"), {
+                    ...commonOptions04,
+                    series: [{
+                            name: 'XLSMART',
+                            data: seriesXLPpl
+                        },
+                        {
+                            name: 'IOH',
+                            data: seriesIOHPpl
+                        },
+                        {
+                            name: 'Tsel',
+                            data: seriesTSELPpl
+                        }
+                    ]
+                }).render();
+            }
 
-                        // Section 02 CSV — Akumulasi
-                        window.exportInt02CSV = function() {
-                            document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-                            const wb = XLSX.utils.book_new();
-                            const rows = [
-                                ['Tanggal', 'Jumlah Pergerakan', '% Pergerakan', 'Jumlah Orang', '% Orang']
-                            ];
-                            intDates.forEach(d => {
-                                const r = intData.akumulasi.daily[d] || {};
-                                rows.push([
-                                    fmtDateID(d),
-                                    r.movement || 0,
-                                    fmtPct(r.movement_pct),
-                                    r.people || 0,
-                                    fmtPct(r.people_pct)
-                                ]);
-                            });
-                            rows.push(['Total', intData.akumulasi.total_movement || 0, '100%', intData.akumulasi
-                                .total_people || 0, '100%'
-                            ]);
-                            const ws = XLSX.utils.aoa_to_sheet(rows);
-                            ws['!cols'] = [{
-                                wch: 30
-                            }, {
-                                wch: 18
-                            }, {
-                                wch: 14
-                            }, {
-                                wch: 18
-                            }, {
-                                wch: 14
-                            }];
-                            XLSX.utils.book_append_sheet(wb, ws, 'Akumulasi');
-                            XLSX.writeFile(wb, 'Akumulasi_InterJabodetabek.xlsx');
-                        };
+            // =========================================
+            // Export Helpers
+            // =========================================
+            window.captureAsPNG = function(elementId, filename) {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                html2canvas(el, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    scrollX: 0,
+                    scrollY: -window.scrollY
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = filename + '.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                });
+            };
+            window.toggleExportMenu = function(menuId) {
+                const menu = document.getElementById(menuId);
+                document.querySelectorAll('.export-menu').forEach(m => {
+                    if (m.id !== menuId) m.classList.remove('show');
+                });
+                menu.classList.toggle('show');
+            };
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.export-dropdown')) {
+                    document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                }
+            });
 
-                        // Section 03 CSV — 2 sheets (Pergerakan, Orang)
-                        window.exportInt03CSV = function() {
-                            document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-                            const wb = XLSX.utils.book_new();
-                            const rowsMov = [
-                                ['Tanggal', 'Jumlah Pergerakan']
-                            ];
-                            intDates.forEach(d => {
-                                const r = intData.akumulasi.daily[d] || {};
-                                rowsMov.push([fmtDateID(d), r.movement || 0]);
-                            });
-                            rowsMov.push(['Total', intData.akumulasi.total_movement || 0]);
-                            const wsMov = XLSX.utils.aoa_to_sheet(rowsMov);
-                            wsMov['!cols'] = [{
-                                wch: 30
-                            }, {
-                                wch: 18
-                            }];
-                            XLSX.utils.book_append_sheet(wb, wsMov, 'Pergerakan Per Hari');
-                            const rowsPpl = [
-                                ['Tanggal', 'Jumlah Orang']
-                            ];
-                            intDates.forEach(d => {
-                                const r = intData.akumulasi.daily[d] || {};
-                                rowsPpl.push([fmtDateID(d), r.people || 0]);
-                            });
-                            rowsPpl.push(['Total', intData.akumulasi.total_people || 0]);
-                            const wsPpl = XLSX.utils.aoa_to_sheet(rowsPpl);
-                            wsPpl['!cols'] = [{
-                                wch: 30
-                            }, {
-                                wch: 18
-                            }];
-                            XLSX.utils.book_append_sheet(wb, wsPpl, 'Orang Per Hari');
-                            XLSX.writeFile(wb, 'Pergerakan_Harian_InterJabodetabek.xlsx');
-                        };
+            // =========================================
+            // CSV Exports
+            // =========================================
+            const intDates = @json($dates);
+            const intData = @json($data);
+            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
 
-                        // Section 04 CSV — 2 sheets (Pergerakan per opsel, Orang per opsel)
-                        window.exportInt04CSV = function() {
-                            document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
-                            const wb = XLSX.utils.book_new();
-                            const rowsMov = [
-                                ['Tanggal', 'XLSMART', 'IOH', 'TSEL', 'Total']
-                            ];
-                            intDates.forEach(d => {
-                                const dd = intData.daily[d] || {};
-                                const xl = dd.XLSMART ? dd.XLSMART.pergerakan || 0 : 0;
-                                const ioh = dd.IOH ? dd.IOH.pergerakan || 0 : 0;
-                                const tsel = dd.TSEL ? dd.TSEL.pergerakan || 0 : 0;
-                                const total = (intData.akumulasi.daily[d] || {}).movement || 0;
-                                rowsMov.push([fmtDateID(d), xl, ioh, tsel, total]);
-                            });
-                            rowsMov.push(['Total',
-                                (intData.totals.XLSMART || {}).pergerakan || 0,
-                                (intData.totals.IOH || {}).pergerakan || 0,
-                                (intData.totals.TSEL || {}).pergerakan || 0,
-                                intData.akumulasi.total_movement || 0
-                            ]);
-                            const wsMov = XLSX.utils.aoa_to_sheet(rowsMov);
-                            wsMov['!cols'] = [{
-                                wch: 30
-                            }, {
-                                wch: 16
-                            }, {
-                                wch: 16
-                            }, {
-                                wch: 16
-                            }, {
-                                wch: 18
-                            }];
-                            XLSX.utils.book_append_sheet(wb, wsMov, 'Pergerakan Per Opsel');
-                            const rowsPpl = [
-                                ['Tanggal', 'XLSMART', 'IOH', 'TSEL', 'Total']
-                            ];
-                            intDates.forEach(d => {
-                                const dd = intData.daily[d] || {};
-                                const xl = dd.XLSMART ? dd.XLSMART.orang || 0 : 0;
-                                const ioh = dd.IOH ? dd.IOH.orang || 0 : 0;
-                                const tsel = dd.TSEL ? dd.TSEL.orang || 0 : 0;
-                                const total = (intData.akumulasi.daily[d] || {}).people || 0;
-                                rowsPpl.push([fmtDateID(d), xl, ioh, tsel, total]);
-                            });
-                            rowsPpl.push(['Total',
-                                (intData.totals.XLSMART || {}).orang || 0,
-                                (intData.totals.IOH || {}).orang || 0,
-                                (intData.totals.TSEL || {}).orang || 0,
-                                intData.akumulasi.total_people || 0
-                            ]);
-                            const wsPpl = XLSX.utils.aoa_to_sheet(rowsPpl);
-                            wsPpl['!cols'] = [{
-                                wch: 30
-                            }, {
-                                wch: 16
-                            }, {
-                                wch: 16
-                            }, {
-                                wch: 16
-                            }, {
-                                wch: 18
-                            }];
-                            XLSX.utils.book_append_sheet(wb, wsPpl, 'Orang Per Opsel');
-                            XLSX.writeFile(wb, 'Persandingan_PerOpsel_InterJabodetabek.xlsx');
-                        };
+            function fmtDateID(d) {
+                const dt = new Date(d);
+                return dayNames[dt.getDay()] + ', ' + dt.getDate() + ' ' + monthNames[dt.getMonth()] + ' ' + dt
+                    .getFullYear();
+            }
 
+            function fmtNum(v) {
+                return v ? v.toLocaleString('id-ID') : '0';
+            }
+
+            function fmtPct(v) {
+                return v ? v.toFixed(2).replace('.', ',') + '%' : '0,00%';
+            }
+
+            // Section 01 CSV — 3 sheets (XLSMART, IOH, TSEL)
+            window.exportInt01CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                ['XLSMART', 'IOH', 'TSEL'].forEach(op => {
+                    const rows = [
+                        ['Hari, Tanggal', 'Jumlah Pergerakan', '% Pergerakan', 'Jumlah Orang',
+                            '% Orang'
+                        ]
+                    ];
+                    intDates.forEach(d => {
+                        const r = intData.daily[d] && intData.daily[d][op] ? intData.daily[d][
+                            op
+                        ] : {};
+                        rows.push([
+                            fmtDateID(d),
+                            r.pergerakan || 0,
+                            fmtPct(r.pct_pergerakan),
+                            r.orang || 0,
+                            fmtPct(r.pct_orang)
+                        ]);
                     });
-                </script>
-            @endpush
+                    const tot = intData.totals && intData.totals[op] ? intData.totals[op] : {};
+                    rows.push(['Total', tot.pergerakan || 0, '100,00%', tot.orang || 0, '100,00%']);
+                    const ws = XLSX.utils.aoa_to_sheet(rows);
+                    ws['!cols'] = [{
+                        wch: 30
+                    }, {
+                        wch: 18
+                    }, {
+                        wch: 14
+                    }, {
+                        wch: 18
+                    }, {
+                        wch: 14
+                    }];
+                    XLSX.utils.book_append_sheet(wb, ws, op);
+                });
+                XLSX.writeFile(wb, 'Persandingan_Opsel_InterJabodetabek.xlsx');
+            };
+
+            // Section 02 CSV — Akumulasi
+            window.exportInt02CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                const rows = [
+                    ['Tanggal', 'Jumlah Pergerakan', '% Pergerakan', 'Jumlah Orang', '% Orang']
+                ];
+                intDates.forEach(d => {
+                    const r = intData.akumulasi.daily[d] || {};
+                    rows.push([
+                        fmtDateID(d),
+                        r.movement || 0,
+                        fmtPct(r.movement_pct),
+                        r.people || 0,
+                        fmtPct(r.people_pct)
+                    ]);
+                });
+                rows.push(['Total', intData.akumulasi.total_movement || 0, '100%', intData.akumulasi
+                    .total_people || 0, '100%'
+                ]);
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                ws['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 18
+                }, {
+                    wch: 14
+                }, {
+                    wch: 18
+                }, {
+                    wch: 14
+                }];
+                XLSX.utils.book_append_sheet(wb, ws, 'Akumulasi');
+                XLSX.writeFile(wb, 'Akumulasi_InterJabodetabek.xlsx');
+            };
+
+            // Section 03 CSV — 2 sheets (Pergerakan, Orang)
+            window.exportInt03CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                const rowsMov = [
+                    ['Tanggal', 'Jumlah Pergerakan']
+                ];
+                intDates.forEach(d => {
+                    const r = intData.akumulasi.daily[d] || {};
+                    rowsMov.push([fmtDateID(d), r.movement || 0]);
+                });
+                rowsMov.push(['Total', intData.akumulasi.total_movement || 0]);
+                const wsMov = XLSX.utils.aoa_to_sheet(rowsMov);
+                wsMov['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsMov, 'Pergerakan Per Hari');
+                const rowsPpl = [
+                    ['Tanggal', 'Jumlah Orang']
+                ];
+                intDates.forEach(d => {
+                    const r = intData.akumulasi.daily[d] || {};
+                    rowsPpl.push([fmtDateID(d), r.people || 0]);
+                });
+                rowsPpl.push(['Total', intData.akumulasi.total_people || 0]);
+                const wsPpl = XLSX.utils.aoa_to_sheet(rowsPpl);
+                wsPpl['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsPpl, 'Orang Per Hari');
+                XLSX.writeFile(wb, 'Pergerakan_Harian_InterJabodetabek.xlsx');
+            };
+
+            // Section 04 CSV — 2 sheets (Pergerakan per opsel, Orang per opsel)
+            window.exportInt04CSV = function() {
+                document.querySelectorAll('.export-menu').forEach(m => m.classList.remove('show'));
+                const wb = XLSX.utils.book_new();
+                const rowsMov = [
+                    ['Tanggal', 'XLSMART', 'IOH', 'TSEL', 'Total']
+                ];
+                intDates.forEach(d => {
+                    const dd = intData.daily[d] || {};
+                    const xl = dd.XLSMART ? dd.XLSMART.pergerakan || 0 : 0;
+                    const ioh = dd.IOH ? dd.IOH.pergerakan || 0 : 0;
+                    const tsel = dd.TSEL ? dd.TSEL.pergerakan || 0 : 0;
+                    const total = (intData.akumulasi.daily[d] || {}).movement || 0;
+                    rowsMov.push([fmtDateID(d), xl, ioh, tsel, total]);
+                });
+                rowsMov.push(['Total',
+                    (intData.totals.XLSMART || {}).pergerakan || 0,
+                    (intData.totals.IOH || {}).pergerakan || 0,
+                    (intData.totals.TSEL || {}).pergerakan || 0,
+                    intData.akumulasi.total_movement || 0
+                ]);
+                const wsMov = XLSX.utils.aoa_to_sheet(rowsMov);
+                wsMov['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsMov, 'Pergerakan Per Opsel');
+                const rowsPpl = [
+                    ['Tanggal', 'XLSMART', 'IOH', 'TSEL', 'Total']
+                ];
+                intDates.forEach(d => {
+                    const dd = intData.daily[d] || {};
+                    const xl = dd.XLSMART ? dd.XLSMART.orang || 0 : 0;
+                    const ioh = dd.IOH ? dd.IOH.orang || 0 : 0;
+                    const tsel = dd.TSEL ? dd.TSEL.orang || 0 : 0;
+                    const total = (intData.akumulasi.daily[d] || {}).people || 0;
+                    rowsPpl.push([fmtDateID(d), xl, ioh, tsel, total]);
+                });
+                rowsPpl.push(['Total',
+                    (intData.totals.XLSMART || {}).orang || 0,
+                    (intData.totals.IOH || {}).orang || 0,
+                    (intData.totals.TSEL || {}).orang || 0,
+                    intData.akumulasi.total_people || 0
+                ]);
+                const wsPpl = XLSX.utils.aoa_to_sheet(rowsPpl);
+                wsPpl['!cols'] = [{
+                    wch: 30
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }, {
+                    wch: 16
+                }, {
+                    wch: 18
+                }];
+                XLSX.utils.book_append_sheet(wb, wsPpl, 'Orang Per Opsel');
+                XLSX.writeFile(wb, 'Persandingan_PerOpsel_InterJabodetabek.xlsx');
+            };
+
+        });
+    </script>
+@endpush
