@@ -135,10 +135,12 @@
     @component('layout.partials.page-header', ['number' => '23', 'title' => 'Map Monitor - Kepadatan Simpul'])
         <form class="d-flex align-items-center gap-2 m-0" id="periodForm">
             <label class="mb-0 fw-bold text-nowrap text-white">Periode:</label>
-            <input type="date" id="startDate" class="form-control form-control-sm" value="{{ config('mpd.start_date', '2026-03-13') }}" min="{{ config('mpd.start_date', '2026-03-13') }}"
+            <input type="date" id="startDate" class="form-control form-control-sm"
+                value="{{ config('mpd.start_date', '2026-03-13') }}" min="{{ config('mpd.start_date', '2026-03-13') }}"
                 max="{{ config('mpd.end_date', '2026-03-29') }}" style="width: 140px;">
             <span class="text-white fw-bold">&mdash;</span>
-            <input type="date" id="endDate" class="form-control form-control-sm" value="{{ config('mpd.end_date', '2026-03-29') }}" min="{{ config('mpd.start_date', '2026-03-13') }}"
+            <input type="date" id="endDate" class="form-control form-control-sm"
+                value="{{ config('mpd.end_date', '2026-03-29') }}" min="{{ config('mpd.start_date', '2026-03-13') }}"
                 max="{{ config('mpd.end_date', '2026-03-29') }}" style="width: 140px;">
 
             <label class="mb-0 fw-bold text-nowrap ms-2 text-white">Opsel:</label>
@@ -267,11 +269,40 @@
                 maxBoundsViscosity: 0.8
             });
 
-            // 2. Add Tile Layer (CartoDB Positron for clean look)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            // 2. Add Tile Layers (Satellite default + Street alternative)
+            const satelliteLayer = L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+                    maxZoom: 19
+                });
+
+            const streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                 subdomains: 'abcd',
                 maxZoom: 19
+            });
+
+            // Labels overlay (nama jalan/kota di atas satelit)
+            const labelsOverlay = L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                    maxZoom: 19,
+                    pane: 'overlayPane'
+                });
+
+            // Set satellite as default
+            satelliteLayer.addTo(map);
+            labelsOverlay.addTo(map);
+
+            // Layer control for switching
+            const baseMaps = {
+                "🛰️ Satelit": satelliteLayer,
+                "🗺️ Peta": streetLayer
+            };
+            const overlayMaps = {
+                "📍 Label Lokasi": labelsOverlay
+            };
+            L.control.layers(baseMaps, overlayMaps, {
+                position: 'topright'
             }).addTo(map);
 
             // Force tile render after layout completes

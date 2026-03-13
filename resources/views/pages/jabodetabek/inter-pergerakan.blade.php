@@ -13,6 +13,16 @@
 
     @push('css')
         <style>
+            /* Prevent page-level horizontal overflow */
+            .page-content {
+                overflow-x: hidden;
+            }
+
+            .card-body {
+                overflow-x: auto;
+                max-width: 100%;
+            }
+
             .table-custom-header th {
                 vertical-align: middle;
                 border: 1px solid rgba(255, 255, 255, 0.2);
@@ -587,7 +597,7 @@
                                         <div class="col-xl-9 col-lg-8 pe-2">
                                             <div class="table-responsive">
                                                 <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 1300px;">
+                                                    style="min-width: 0; width: 100%;">
                                                     <thead>
                                                         <tr>
                                                             <th rowspan="2" class="align-middle"
@@ -652,7 +662,7 @@
                                         <div class="col-xl-9 col-lg-8 pe-2">
                                             <div class="table-responsive">
                                                 <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 1300px;">
+                                                    style="min-width: 0; width: 100%;">
                                                     <thead>
                                                         <tr>
                                                             <th rowspan="2" class="align-middle"
@@ -747,7 +757,7 @@
                                         <div class="col-xl-9 col-lg-8 pe-2">
                                             <div class="table-responsive">
                                                 <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 1400px;">
+                                                    style="min-width: 0; width: 100%;">
                                                     <thead>
                                                         <tr>
                                                             <th rowspan="2" class="align-middle text-white"
@@ -856,7 +866,7 @@
                                         <div class="col-xl-9 col-lg-8 pe-2">
                                             <div class="table-responsive">
                                                 <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 1400px;">
+                                                    style="min-width: 0; width: 100%;">
                                                     <thead>
                                                         <tr>
                                                             <th rowspan="2" class="align-middle text-white"
