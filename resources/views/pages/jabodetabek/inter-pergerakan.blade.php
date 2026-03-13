@@ -13,11 +13,6 @@
 
     @push('css')
         <style>
-            /* Minimal overflow fix — only at page level, no layout disruption */
-            html {
-                overflow-x: hidden;
-            }
-
             .table-custom-header th {
                 vertical-align: middle;
                 border: 1px solid rgba(255, 255, 255, 0.2);
@@ -592,7 +587,7 @@
                                         <div class="col-xl-9 col-lg-8 pe-2">
                                             <div class="table-responsive">
                                                 <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 0; width: 100%;">
+                                                    style="min-width: 1300px;">
                                                     <thead>
                                                         <tr>
                                                             <th rowspan="2" class="align-middle"
@@ -657,7 +652,7 @@
                                         <div class="col-xl-9 col-lg-8 pe-2">
                                             <div class="table-responsive">
                                                 <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 0; width: 100%;">
+                                                    style="min-width: 1300px;">
                                                     <thead>
                                                         <tr>
                                                             <th rowspan="2" class="align-middle"
@@ -752,7 +747,7 @@
                                         <div class="col-xl-9 col-lg-8 pe-2">
                                             <div class="table-responsive">
                                                 <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 0; width: 100%;">
+                                                    style="min-width: 1400px;">
                                                     <thead>
                                                         <tr>
                                                             <th rowspan="2" class="align-middle text-white"
@@ -861,7 +856,7 @@
                                         <div class="col-xl-9 col-lg-8 pe-2">
                                             <div class="table-responsive">
                                                 <table class="table table-bordered mb-0 table-03 text-center align-middle"
-                                                    style="min-width: 0; width: 100%;">
+                                                    style="min-width: 1400px;">
                                                     <thead>
                                                         <tr>
                                                             <th rowspan="2" class="align-middle text-white"
