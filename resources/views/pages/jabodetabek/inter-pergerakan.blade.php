@@ -13,14 +13,46 @@
 
     @push('css')
         <style>
-            /* Prevent page-level horizontal overflow */
-            .page-content {
-                overflow-x: hidden;
+            /* ======= COMPREHENSIVE OVERFLOW FIX ======= */
+            /* Target every DOM level to prevent horizontal page scroll */
+            html, body {
+                overflow-x: hidden !important;
+                max-width: 100vw !important;
             }
 
+            #layout-wrapper,
+            .main-content,
+            .page-content,
+            .container-fluid {
+                overflow-x: hidden !important;
+                max-width: 100% !important;
+            }
+
+            .row {
+                margin-right: 0 !important;
+                margin-left: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .card,
             .card-body {
                 overflow-x: auto;
                 max-width: 100%;
+            }
+
+            /* Contain chart SVGs within their parent */
+            [id^="chart-"] {
+                overflow: hidden;
+                max-width: 100%;
+            }
+
+            .apexcharts-canvas {
+                max-width: 100% !important;
+            }
+
+            /* Ensure position:absolute badges don't extend beyond container */
+            .position-relative {
+                overflow: hidden;
             }
 
             .table-custom-header th {

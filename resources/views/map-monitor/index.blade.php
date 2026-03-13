@@ -272,26 +272,23 @@
             // 2. Add Tile Layers (Satellite default + Street alternative)
             const satelliteLayer = L.tileLayer(
                 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                    maxZoom: 19
+                    maxZoom: 19,
                 });
 
             const streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
                 subdomains: 'abcd',
                 maxZoom: 19
             });
 
-            // Labels overlay (nama jalan/kota di atas satelit)
+            // Labels overlay (opsional, default OFF)
             const labelsOverlay = L.tileLayer(
                 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
                     maxZoom: 19,
                     pane: 'overlayPane'
                 });
 
-            // Set satellite as default
+            // Set satellite as default (polos, tanpa label)
             satelliteLayer.addTo(map);
-            labelsOverlay.addTo(map);
 
             // Layer control for switching
             const baseMaps = {
