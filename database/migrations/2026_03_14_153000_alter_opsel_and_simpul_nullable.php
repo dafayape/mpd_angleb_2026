@@ -10,6 +10,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Drop materialized view that depends on opsel
+        DB::statement('DROP MATERIALIZED VIEW IF EXISTS mv_daily_summary;');
+
         // Fix opsel length to handle XLSMART
         DB::statement('ALTER TABLE spatial_movements ALTER COLUMN opsel TYPE varchar(10);');
         DB::statement('ALTER TABLE raw_mpd_data ALTER COLUMN opsel TYPE varchar(10);');
@@ -26,6 +29,23 @@ return new class extends Migration
         DB::statement('ALTER TABLE spatial_movements ALTER COLUMN kode_origin_simpul DROP NOT NULL;');
         DB::statement('ALTER TABLE spatial_movements ALTER COLUMN kode_dest_simpul DROP NOT NULL;');
         DB::statement('ALTER TABLE spatial_movements ALTER COLUMN kode_moda DROP NOT NULL;');
+
+        // Recreate the materialized view
+        DB::statement("
+            CREATE MATERIALIZED VIEW IF NOT EXISTS mv_daily_summary AS
+            SELECT
+                tanggal,
+                kategori,
+                opsel,
+                is_forecast,
+                SUM(total) as total_volume,
+                COUNT(*) as record_count
+            FROM spatial_movements
+            GROUP BY tanggal, kategori, opsel, is_forecast
+            ORDER BY tanggal, kategori, opsel
+            WITH DATA;
+        ");
+        DB::statement("CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_daily_summary ON mv_daily_summary (tanggal, kategori, opsel, is_forecast);");
     }
 
     /**
@@ -33,6 +53,9 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drop materialized view that depends on opsel
+        DB::statement('DROP MATERIALIZED VIEW IF EXISTS mv_daily_summary;');
+
         // Revert to NOT NULL
         DB::statement('ALTER TABLE spatial_movements ALTER COLUMN kode_origin_simpul SET NOT NULL;');
         DB::statement('ALTER TABLE spatial_movements ALTER COLUMN kode_dest_simpul SET NOT NULL;');
@@ -48,5 +71,22 @@ return new class extends Migration
         // Revert opsel length
         DB::statement('ALTER TABLE spatial_movements ALTER COLUMN opsel TYPE varchar(4);');
         DB::statement('ALTER TABLE raw_mpd_data ALTER COLUMN opsel TYPE varchar(4);');
+
+        // Recreate the materialized view
+        DB::statement("
+            CREATE MATERIALIZED VIEW IF NOT EXISTS mv_daily_summary AS
+            SELECT
+                tanggal,
+                kategori,
+                opsel,
+                is_forecast,
+                SUM(total) as total_volume,
+                COUNT(*) as record_count
+            FROM spatial_movements
+            GROUP BY tanggal, kategori, opsel, is_forecast
+            ORDER BY tanggal, kategori, opsel
+            WITH DATA;
+        ");
+        DB::statement("CREATE UNIQUE INDEX IF NOT EXISTS idx_mv_daily_summary ON mv_daily_summary (tanggal, kategori, opsel, is_forecast);");
     }
 };
