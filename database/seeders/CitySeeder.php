@@ -523,7 +523,13 @@ class CitySeeder extends Seeder
             ['9505', 'KAB. MAMBERAMO TENGAH'],
             ['9506', 'KAB. YALIMO'],
             ['9507', 'KAB. LANNY JAYA'],
-            ['9508', 'KAB. NDUGA']
+            ['9508', 'KAB. NDUGA'],
+            ['9601', 'KAB. SORONG'],
+            ['9602', 'KAB. SORONG SELATAN'],
+            ['9603', 'KAB. RAJA AMPAT'],
+            ['9604', 'KAB. TAMBRAUW'],
+            ['9605', 'KAB. MAYBRAT'],
+            ['9671', 'KOTA SORONG'],
         ];
 
         $chunkSize = 100;
