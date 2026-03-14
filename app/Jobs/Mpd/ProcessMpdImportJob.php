@@ -135,7 +135,7 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
 
         $isForecast = $job->kategori === 'FORECAST';
         $delimiter = ';';
-        $batchSize = 10000;
+        $batchSize = 2000; // Dikurangi jadi 2000 agar tidak melewati batas 65535 parameter PostgreSQL (2000 * 22 kolom = 44000 parameter)
         $batch = [];
         $processedRows = 0;
         $skippedRows = 0;
@@ -232,7 +232,6 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
                 ];
-
 
                 if (count($batch) >= $batchSize) {
                     $this->upsertBatch($batch);
