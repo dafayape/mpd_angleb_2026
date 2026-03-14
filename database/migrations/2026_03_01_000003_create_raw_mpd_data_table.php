@@ -11,7 +11,7 @@ return new class extends Migration
         DB::statement("
             CREATE TABLE raw_mpd_data (
                 tanggal date NOT NULL,
-                opsel varchar(4) NOT NULL CHECK (opsel IN ('TSEL', 'IOH', 'XL')),
+                opsel varchar(10) NOT NULL CHECK (opsel IN ('TSEL', 'IOH', 'XL', 'XLSMART')),
                 kategori varchar(10) NOT NULL CHECK (kategori IN ('ORANG', 'PERGERAKAN')),
                 kode_origin_provinsi char(2) NOT NULL,
                 origin_provinsi varchar(50) NOT NULL,
