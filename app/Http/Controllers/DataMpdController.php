@@ -613,7 +613,6 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('kategori', 'PERGERAKAN')
-                ->where('is_forecast', false)
                 ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
 
@@ -1904,7 +1903,6 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_outflow')
                 )
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-                ->where('is_forecast', false)
                 ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
                 ->groupBy('kode_origin_kabupaten_kota')
                 ->get()
@@ -1919,7 +1917,6 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_inflow')
                 )
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-                ->where('is_forecast', false)
                 ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
                 ->groupBy('kode_dest_kabupaten_kota')
                 ->get()
@@ -2028,7 +2025,6 @@ class DataMpdController extends Controller
             ->select('tanggal', DB::raw('SUM(total) as daily_total'))
             ->whereBetween('tanggal', [$startDateStr, $endDateStr])
             ->where('kategori', 'PERGERAKAN')
-            ->where('is_forecast', false)
             ->groupBy('tanggal')
             ->orderByDesc('daily_total')
             ->get();
@@ -2041,7 +2037,6 @@ class DataMpdController extends Controller
         $totalOrang = DB::table('spatial_movements')
             ->whereBetween('tanggal', [$startDateStr, $endDateStr])
             ->where('kategori', 'ORANG')
-            ->where('is_forecast', false)
             ->sum('total');
 
         // 3. Kontribusi Operator (TSEL, IOH, XL)
@@ -2050,7 +2045,6 @@ class DataMpdController extends Controller
             ->select('opsel', 'kategori', DB::raw('SUM(total) as op_total'))
             ->whereBetween('tanggal', [$startDateStr, $endDateStr])
             ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
-            ->where('is_forecast', false)
             ->groupBy('opsel', 'kategori')
             ->get();
 
@@ -2074,7 +2068,6 @@ class DataMpdController extends Controller
             ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->groupBy('p.name')
             ->orderByDesc('prov_total')
             ->take(5)
@@ -2087,7 +2080,6 @@ class DataMpdController extends Controller
             ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->groupBy('p.name')
             ->orderByDesc('prov_total')
             ->take(5)
@@ -2099,7 +2091,6 @@ class DataMpdController extends Controller
             ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->groupBy('c.name')
             ->orderByDesc('city_total')
             ->take(3)
@@ -2111,7 +2102,6 @@ class DataMpdController extends Controller
             ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->groupBy('c.name')
             ->orderByDesc('city_total')
             ->take(5)
@@ -2175,7 +2165,6 @@ class DataMpdController extends Controller
             ->select('sm.tanggal', DB::raw('SUM(sm.total) as daily_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
             ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
             ->groupBy('sm.tanggal')
@@ -2189,7 +2178,6 @@ class DataMpdController extends Controller
             ->select('sm.tanggal', DB::raw('SUM(sm.total) as daily_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
             ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
             ->groupBy('sm.tanggal')
@@ -2205,7 +2193,6 @@ class DataMpdController extends Controller
             ->select('oc.name', DB::raw('SUM(sm.total) as city_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
             // It says "pergerakan Masyarakat Jabodetabek", implies origin is Jabo, regardless of destination (could be intra + inter)
             ->groupBy('oc.name')
@@ -2219,7 +2206,6 @@ class DataMpdController extends Controller
             ->select('dc.name', DB::raw('SUM(sm.total) as city_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
             ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes) // Intra
             ->groupBy('dc.name')
@@ -2234,7 +2220,6 @@ class DataMpdController extends Controller
             ->select('dp.name', DB::raw('SUM(sm.total) as prov_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->where('sm.is_forecast', false)
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
             ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes) // Inter
             ->groupBy('dp.name')
