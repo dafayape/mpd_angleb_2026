@@ -107,7 +107,6 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.is_forecast', false) // Only REAL data
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
@@ -257,7 +256,6 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.is_forecast', false)
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
@@ -357,7 +355,6 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.is_forecast', false)
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 // Origin IS in Jabodetabek
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
@@ -454,7 +451,6 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.is_forecast', false)
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 ->where(function ($q) use ($jabodetabekCodes) {
                     $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
@@ -1618,7 +1614,7 @@ class DataMpdController extends Controller
         // B. Query Movement Data
         try {
             $query = DB::table('spatial_movements as sm')
-                ->join('ref_transport_nodes as simpul', 'sm.kode_origin_simpul', '=', 'simpul.code')
+                ->leftJoin('ref_transport_nodes as simpul', 'sm.kode_origin_simpul', '=', 'simpul.code')
                 ->select(
                     'simpul.category as kategori_simpul',
                     'sm.tanggal',
@@ -1635,14 +1631,16 @@ class DataMpdController extends Controller
 
             // C. Merge Data
             foreach ($data as $row) {
-                $cat = $row->kategori_simpul;
+                $cat = $row->kategori_simpul ?? 'Tanpa Data Simpul (Forecast/Other)';
                 $date = $row->tanggal;
                 $vol = $row->total_volume;
 
-                if (isset($pivot[$cat])) {
-                    $pivot[$cat][$date] = $vol;
-                    $pivot[$cat]['total'] += $vol;
+                if (!isset($pivot[$cat])) {
+                    $pivot[$cat] = ['total' => 0];
                 }
+
+                $pivot[$cat][$date] = $vol;
+                $pivot[$cat]['total'] += $vol;
             }
         } catch (\Throwable $e) {
             // If DB Query fails, we return the initialized empty pivot
