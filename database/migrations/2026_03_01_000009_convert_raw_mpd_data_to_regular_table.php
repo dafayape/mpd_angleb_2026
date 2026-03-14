@@ -15,7 +15,7 @@ return new class extends Migration {
                 id bigserial PRIMARY KEY,
                 import_job_id bigint NULL,
                 tanggal date NOT NULL,
-                opsel varchar(4) NOT NULL,
+                opsel varchar(10) NOT NULL,
                 kategori varchar(10) NOT NULL,
                 kode_origin_provinsi char(2) NOT NULL,
                 origin_provinsi varchar(50) NOT NULL,

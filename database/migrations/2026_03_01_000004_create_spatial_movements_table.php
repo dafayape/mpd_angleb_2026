@@ -13,7 +13,7 @@ return new class extends Migration {
     DB::statement("
         CREATE TABLE spatial_movements (
             tanggal date NOT NULL,
-            opsel varchar(4) NOT NULL,
+            opsel varchar(10) NOT NULL,
             kategori varchar(10) NOT NULL,
             kode_origin_kabupaten_kota char(4) NOT NULL,
             kode_dest_kabupaten_kota char(4) NOT NULL,
