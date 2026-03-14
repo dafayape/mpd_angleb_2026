@@ -200,12 +200,12 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 $modaName = $cols[16];
 
                 if ($isForecast) {
-                    $originSimpulCode = '';
-                    $originSimpulName = '';
-                    $destSimpulCode = '';
-                    $destSimpulName = '';
-                    $modaCode = '';
-                    $modaName = '';
+                    $originSimpulCode = null;
+                    $originSimpulName = null;
+                    $destSimpulCode = null;
+                    $destSimpulName = null;
+                    $modaCode = null;
+                    $modaName = null;
                 }
 
                 $batch[] = [
