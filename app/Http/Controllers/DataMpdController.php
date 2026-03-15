@@ -733,7 +733,6 @@ class DataMpdController extends Controller
             )
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->where('kategori', 'PERGERAKAN')
-            ->where('is_forecast', false)
             ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
             ->get();
     }
