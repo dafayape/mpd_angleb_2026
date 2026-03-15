@@ -13,8 +13,9 @@ use Illuminate\Support\Facades\Log;
  * Berbeda dengan retry-etl (yang dispatch ke queue), command ini:
  * 1. Menjalankan ETL secara SINKRON & BERURUTAN per kombinasi (tanggal/opsel/kategori)
  * 2. Menampilkan progress realtime
- * 3. Refresh Materialized Views & Cache SEKALI di akhir (lebih efisien)
- * 4. Verifikasi akhir untuk memastikan 100%
+ * 3. Memperbarui status di tabel import_jobs agar dashboard sinkron
+ * 4. Refresh Materialized Views & Cache SEKALI di akhir (lebih efisien)
+ * 5. Verifikasi akhir untuk memastikan 100%
  *
  * SQL yang digunakan IDENTIK dengan TransformRawToSpatialJob::processDateBatch()
  */
@@ -112,16 +113,50 @@ class FixEtlCommand extends Command
 
                 if ($rawNow === $spatialNow) {
                     $this->info("  ✅ SUKSES — Raw: " . number_format($rawNow) . " = Spatial: " . number_format($spatialNow) . " ({$elapsed}s)");
+                    
+                    // Update ImportJob table so UI reflecting "Completed"
+                    DB::table('import_jobs')
+                        ->where('tanggal_data', $item['tanggal'])
+                        ->where('opsel', $item['opsel'])
+                        ->where('kategori', $item['kategori'])
+                        ->update([
+                            'status_etl' => 'completed',
+                            'etl_progress' => 100,
+                            'updated_at' => now()
+                        ]);
+
                     $completed++;
                 } else {
                     $diff = $rawNow - $spatialNow;
                     $this->warn("  ⚠️ Selisih — Raw: " . number_format($rawNow) . " | Spatial: " . number_format($spatialNow) . " | Δ " . number_format($diff) . " ({$elapsed}s)");
+                    
+                    // Even if partial, mark as processing/partial for UI
+                    DB::table('import_jobs')
+                        ->where('tanggal_data', $item['tanggal'])
+                        ->where('opsel', $item['opsel'])
+                        ->where('kategori', $item['kategori'])
+                        ->update([
+                            'status_etl' => 'processing',
+                            'etl_progress' => $rawNow > 0 ? (int)(($spatialNow/$rawNow)*100) : 0,
+                            'updated_at' => now()
+                        ]);
+
                     $completed++;
                 }
             } catch (\Throwable $e) {
                 $elapsed = round(microtime(true) - $jobStart, 1);
                 $this->error("  ❌ ERROR ({$elapsed}s): " . $e->getMessage());
                 Log::error("FixETL failed for {$label}: " . $e->getMessage());
+
+                DB::table('import_jobs')
+                    ->where('tanggal_data', $item['tanggal'])
+                    ->where('opsel', $item['opsel'])
+                    ->where('kategori', $item['kategori'])
+                    ->update([
+                        'status_etl' => 'failed',
+                        'updated_at' => now()
+                    ]);
+
                 $failed++;
             }
 
@@ -310,6 +345,30 @@ class FixEtlCommand extends Command
             ";
 
             DB::statement($sql, [$tanggal, $opsel, $kategori, $isForecast]);
+
+            // Calculate Data Lost (Unmapped Nodes) if it's REAL data
+            if (!$isForecast) {
+                $unmapped = (int) DB::table('raw_mpd_data as r')
+                    ->leftJoin('ref_transport_nodes as n1', 'r.kode_origin_simpul', '=', 'n1.code')
+                    ->leftJoin('ref_transport_nodes as n2', 'r.kode_dest_simpul', '=', 'n2.code')
+                    ->where('r.tanggal', $tanggal)
+                    ->where('r.opsel', $opsel)
+                    ->where('r.kategori', $kategori)
+                    ->where('r.is_forecast', false)
+                    ->where(function ($q) {
+                        $q->where(function ($q2) {
+                            $q2->where('r.kode_origin_simpul', '!=', '')->whereNull('n1.code');
+                        })->orWhere(function ($q2) {
+                            $q2->where('r.kode_dest_simpul', '!=', '')->whereNull('n2.code');
+                        });
+                    })->sum('r.total');
+
+                DB::table('import_jobs')
+                    ->where('tanggal_data', $tanggal)
+                    ->where('opsel', $opsel)
+                    ->where('kategori', $kategori)
+                    ->update(['data_lost' => $unmapped]);
+            }
         }
     }
 }
