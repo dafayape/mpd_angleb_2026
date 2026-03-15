@@ -278,7 +278,16 @@ class TransformRawToSpatialJob implements ShouldQueue
 
                     if (!$exists) continue;
 
-                    // Eksekusi upsert dalam porsi kecil yang bersahabat dengan RAM
+                    // STEP 1: Delete existing spatial data for this specific combination to prevent duplicates
+                    // Safer than ON CONFLICT for NULL values
+                    DB::table('spatial_movements')
+                        ->where('tanggal', $date)
+                        ->where('opsel', $opsel)
+                        ->where('kategori', $kategori)
+                        ->where('is_forecast', $isForecast)
+                        ->delete();
+
+                    // STEP 2: Insert fresh aggregated data
                     $sql = "
                         INSERT INTO spatial_movements (
                             tanggal, opsel, kategori,
@@ -321,13 +330,6 @@ class TransformRawToSpatialJob implements ShouldQueue
                             r.kode_origin_simpul, r.kode_dest_simpul,
                             r.kode_moda, r.is_forecast,
                             n_origin.location, n_dest.location
-                        ON CONFLICT (tanggal, opsel, kategori, kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, kode_origin_simpul, kode_dest_simpul, kode_moda, is_forecast)
-                        DO UPDATE SET
-                            total = EXCLUDED.total,
-                            origin_location = EXCLUDED.origin_location,
-                            dest_location = EXCLUDED.dest_location,
-                            distance_meters = EXCLUDED.distance_meters,
-                            updated_at = NOW()
                     ";
 
                     DB::statement($sql, [$date, $opsel, $kategori, $isForecast]);
