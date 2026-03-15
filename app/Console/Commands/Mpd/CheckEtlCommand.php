@@ -25,27 +25,29 @@ class CheckEtlCommand extends Command
         $this->info("🔍 Memeriksa Kelengkapan Data (Raw vs Spatial)...");
 
         $rawSums = DB::table('raw_mpd_data')
-            ->selectRaw('tanggal, opsel, kategori, SUM(total) as raw_sum')
-            ->groupBy('tanggal', 'opsel', 'kategori')
+            ->selectRaw('tanggal, opsel, kategori, is_forecast, SUM(total) as raw_sum')
+            ->groupBy('tanggal', 'opsel', 'kategori', 'is_forecast')
             ->get();
 
         $spatialSums = DB::table('spatial_movements')
-            ->selectRaw('tanggal, opsel, kategori, SUM(total) as spatial_sum')
-            ->groupBy('tanggal', 'opsel', 'kategori')
+            ->selectRaw('tanggal, opsel, kategori, is_forecast, SUM(total) as spatial_sum')
+            ->groupBy('tanggal', 'opsel', 'kategori', 'is_forecast')
             ->get()
             ->keyBy(function ($item) {
-                return $item->tanggal . '|' . $item->opsel . '|' . $item->kategori;
+                return $item->tanggal . '|' . $item->opsel . '|' . $item->kategori . '|' . ($item->is_forecast ? '1' : '0');
             });
 
         $report = [];
         $hasMissing = false;
 
         foreach ($rawSums as $raw) {
-            $key = $raw->tanggal . '|' . $raw->opsel . '|' . $raw->kategori;
+            $key = $raw->tanggal . '|' . $raw->opsel . '|' . $raw->kategori . '|' . ($raw->is_forecast ? '1' : '0');
             $spatial = $spatialSums->get($key);
             $spatialTotal = $spatial ? (int) $spatial->spatial_sum : 0;
             $rawTotal = (int) $raw->raw_sum;
             
+            $typeLabel = $raw->is_forecast ? 'FORECAST' : 'REAL';
+
             if ($spatialTotal === 0) {
                 $status = '❌ GAGAL (Belum di-ETL)';
                 $hasMissing = true;
@@ -59,10 +61,11 @@ class CheckEtlCommand extends Command
             $report[] = [
                 'Tanggal' => $raw->tanggal,
                 'Opsel' => $raw->opsel,
-                'Kategori' => $raw->kategori,
-                'Raw Total' => number_format($rawTotal),
-                'Spatial Total' => number_format($spatialTotal),
-                'Selisih (Missing)' => number_format($rawTotal - $spatialTotal),
+                'Tipe' => $typeLabel,
+                'Data' => $raw->kategori,
+                'Raw' => number_format($rawTotal),
+                'Spatial' => number_format($spatialTotal),
+                'Diff' => number_format($rawTotal - $spatialTotal),
                 'Status' => $status
             ];
         }
@@ -70,7 +73,7 @@ class CheckEtlCommand extends Command
         if ($rawSums->isEmpty()) {
             $this->warn("Tidak ada data raw ditemukan di database.");
         } else {
-            $this->table(['Tanggal', 'Opsel', 'Kategori', 'Raw Total', 'Spatial Total', 'Missing', 'Status'], $report);
+            $this->table(['Tanggal', 'Opsel', 'Tipe', 'Data', 'Raw Total', 'Spatial Total', 'Missing', 'Status'], $report);
         }
 
         if ($hasMissing) {

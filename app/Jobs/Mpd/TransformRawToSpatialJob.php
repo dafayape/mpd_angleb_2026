@@ -4,7 +4,6 @@ namespace App\Jobs\Mpd;
 
 use App\Models\ImportJob;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -27,7 +26,7 @@ use Illuminate\Support\Facades\Log;
  * ShouldBeUnique: Mencegah duplikasi ETL job untuk import_job_id yang sama.
  * Jika user upload cepat 2x atau network retry, hanya 1 ETL yang jalan.
  */
-class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
+class TransformRawToSpatialJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -43,13 +42,6 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
      */
     public array $backoff = [30, 60, 120];
 
-    /**
-     * Unique ID: memastikan hanya 1 job per import_job_id yang bisa masuk ke queue.
-     */
-    public function uniqueId(): string
-    {
-        return 'etl_' . $this->importJobId;
-    }
 
     public function __construct(int $importJobId)
     {

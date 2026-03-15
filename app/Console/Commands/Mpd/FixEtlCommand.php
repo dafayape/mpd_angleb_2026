@@ -96,6 +96,22 @@ class FixEtlCommand extends Command
             try {
                 $this->processEtlForCombination($item['tanggal'], $item['opsel'], $item['kategori']);
 
+                // Determine target category for ImportJob table
+                $importJobKategori = $item['status'] === 'GAGAL' ? null : 'REAL'; 
+                // We need to check if there were forecast rows
+                $hasForecast = DB::table('raw_mpd_data')
+                    ->where('tanggal', $item['tanggal'])
+                    ->where('opsel', $item['opsel'])
+                    ->where('kategori', $item['kategori'])
+                    ->where('is_forecast', true)
+                    ->exists();
+                $hasReal = DB::table('raw_mpd_data')
+                    ->where('tanggal', $item['tanggal'])
+                    ->where('opsel', $item['opsel'])
+                    ->where('kategori', $item['kategori'])
+                    ->where('is_forecast', false)
+                    ->exists();
+
                 // Verify immediately
                 $rawNow = (int) DB::table('raw_mpd_data')
                     ->where('tanggal', $item['tanggal'])
@@ -114,11 +130,15 @@ class FixEtlCommand extends Command
                 if ($rawNow === $spatialNow) {
                     $this->info("  ✅ SUKSES — Raw: " . number_format($rawNow) . " = Spatial: " . number_format($spatialNow) . " ({$elapsed}s)");
                     
-                    // Update ImportJob table so UI reflecting "Completed"
+                    // Update ImportJob table (Map data back to UI Tipe: REAL/FORECAST)
+                    $targetTypes = [];
+                    if ($hasReal) $targetTypes[] = 'REAL';
+                    if ($hasForecast) $targetTypes[] = 'FORECAST';
+
                     DB::table('import_jobs')
                         ->where('tanggal_data', $item['tanggal'])
                         ->where('opsel', $item['opsel'])
-                        ->where('kategori', $item['kategori'])
+                        ->whereIn('kategori', $targetTypes)
                         ->update([
                             'status_etl' => 'completed',
                             'etl_progress' => 100,
@@ -130,11 +150,14 @@ class FixEtlCommand extends Command
                     $diff = $rawNow - $spatialNow;
                     $this->warn("  ⚠️ Selisih — Raw: " . number_format($rawNow) . " | Spatial: " . number_format($spatialNow) . " | Δ " . number_format($diff) . " ({$elapsed}s)");
                     
-                    // Even if partial, mark as processing/partial for UI
+                    $targetTypes = [];
+                    if ($hasReal) $targetTypes[] = 'REAL';
+                    if ($hasForecast) $targetTypes[] = 'FORECAST';
+
                     DB::table('import_jobs')
                         ->where('tanggal_data', $item['tanggal'])
                         ->where('opsel', $item['opsel'])
-                        ->where('kategori', $item['kategori'])
+                        ->whereIn('kategori', $targetTypes)
                         ->update([
                             'status_etl' => 'processing',
                             'etl_progress' => $rawNow > 0 ? (int)(($spatialNow/$rawNow)*100) : 0,
@@ -148,10 +171,11 @@ class FixEtlCommand extends Command
                 $this->error("  ❌ ERROR ({$elapsed}s): " . $e->getMessage());
                 Log::error("FixETL failed for {$label}: " . $e->getMessage());
 
+                $targetTypes = ['REAL', 'FORECAST']; // On error, try both to be safe
                 DB::table('import_jobs')
                     ->where('tanggal_data', $item['tanggal'])
                     ->where('opsel', $item['opsel'])
-                    ->where('kategori', $item['kategori'])
+                    ->whereIn('kategori', $targetTypes)
                     ->update([
                         'status_etl' => 'failed',
                         'updated_at' => now()
@@ -366,7 +390,7 @@ class FixEtlCommand extends Command
                 DB::table('import_jobs')
                     ->where('tanggal_data', $tanggal)
                     ->where('opsel', $opsel)
-                    ->where('kategori', $kategori)
+                    ->where('kategori', $isForecast ? 'FORECAST' : 'REAL')
                     ->update(['data_lost' => $unmapped]);
             }
         }

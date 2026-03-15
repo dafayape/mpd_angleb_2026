@@ -208,10 +208,17 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                     $modaName = null;
                 }
 
+                // Sanitize Category: Ensure only ORANG or PERGERAKAN (regardless of what's in CSV)
+                $dataKategori = strtoupper(trim($cols[2]));
+                if (!in_array($dataKategori, ['ORANG', 'PERGERAKAN'])) {
+                    // Fallback to PERGERAKAN if CSV is weird
+                    $dataKategori = 'PERGERAKAN';
+                }
+
                 $batch[] = [
                     'tanggal' => $dbTanggal,
                     'opsel' => $cols[1],
-                    'kategori' => $cols[2],
+                    'kategori' => $dataKategori, 
                     'kode_origin_provinsi' => $cols[3],
                     'origin_provinsi' => $cols[4],
                     'kode_origin_kabupaten_kota' => $cols[5],
