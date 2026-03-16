@@ -170,7 +170,9 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
             // Skip header line
             fgets($handle);
 
+            $rowsRead = 0;
             while (($line = fgets($handle)) !== false) {
+                $line = trim(str_getcsv($line, $delimiter)[0] ?? $line); // fix trim if str_getcsv fails early
                 $line = trim(str_replace("\r", '', $line));
                 if ($line === '') {
                     continue;
@@ -178,11 +180,12 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
 
                 $cols = str_getcsv($line, $delimiter);
 
-                if (count($cols) !== $expectedCount) {
+                if (count($cols) < $expectedCount) {
                     $skippedRows++;
-
                     continue;
                 }
+
+                $rowsRead++;
 
                 // Normalize Date for DB (must be YYYY-MM-DD)
                 $rawTanggal = trim($cols[0]);
@@ -192,12 +195,12 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 // ═══════════════════════════════════════════════════════
                 // FORECAST LOGIC: Force empty Simpul & Moda if category is FORECAST
                 // ═══════════════════════════════════════════════════════
-                $originSimpulCode = $cols[11];
-                $originSimpulName = $cols[12];
-                $destSimpulCode = $cols[13];
-                $destSimpulName = $cols[14];
-                $modaCode = $cols[15];
-                $modaName = $cols[16];
+                $originSimpulCode = trim($cols[11]);
+                $originSimpulName = trim($cols[12]);
+                $destSimpulCode = trim($cols[13]);
+                $destSimpulName = trim($cols[14]);
+                $modaCode = trim($cols[15]);
+                $modaName = trim($cols[16]);
 
                 if ($isForecast) {
                     $originSimpulCode = null;
@@ -208,52 +211,63 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                     $modaName = null;
                 }
 
-                // Sanitize Category: Ensure only ORANG or PERGERAKAN (regardless of what's in CSV)
+                // Sanitize Category: Ensure only ORANG or PERGERAKAN
                 $dataKategori = strtoupper(trim($cols[2]));
                 if (!in_array($dataKategori, ['ORANG', 'PERGERAKAN'])) {
-                    // Fallback to PERGERAKAN if CSV is weird
                     $dataKategori = 'PERGERAKAN';
                 }
 
-                $batch[] = [
-                    'tanggal' => $dbTanggal,
-                    'opsel' => $cols[1],
-                    'kategori' => $dataKategori, 
-                    'kode_origin_provinsi' => $cols[3],
-                    'origin_provinsi' => $cols[4],
-                    'kode_origin_kabupaten_kota' => $cols[5],
-                    'origin_kabupaten_kota' => $cols[6],
-                    'kode_dest_provinsi' => $cols[7],
-                    'dest_provinsi' => $cols[8],
-                    'kode_dest_kabupaten_kota' => $cols[9],
-                    'dest_kabupaten_kota' => $cols[10],
-                    'kode_origin_simpul' => $originSimpulCode,
-                    'origin_simpul' => $originSimpulName,
-                    'kode_dest_simpul' => $destSimpulCode,
-                    'dest_simpul' => $destSimpulName,
-                    'kode_moda' => $modaCode,
-                    'moda' => $modaName,
-                    'total' => (int) $cols[17],
-                    'is_forecast' => $isForecast,
-                    'import_job_id' => $this->importJobId,
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ];
+                // ═══════════════════════════════════════════════════════
+                // DEDUPLICATION KEY (Matches Unique Index)
+                // ═══════════════════════════════════════════════════════
+                $key = "{$dbTanggal}|{$cols[1]}|{$dataKategori}|{$cols[5]}|{$cols[9]}|" . 
+                       ($originSimpulCode ?? 'NULL') . "|" . 
+                       ($destSimpulCode ?? 'NULL') . "|" . 
+                       ($modaCode ?? 'NULL') . "|" . 
+                       ($isForecast ? '1' : '0');
+
+                if (isset($batch[$key])) {
+                    $batch[$key]['total'] += (int) $cols[17];
+                } else {
+                    $batch[$key] = [
+                        'tanggal' => $dbTanggal,
+                        'opsel' => $cols[1],
+                        'kategori' => $dataKategori, 
+                        'kode_origin_provinsi' => $cols[3],
+                        'origin_provinsi' => $cols[4],
+                        'kode_origin_kabupaten_kota' => $cols[5],
+                        'origin_kabupaten_kota' => $cols[6],
+                        'kode_dest_provinsi' => $cols[7],
+                        'dest_provinsi' => $cols[8],
+                        'kode_dest_kabupaten_kota' => $cols[9],
+                        'dest_kabupaten_kota' => $cols[10],
+                        'kode_origin_simpul' => $originSimpulCode,
+                        'origin_simpul' => $originSimpulName,
+                        'kode_dest_simpul' => $destSimpulCode,
+                        'dest_simpul' => $destSimpulName,
+                        'kode_moda' => $modaCode,
+                        'moda' => $modaName,
+                        'total' => (int) $cols[17],
+                        'is_forecast' => $isForecast,
+                        'import_job_id' => $this->importJobId,
+                        'created_at' => $timestamp,
+                        'updated_at' => $timestamp,
+                    ];
+                }
 
                 if (count($batch) >= $batchSize) {
-                    $this->upsertBatch($batch);
+                    $this->upsertBatch(array_values($batch));
                     $processedRows += count($batch);
                     $batch = [];
 
-                    // Update progress setiap 10K baris
-                    $percent = min(99, (int) round(($processedRows / $totalRows) * 100));
+                    // Update progress berdasarkan baris file yang terbaca
+                    $percent = min(99, (int) round(($rowsRead / $totalRows) * 100));
                     $job->update([
-                        'processed_rows' => $processedRows,
+                        'processed_rows' => $rowsRead,
                         'skipped_rows' => $skippedRows,
                         'progress' => $percent,
                     ]);
 
-                    // Memory management
                     if (memory_get_usage() > 64 * 1024 * 1024) {
                         gc_collect_cycles();
                     }
@@ -262,9 +276,10 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
 
             // Flush remaining batch
             if (! empty($batch)) {
-                $this->upsertBatch($batch);
+                $this->upsertBatch(array_values($batch));
                 $processedRows += count($batch);
             }
+
 
             fclose($handle);
 

@@ -107,19 +107,55 @@ class ImportFastCommand extends Command
             $query = "COPY {$tempTable} ({$dbColumns}) FROM '{$path}' WITH (FORMAT csv, HEADER true, DELIMITER ';', ENCODING 'UTF8')";
             $pdo->exec($query);
 
-            // c. Migrasi Internal dari Temp ke Tabel Asli + MetaData
+            // c. Migrasi Internal dari Temp ke Tabel Asli + deduplikasi + logic forecast
             $isForecastStr = ($kategori === 'FORECAST') ? 'true' : 'false';
+            
+            // Kolom target unik untuk ON CONFLICT
+            $uniqueColumns = "tanggal, opsel, kategori, kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, kode_origin_simpul, kode_dest_simpul, kode_moda, is_forecast";
+            
             $insertQuery = "
                 INSERT INTO raw_mpd_data (
-                    import_job_id, is_forecast, created_at, updated_at, {$dbColumns}
+                    import_job_id, is_forecast, created_at, updated_at, 
+                    tanggal, opsel, kategori, 
+                    kode_origin_provinsi, origin_provinsi, 
+                    kode_origin_kabupaten_kota, origin_kabupaten_kota, 
+                    kode_dest_provinsi, dest_provinsi, 
+                    kode_dest_kabupaten_kota, dest_kabupaten_kota, 
+                    kode_origin_simpul, origin_simpul, 
+                    kode_dest_simpul, dest_simpul, 
+                    kode_moda, moda, total
                 )
                 SELECT 
-                    {$job->id}, {$isForecastStr}, NOW(), NOW(), {$dbColumns}
+                    {$job->id}, {$isForecastStr}, NOW(), NOW(),
+                    tanggal, opsel, kategori, 
+                    MAX(kode_origin_provinsi), MAX(origin_provinsi), 
+                    kode_origin_kabupaten_kota, MAX(origin_kabupaten_kota), 
+                    MAX(kode_dest_provinsi), MAX(dest_provinsi), 
+                    kode_dest_kabupaten_kota, MAX(dest_kabupaten_kota), 
+                    -- Force NULL if Forecast, otherwise take from CSV
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_origin_simpul END,
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE MAX(origin_simpul) END,
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_dest_simpul END,
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE MAX(dest_simpul) END,
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_moda END,
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE MAX(moda) END,
+                    SUM(total)
                 FROM {$tempTable}
+                GROUP BY 
+                    tanggal, opsel, kategori, 
+                    kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, 
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_origin_simpul END,
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_dest_simpul END,
+                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_moda END
+                ON CONFLICT ({$uniqueColumns}) 
+                DO UPDATE SET 
+                    total = raw_mpd_data.total + EXCLUDED.total,
+                    import_job_id = EXCLUDED.import_job_id,
+                    updated_at = NOW()
             ";
             
             $insertedRows = $pdo->exec($insertQuery);
-            $this->info("✅ [3/4] Eksekusi COPY PostgreSQL Selesai (Sangat Cepat!).");
+            $this->info("✅ [3/4] Eksekusi Copy & Deduplikasi PostgreSQL Selesai.");
 
             // 5. Update Status History ke "Completed" dengan jumlah baris aslinya
             $job->update([
@@ -130,15 +166,9 @@ class ImportFastCommand extends Command
             ]);
 
             $this->info("✅ [4/4] {$insertedRows} Baris berhasil masuk & History Web diupdate!");
-
-            // 6. Jalankan Proses ETL Spasial secara Background (Mirroring dengan Web)
-            \App\Jobs\Mpd\TransformRawToSpatialJob::dispatch($job->id);
-            $this->info("🗺️  Job Transformasi Peta/Spasial sedang berjalan di background server.");
-
-            $this->newLine();
-            $this->info("🎉 IMPORT KILAT BERHASIL!");
             
             return Command::SUCCESS;
+
 
         } catch (\Exception $e) {
             $this->error("🔥 INSERT ERROR (Postgres COPY Aborted): " . $e->getMessage());
