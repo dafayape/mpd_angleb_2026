@@ -2344,7 +2344,6 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
 
         // Map slug -> config (sub_category values verified from ref_simpul.csv)
-        // Actual categories: Bandara(empty), Pelabuhan(Laut/Penyeberangan), Stasiun(Antar Kota/Perkotaan/KCJB), Terminal(A/B)
         $map = [
             'stasiun-ka-antar-kota' => ['category' => 'Stasiun', 'sub_category' => 'Antar Kota',      'title' => 'Stasiun KA Antar Kota',      'view' => 'pages.substansi._simpul-layout',  'number' => '14', 'kode_moda' => 'E'],
             'stasiun-ka-regional' => ['category' => 'Stasiun', 'sub_category' => 'Perkotaan',       'title' => 'Stasiun KA Regional (Perkotaan)',  'view' => 'pages.substansi._simpul-layout',  'number' => '15', 'kode_moda' => 'G'],
@@ -2364,9 +2363,10 @@ class DataMpdController extends Controller
         $category = $cfg['category'];
         $subCat = $cfg['sub_category'];
         $kodeModa = $cfg['kode_moda'] ?? null;
-        $cacheKey = "mpd:simpul:{$slug}:".$startDate->format('Ymd').'_'.$endDate->format('Ymd');
+        $cacheKey = "mpd:simpul:{$slug}:v5:".$startDate->format('Ymd').'_'.$endDate->format('Ymd');
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $category, $subCat, $kodeModa) {
+            $isForecast = false; // Always REAL for Substansi Simpul
 
             // TOP 10 ORIGIN (Asal)
             $topOrigin = DB::table('spatial_movements as sm')
@@ -2374,7 +2374,7 @@ class DataMpdController extends Controller
                 ->select(DB::raw('COALESCE(n.code, sm.kode_origin_simpul) as code'), DB::raw('COALESCE(n.name, sm.kode_origin_simpul) as name'), DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
-                ->where('sm.is_forecast', false)
+                ->where('sm.is_forecast', $isForecast)
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
                     if ($kodeModa) {
@@ -2390,7 +2390,7 @@ class DataMpdController extends Controller
                         }
                     }
                 })
-                ->groupBy('n.code', 'n.name', 'sm.kode_origin_simpul')
+                ->groupBy('sm.kode_origin_simpul', 'n.code', 'n.name')
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
@@ -2401,7 +2401,7 @@ class DataMpdController extends Controller
                 ->select(DB::raw('COALESCE(n.code, sm.kode_dest_simpul) as code'), DB::raw('COALESCE(n.name, sm.kode_dest_simpul) as name'), DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
-                ->where('sm.is_forecast', false)
+                ->where('sm.is_forecast', $isForecast)
                 ->where('sm.kode_dest_simpul', '!=', '')
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
                     if ($kodeModa) {
@@ -2417,12 +2417,12 @@ class DataMpdController extends Controller
                         }
                     }
                 })
-                ->groupBy('n.code', 'n.name', 'sm.kode_dest_simpul')
+                ->groupBy('sm.kode_dest_simpul', 'n.code', 'n.name')
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
 
-            // TOP 10 O-D PAIRS
+            // TOP 10 O-D PAIRS (STRICT FILTER: Both ends must match category)
             $topOd = DB::table('spatial_movements as sm')
                 ->leftJoin('ref_transport_nodes as o', 'sm.kode_origin_simpul', '=', 'o.code')
                 ->leftJoin('ref_transport_nodes as d', 'sm.kode_dest_simpul', '=', 'd.code')
@@ -2432,9 +2432,10 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
-                ->where('sm.is_forecast', false)
+                ->where('sm.is_forecast', $isForecast)
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->where('sm.kode_dest_simpul', '!=', '')
+                // Filter Asal (Origin)
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
                     if ($kodeModa) {
                         if (is_array($kodeModa)) {
@@ -2449,40 +2450,45 @@ class DataMpdController extends Controller
                         }
                     }
                 })
+                // Filter Tujuan (Destination)
+                ->where(function ($q) use ($category, $subCat, $kodeModa) {
+                    if ($kodeModa) {
+                        if (is_array($kodeModa)) {
+                            $q->whereIn('sm.kode_moda', $kodeModa);
+                        } else {
+                            $q->where('sm.kode_moda', $kodeModa);
+                        }
+                    } else {
+                        $q->where('d.category', $category);
+                        if ($subCat) {
+                            $q->where('d.sub_category', $subCat);
+                        }
+                    }
+                })
                 ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
-
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
 
             // Calculate totals for percentage
-            $totalOrigin = $topOrigin->sum('total_volume');
-            $totalDest = $topDest->sum('total_volume');
-            $totalOd = $topOd->sum('total_volume');
+            $totalOrigin = $topOrigin->sum('total_volume') ?: 1;
+            $totalDest = $topDest->sum('total_volume') ?: 1;
+            $totalOd = $topOd->sum('total_volume') ?: 1;
 
             // Attach percentages
-            $topOrigin = $topOrigin->map(fn ($r) => (object) array_merge((array) $r, ['pct' => $totalOrigin > 0 ? round($r->total_volume / $totalOrigin * 100, 2) : 0]));
-            $topDest = $topDest->map(fn ($r) => (object) array_merge((array) $r, ['pct' => $totalDest > 0 ? round($r->total_volume / $totalDest * 100, 2) : 0]));
-            $topOd = $topOd->map(fn ($r) => (object) array_merge((array) $r, ['pct' => $totalOd > 0 ? round($r->total_volume / $totalOd * 100, 2) : 0]));
-
-            // Build conclusion text
-            $topOdName = $topOd->first()?->od_name ?? '-';
+            $topOrigin = $topOrigin->map(fn ($r) => (object) array_merge((array) $r, ['pct' => round($r->total_volume / $totalOrigin * 100, 2)]));
+            $topDest = $topDest->map(fn ($r) => (object) array_merge((array) $r, ['pct' => round($r->total_volume / $totalDest * 100, 2)]));
+            $topOd = $topOd->map(fn ($r) => (object) array_merge((array) $r, ['pct' => round($r->total_volume / $totalOd * 100, 2)]));
 
             return [
                 'top_origin' => $topOrigin,
                 'top_dest' => $topDest,
                 'top_od' => $topOd,
-                'total_origin' => $totalOrigin,
-                'total_dest' => $totalDest,
-                'total_od' => $totalOd,
-                'top_od_name' => $topOdName,
+                'top_od_name' => $topOd->first()?->od_name ?? '-',
             ];
         });
 
-        /** @var string $viewName */
-        $viewName = $cfg['view'];
-
-        return view($viewName, array_merge($data, [
+        return view($cfg['view'], array_merge($data, [
             'title' => $cfg['title'],
             'pageNumber' => $cfg['number'],
             'note' => $cfg['note'] ?? null,
