@@ -5,43 +5,29 @@ namespace App\Jobs\Mpd;
 use App\Models\ImportJob;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 
-/**
- * ETL Job: Transforms raw_mpd_data → spatial_movements
- *
- * Proses:
- * 1. Ambil data dari raw_mpd_data berdasarkan import_job_id
- * 2. Aggregasi per (tanggal, opsel, kategori, origin_kab, dest_kab, origin_simpul, dest_simpul, kode_moda)
- * 3. Enrich dengan PostGIS coordinates dari ref_transport_nodes
- * 4. Hitung distance_meters menggunakan ST_Distance
- * 5. Upsert ke spatial_movements
- * 6. Invalidate cache
- *
- * ShouldBeUnique: Mencegah duplikasi ETL job untuk import_job_id yang sama.
- * Jika user upload cepat 2x atau network retry, hanya 1 ETL yang jalan.
- */
-class TransformRawToSpatialJob implements ShouldQueue
+class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $importJobId;
-
-    public int $timeout = 3600; // 1 hour max
-
-    public int $tries = 3;
+    public $timeout = 7200; // 2 Jam
+    private $importJobId;
 
     /**
-     * Backoff: jeda antar retry agar tidak langsung menghantam server.
-     * Retry 1: tunggu 30 detik, Retry 2: tunggu 60 detik, Retry 3: tunggu 120 detik.
+     * Unique ID based on importJobId to prevent duplicate processing
      */
-    public array $backoff = [30, 60, 120];
-
+    public function uniqueId(): string
+    {
+        return (string) $this->importJobId;
+    }
 
     public function __construct(int $importJobId)
     {
@@ -53,187 +39,42 @@ class TransformRawToSpatialJob implements ShouldQueue
         $this->updateEtlStatus('processing', 0, "Starting ETL transform for import_job_id={$this->importJobId}");
 
         try {
+            // STEP 1: Calculate initial volume
             $this->calculateIntegrityMetrics('start');
+
+            // STEP 2: Main transformation
             $this->transformData();
+
+            // STEP 3: Final metrics and status update
             $this->calculateIntegrityMetrics('end');
             
-            // Refresh views wrapped so it does not fail the whole job
-            try {
-                $this->refreshMaterializedViews();
-            } catch (\Throwable $ve) {
-                Log::warning("ETL View Refresh skipped for job {$this->importJobId}: " . $ve->getMessage());
-            }
+            // Refresh views (wrapped in try-catch to not fail the whole job)
+            $this->refreshMaterializedViews();
 
+            // Clear specific caches
             $this->invalidateCache();
 
-            $this->updateEtlStatus('completed', 100, "Completed ETL transform for import_job_id={$this->importJobId}");
+            $this->updateEtlStatus('completed', 100, "ETL Transformation successful");
+
         } catch (\Throwable $e) {
-            $this->updateEtlStatus('failed', 0, "Failed: " . $e->getMessage(), 'error');
+            Log::error("ETL Transformation Failed (Job: {$this->importJobId}): " . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            $this->updateEtlStatus('failed', 0, "Error: " . $e->getMessage());
             throw $e;
         }
     }
 
-    private function updateEtlStatus(string $status, int $progress, string $message, string $level = 'info'): void
-    {
-        // 1. Dedicated Logging (Safely handle channel failures)
-        try {
-            Log::channel('etl')->log($level, "[Job ID: {$this->importJobId}] {$message}");
-        } catch (\Throwable $logErr) {
-            // Fallback to default log if 'etl' channel is misconfigured
-            Log::log($level, "[ETL FALLBACK][Job ID: {$this->importJobId}] {$message}");
-        }
-        
-        // 2. Database Update (dedicated columns + metadata JSON)
-        try {
-            $job = ImportJob::find($this->importJobId);
-            if ($job) {
-                // Update dedicated columns for easy polling
-                $job->status_etl = $status;
-                $job->etl_progress = $progress;
-
-                // Update metadata JSON for detailed logs
-                $meta = $job->metadata ?? [];
-                $meta['etl_status'] = $status;
-                $meta['etl_progress'] = $progress;
-                
-                $logs = $meta['etl_logs'] ?? [];
-                $logs[] = [
-                    'time' => now()->toDateTimeString(),
-                    'level' => strtoupper($level),
-                    'message' => $message,
-                ];
-                
-                // Keep last 100 log entries
-                if (count($logs) > 100) {
-                    array_shift($logs);
-                }
-                $meta['etl_logs'] = $logs;
-                
-                $job->metadata = $meta;
-                $job->save();
-            }
-        } catch (\Throwable $e) {
-            Log::error("Failed to update ETL database metadata for job {$this->importJobId}: " . $e->getMessage());
-        }
-    }
-
-    private function calculateIntegrityMetrics(string $phase): void
-    {
-        try {
-            $job = ImportJob::find($this->importJobId);
-            if (!$job) return;
-
-            $meta = $job->metadata ?? [];
-            $stats = $meta['etl_stats'] ?? [
-                'raw_volume' => 0,
-                'mapped_volume' => 0,
-                'unmapped_volume' => 0,
-                'success_rate' => 0,
-                'missing_nodes' => []
-            ];
-
-            if ($phase === 'start') {
-                $stats['raw_volume'] = (float) DB::table('raw_mpd_data')
-                    ->where('import_job_id', $this->importJobId)
-                    ->sum('total');
-                
-                $this->updateEtlStatus('processing', 0, "Calculated raw volume: " . number_format($stats['raw_volume'], 0));
-            } else {
-                // Volume REAL saja: Data Forecast sengaja tidak punya simpul, jadi tidak boleh
-                // dihitung sebagai "unmapped" karena akan menghasilkan warning palsu.
-                $realVolume = (float) DB::table('raw_mpd_data')
-                    ->where('import_job_id', $this->importJobId)
-                    ->where('is_forecast', false)
-                    ->sum('total');
-
-                $forecastVolume = (float) DB::table('raw_mpd_data')
-                    ->where('import_job_id', $this->importJobId)
-                    ->where('is_forecast', true)
-                    ->sum('total');
-
-                // Hanya hitung unmapped untuk data REAL yang punya simpul non-kosong
-                $unmappedVolume = (float) DB::table('raw_mpd_data as r')
-                    ->leftJoin('ref_transport_nodes as n1', 'r.kode_origin_simpul', '=', 'n1.code')
-                    ->leftJoin('ref_transport_nodes as n2', 'r.kode_dest_simpul', '=', 'n2.code')
-                    ->where('r.import_job_id', $this->importJobId)
-                    ->where('r.is_forecast', false) // Hanya data REAL
-                    ->where(function($q) {
-                        $q->where(function($q2) {
-                            // Origin simpul diisi tapi tidak ditemukan di referensi
-                            $q2->where('r.kode_origin_simpul', '!=', '')
-                               ->whereNull('n1.code');
-                        })->orWhere(function($q2) {
-                            // Dest simpul diisi tapi tidak ditemukan di referensi
-                            $q2->where('r.kode_dest_simpul', '!=', '')
-                               ->whereNull('n2.code');
-                        });
-                    })
-                    ->sum('r.total');
-
-                $stats['unmapped_volume'] = $unmappedVolume;
-                $stats['forecast_volume'] = $forecastVolume;
-                $stats['real_volume'] = $realVolume;
-                $stats['mapped_volume'] = $realVolume - $unmappedVolume;
-                $stats['success_rate'] = $realVolume > 0 
-                    ? round(($stats['mapped_volume'] / $realVolume) * 100, 2) 
-                    : 100;
-
-                // Identifikasi node yang hilang (hanya dari data REAL)
-                $missingOrigins = DB::table('raw_mpd_data as r')
-                    ->leftJoin('ref_transport_nodes as n', 'r.kode_origin_simpul', '=', 'n.code')
-                    ->where('r.import_job_id', $this->importJobId)
-                    ->where('r.is_forecast', false)
-                    ->where('r.kode_origin_simpul', '!=', '')
-                    ->whereNull('n.code')
-                    ->select('r.kode_origin_simpul as code', DB::raw('SUM(total) as t'))
-                    ->groupBy('r.kode_origin_simpul')
-                    ->orderByDesc('t')
-                    ->take(5)
-                    ->get();
-
-                $stats['missing_nodes'] = $missingOrigins->map(fn($m) => ['code' => $m->code, 'vol' => $m->t])->toArray();
-
-                $msg = "Integrity Check: " . $stats['success_rate'] . "% REAL data mapped. " .
-                       number_format($unmappedVolume, 0) . " volume unmapped. " .
-                       ($forecastVolume > 0 ? number_format($forecastVolume, 0) . " forecast volume (tanpa simpul, OK)." : '');
-                $this->updateEtlStatus('processing', 82, $msg, $stats['success_rate'] < 90 ? 'warning' : 'info');
-
-                // Write data_lost to dedicated column for display in history
-                try {
-                    $job = ImportJob::find($this->importJobId);
-                    if ($job) {
-                        $job->data_lost = (int) $unmappedVolume;
-                        $job->save();
-                    }
-                } catch (\Throwable $e) {
-                    Log::error("Failed to update data_lost: " . $e->getMessage());
-                }
-            }
-
-            $meta['etl_stats'] = $stats;
-            $job->metadata = $meta;
-            $job->save();
-        } catch (\Throwable $e) {
-            Log::error("Failed to calculate ETL integrity metrics: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Main ETL: aggregate raw_mpd_data and upsert into spatial_movements
-     * with PostGIS enrichment (origin/dest location + distance)
-     */
     private function transformData(): void
     {
-        // Process in date-based batches to avoid memory issues
         $dates = DB::table('raw_mpd_data')
             ->where('import_job_id', $this->importJobId)
-            ->select('tanggal')
             ->distinct()
-            ->pluck('tanggal');
+            ->pluck('tanggal')
+            ->toArray();
 
-        $totalDates = $dates->count();
+        $totalDates = count($dates);
         if ($totalDates === 0) {
-            $this->updateEtlStatus('processing', 10, "No raw data found to process.");
+            Log::warning("[ETL Job: {$this->importJobId}] No raw data found for transformation");
             return;
         }
 
@@ -241,15 +82,14 @@ class TransformRawToSpatialJob implements ShouldQueue
         foreach ($dates as $date) {
             $this->processDateBatch($date);
             $processed++;
-            // Calculate progress up to 80% for this phase
-            $progress = (int) (($processed / $totalDates) * 80);
+            $progress = (int) (($processed / $totalDates) * 85);
             $this->updateEtlStatus('processing', $progress, "Processed date batch: {$date} ({$processed}/{$totalDates})");
         }
     }
 
     private function processDateBatch(string $date): void
     {
-        // Ambil semua kombinasi unik yang ADA di raw_mpd_data untuk tanggal ini & job ini
+        // 1. Get unique combinations from raw data
         $combinations = DB::table('raw_mpd_data')
             ->where('import_job_id', $this->importJobId)
             ->where('tanggal', $date)
@@ -257,94 +97,152 @@ class TransformRawToSpatialJob implements ShouldQueue
             ->distinct()
             ->get();
 
-        if ($combinations->isEmpty()) {
-            Log::info("[ETL Job: {$this->importJobId}] No combinations found for date: {$date}");
-            return;
-        }
+        if ($combinations->isEmpty()) return;
 
         foreach ($combinations as $combo) {
-            // STEP 1: Bersihkan data lama agar tidak duplikat
-            DB::table('spatial_movements')
-                ->where('tanggal', $date)
-                ->where('opsel', $combo->opsel)
-                ->where('kategori', $combo->kategori)
-                ->where('tipe', $combo->tipe)
-                ->where('is_forecast', $combo->is_forecast)
-                ->delete();
+            // Use Transaction to prevent data loss if insert fails
+            DB::transaction(function () use ($date, $combo) {
+                // DELETE based on specific combinations
+                DB::table('spatial_movements')
+                    ->where('tanggal', $date)
+                    ->where('opsel', $combo->opsel)
+                    ->where('kategori', $combo->kategori)
+                    ->where('tipe', $combo->tipe)
+                    ->where('is_forecast', $combo->is_forecast)
+                    ->delete();
 
-            // STEP 2: Insert data agregasi
-            $sql = "
-                INSERT INTO spatial_movements (
-                    tanggal, opsel, kategori,
-                    kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
-                    kode_origin_simpul, kode_dest_simpul,
-                    kode_moda, total, is_forecast,
-                    origin_location, dest_location, distance_meters,
-                    created_at, updated_at
-                )
-                SELECT
-                    r.tanggal, r.opsel, r.kategori,
-                    r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
-                    r.kode_origin_simpul, r.kode_dest_simpul,
-                    r.kode_moda, SUM(r.total), r.is_forecast,
-                    n1.location, n2.location,
-                    CASE WHEN n1.location IS NOT NULL AND n2.location IS NOT NULL
-                         THEN ST_Distance(n1.location, n2.location)
-                         ELSE NULL END,
-                    NOW(), NOW()
-                FROM raw_mpd_data r
-                LEFT JOIN ref_transport_nodes n1 ON r.kode_origin_simpul = n1.code
-                LEFT JOIN ref_transport_nodes n2 ON r.kode_dest_simpul = n2.code
-                WHERE r.import_job_id = ? 
-                  AND r.tanggal = ? 
-                  AND r.opsel = ? 
-                  AND r.kategori = ? 
-                  AND r.tipe = ? 
-                  AND r.is_forecast = ?
-                GROUP BY r.tanggal, r.opsel, r.kategori,
-                         r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
-                         r.kode_origin_simpul, r.kode_dest_simpul, r.kode_moda, r.is_forecast,
-                         n1.location, n2.location
-            ";
+                // INSERT from aggregated raw data
+                $sql = "
+                    INSERT INTO spatial_movements (
+                        tanggal, opsel, kategori, tipe,
+                        kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
+                        kode_origin_simpul, kode_dest_simpul,
+                        kode_moda, total, is_forecast,
+                        origin_location, dest_location, distance_meters,
+                        created_at, updated_at
+                    )
+                    SELECT
+                        r.tanggal, r.opsel, r.kategori, r.tipe,
+                        r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
+                        r.kode_origin_simpul, r.kode_dest_simpul,
+                        r.kode_moda, SUM(r.total), r.is_forecast,
+                        n1.location, n2.location,
+                        CASE WHEN n1.location IS NOT NULL AND n2.location IS NOT NULL
+                             THEN ST_Distance(n1.location, n2.location)
+                             ELSE NULL END,
+                        NOW(), NOW()
+                    FROM raw_mpd_data r
+                    LEFT JOIN ref_transport_nodes n1 ON r.kode_origin_simpul = n1.code
+                    LEFT JOIN ref_transport_nodes n2 ON r.kode_dest_simpul = n2.code
+                    WHERE r.import_job_id = ? 
+                      AND r.tanggal = ? 
+                      AND r.opsel = ? 
+                      AND r.kategori = ? 
+                      AND r.tipe = ? 
+                      AND r.is_forecast = ?
+                    GROUP BY r.tanggal, r.opsel, r.kategori, r.tipe,
+                             r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
+                             r.kode_origin_simpul, r.kode_dest_simpul, r.kode_moda, r.is_forecast,
+                             n1.location, n2.location
+                ";
 
-            DB::statement($sql, [
-                $this->importJobId, 
-                $date, 
-                $combo->opsel, 
-                $combo->kategori, 
-                $combo->tipe, 
-                $combo->is_forecast
-            ]);
+                DB::statement($sql, [
+                    $this->importJobId, 
+                    $date, 
+                    $combo->opsel, 
+                    $combo->kategori, 
+                    $combo->tipe, 
+                    $combo->is_forecast
+                ]);
+            });
         }
     }
 
-    /**
-     * Refresh pre-computed materialized views (P3.4)
-     */
+    private function calculateIntegrityMetrics(string $phase): void
+    {
+        $targetJob = ImportJob::find($this->importJobId);
+        if (!$targetJob) return;
+
+        $meta = $targetJob->metadata ?? [];
+        
+        if ($phase === 'start') {
+            $totalRaw = DB::table('raw_mpd_data')
+                ->where('import_job_id', $this->importJobId)
+                ->sum('total');
+            
+            $meta['etl_stats'] = [
+                'raw_volume' => (int) $totalRaw,
+                'started_at' => now()->toDateTimeString()
+            ];
+            
+            $targetJob->metadata = $meta;
+            $targetJob->save();
+        } else {
+            $dates = DB::table('raw_mpd_data')
+                ->where('import_job_id', $this->importJobId)
+                ->distinct()
+                ->pluck('tanggal')
+                ->toArray();
+
+            $totalMapped = DB::table('spatial_movements')
+                ->whereIn('tanggal', $dates)
+                ->sum('total');
+
+            $stats = $meta['etl_stats'] ?? [];
+            $stats['mapped_volume'] = (int) $totalMapped;
+            $stats['success_rate'] = ($stats['raw_volume'] > 0) 
+                ? round(($totalMapped / $stats['raw_volume']) * 100, 2) 
+                : 100; // If raw is 0, we can say it's 100% processed
+            $stats['ended_at'] = now()->toDateTimeString();
+
+            try {
+                // Update specific fields without overwriting metadata object repeatedly
+                DB::table('import_jobs')->where('id', $this->importJobId)->update([
+                    'data_lost' => (int) max(0, ($stats['raw_volume'] - $totalMapped)),
+                    'metadata' => json_encode(array_merge($meta, ['etl_stats' => $stats]))
+                ]);
+            } catch (\Throwable $e) {
+                Log::error("Integrity update error: " . $e->getMessage());
+            }
+        }
+    }
+
+    private function updateEtlStatus(string $status, int $progress, string $message, string $level = 'info'): void
+    {
+        DB::table('import_jobs')->where('id', $this->importJobId)->update([
+            'etl_status' => $status,
+            'etl_progress' => $progress
+        ]);
+
+        $logPrefix = "[ETL import_job_id: {$this->importJobId}] ";
+        Log::log($level, $logPrefix . $message);
+    }
+
     private function refreshMaterializedViews(): void
     {
-        $this->updateEtlStatus('processing', 85, "Refreshing materialized views...");
         try {
             DB::statement("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_daily_summary;");
-            $this->updateEtlStatus('processing', 90, "Refreshed mv_daily_summary...");
             DB::statement("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_jabodetabek_daily;");
-            $this->updateEtlStatus('processing', 95, "Refreshed mv_jabodetabek_daily...");
         } catch (\Throwable $e) {
-            $this->updateEtlStatus('processing', 95, "Materialized view refresh skipped/failed: " . $e->getMessage(), 'warning');
+            Log::warning("View refresh failed/skipped: " . $e->getMessage());
         }
     }
 
-    /**
-     * Clear all dashboard/chart caches after new data is loaded
-     */
     private function invalidateCache(): void
     {
-        $this->updateEtlStatus('processing', 98, "Flushing application cache...");
         try {
-            Cache::flush();
-            $this->updateEtlStatus('processing', 99, "Cache flushed successfully.");
+            // Specific key clearing
+            $keys = ['mpd_national_stats', 'mpd_jabodetabek_stats', 'mpd_summary_total'];
+            foreach ($keys as $key) {
+                Cache::forget($key);
+            }
+            
+            // Clean specific tags if supported
+            if (config('cache.default') !== 'file' && config('cache.default') !== 'database') {
+                Cache::tags(['mpd', 'dashboard'])->flush();
+            }
         } catch (\Throwable $e) {
-            $this->updateEtlStatus('processing', 99, "Cache flush failed: " . $e->getMessage(), 'warning');
+            Log::warning("Cache invalidation failed: " . $e->getMessage());
         }
     }
 }
