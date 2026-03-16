@@ -309,6 +309,32 @@ class DataMpdController extends Controller
             ];
         })->values();
 
+        // FORCE ALL 14 NODES (Ensure even small regions like Kep. Seribu appear)
+        $allNodes = DB::table('ref_cities')->whereIn('code', $jabodetabekCodes)->pluck('name', 'code');
+        
+        foreach ($allNodes as $code => $name) {
+            if (!$topOrigin->contains('code', $code)) {
+                $topOrigin->push([
+                    'code' => $code,
+                    'name' => $name,
+                    'total' => 0,
+                    'pct' => 0
+                ]);
+            }
+            if (!$topDest->contains('code', $code)) {
+                $topDest->push([
+                    'code' => $code,
+                    'name' => $name,
+                    'total' => 0,
+                    'pct' => 0
+                ]);
+            }
+        }
+
+        // Re-sort after pushing
+        $topOrigin = $topOrigin->sortByDesc('total')->values();
+        $topDest = $topDest->sortByDesc('total')->values();
+
         return [
             'top_origin' => $topOrigin,
             'top_dest' => $topDest,
