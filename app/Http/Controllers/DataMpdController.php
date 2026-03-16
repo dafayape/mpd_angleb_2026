@@ -640,7 +640,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('kategori', 'PERGERAKAN')
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
                 ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
 
@@ -698,9 +698,9 @@ class DataMpdController extends Controller
             ->take(10)
             ->values();
 
-        // Top 20 overall routes for Sankey diagram
+        // Top 100 overall routes for Sankey diagram (Increased from 20)
         /** @var \Illuminate\Support\Collection $sankeyData */
-        $sankeyData = $query->take(20)->map(function ($row) {
+        $sankeyData = $query->take(100)->map(function ($row) {
             return [
                 'from' => '(O) '.$row->origin_name,
                 'to' => '(D) '.$row->dest_name,
@@ -760,7 +760,7 @@ class DataMpdController extends Controller
                 DB::raw('SUM(total) as total_volume')
             )
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->where('kategori', 'PERGERAKAN')
+            ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
             ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
             ->get();
     }
@@ -940,7 +940,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('kategori', 'PERGERAKAN')
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
                 ->whereNotNull('kode_origin_simpul')
                 ->where('kode_origin_simpul', '!=', '')
                 ->groupBy('kode_origin_simpul', 'tanggal', 'opsel', 'is_forecast')
