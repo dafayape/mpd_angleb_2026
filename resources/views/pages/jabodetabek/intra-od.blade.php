@@ -151,7 +151,7 @@
                 <div class="card-header d-flex align-items-center bg-white"
                     style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
                     <span class="section-badge">01</span>
-                    <h5 class="fw-bold text-navy mb-0">O-D Intra Jabodetabek (Top 10 kota/kab asal favorit Jabodetabek)</h5>
+                    <h5 class="fw-bold text-navy mb-0">O-D Intra Jabodetabek (14 kota/kab asal Jabodetabek)</h5>
                     <div class="export-dropdown ms-auto">
                         <button class="export-btn" onclick="toggleExportMenu('export-menu-iod01')">
                             <i class="bx bx-download"></i> Export
@@ -235,7 +235,7 @@
                 <div class="card-header d-flex align-items-center bg-white"
                     style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
                     <span class="section-badge">02</span>
-                    <h5 class="fw-bold text-navy mb-0">O-D Intra Jabodetabek (Top 10 kota/kab tujuan favorit Jabodetabek)
+                    <h5 class="fw-bold text-navy mb-0">O-D Intra Jabodetabek (14 kota/kab tujuan Jabodetabek)
                     </h5>
                     <div class="export-dropdown ms-auto">
                         <button class="export-btn" onclick="toggleExportMenu('export-menu-iod02')">

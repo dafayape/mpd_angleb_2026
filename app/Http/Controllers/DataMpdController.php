@@ -281,7 +281,7 @@ class DataMpdController extends Controller
                 ];
             })
             ->sortByDesc('total')
-            ->take(10)
+            ->take(14)
             ->values();
 
         $topDest = $query->groupBy('dest_code')
@@ -296,7 +296,7 @@ class DataMpdController extends Controller
                 ];
             })
             ->sortByDesc('total')
-            ->take(10)
+            ->take(14)
             ->values();
 
         // Sankey Top 20 overall routes
