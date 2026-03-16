@@ -593,14 +593,15 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
+        $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:od-simpul:split:v4:{$dString}";
-        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v4:{$dString}";
-        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v4:{$dString}";
+        $cacheKey = "mpd:nasional:od-simpul:split:v5:{$type}:{$dString}";
+        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v5:{$type}:{$dString}";
+        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v5:{$type}:{$dString}";
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalOdSimpulData($startDate, $endDate));
-        $dataProv = $this->cached($cacheKeyOdProv, $this->dataCacheTtl(), fn () => $this->getNasionalOdProvinsiAsalData($startDate, $endDate));
-        $dataKabKota = $this->cached($cacheKeyOdKabKota, $this->dataCacheTtl(), fn () => $this->getNasionalOdKabKotaData($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalOdSimpulData($startDate, $endDate, $type));
+        $dataProv = $this->cached($cacheKeyOdProv, $this->dataCacheTtl(), fn () => $this->getNasionalOdProvinsiAsalData($startDate, $endDate, $type));
+        $dataKabKota = $this->cached($cacheKeyOdKabKota, $this->dataCacheTtl(), fn () => $this->getNasionalOdKabKotaData($startDate, $endDate, $type));
 
         return view('data-mpd.nasional.od-simpul', [
             'title' => 'O-D Provinsi & Simpul Nasional',
@@ -618,26 +619,34 @@ class DataMpdController extends Controller
             'sankey_kab' => $dataKabKota['sankey'],
             'total_national' => $dataProv['total_national'] ?? 0,
             'prov_coords' => $dataProv['prov_coords'] ?? [],
+            'activeType' => $type,
         ]);
     }
 
     /**
      * @return array
      */
-    private function getNasionalOdKabKotaData($startDate, $endDate)
+    private function getNasionalOdKabKotaData($startDate, $endDate, $type = 'REAL')
     {
         try {
             /** @var \Illuminate\Database\Query\Builder $queryBuilder */
             $queryBuilder = DB::table('spatial_movements');
-            $baseQuery = $queryBuilder
+            $query = $queryBuilder
                 ->select(
                     'kode_origin_kabupaten_kota as origin_code',
                     'kode_dest_kabupaten_kota as dest_code',
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
-                ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
+
+            if ($type === 'FORECAST') {
+                $query->where('is_forecast', true);
+            } else {
+                $query->where('is_forecast', false);
+            }
+
+            $baseQuery = $query->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
 
             $cityCodes = $baseQuery->pluck('origin_code')->merge($baseQuery->pluck('dest_code'))->unique()->filter()->values();
@@ -714,10 +723,10 @@ class DataMpdController extends Controller
     /**
      * @return array
      */
-    private function getNasionalOdProvinsiAsalData(Carbon $startDate, Carbon $endDate)
+    private function getNasionalOdProvinsiAsalData(Carbon $startDate, Carbon $endDate, $type = 'REAL')
     {
         try {
-            $baseQueryResult = $this->fetchBaseOdProvinsiData($startDate, $endDate);
+            $baseQueryResult = $this->fetchBaseOdProvinsiData($startDate, $endDate, $type);
             $query = $this->groupByProvincePairs($baseQueryResult);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('OD Provinsi Query Error (DataMpd): '.$e->getMessage());
@@ -742,20 +751,27 @@ class DataMpdController extends Controller
     /**
      * Fetch raw OD data aggregated by city pairs.
      */
-    private function fetchBaseOdProvinsiData(Carbon $startDate, Carbon $endDate): \Illuminate\Support\Collection
+    private function fetchBaseOdProvinsiData(Carbon $startDate, Carbon $endDate, $type = 'REAL'): \Illuminate\Support\Collection
     {
         /** @var \Illuminate\Database\Query\Builder $queryBuilder */
         $queryBuilder = DB::table('spatial_movements');
 
-        return $queryBuilder
+        $query = $queryBuilder
             ->select(
                 'kode_origin_kabupaten_kota as origin_city_code',
                 'kode_dest_kabupaten_kota as dest_city_code',
                 DB::raw('SUM(total) as total_volume')
             )
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
-            ->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
+            ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
+
+        if ($type === 'FORECAST') {
+            $query->where('is_forecast', true);
+        } else {
+            $query->where('is_forecast', false);
+        }
+
+        return $query->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
             ->get();
     }
 
@@ -875,7 +891,7 @@ class DataMpdController extends Controller
         return $provCoordsMapping;
     }
 
-    private function getNasionalOdSimpulData($startDate, $endDate)
+    private function getNasionalOdSimpulData($startDate, $endDate, $type = 'REAL')
     {
         // categories mapping
         $catMap = [
@@ -887,8 +903,6 @@ class DataMpdController extends Controller
 
         // Opsel list
         $opsels = ['XLSMART', 'IOH', 'TSEL'];
-        // Types
-        $types = ['FORECAST', 'REAL'];
 
         // Initialize Structure
         $result = [
@@ -918,17 +932,15 @@ class DataMpdController extends Controller
         // User example: FORECAST IOH, FORECAST XL... then REAL IOH, REAL TSEL...
 
         foreach ($catMap as $dbCat => $key) {
-            foreach ($types as $tipe) {
-                foreach ($opsels as $opsel) {
-                    // Create a key for easy access, e.g. "FORECAST_IOH"
-                    $rowKey = $tipe.'_'.$opsel;
-                    $result[$key][$rowKey] = $initRow($opsel, $tipe);
-                }
+            foreach ($opsels as $opsel) {
+                // Now we only care about the active type
+                $rowKey = $type.'_'.$opsel;
+                $result[$key][$rowKey] = $initRow($opsel, $type);
             }
         }
 
         try {
-            $baseQuery = DB::table('spatial_movements')
+            $queryObj = DB::table('spatial_movements')
                 ->select(
                     'kode_origin_simpul',
                     'tanggal',
@@ -939,8 +951,15 @@ class DataMpdController extends Controller
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
                 ->whereNotNull('kode_origin_simpul')
-                ->where('kode_origin_simpul', '!=', '')
-                ->groupBy('kode_origin_simpul', 'tanggal', 'opsel', 'is_forecast')
+                ->where('kode_origin_simpul', '!=', '');
+
+            if ($type === 'FORECAST') {
+                $queryObj->where('is_forecast', true);
+            } else {
+                $queryObj->where('is_forecast', false);
+            }
+
+            $baseQuery = $queryObj->groupBy('kode_origin_simpul', 'tanggal', 'opsel', 'is_forecast')
                 ->get();
 
             $simpulCodes = $baseQuery->pluck('kode_origin_simpul')->unique()->filter()->values();
