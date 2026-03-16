@@ -127,8 +127,6 @@ class DataMpdController extends Controller
             \Illuminate\Support\Facades\Log::error('Jabodetabek Intra Pergerakan DB Error: '.$e->getMessage());
         }
 
-
-
         // Calculate Totals and Percentages
         $totals = [];
         foreach ($opsels as $opsel) {
@@ -311,22 +309,22 @@ class DataMpdController extends Controller
 
         // FORCE ALL 14 NODES (Ensure even small regions like Kep. Seribu appear)
         $allNodes = DB::table('ref_cities')->whereIn('code', $jabodetabekCodes)->pluck('name', 'code');
-        
+
         foreach ($allNodes as $code => $name) {
-            if (!$topOrigin->contains('code', $code)) {
+            if (! $topOrigin->contains('code', $code)) {
                 $topOrigin->push([
                     'code' => $code,
                     'name' => $name,
                     'total' => 0,
-                    'pct' => 0
+                    'pct' => 0,
                 ]);
             }
-            if (!$topDest->contains('code', $code)) {
+            if (! $topDest->contains('code', $code)) {
                 $topDest->push([
                     'code' => $code,
                     'name' => $name,
                     'total' => 0,
-                    'pct' => 0
+                    'pct' => 0,
                 ]);
             }
         }
@@ -504,8 +502,6 @@ class DataMpdController extends Controller
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Jabodetabek Inter Pergerakan DB Error: '.$e->getMessage());
         }
-
-
 
         $totals = [];
         foreach ($opsels as $opsel) {
@@ -700,7 +696,7 @@ class DataMpdController extends Controller
 
         // Top 10 overall routes for Sankey diagram (Limited to 10 for clarity)
         /** @var \Illuminate\Support\Collection $sankeyData */
-        $sankeyData = $query->take(10)->map(function ($row) {
+        $sankeyData = $query->take(50)->map(function ($row) {
             return [
                 'from' => '(O) '.$row->origin_name,
                 'to' => '(D) '.$row->dest_name,
@@ -716,8 +712,6 @@ class DataMpdController extends Controller
     }
 
     /**
-     * @param Carbon $startDate
-     * @param Carbon $endDate
      * @return array
      */
     private function getNasionalOdProvinsiAsalData(Carbon $startDate, Carbon $endDate)
@@ -814,6 +808,7 @@ class DataMpdController extends Controller
         return $query->groupBy('origin_code')
             ->map(function (\Illuminate\Support\Collection $rows) use ($totalNational) {
                 $subTotal = (float) $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->origin_code,
                     'name' => $rows->first()->origin_name,
@@ -834,6 +829,7 @@ class DataMpdController extends Controller
         return $query->groupBy('dest_code')
             ->map(function (\Illuminate\Support\Collection $rows) use ($totalNational) {
                 $subTotal = (float) $rows->sum('total_volume');
+
                 return [
                     'code' => $rows->first()->dest_code,
                     'name' => $rows->first()->dest_name,
@@ -875,6 +871,7 @@ class DataMpdController extends Controller
                 ];
             }
         }
+
         return $provCoordsMapping;
     }
 
@@ -1346,7 +1343,6 @@ class DataMpdController extends Controller
                 }
             }
 
-
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Pergerakan Harian DB Error: '.$e->getMessage());
         }
@@ -1507,8 +1503,6 @@ class DataMpdController extends Controller
             \Illuminate\Support\Facades\Log::error('Pergerakan Tables Error: '.$e->getMessage());
         }
 
-
-
         // Process Final Structure
         $final = [
             'real' => [],
@@ -1611,7 +1605,6 @@ class DataMpdController extends Controller
         return $final;
     }
 
-
     // --- REFACTORED HELPERS ---
 
     private function getOdSimpulData($startDate, $endDate, $filterCodes = [])
@@ -1661,7 +1654,7 @@ class DataMpdController extends Controller
                 $date = $row->tanggal;
                 $vol = $row->total_volume;
 
-                if (!isset($pivot[$cat])) {
+                if (! isset($pivot[$cat])) {
                     $pivot[$cat] = ['total' => 0];
                 }
 
@@ -2048,102 +2041,102 @@ class DataMpdController extends Controller
         $endDateStr = $endDate->format('Y-m-d');
 
         try {
-        $dailyMovements = DB::table('spatial_movements')
-            ->select('tanggal', DB::raw('SUM(total) as daily_total'))
-            ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-            ->where('kategori', 'PERGERAKAN')
-            ->groupBy('tanggal')
-            ->orderByDesc('daily_total')
-            ->get();
+            $dailyMovements = DB::table('spatial_movements')
+                ->select('tanggal', DB::raw('SUM(total) as daily_total'))
+                ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+                ->where('kategori', 'PERGERAKAN')
+                ->groupBy('tanggal')
+                ->orderByDesc('daily_total')
+                ->get();
 
-        $totalPergerakan = $dailyMovements->sum('daily_total');
-        $peakDays = $dailyMovements->take(2);
+            $totalPergerakan = $dailyMovements->sum('daily_total');
+            $peakDays = $dailyMovements->take(2);
 
-        // 2. Total unique subscriber (approximated by Total Orang or Total Pergerakan / factor)
-        // From previous logic, total orang / 2.13 ratio can be mentioned. Let's get Total ORANG
-        $totalOrang = DB::table('spatial_movements')
-            ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-            ->where('kategori', 'ORANG')
-            ->sum('total');
+            // 2. Total unique subscriber (approximated by Total Orang or Total Pergerakan / factor)
+            // From previous logic, total orang / 2.13 ratio can be mentioned. Let's get Total ORANG
+            $totalOrang = DB::table('spatial_movements')
+                ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+                ->where('kategori', 'ORANG')
+                ->sum('total');
 
-        // 3. Kontribusi Operator (TSEL, IOH, XL)
-        // Batched: Single query for both PERGERAKAN and ORANG opsel stats
-        $opselAll = DB::table('spatial_movements')
-            ->select('opsel', 'kategori', DB::raw('SUM(total) as op_total'))
-            ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-            ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
-            ->groupBy('opsel', 'kategori')
-            ->get();
+            // 3. Kontribusi Operator (TSEL, IOH, XL)
+            // Batched: Single query for both PERGERAKAN and ORANG opsel stats
+            $opselAll = DB::table('spatial_movements')
+                ->select('opsel', 'kategori', DB::raw('SUM(total) as op_total'))
+                ->whereBetween('tanggal', [$startDateStr, $endDateStr])
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
+                ->groupBy('opsel', 'kategori')
+                ->get();
 
-        $operatorStats = [
-            'PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0],
-            'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0],
-        ];
+            $operatorStats = [
+                'PERGERAKAN' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0],
+                'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0],
+            ];
 
-        foreach ($opselAll as $row) {
-            $cat = strtoupper($row->kategori);
-            $normalized = $this->normalizeOpsel($row->opsel);
-            if ($normalized !== 'OTHER' && isset($operatorStats[$cat][$normalized])) {
-                $operatorStats[$cat][$normalized] += $row->op_total;
+            foreach ($opselAll as $row) {
+                $cat = strtoupper($row->kategori);
+                $normalized = $this->normalizeOpsel($row->opsel);
+                if ($normalized !== 'OTHER' && isset($operatorStats[$cat][$normalized])) {
+                    $operatorStats[$cat][$normalized] += $row->op_total;
+                }
             }
-        }
 
-        // 4. Top 5 Provinsi Asal
-        $top5ProvAsal = DB::table('spatial_movements as sm')
-            ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
-            ->join('ref_provinces as p', 'oc.province_code', '=', 'p.code')
-            ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
-            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-            ->where('sm.kategori', 'PERGERAKAN')
-            ->groupBy('p.name')
-            ->orderByDesc('prov_total')
-            ->take(5)
-            ->get();
+            // 4. Top 5 Provinsi Asal
+            $top5ProvAsal = DB::table('spatial_movements as sm')
+                ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
+                ->join('ref_provinces as p', 'oc.province_code', '=', 'p.code')
+                ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
+                ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->groupBy('p.name')
+                ->orderByDesc('prov_total')
+                ->take(5)
+                ->get();
 
-        // 5. Top 5 Provinsi Tujuan
-        $top5ProvTujuan = DB::table('spatial_movements as sm')
-            ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
-            ->join('ref_provinces as p', 'dc.province_code', '=', 'p.code')
-            ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
-            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-            ->where('sm.kategori', 'PERGERAKAN')
-            ->groupBy('p.name')
-            ->orderByDesc('prov_total')
-            ->take(5)
-            ->get();
+            // 5. Top 5 Provinsi Tujuan
+            $top5ProvTujuan = DB::table('spatial_movements as sm')
+                ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
+                ->join('ref_provinces as p', 'dc.province_code', '=', 'p.code')
+                ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
+                ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->groupBy('p.name')
+                ->orderByDesc('prov_total')
+                ->take(5)
+                ->get();
 
-        // 6. Top 5 Kota/Kab Asal
-        $top3KotaAsal = DB::table('spatial_movements as sm')
-            ->join('ref_cities as c', 'sm.kode_origin_kabupaten_kota', '=', 'c.code')
-            ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
-            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-            ->where('sm.kategori', 'PERGERAKAN')
-            ->groupBy('c.name')
-            ->orderByDesc('city_total')
-            ->take(3)
-            ->get();
+            // 6. Top 5 Kota/Kab Asal
+            $top3KotaAsal = DB::table('spatial_movements as sm')
+                ->join('ref_cities as c', 'sm.kode_origin_kabupaten_kota', '=', 'c.code')
+                ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
+                ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->groupBy('c.name')
+                ->orderByDesc('city_total')
+                ->take(3)
+                ->get();
 
-        // 7. Top 5 Kota/Kab Tujuan
-        $top5KotaTujuan = DB::table('spatial_movements as sm')
-            ->join('ref_cities as c', 'sm.kode_dest_kabupaten_kota', '=', 'c.code')
-            ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
-            ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-            ->where('sm.kategori', 'PERGERAKAN')
-            ->groupBy('c.name')
-            ->orderByDesc('city_total')
-            ->take(5)
-            ->get();
+            // 7. Top 5 Kota/Kab Tujuan
+            $top5KotaTujuan = DB::table('spatial_movements as sm')
+                ->join('ref_cities as c', 'sm.kode_dest_kabupaten_kota', '=', 'c.code')
+                ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
+                ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
+                ->where('sm.kategori', 'PERGERAKAN')
+                ->groupBy('c.name')
+                ->orderByDesc('city_total')
+                ->take(5)
+                ->get();
 
-        return [
-            'total_pergerakan' => $totalPergerakan,
-            'total_orang' => $totalOrang,
-            'peak_days' => $peakDays,
-            'operator_stats' => $operatorStats,
-            'top_5_prov_asal' => $top5ProvAsal,
-            'top_5_prov_tujuan' => $top5ProvTujuan,
-            'top_3_kota_asal' => $top3KotaAsal,
-            'top_5_kota_tujuan' => $top5KotaTujuan,
-        ];
+            return [
+                'total_pergerakan' => $totalPergerakan,
+                'total_orang' => $totalOrang,
+                'peak_days' => $peakDays,
+                'operator_stats' => $operatorStats,
+                'top_5_prov_asal' => $top5ProvAsal,
+                'top_5_prov_tujuan' => $top5ProvTujuan,
+                'top_3_kota_asal' => $top3KotaAsal,
+                'top_5_kota_tujuan' => $top5KotaTujuan,
+            ];
 
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Kesimpulan Nasional DB Error: '.$e->getMessage());
@@ -2277,7 +2270,7 @@ class DataMpdController extends Controller
             'pelabuhan-penyeberangan' => ['category' => 'Pelabuhan', 'sub_category' => 'Penyeberangan', 'title' => 'Pelabuhan Penyeberangan',    'view' => 'pages.substansi._simpul-layout',  'number' => '17', 'kode_moda' => 'J'],
             'pelabuhan-laut' => ['category' => 'Pelabuhan', 'sub_category' => 'Laut',          'title' => 'Pelabuhan Laut',             'view' => 'pages.substansi._simpul-layout',  'number' => '18', 'kode_moda' => 'I'],
             'bandara' => ['category' => 'Bandara', 'sub_category' => null,               'title' => 'Bandara',                    'view' => 'pages.substansi._simpul-layout',  'number' => '19', 'kode_moda' => 'H'],
-            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '20', 'kode_moda' => ['C', 'D']], 
+            'terminal' => ['category' => 'Terminal', 'sub_category' => null,              'title' => 'Terminal',                   'view' => 'pages.substansi._simpul-layout',  'number' => '20', 'kode_moda' => ['C', 'D']],
             'od-simpul-pelabuhan' => ['category' => 'Pelabuhan', 'sub_category' => null,             'title' => 'O-D Simpul Pelabuhan',       'view' => 'pages.substansi._simpul-layout',  'number' => '21'],
         ];
 
@@ -2376,11 +2369,9 @@ class DataMpdController extends Controller
                 })
                 ->groupBy('o.name', 'd.name', 'sm.kode_origin_simpul', 'sm.kode_dest_simpul')
 
-
                 ->orderByDesc('total_volume')
                 ->take(10)
                 ->get();
-
 
             // Calculate totals for percentage
             $totalOrigin = $topOrigin->sum('total_volume');
