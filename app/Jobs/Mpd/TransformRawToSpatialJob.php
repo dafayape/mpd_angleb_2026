@@ -278,7 +278,7 @@ class TransformRawToSpatialJob implements ShouldQueue
                     tanggal, opsel, kategori,
                     kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
                     kode_origin_simpul, kode_dest_simpul,
-                    kode_moda, total, is_forecast, tipe,
+                    kode_moda, total, is_forecast,
                     origin_location, dest_location, distance_meters,
                     created_at, updated_at
                 )
@@ -286,7 +286,7 @@ class TransformRawToSpatialJob implements ShouldQueue
                     r.tanggal, r.opsel, r.kategori,
                     r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
                     r.kode_origin_simpul, r.kode_dest_simpul,
-                    r.kode_moda, SUM(r.total), r.is_forecast, r.tipe,
+                    r.kode_moda, SUM(r.total), r.is_forecast,
                     n1.location, n2.location,
                     CASE WHEN n1.location IS NOT NULL AND n2.location IS NOT NULL
                          THEN ST_Distance(n1.location, n2.location)
@@ -301,7 +301,7 @@ class TransformRawToSpatialJob implements ShouldQueue
                   AND r.kategori = ? 
                   AND r.tipe = ? 
                   AND r.is_forecast = ?
-                GROUP BY r.tanggal, r.opsel, r.kategori, r.tipe,
+                GROUP BY r.tanggal, r.opsel, r.kategori,
                          r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
                          r.kode_origin_simpul, r.kode_dest_simpul, r.kode_moda, r.is_forecast,
                          n1.location, n2.location
