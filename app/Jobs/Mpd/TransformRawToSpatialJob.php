@@ -93,7 +93,7 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
         $combinations = DB::table('raw_mpd_data')
             ->where('import_job_id', $this->importJobId)
             ->where('tanggal', $date)
-            ->select('opsel', 'kategori', 'tipe', 'is_forecast')
+            ->select('opsel', 'kategori', 'is_forecast')
             ->distinct()
             ->get();
 
@@ -107,14 +107,13 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
                     ->where('tanggal', $date)
                     ->where('opsel', $combo->opsel)
                     ->where('kategori', $combo->kategori)
-                    ->where('tipe', $combo->tipe)
                     ->where('is_forecast', $combo->is_forecast)
                     ->delete();
 
                 // INSERT from aggregated raw data
                 $sql = "
                     INSERT INTO spatial_movements (
-                        tanggal, opsel, kategori, tipe,
+                        tanggal, opsel, kategori,
                         kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
                         kode_origin_simpul, kode_dest_simpul,
                         kode_moda, total, is_forecast,
@@ -122,7 +121,7 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
                         created_at, updated_at
                     )
                     SELECT
-                        r.tanggal, r.opsel, r.kategori, r.tipe,
+                        r.tanggal, r.opsel, r.kategori,
                         r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
                         r.kode_origin_simpul, r.kode_dest_simpul,
                         r.kode_moda, SUM(r.total), r.is_forecast,
@@ -138,9 +137,8 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
                       AND r.tanggal = ? 
                       AND r.opsel = ? 
                       AND r.kategori = ? 
-                      AND r.tipe = ? 
                       AND r.is_forecast = ?
-                    GROUP BY r.tanggal, r.opsel, r.kategori, r.tipe,
+                    GROUP BY r.tanggal, r.opsel, r.kategori,
                              r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
                              r.kode_origin_simpul, r.kode_dest_simpul, r.kode_moda, r.is_forecast,
                              n1.location, n2.location
@@ -151,7 +149,6 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
                     $date, 
                     $combo->opsel, 
                     $combo->kategori, 
-                    $combo->tipe, 
                     $combo->is_forecast
                 ]);
             });
