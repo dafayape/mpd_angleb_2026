@@ -698,9 +698,9 @@ class DataMpdController extends Controller
             ->take(10)
             ->values();
 
-        // Top 100 overall routes for Sankey diagram (Increased from 20)
+        // Top 10 overall routes for Sankey diagram (Limited to 10 for clarity)
         /** @var \Illuminate\Support\Collection $sankeyData */
-        $sankeyData = $query->take(100)->map(function ($row) {
+        $sankeyData = $query->take(10)->map(function ($row) {
             return [
                 'from' => '(O) '.$row->origin_name,
                 'to' => '(D) '.$row->dest_name,
@@ -733,7 +733,7 @@ class DataMpdController extends Controller
         $totalNational = (float) $query->sum('total_volume');
         $topOrigin = $this->calculateTopOriginProvinsi($query, $totalNational);
         $topDest = $this->calculateTopDestProvinsi($query, $totalNational);
-        $sankeyData = $this->formatSankeyDataProvinsi($query);
+        $sankeyData = $this->formatSankeyDataProvinsi($query->take(10));
         $provCoordsMapping = $this->getProvinceCoordinates();
 
         return [
