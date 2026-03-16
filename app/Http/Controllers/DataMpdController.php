@@ -60,20 +60,24 @@ class DataMpdController extends Controller
     {
         [$startDate, $endDate] = $this->getPeriodDates();
 
+        $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:intra-pergerakan:v1:{$dString}";
+        $cacheKey = "mpd:jabodetabek:intra-pergerakan:v2:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes, $type));
 
         return view('pages.jabodetabek.intra-pergerakan', [
             'dates' => $this->getDatesCollection($startDate, $endDate),
             'data' => $data,
+            'activeType' => $type,
+            'title' => 'Intra Pergerakan Jabodetabek',
+            'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Intra Pergerakan'],
         ]);
     }
 
-    private function getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes)
+    private function getJabodetabekIntraPergerakanData($startDate, $endDate, $jabodetabekCodes, $type = 'REAL')
     {
         $opsels = ['XLSMART', 'TSEL', 'IOH'];
         $categories = ['PERGERAKAN', 'ORANG']; // We'll map to 'pergerakan' and 'orang'
@@ -99,7 +103,7 @@ class DataMpdController extends Controller
         }
 
         try {
-            $query = DB::table('spatial_movements as sm')
+            $dbQuery = DB::table('spatial_movements as sm')
                 ->select(
                     'sm.tanggal',
                     'sm.opsel',
@@ -109,8 +113,15 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
+                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+
+            if ($type === 'FORECAST') {
+                $dbQuery->where('sm.is_forecast', true);
+            } else {
+                $dbQuery->where('sm.is_forecast', false);
+            }
+
+            $query = $dbQuery->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
                 ->get();
 
             foreach ($query as $row) {
