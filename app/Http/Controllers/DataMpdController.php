@@ -365,12 +365,13 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
+        $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:inter-od:v1:{$dString}";
+        $cacheKey = "mpd:jabodetabek:inter-od:v2:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes, $type));
 
         return view('pages.jabodetabek.inter-od', [
             'title' => 'O-D Inter Jabodetabek',
@@ -379,13 +380,14 @@ class DataMpdController extends Controller
             'top_dest' => $data['top_dest'],
             'sankey' => $data['sankey'],
             'total_pergerakan' => $data['total_pergerakan'],
+            'activeType' => $type,
         ]);
     }
 
-    private function getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes)
+    private function getJabodetabekInterOdData($startDate, $endDate, $jabodetabekCodes, $type = 'REAL')
     {
         try {
-            $query = DB::table('spatial_movements as sm')
+            $baseQuery = DB::table('spatial_movements as sm')
                 // Join Origin City
                 ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
                 // Join Dest City & Province
@@ -399,11 +401,15 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
-                // Note: removed is_forecast filter for aggregate data
-                // Origin IS in Jabodetabek
-                ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                // Destination IS NOT in Jabodetabek
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG']);
+
+            if ($type === 'FORECAST') {
+                $baseQuery->where('sm.is_forecast', true);
+            } else {
+                $baseQuery->where('sm.is_forecast', false);
+            }
+
+            $query = $baseQuery->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('oc.code', 'oc.name', 'dp.code', 'dp.name')
                 ->orderByRaw('total_volume DESC')
@@ -451,20 +457,24 @@ class DataMpdController extends Controller
     {
         [$startDate, $endDate] = $this->getPeriodDates();
 
+        $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:inter-pergerakan:v1:{$dString}";
+        $cacheKey = "mpd:jabodetabek:inter-pergerakan:v2:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes, $type));
 
         return view('pages.jabodetabek.inter-pergerakan', [
             'dates' => $this->getDatesCollection($startDate, $endDate),
             'data' => $data,
+            'activeType' => $type,
+            'title' => 'Inter Pergerakan Jabodetabek',
+            'breadcrumb' => ['Data MPD Opsel', 'Jabodetabek', 'Inter Pergerakan'],
         ]);
     }
 
-    private function getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes)
+    private function getJabodetabekInterPergerakanData($startDate, $endDate, $jabodetabekCodes, $type = 'REAL')
     {
         $opsels = ['XLSMART', 'TSEL', 'IOH'];
         $categories = ['PERGERAKAN', 'ORANG'];
@@ -488,7 +498,7 @@ class DataMpdController extends Controller
         }
 
         try {
-            $query = DB::table('spatial_movements as sm')
+            $queryBuilder = DB::table('spatial_movements as sm')
                 ->select(
                     'sm.tanggal',
                     'sm.opsel',
@@ -496,8 +506,15 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
-                ->where(function ($q) use ($jabodetabekCodes) {
+                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG']);
+
+            if ($type === 'FORECAST') {
+                $queryBuilder->where('sm.is_forecast', true);
+            } else {
+                $queryBuilder->where('sm.is_forecast', false);
+            }
+
+            $query = $queryBuilder->where(function ($q) use ($jabodetabekCodes) {
                     $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                         ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
                         ->orWhere(function ($q2) use ($jabodetabekCodes) {

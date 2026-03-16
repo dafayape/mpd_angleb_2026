@@ -12,8 +12,34 @@
                     <li class="breadcrumb-item"><a href="#">{{ $crumb }}</a></li>
                 @endif
             @endforeach
+            <li class="breadcrumb-item active text-primary fw-bold">{{ $activeType }}</li>
         </ol>
     @endcomponent
+
+    <!-- Sticky Filter Bar -->
+    <div class="sticky-filter d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4" data-aos="fade-down"
+        data-aos-duration="600">
+        <div class="d-flex align-items-center gap-4 flex-wrap">
+            <div class="d-flex flex-column">
+                <label class="small fw-bold text-muted mb-2 text-uppercase" style="letter-spacing: 0.5px;">Tipe Data</label>
+                <div class="custom-toggle-group" role="group">
+                    <input type="radio" class="btn-check type-filter" name="data_type" id="dt_real" value="REAL"
+                        autocomplete="off" {{ $activeType === 'REAL' ? 'checked' : '' }}>
+                    <label class="btn" for="dt_real" style="font-size: 0.85rem;">REAL</label>
+
+                    <input type="radio" class="btn-check type-filter" name="data_type" id="dt_fore" value="FORECAST"
+                        autocomplete="off" {{ $activeType === 'FORECAST' ? 'checked' : '' }}>
+                    <label class="btn" for="dt_fore" style="font-size: 0.85rem;">FORECAST</label>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center bg-white px-4 py-3 rounded-pill border shadow-sm">
+            <i class="bx bx-info-circle fs-4 me-3 text-primary"></i>
+            <div class="fw-bold text-navy" style="font-size: 0.95rem;">
+                Menampilkan Data: <span class="text-primary">{{ $activeType }}</span>
+            </div>
+        </div>
+    </div>
 
     @push('css')
         <style>
@@ -140,6 +166,69 @@
                 font-size: 1.1rem;
                 width: 20px;
                 text-align: center;
+            }
+
+            /* Modern Filter Styles */
+            .sticky-filter {
+                position: sticky;
+                top: 70px;
+                z-index: 1000;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                padding: 16px 24px;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+                margin-bottom: 28px;
+                border: 1px solid #e2e8f0;
+                transition: all 0.3s ease;
+            }
+
+            .custom-toggle-group {
+                border-radius: 6px;
+                overflow: hidden;
+                display: inline-flex;
+                box-shadow: none !important;
+                height: 38px;
+            }
+
+            .custom-toggle-group .btn {
+                border: 1px solid #2a3042;
+                color: #2a3042;
+                font-weight: 700;
+                padding: 0 30px;
+                border-radius: 0;
+                background-color: white;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
+                margin: 0;
+                height: 100%;
+            }
+
+            .custom-toggle-group .btn:first-child,
+            .custom-toggle-group .btn:first-of-type {
+                border-top-left-radius: 6px;
+                border-bottom-left-radius: 6px;
+                border-right: none;
+            }
+
+            .custom-toggle-group .btn:last-child,
+            .custom-toggle-group .btn:last-of-type {
+                border-top-right-radius: 6px;
+                border-bottom-right-radius: 6px;
+            }
+
+            .custom-toggle-group .btn-check:checked+.btn {
+                background-color: #2a3042;
+                color: white;
+                border-color: #2a3042; box-shadow: none;
+            }
+
+            .custom-toggle-group .btn:hover {
+                background-color: rgba(42, 48, 66, 0.05);
+                color: #2a3042;
             }
         </style>
     @endpush
@@ -364,6 +453,14 @@
                 XLSX.utils.book_append_sheet(wb, ws, 'Provinsi Tujuan');
                 XLSX.writeFile(wb, 'OD_InterJabodetabek_ProvinsiTujuan.xlsx');
             };
+
+            // Filter Redirection
+            $('.type-filter').on('change', function() {
+                const type = $(this).val();
+                let url = new URL(window.location.href);
+                url.searchParams.set('type', type);
+                window.location.href = url.toString();
+            });
 
         });
     </script>
