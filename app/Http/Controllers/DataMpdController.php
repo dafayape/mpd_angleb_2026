@@ -2363,10 +2363,10 @@ class DataMpdController extends Controller
         $category = $cfg['category'];
         $subCat = $cfg['sub_category'];
         $kodeModa = $cfg['kode_moda'] ?? null;
-        $cacheKey = "mpd:simpul:{$slug}:v5:".$startDate->format('Ymd').'_'.$endDate->format('Ymd');
+        $cacheKey = "mpd:simpul:{$slug}:v6:".$startDate->format('Ymd').'_'.$endDate->format('Ymd');
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), function () use ($startDate, $endDate, $category, $subCat, $kodeModa) {
-            $isForecast = false; // Always REAL for Substansi Simpul
+            $isForecast = false;
 
             // TOP 10 ORIGIN (Asal)
             $topOrigin = DB::table('spatial_movements as sm')
@@ -2377,16 +2377,17 @@ class DataMpdController extends Controller
                 ->where('sm.is_forecast', $isForecast)
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
+                    // Mandatory Category Filter
+                    $q->where('n.category', $category);
+                    if ($subCat) {
+                        $q->where('n.sub_category', $subCat);
+                    }
+                    // Optional Moda Filter
                     if ($kodeModa) {
                         if (is_array($kodeModa)) {
                             $q->whereIn('sm.kode_moda', $kodeModa);
                         } else {
                             $q->where('sm.kode_moda', $kodeModa);
-                        }
-                    } else {
-                        $q->where('n.category', $category);
-                        if ($subCat) {
-                            $q->where('n.sub_category', $subCat);
                         }
                     }
                 })
@@ -2404,16 +2405,17 @@ class DataMpdController extends Controller
                 ->where('sm.is_forecast', $isForecast)
                 ->where('sm.kode_dest_simpul', '!=', '')
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
+                    // Mandatory Category Filter
+                    $q->where('n.category', $category);
+                    if ($subCat) {
+                        $q->where('n.sub_category', $subCat);
+                    }
+                    // Optional Moda Filter
                     if ($kodeModa) {
                         if (is_array($kodeModa)) {
                             $q->whereIn('sm.kode_moda', $kodeModa);
                         } else {
                             $q->where('sm.kode_moda', $kodeModa);
-                        }
-                    } else {
-                        $q->where('n.category', $category);
-                        if ($subCat) {
-                            $q->where('n.sub_category', $subCat);
                         }
                     }
                 })
@@ -2435,33 +2437,31 @@ class DataMpdController extends Controller
                 ->where('sm.is_forecast', $isForecast)
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->where('sm.kode_dest_simpul', '!=', '')
-                // Filter Asal (Origin)
+                // Strict Filter Origin
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
+                    $q->where('o.category', $category);
+                    if ($subCat) {
+                        $q->where('o.sub_category', $subCat);
+                    }
                     if ($kodeModa) {
                         if (is_array($kodeModa)) {
                             $q->whereIn('sm.kode_moda', $kodeModa);
                         } else {
                             $q->where('sm.kode_moda', $kodeModa);
-                        }
-                    } else {
-                        $q->where('o.category', $category);
-                        if ($subCat) {
-                            $q->where('o.sub_category', $subCat);
                         }
                     }
                 })
-                // Filter Tujuan (Destination)
+                // Strict Filter Destination
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
+                    $q->where('d.category', $category);
+                    if ($subCat) {
+                        $q->where('d.sub_category', $subCat);
+                    }
                     if ($kodeModa) {
                         if (is_array($kodeModa)) {
                             $q->whereIn('sm.kode_moda', $kodeModa);
                         } else {
                             $q->where('sm.kode_moda', $kodeModa);
-                        }
-                    } else {
-                        $q->where('d.category', $category);
-                        if ($subCat) {
-                            $q->where('d.sub_category', $subCat);
                         }
                     }
                 })
