@@ -257,6 +257,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
+                // Note: removed is_forecast filter to allow aggregate Real + Forecast data
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
                 ->groupBy('oc.code', 'oc.name', 'dc.code', 'dc.name')
@@ -356,6 +357,7 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
+                // Note: removed is_forecast filter for aggregate data
                 // Origin IS in Jabodetabek
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 // Destination IS NOT in Jabodetabek
