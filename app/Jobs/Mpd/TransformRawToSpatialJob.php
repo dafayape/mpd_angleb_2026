@@ -207,7 +207,7 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
     private function updateEtlStatus(string $status, int $progress, string $message, string $level = 'info'): void
     {
         DB::table('import_jobs')->where('id', $this->importJobId)->update([
-            'etl_status' => $status,
+            'status_etl' => $status,
             'etl_progress' => $progress
         ]);
 
