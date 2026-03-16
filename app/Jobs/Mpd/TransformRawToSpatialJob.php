@@ -249,91 +249,72 @@ class TransformRawToSpatialJob implements ShouldQueue
 
     private function processDateBatch(string $date): void
     {
-        // 1. Temukan Opsel yang terlibat
-        $opsels = DB::table('raw_mpd_data')
+        // Ambil semua kombinasi unik yang ADA di raw_mpd_data untuk tanggal ini & job ini
+        $combinations = DB::table('raw_mpd_data')
             ->where('import_job_id', $this->importJobId)
             ->where('tanggal', $date)
+            ->select('opsel', 'kategori', 'tipe', 'is_forecast')
             ->distinct()
-            ->pluck('opsel')
-            ->toArray();
+            ->get();
 
-        // 2. Temukan Kategori yang terlibat
-        $kategoris = DB::table('raw_mpd_data')
-            ->where('import_job_id', $this->importJobId)
-            ->where('tanggal', $date)
-            ->distinct()
-            ->pluck('kategori')
-            ->toArray();
+        if ($combinations->isEmpty()) {
+            Log::info("[ETL Job: {$this->importJobId}] No combinations found for date: {$date}");
+            return;
+        }
 
-        // 3. Temukan Tipe (ORANG/PERGERAKAN) yang terlibat
-        $tipes = DB::table('raw_mpd_data')
-            ->where('import_job_id', $this->importJobId)
-            ->where('tanggal', $date)
-            ->distinct()
-            ->pluck('tipe')
-            ->toArray();
+        foreach ($combinations as $combo) {
+            // STEP 1: Bersihkan data lama agar tidak duplikat
+            DB::table('spatial_movements')
+                ->where('tanggal', $date)
+                ->where('opsel', $combo->opsel)
+                ->where('kategori', $combo->kategori)
+                ->where('tipe', $combo->tipe)
+                ->where('is_forecast', $combo->is_forecast)
+                ->delete();
 
-        if (empty($opsels) || empty($kategoris) || empty($tipes)) return;
+            // STEP 2: Insert data agregasi
+            $sql = "
+                INSERT INTO spatial_movements (
+                    tanggal, opsel, kategori,
+                    kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
+                    kode_origin_simpul, kode_dest_simpul,
+                    kode_moda, total, is_forecast, tipe,
+                    origin_location, dest_location, distance_meters,
+                    created_at, updated_at
+                )
+                SELECT
+                    r.tanggal, r.opsel, r.kategori,
+                    r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
+                    r.kode_origin_simpul, r.kode_dest_simpul,
+                    r.kode_moda, SUM(r.total), r.is_forecast, r.tipe,
+                    n1.location, n2.location,
+                    CASE WHEN n1.location IS NOT NULL AND n2.location IS NOT NULL
+                         THEN ST_Distance(n1.location, n2.location)
+                         ELSE NULL END,
+                    NOW(), NOW()
+                FROM raw_mpd_data r
+                LEFT JOIN ref_transport_nodes n1 ON r.kode_origin_simpul = n1.code
+                LEFT JOIN ref_transport_nodes n2 ON r.kode_dest_simpul = n2.code
+                WHERE r.import_job_id = ? 
+                  AND r.tanggal = ? 
+                  AND r.opsel = ? 
+                  AND r.kategori = ? 
+                  AND r.tipe = ? 
+                  AND r.is_forecast = ?
+                GROUP BY r.tanggal, r.opsel, r.kategori, r.tipe,
+                         r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
+                         r.kode_origin_simpul, r.kode_dest_simpul, r.kode_moda, r.is_forecast,
+                         n1.location, n2.location
+            ";
 
-        $forecastTypes = [true, false];
-
-        foreach ($opsels as $opsel) {
-            foreach ($kategoris as $kategori) {
-                foreach ($tipes as $tipe) {
-                    foreach ($forecastTypes as $isForecast) {
-                        
-                        $exists = DB::table('raw_mpd_data')
-                            ->where('tanggal', $date)
-                            ->where('opsel', $opsel)
-                            ->where('kategori', $kategori)
-                            ->where('tipe', $tipe)
-                            ->where('is_forecast', $isForecast)
-                            ->exists();
-
-                        if (!$exists) continue;
-
-                        // Delete existing to prevent duplication
-                        DB::table('spatial_movements')
-                            ->where('tanggal', $date)
-                            ->where('opsel', $opsel)
-                            ->where('kategori', $kategori)
-                            ->where('tipe', $tipe)
-                            ->where('is_forecast', $isForecast)
-                            ->delete();
-
-                        $sql = "
-                            INSERT INTO spatial_movements (
-                                tanggal, opsel, kategori,
-                                kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
-                                kode_origin_simpul, kode_dest_simpul,
-                                kode_moda, total, is_forecast, tipe,
-                                origin_location, dest_location, distance_meters,
-                                created_at, updated_at
-                            )
-                            SELECT
-                                r.tanggal, r.opsel, r.kategori,
-                                r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
-                                r.kode_origin_simpul, r.kode_dest_simpul,
-                                r.kode_moda, SUM(r.total), r.is_forecast, r.tipe,
-                                n1.location, n2.location,
-                                CASE WHEN n1.location IS NOT NULL AND n2.location IS NOT NULL
-                                     THEN ST_Distance(n1.location, n2.location)
-                                     ELSE NULL END,
-                                NOW(), NOW()
-                            FROM raw_mpd_data r
-                            LEFT JOIN ref_transport_nodes n1 ON r.kode_origin_simpul = n1.code
-                            LEFT JOIN ref_transport_nodes n2 ON r.kode_dest_simpul = n2.code
-                            WHERE r.tanggal = ? AND r.opsel = ? AND r.kategori = ? AND r.tipe = ? AND r.is_forecast = ?
-                            GROUP BY r.tanggal, r.opsel, r.kategori, r.tipe,
-                                     r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
-                                     r.kode_origin_simpul, r.kode_dest_simpul, r.kode_moda, r.is_forecast,
-                                     n1.location, n2.location
-                        ";
-
-                        DB::statement($sql, [$date, $opsel, $kategori, $tipe, $isForecast]);
-                    }
-                }
-            }
+            DB::statement($sql, [
+                $this->importJobId, 
+                $date, 
+                $combo->opsel, 
+                $combo->kategori, 
+                $combo->tipe, 
+                $combo->is_forecast
+            ]);
         }
     }
 
