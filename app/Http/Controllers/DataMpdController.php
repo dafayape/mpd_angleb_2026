@@ -631,9 +631,9 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:od-simpul:split:v5:{$type}:{$dString}";
-        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v5:{$type}:{$dString}";
-        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v5:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:od-simpul:split:v6:{$type}:{$dString}";
+        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v6:{$type}:{$dString}";
+        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v6:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalOdSimpulData($startDate, $endDate, $type));
         $dataProv = $this->cached($cacheKeyOdProv, $this->dataCacheTtl(), fn () => $this->getNasionalOdProvinsiAsalData($startDate, $endDate, $type));
@@ -739,9 +739,9 @@ class DataMpdController extends Controller
             ->take(10)
             ->values();
 
-        // Top 50 overall routes for Sankey diagram (Increased to 50)
+        // Top 300 overall routes for Sankey diagram (cobIncreased to 300)
         /** @var \Illuminate\Support\Collection $sankeyData */
-        $sankeyData = $query->take(50)->map(function ($row) {
+        $sankeyData = $query->take(300)->map(function ($row) {
             return [
                 'from' => '(O) '.$row->origin_name,
                 'to' => '(D) '.$row->dest_name,
@@ -772,7 +772,7 @@ class DataMpdController extends Controller
         $totalNational = (float) $query->sum('total_volume');
         $topOrigin = $this->calculateTopOriginProvinsi($query, $totalNational);
         $topDest = $this->calculateTopDestProvinsi($query, $totalNational);
-        $sankeyData = $this->formatSankeyDataProvinsi($query->take(50));
+        $sankeyData = $this->formatSankeyDataProvinsi($query->take(300));
         $provCoordsMapping = $this->getProvinceCoordinates();
 
         return [
