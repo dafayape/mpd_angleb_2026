@@ -299,8 +299,8 @@ class DataMpdController extends Controller
             ->take(14)
             ->values();
 
-        // Sankey Top overall routes (Increased to 100)
-        $sankeyData = $query->take(100)->map(function ($row) {
+        // Sankey Top overall routes (Increased to 300 to show all regions)
+        $sankeyData = $query->take(300)->map(function ($row) {
             return [
                 'from' => '(O) '.$row->origin_name,
                 'to' => '(D) '.$row->dest_name,
@@ -386,8 +386,8 @@ class DataMpdController extends Controller
             ->take(20) // Keep 20 for completeness, UI displays 20 in screenshot
             ->values();
 
-        // Sankey Top overall routes (Increased to 100)
-        $sankeyData = $query->take(100)->map(function ($row) {
+        // Sankey Top overall routes (Increased to 300)
+        $sankeyData = $query->take(300)->map(function ($row) {
             return [
                 'from' => '(O) '.$row->origin_name,
                 'to' => '(D) '.$row->dest_prov_name,
