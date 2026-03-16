@@ -56,7 +56,14 @@ class TransformRawToSpatialJob implements ShouldQueue
             $this->calculateIntegrityMetrics('start');
             $this->transformData();
             $this->calculateIntegrityMetrics('end');
-            $this->refreshMaterializedViews();
+            
+            // Refresh views wrapped so it does not fail the whole job
+            try {
+                $this->refreshMaterializedViews();
+            } catch (\Throwable $ve) {
+                Log::warning("ETL View Refresh skipped for job {$this->importJobId}: " . $ve->getMessage());
+            }
+
             $this->invalidateCache();
 
             $this->updateEtlStatus('completed', 100, "Completed ETL transform for import_job_id={$this->importJobId}");
