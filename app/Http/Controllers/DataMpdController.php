@@ -1955,10 +1955,11 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
+        $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:substansi:netflow:v1:{$dString}";
+        $cacheKey = "mpd:substansi:netflow:v2:{$type}:{$dString}";
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getSubstansiNetflowData($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getSubstansiNetflowData($startDate, $endDate, $type));
 
         return view('pages.substansi.netflow', [
             'title' => 'Netflow Pergerakan Nasional',
@@ -1968,13 +1969,14 @@ class DataMpdController extends Controller
             'top_dest_netflow' => $data['top_dest_netflow'],
             'top_origin_nfr' => $data['top_origin_nfr'],
             'top_dest_nfr' => $data['top_dest_nfr'],
+            'activeType' => $type,
         ]);
     }
 
     /**
      * @return array
      */
-    private function getSubstansiNetflowData(Carbon $startDate, Carbon $endDate)
+    private function getSubstansiNetflowData(Carbon $startDate, Carbon $endDate, $type = 'REAL')
     {
         try {
             $startDateStr = $startDate->format('Y-m-d');
@@ -1982,6 +1984,13 @@ class DataMpdController extends Controller
 
             /** @var \Illuminate\Database\Query\Builder $outflowBuilder */
             $outflowBuilder = DB::table('spatial_movements');
+
+            if ($type === 'FORECAST') {
+                $outflowBuilder->where('is_forecast', true);
+            } else {
+                $outflowBuilder->where('is_forecast', false);
+            }
+
             /** @var \Illuminate\Support\Collection $outflowQuery */
             $outflowQuery = $outflowBuilder
                 ->select(
@@ -1996,6 +2005,13 @@ class DataMpdController extends Controller
 
             /** @var \Illuminate\Database\Query\Builder $inflowBuilder */
             $inflowBuilder = DB::table('spatial_movements');
+
+            if ($type === 'FORECAST') {
+                $inflowBuilder->where('is_forecast', true);
+            } else {
+                $inflowBuilder->where('is_forecast', false);
+            }
+
             /** @var \Illuminate\Support\Collection $inflowQuery */
             $inflowQuery = $inflowBuilder
                 ->select(
