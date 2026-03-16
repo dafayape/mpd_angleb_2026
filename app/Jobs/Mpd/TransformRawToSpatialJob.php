@@ -308,11 +308,12 @@ class TransformRawToSpatialJob implements ShouldQueue
                             r.kode_moda,
                             SUM(r.total) as total,
                             r.is_forecast,
-                            n_origin.location as origin_location,
-                            n_dest.location as dest_location,
+                            COALESCE(n_origin.location, c_origin.location) as origin_location,
+                            COALESCE(n_dest.location, c_dest.location) as dest_location,
                             CASE
-                                WHEN n_origin.location IS NOT NULL AND n_dest.location IS NOT NULL
-                                THEN ST_Distance(n_origin.location, n_dest.location)
+                                WHEN COALESCE(n_origin.location, c_origin.location) IS NOT NULL 
+                                 AND COALESCE(n_dest.location, c_dest.location) IS NOT NULL
+                                THEN ST_Distance(COALESCE(n_origin.location, c_origin.location), COALESCE(n_dest.location, c_dest.location))
                                 ELSE NULL
                             END as distance_meters,
                             NOW() as created_at,
@@ -320,6 +321,8 @@ class TransformRawToSpatialJob implements ShouldQueue
                         FROM raw_mpd_data r
                         LEFT JOIN ref_transport_nodes n_origin ON r.kode_origin_simpul = n_origin.code
                         LEFT JOIN ref_transport_nodes n_dest ON r.kode_dest_simpul = n_dest.code
+                        LEFT JOIN ref_cities c_origin ON r.kode_origin_kabupaten_kota = c_origin.code
+                        LEFT JOIN ref_cities c_dest ON r.kode_dest_kabupaten_kota = c_dest.code
                         WHERE r.tanggal = ?
                           AND r.opsel = ?
                           AND r.kategori = ?
@@ -329,7 +332,8 @@ class TransformRawToSpatialJob implements ShouldQueue
                             r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
                             r.kode_origin_simpul, r.kode_dest_simpul,
                             r.kode_moda, r.is_forecast,
-                            n_origin.location, n_dest.location
+                            n_origin.location, n_dest.location,
+                            c_origin.location, c_dest.location
                     ";
 
                     DB::statement($sql, [$date, $opsel, $kategori, $isForecast]);
