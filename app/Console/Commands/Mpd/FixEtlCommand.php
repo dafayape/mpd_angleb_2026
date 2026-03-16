@@ -321,57 +321,59 @@ class FixEtlCommand extends Command
 
             if (!$exists) continue;
 
-            // STEP 1: Delete existing spatial data for this specific combination to prevent duplicates
-            // This is safer than ON CONFLICT when dealing with NULL values (Forecast data)
-            DB::table('spatial_movements')
-                ->where('tanggal', $tanggal)
-                ->where('opsel', $opsel)
-                ->where('kategori', $kategori)
-                ->where('is_forecast', $isForecast)
-                ->delete();
+            DB::transaction(function () use ($tanggal, $opsel, $kategori, $isForecast) {
+                // STEP 1: Delete existing spatial data for this specific combination to prevent duplicates
+                // This is safer than ON CONFLICT when dealing with NULL values (Forecast data)
+                DB::table('spatial_movements')
+                    ->where('tanggal', $tanggal)
+                    ->where('opsel', $opsel)
+                    ->where('kategori', $kategori)
+                    ->where('is_forecast', $isForecast)
+                    ->delete();
 
-            // STEP 2: Insert fresh aggregated data
-            $sql = "
-                INSERT INTO spatial_movements (
-                    tanggal, opsel, kategori,
-                    kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
-                    kode_origin_simpul, kode_dest_simpul,
-                    kode_moda, total, is_forecast,
-                    origin_location, dest_location, distance_meters,
-                    created_at, updated_at
-                )
-                SELECT
-                    r.tanggal, r.opsel, r.kategori,
-                    r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
-                    r.kode_origin_simpul, r.kode_dest_simpul,
-                    r.kode_moda,
-                    SUM(r.total) as total,
-                    r.is_forecast,
-                    n_origin.location as origin_location,
-                    n_dest.location as dest_location,
-                    CASE
-                        WHEN n_origin.location IS NOT NULL AND n_dest.location IS NOT NULL
-                        THEN ST_Distance(n_origin.location, n_dest.location)
-                        ELSE NULL
-                    END as distance_meters,
-                    NOW() as created_at,
-                    NOW() as updated_at
-                FROM raw_mpd_data r
-                LEFT JOIN ref_transport_nodes n_origin ON r.kode_origin_simpul = n_origin.code
-                LEFT JOIN ref_transport_nodes n_dest ON r.kode_dest_simpul = n_dest.code
-                WHERE r.tanggal = ?
-                  AND r.opsel = ?
-                  AND r.kategori = ?
-                  AND r.is_forecast = ?
-                GROUP BY
-                    r.tanggal, r.opsel, r.kategori,
-                    r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
-                    r.kode_origin_simpul, r.kode_dest_simpul,
-                    r.kode_moda, r.is_forecast,
-                    n_origin.location, n_dest.location
-            ";
+                // STEP 2: Insert fresh aggregated data
+                $sql = "
+                    INSERT INTO spatial_movements (
+                        tanggal, opsel, kategori,
+                        kode_origin_kabupaten_kota, kode_dest_kabupaten_kota,
+                        kode_origin_simpul, kode_dest_simpul,
+                        kode_moda, total, is_forecast,
+                        origin_location, dest_location, distance_meters,
+                        created_at, updated_at
+                    )
+                    SELECT
+                        r.tanggal, r.opsel, r.kategori,
+                        r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
+                        r.kode_origin_simpul, r.kode_dest_simpul,
+                        r.kode_moda,
+                        SUM(r.total) as total,
+                        r.is_forecast,
+                        n_origin.location as origin_location,
+                        n_dest.location as dest_location,
+                        CASE
+                            WHEN n_origin.location IS NOT NULL AND n_dest.location IS NOT NULL
+                            THEN ST_Distance(n_origin.location, n_dest.location)
+                            ELSE NULL
+                        END as distance_meters,
+                        NOW() as created_at,
+                        NOW() as updated_at
+                    FROM raw_mpd_data r
+                    LEFT JOIN ref_transport_nodes n_origin ON r.kode_origin_simpul = n_origin.code
+                    LEFT JOIN ref_transport_nodes n_dest ON r.kode_dest_simpul = n_dest.code
+                    WHERE r.tanggal = ?
+                      AND r.opsel = ?
+                      AND r.kategori = ?
+                      AND r.is_forecast = ?
+                    GROUP BY
+                        r.tanggal, r.opsel, r.kategori,
+                        r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
+                        r.kode_origin_simpul, r.kode_dest_simpul,
+                        r.kode_moda, r.is_forecast,
+                        n_origin.location, n_dest.location
+                ";
 
-            DB::statement($sql, [$tanggal, $opsel, $kategori, $isForecast]);
+                DB::statement($sql, [$tanggal, $opsel, $kategori, $isForecast]);
+            });
 
             // Calculate Data Lost (Unmapped Nodes) if it's REAL data
             if (!$isForecast) {
