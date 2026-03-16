@@ -515,13 +515,13 @@ class DataMpdController extends Controller
             }
 
             $query = $queryBuilder->where(function ($q) use ($jabodetabekCodes) {
-                    $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                        ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
-                        ->orWhere(function ($q2) use ($jabodetabekCodes) {
-                            $q2->whereNotIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
-                        });
-                })
+                $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                    ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+                    ->orWhere(function ($q2) use ($jabodetabekCodes) {
+                        $q2->whereNotIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+                    });
+            })
                 ->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
                 ->get();
 
@@ -1334,7 +1334,7 @@ class DataMpdController extends Controller
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:nasional:pergerakan-harian:v8:{$type}:{$dString}";
-        
+
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
