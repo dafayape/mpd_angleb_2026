@@ -53,8 +53,11 @@ class TransformRawToSpatialJob implements ShouldQueue
         $this->updateEtlStatus('processing', 0, "Starting ETL transform for import_job_id={$this->importJobId}");
 
         try {
+            $job = ImportJob::find($this->importJobId);
+            if (!$job) return;
+
             $this->calculateIntegrityMetrics('start');
-            $this->transformData();
+            $this->transformData($job);
             $this->calculateIntegrityMetrics('end');
             
             // Refresh views wrapped so it does not fail the whole job
