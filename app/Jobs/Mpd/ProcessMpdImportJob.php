@@ -187,13 +187,12 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 $rowsRead++;
 
                 // Normalize Date for DB (must be YYYY-MM-DD)
-                $rawTanggal = trim($cols[0]);
+                $rawTanggal = trim($cols[0] ?? '');
                 $normalizedTanggal = str_replace('/', '-', $rawTanggal);
                 $dbTanggal = date('Y-m-d', strtotime($normalizedTanggal));
 
                 // ═══════════════════════════════════════════════════════
                 // DATA LOGIC: REAL keep values, FORECAST must be empty ('')
-                // Note: Columns in DB are NOT NULL, so use '' instead of null
                 // ═══════════════════════════════════════════════════════
                 $originSimpulCode = trim($cols[11] ?? '');
                 $originSimpulName = trim($cols[12] ?? '');
@@ -202,6 +201,8 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 $modaCode         = trim($cols[15] ?? '');
                 $modaName         = trim($cols[16] ?? '');
 
+                // HANYA jika FORECAST maka kita paksa kosong. 
+                // Jika REAL (is_forecast false), maka tetap gunakan nilai di atas.
                 if ($isForecast) {
                     $originSimpulCode = '';
                     $originSimpulName = '';
@@ -212,10 +213,12 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 }
 
                 // Sanitize Category: Ensure only ORANG or PERGERAKAN
-                $dataKategori = strtoupper(trim($cols[2]));
+                $dataKategori = strtoupper(trim($cols[2] ?? ''));
                 if (!in_array($dataKategori, ['ORANG', 'PERGERAKAN'])) {
                     $dataKategori = 'PERGERAKAN';
                 }
+
+
 
                 // ═══════════════════════════════════════════════════════
                 // DEDUPLICATION KEY (Standardized)

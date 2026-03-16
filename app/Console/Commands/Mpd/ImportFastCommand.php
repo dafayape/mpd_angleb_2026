@@ -132,7 +132,7 @@ class ImportFastCommand extends Command
                     kode_origin_kabupaten_kota, MAX(origin_kabupaten_kota), 
                     MAX(kode_dest_provinsi), MAX(dest_provinsi), 
                     kode_dest_kabupaten_kota, MAX(dest_kabupaten_kota), 
-                    -- Force '' (empty string) if Forecast, because columns are NOT NULL
+                    -- HANYA paksa kosong ('') jika Kategori adalah FORECAST
                     CASE WHEN {$isForecastStr} THEN '' ELSE kode_origin_simpul END,
                     CASE WHEN {$isForecastStr} THEN '' ELSE MAX(origin_simpul) END,
                     CASE WHEN {$isForecastStr} THEN '' ELSE kode_dest_simpul END,
@@ -144,6 +144,7 @@ class ImportFastCommand extends Command
                 GROUP BY 
                     tanggal, opsel, kategori, 
                     kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, 
+                    -- Kolom unik harus konsisten dengan SELECT agar GROUP BY jalan
                     CASE WHEN {$isForecastStr} THEN '' ELSE kode_origin_simpul END,
                     CASE WHEN {$isForecastStr} THEN '' ELSE kode_dest_simpul END,
                     CASE WHEN {$isForecastStr} THEN '' ELSE kode_moda END
