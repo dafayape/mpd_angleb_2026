@@ -47,9 +47,9 @@ class KeynoteController extends Controller
             ['no' => 27, 'content' => 'Akumulasi pergerakan harian dari seluruh opsel dan keterangan singkat terkait jumlah unique subscribernya (Inter Jabodetabek)', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.inter-pergerakan'],
             ['no' => 28, 'content' => 'Pergerakan harian total (pergerakan per hari dan orang per hari) untuk Inter Jabodetabek', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.inter-pergerakan'],
             ['no' => 29, 'content' => 'Akumulasi pergerakan harian total berdasarkan masing-masing opsel (Inter Jabodetabek)', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.inter-pergerakan'],
-            ['no' => 30, 'content' => 'O-D Intra Jabodetabek (Top 10 kota/kab asal favorit Jabodetabek)', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.intra-od'],
-            ['no' => 31, 'content' => 'O-D Intra Jabodetabek (Top 10 kota/kab tujuan favorit Jabodetabek)', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.intra-od'],
-            ['no' => 32, 'content' => 'O-D Inter Jabodetabek (Top 10 Provinsi tujuan favorit dari Jabodetabek)', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.inter-od'],
+            ['no' => 30, 'content' => 'O-D Intra Jabodetabek (Top 14 kota/kab asal favorit Jabodetabek)', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.intra-od'],
+            ['no' => 31, 'content' => 'O-D Intra Jabodetabek (Top 14 kota/kab tujuan favorit Jabodetabek)', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.intra-od'],
+            ['no' => 32, 'content' => 'O-D Inter Jabodetabek (Top 20 Provinsi tujuan favorit dari Jabodetabek)', 'group' => 'Pergerakan Jabodetabek', 'route' => 'pages.jabodetabek.inter-od'],
 
             // Kesimpulan dan Rekomendasi
             ['no' => 33, 'content' => 'Kesimpulan Nasional', 'group' => 'Kesimpulan dan Rekomendasi', 'route' => 'pages.kesimpulan.nasional'],

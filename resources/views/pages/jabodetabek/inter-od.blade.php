@@ -151,7 +151,7 @@
                 <div class="card-header d-flex align-items-center bg-white"
                     style="padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05);">
                     <span class="section-badge">01</span>
-                    <h5 class="fw-bold text-navy mb-0">O-D Inter Jabodetabek (Top 10 Provinsi tujuan favorit dari
+                    <h5 class="fw-bold text-navy mb-0">O-D Inter Jabodetabek (Top 20 Provinsi tujuan favorit dari
                         Jabodetabek)</h5>
                     <div class="export-dropdown ms-auto">
                         <button class="export-btn" onclick="toggleExportMenu('export-menu-iod01')">
