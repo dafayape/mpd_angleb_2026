@@ -1276,16 +1276,20 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:nasional:pergerakan-harian:v6';
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate));
+        $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
+        $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
+        $cacheKey = "mpd:nasional:pergerakan-harian:v8:{$type}:{$dString}";
+        
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
             'dates' => $dates,
             'data' => $data,
+            'activeType' => $type,
         ]);
     }
 
-    private function getPergerakanHarianData($startDate, $endDate)
+    private function getPergerakanHarianData($startDate, $endDate, $type = 'ALL')
     {
         $opsels = ['XLSMART', 'IOH', 'TSEL'];
         $categories = ['PERGERAKAN', 'ORANG'];
@@ -1310,12 +1314,19 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
-                ->groupBy('tanggal', 'opsel', 'kategori')
-                ->get();
+                ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
+
+            if ($type === 'FORECAST') {
+                $query->where('is_forecast', true);
+            } else {
+                // Default is REAL
+                $query->where('is_forecast', false);
+            }
+
+            $results = $query->groupBy('tanggal', 'opsel', 'kategori')->get();
 
             $hasOrang = [];
-            foreach ($query as $row) {
+            foreach ($results as $row) {
                 $date = substr($row->tanggal, 0, 10);
                 $cat = strtoupper($row->kategori);
                 $vol = (int) $row->total_volume;
