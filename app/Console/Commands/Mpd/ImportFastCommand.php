@@ -132,21 +132,21 @@ class ImportFastCommand extends Command
                     kode_origin_kabupaten_kota, MAX(origin_kabupaten_kota), 
                     MAX(kode_dest_provinsi), MAX(dest_provinsi), 
                     kode_dest_kabupaten_kota, MAX(dest_kabupaten_kota), 
-                    -- Force NULL if Forecast, otherwise take from CSV
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_origin_simpul END,
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE MAX(origin_simpul) END,
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_dest_simpul END,
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE MAX(dest_simpul) END,
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_moda END,
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE MAX(moda) END,
+                    -- Force '' (empty string) if Forecast, because columns are NOT NULL
+                    CASE WHEN {$isForecastStr} THEN '' ELSE kode_origin_simpul END,
+                    CASE WHEN {$isForecastStr} THEN '' ELSE MAX(origin_simpul) END,
+                    CASE WHEN {$isForecastStr} THEN '' ELSE kode_dest_simpul END,
+                    CASE WHEN {$isForecastStr} THEN '' ELSE MAX(dest_simpul) END,
+                    CASE WHEN {$isForecastStr} THEN '' ELSE kode_moda END,
+                    CASE WHEN {$isForecastStr} THEN '' ELSE MAX(moda) END,
                     SUM(total)
                 FROM {$tempTable}
                 GROUP BY 
                     tanggal, opsel, kategori, 
                     kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, 
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_origin_simpul END,
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_dest_simpul END,
-                    CASE WHEN {$isForecastStr} THEN NULL ELSE kode_moda END
+                    CASE WHEN {$isForecastStr} THEN '' ELSE kode_origin_simpul END,
+                    CASE WHEN {$isForecastStr} THEN '' ELSE kode_dest_simpul END,
+                    CASE WHEN {$isForecastStr} THEN '' ELSE kode_moda END
                 ON CONFLICT ({$uniqueColumns}) 
                 DO UPDATE SET 
                     total = raw_mpd_data.total + EXCLUDED.total,
