@@ -284,6 +284,10 @@
                     <input type="radio" class="btn-check type-filter" name="data_type" id="dt_fore" value="FORECAST"
                         autocomplete="off" {{ $activeType === 'FORECAST' ? 'checked' : '' }}>
                     <label class="btn" for="dt_fore" style="font-size: 0.85rem;">FORECAST</label>
+
+                    <input type="radio" class="btn-check type-filter" name="data_type" id="dt_comb" value="COMBINED"
+                        autocomplete="off" {{ $activeType === 'COMBINED' ? 'checked' : '' }}>
+                    <label class="btn" for="dt_comb" style="font-size: 0.85rem;">COMBINED</label>
                 </div>
             </div>
         </div>
@@ -440,14 +444,18 @@
                                             <p class="mb-0 text-muted"
                                                 style="font-size: 0.85rem; line-height: 1.5; text-align: justify;">
                                                 @if ($totMov > 0)
-                                                    Berdasarkan akumulasi data <strong>{{ $activeType }}</strong> tanggal 13 - {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}, total pergerakan yang
+                                                    Berdasarkan akumulasi data <strong>{{ $activeType }}</strong> tanggal
+                                                    13 -
+                                                    {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }},
+                                                    total pergerakan yang
                                                     terekam oleh <strong>{{ $conf['name'] }}</strong> adalah
                                                     <strong>{{ fmtNum($totMov) }}</strong>, mencakup
                                                     <strong>{{ fmtNum($totPpl) }}</strong> target orang.
                                                 @else
                                                     Pada rentang waktu ini, belum terdapat rekaman observasi pergerakan yang
                                                     valid secara menyeluruh untuk operator
-                                                    <strong>{{ $conf['name'] }}</strong> pada kategori data <strong>{{ $activeType }}</strong>.
+                                                    <strong>{{ $conf['name'] }}</strong> pada kategori data
+                                                    <strong>{{ $activeType }}</strong>.
                                                 @endif
                                             </p>
                                         </div>
@@ -762,7 +770,9 @@
                                     <div class="summary-box-03 border border-dark border-2 rounded">
                                         <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
                                             Total pergerakan pada periode<br>
-                                            <strong>13 Maret 2026 s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong> mencapai<br>
+                                            <strong>13 Maret 2026 s/d
+                                                {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong>
+                                            mencapai<br>
                                             <span class="highlight text-dark"
                                                 style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNum($totMovAll) }}
                                                 Pergerakan</span>
@@ -828,7 +838,9 @@
                                     <div class="summary-box-03 border border-dark border-2 rounded">
                                         <div style="font-size: 0.95rem; line-height: 1.5; color: #222;">
                                             Total orang pada periode<br>
-                                            <strong>13 Maret 2026 s/d {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong> mencapai<br>
+                                            <strong>13 Maret 2026 s/d
+                                                {{ \Carbon\Carbon::parse(config('mpd.end_date', '2026-03-29'))->locale('id')->isoFormat('D MMMM YYYY') }}</strong>
+                                            mencapai<br>
                                             <span class="highlight text-dark"
                                                 style="background-color: #fef08a !important; padding: 6px 15px; font-size: 1.25rem; font-weight: 800; border-radius: 4px; display:inline-block; margin-top: 10px;">{{ fmtNum($totPplAll) }}
                                                 Orang</span>

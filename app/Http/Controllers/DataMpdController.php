@@ -56,6 +56,48 @@ class DataMpdController extends Controller
         ]);
     }
 
+    private function getRealDates(string $kategori, ?string $opsel = null): array
+    {
+        [$startDate, $endDate] = $this->getPeriodDates();
+        $key = "mpd:real_dates:{$kategori}:{$opsel}:{$startDate->format('Ymd')}:{$endDate->format('Ymd')}";
+
+        return Cache::remember($key, $this->dataCacheTtl(), function () use ($kategori, $opsel, $startDate, $endDate) {
+            $q = DB::table('spatial_movements')
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('kategori', $kategori)
+                ->where('is_forecast', false);
+            if ($opsel) {
+                $q->where('opsel', $opsel);
+            }
+            return $q->distinct()->pluck('tanggal')->toArray();
+        });
+    }
+
+    private function applyTypeFilter($query, string $type, string $kategori = 'PERGERAKAN', ?string $opsel = null, string $alias = '')
+    {
+        $prefix = $alias ? $alias . '.' : '';
+        if ($type === 'COMBINED') {
+            $realDates = $this->getRealDates($kategori, $opsel);
+            $query->where(function ($q) use ($realDates, $prefix) {
+                $q->where($prefix . 'is_forecast', false)
+                    ->orWhere(function ($sub) use ($realDates, $prefix) {
+                        if (!empty($realDates)) {
+                            $sub->where($prefix . 'is_forecast', true)
+                                ->whereNotIn($prefix . 'tanggal', $realDates);
+                        } else {
+                            $sub->where($prefix . 'is_forecast', true);
+                        }
+                    });
+            });
+        } elseif ($type === 'FORECAST') {
+            $query->where($prefix . 'is_forecast', true);
+        } else {
+            // Default to REAL
+            $query->where($prefix . 'is_forecast', false);
+        }
+        return $query;
+    }
+
     public function jabodetabekIntraPergerakanPage(Request $request)
     {
         [$startDate, $endDate] = $this->getPeriodDates();
@@ -115,11 +157,7 @@ class DataMpdController extends Controller
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
 
-            if ($type === 'FORECAST') {
-                $dbQuery->where('sm.is_forecast', true);
-            } else {
-                $dbQuery->where('sm.is_forecast', false);
-            }
+            $this->applyTypeFilter($dbQuery, $type, 'PERGERAKAN', null, 'sm');
 
             $query = $dbQuery->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
                 ->get();
@@ -271,11 +309,7 @@ class DataMpdController extends Controller
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
 
-            if ($type === 'FORECAST') {
-                $baseQuery->where('sm.is_forecast', true);
-            } else {
-                $baseQuery->where('sm.is_forecast', false);
-            }
+            $this->applyTypeFilter($baseQuery, $type, 'PERGERAKAN', null, 'sm');
 
             $query = $baseQuery->groupBy('oc.code', 'oc.name', 'dc.code', 'dc.name')
                 ->orderByRaw('total_volume DESC')
@@ -403,11 +437,7 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG']);
 
-            if ($type === 'FORECAST') {
-                $baseQuery->where('sm.is_forecast', true);
-            } else {
-                $baseQuery->where('sm.is_forecast', false);
-            }
+            $this->applyTypeFilter($baseQuery, $type, 'PERGERAKAN', null, 'sm');
 
             $query = $baseQuery->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
@@ -508,11 +538,7 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG']);
 
-            if ($type === 'FORECAST') {
-                $queryBuilder->where('sm.is_forecast', true);
-            } else {
-                $queryBuilder->where('sm.is_forecast', false);
-            }
+            $this->applyTypeFilter($queryBuilder, $type, 'PERGERAKAN', null, 'sm');
 
             $query = $queryBuilder->where(function ($q) use ($jabodetabekCodes) {
                 $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
@@ -676,11 +702,7 @@ class DataMpdController extends Controller
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
 
-            if ($type === 'FORECAST') {
-                $query->where('is_forecast', true);
-            } else {
-                $query->where('is_forecast', false);
-            }
+            $this->applyTypeFilter($query, $type, 'PERGERAKAN');
 
             $baseQuery = $query->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
                 ->get();
@@ -801,11 +823,7 @@ class DataMpdController extends Controller
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
 
-        if ($type === 'FORECAST') {
-            $query->where('is_forecast', true);
-        } else {
-            $query->where('is_forecast', false);
-        }
+        $this->applyTypeFilter($query, $type, 'PERGERAKAN');
 
         return $query->groupBy('kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota')
             ->get();
@@ -989,11 +1007,7 @@ class DataMpdController extends Controller
                 ->whereNotNull('kode_origin_simpul')
                 ->where('kode_origin_simpul', '!=', '');
 
-            if ($type === 'FORECAST') {
-                $queryObj->where('is_forecast', true);
-            } else {
-                $queryObj->where('is_forecast', false);
-            }
+            $this->applyTypeFilter($queryObj, $type, 'PERGERAKAN');
 
             $baseQuery = $queryObj->groupBy('kode_origin_simpul', 'tanggal', 'opsel', 'is_forecast')
                 ->get();
@@ -1371,12 +1385,7 @@ class DataMpdController extends Controller
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
 
-            if ($type === 'FORECAST') {
-                $query->where('is_forecast', true);
-            } else {
-                // Default is REAL
-                $query->where('is_forecast', false);
-            }
+            $this->applyTypeFilter($query, $type, 'PERGERAKAN');
 
             $results = $query->groupBy('tanggal', 'opsel', 'kategori')->get();
 
@@ -1985,11 +1994,7 @@ class DataMpdController extends Controller
             /** @var \Illuminate\Database\Query\Builder $outflowBuilder */
             $outflowBuilder = DB::table('spatial_movements');
 
-            if ($type === 'FORECAST') {
-                $outflowBuilder->where('is_forecast', true);
-            } else {
-                $outflowBuilder->where('is_forecast', false);
-            }
+            $this->applyTypeFilter($outflowBuilder, $type, 'PERGERAKAN', null, 'sm');
 
             /** @var \Illuminate\Support\Collection $outflowQuery */
             $outflowQuery = $outflowBuilder
@@ -2006,11 +2011,7 @@ class DataMpdController extends Controller
             /** @var \Illuminate\Database\Query\Builder $inflowBuilder */
             $inflowBuilder = DB::table('spatial_movements');
 
-            if ($type === 'FORECAST') {
-                $inflowBuilder->where('is_forecast', true);
-            } else {
-                $inflowBuilder->where('is_forecast', false);
-            }
+            $this->applyTypeFilter($inflowBuilder, $type, 'PERGERAKAN', null, 'sm');
 
             /** @var \Illuminate\Support\Collection $inflowQuery */
             $inflowQuery = $inflowBuilder

@@ -30,6 +30,10 @@
                     <input type="radio" class="btn-check type-filter" name="data_type" id="dt_fore" value="FORECAST"
                         autocomplete="off" {{ $activeType === 'FORECAST' ? 'checked' : '' }}>
                     <label class="btn" for="dt_fore" style="font-size: 0.85rem;">FORECAST</label>
+
+                    <input type="radio" class="btn-check type-filter" name="data_type" id="dt_comb" value="COMBINED"
+                        autocomplete="off" {{ $activeType === 'COMBINED' ? 'checked' : '' }}>
+                    <label class="btn" for="dt_comb" style="font-size: 0.85rem;">COMBINED</label>
                 </div>
             </div>
         </div>
@@ -197,14 +201,15 @@
                 background-color: rgba(42, 48, 66, 0.05);
                 color: #2a3042;
             }
-                margin-top: 4px;
-                min-width: 180px;
-                background: white;
-                border-radius: 8px;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-                z-index: 9999;
-                overflow: hidden;
-                border: 1px solid #e2e8f0;
+
+            margin-top: 4px;
+            min-width: 180px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
             }
 
             .export-dropdown .export-menu.show {
@@ -382,7 +387,8 @@
                         <div class="col-xl-5 col-lg-12 d-flex flex-column">
                             <div class="border rounded p-3 mb-4 flex-grow-1"
                                 style="border-width:2px !important; border-color: #aab5c3 !important;">
-                                <h5 class="text-center fw-bold text-primary mb-3 mt-2" style="font-size: 1.25rem;">10 Besar
+                                <h5 class="text-center fw-bold text-primary mb-3 mt-2" style="font-size: 1.25rem;">10
+                                    Besar
                                     Provinsi Tujuan Favorit Nasional</h5>
                                 <div class="table-responsive">
                                     <table class="table table-bordered table-striped table-custom mb-0 text-center">

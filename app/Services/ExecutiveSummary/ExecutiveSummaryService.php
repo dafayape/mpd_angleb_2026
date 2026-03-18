@@ -59,11 +59,42 @@ class ExecutiveSummaryService
         ];
     }
 
+    private function getRealDates(string $kategori, ?string $opsel): array
+    {
+        $key = "executive_summary:real_dates:{$kategori}:{$opsel}:{$this->getStartDate()}:{$this->getEndDate()}";
+
+        return Cache::remember($key, $this->cacheTtl(), function () use ($kategori, $opsel) {
+            $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
+                ->where('kategori', $kategori)
+                ->where('is_forecast', false);
+            if ($opsel) {
+                $q->where('opsel', $opsel);
+            }
+            return $q->distinct()->pluck('tanggal')->toArray();
+        });
+    }
+
     private function baseQuery(string $kategori, string $dataType, ?string $opsel)
     {
         $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-            ->where('kategori', $kategori)
-            ->where('is_forecast', $dataType === 'forecast');
+            ->where('kategori', $kategori);
+
+        if ($dataType === 'combined') {
+            $realDates = $this->getRealDates($kategori, $opsel);
+            $q->where(function ($query) use ($realDates) {
+                $query->where('is_forecast', false)
+                    ->orWhere(function ($sub) use ($realDates) {
+                        if (!empty($realDates)) {
+                            $sub->where('is_forecast', true)
+                                ->whereNotIn('tanggal', $realDates);
+                        } else {
+                            $sub->where('is_forecast', true);
+                        }
+                    });
+            });
+        } else {
+            $q->where('is_forecast', $dataType === 'forecast');
+        }
         if ($opsel) {
             $q->where('opsel', $opsel);
         }
@@ -223,8 +254,26 @@ class ExecutiveSummaryService
     private function batchJaboSums(string $dataType, ?string $opsel, string $region): array
     {
         $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-            ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
-            ->where('is_forecast', $dataType === 'forecast');
+            ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
+
+        if ($dataType === 'combined') {
+            // Need to merge logic for both categories, but in combined usually we fetch each distinct category's real dates
+            // For simplicity, we assume real dates for PERGERAKAN and ORANG are the same
+            $realDates = $this->getRealDates('PERGERAKAN', $opsel);
+            $q->where(function ($query) use ($realDates) {
+                $query->where('is_forecast', false)
+                    ->orWhere(function ($sub) use ($realDates) {
+                        if (!empty($realDates)) {
+                            $sub->where('is_forecast', true)
+                                ->whereNotIn('tanggal', $realDates);
+                        } else {
+                            $sub->where('is_forecast', true);
+                        }
+                    });
+            });
+        } else {
+            $q->where('is_forecast', $dataType === 'forecast');
+        }
         if ($opsel) {
             $q->where('opsel', $opsel);
         }

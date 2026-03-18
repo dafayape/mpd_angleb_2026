@@ -211,7 +211,7 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
             'etl_progress' => $progress
         ]);
 
-        $logPrefix = "[ETL import_job_id: {$this->importJobId}] ";
+        $logPrefix = "[ETL import_job   _id: {$this->importJobId}] ";
         Log::log($level, $logPrefix . $message);
     }
 

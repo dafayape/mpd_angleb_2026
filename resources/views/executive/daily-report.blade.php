@@ -132,8 +132,8 @@
                             <label class="filter-label">Tipe Data</label>
                             <select name="kategori" class="form-select">
                                 <option value="REAL" {{ ($kategori ?? 'REAL') == 'REAL' ? 'selected' : '' }}>Real</option>
-                                <option value="FORECAST" {{ ($kategori ?? '') == 'FORECAST' ? 'selected' : '' }}>Forecast
-                                </option>
+                                <option value="FORECAST" {{ ($kategori ?? '') == 'FORECAST' ? 'selected' : '' }}>Forecast</option>
+                                <option value="COMBINED" {{ ($kategori ?? '') == 'COMBINED' ? 'selected' : '' }}>Combined</option>
                             </select>
                         </div>
                         <div class="col-lg-2 col-md-3">
@@ -208,19 +208,19 @@
                             class="bold">{{ $period_string }}</span> sebagai berikut:
 
                         A. Pergerakan NASIONAL:
-                        1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : 'realisasi' }} pergerakan
+                        1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'realisasi & prediksi' : 'realisasi') }} pergerakan
                         orang adalah sebanyak <span class="bold">{{ number_format($nasional_total, 0, ',', '.') }}</span>
                         orang;
-                        2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : 'Realisasi' }} pergerakan orang arus
+                        2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'Realisasi & Prediksi' : 'Realisasi') }} pergerakan orang arus
                         keberangkatan TERTINGGI terjadi pada hari <span class="bold">{{ $nasional_highest_date }}</span>
                         sebanyak <span class="bold">{{ number_format($nasional_highest_total, 0, ',', '.') }}</span>
                         orang.
 
                         B. Pergerakan JABODETABEK:
-                        1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : 'realisasi' }} pergerakan
+                        1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'realisasi & prediksi' : 'realisasi') }} pergerakan
                         orang adalah sebanyak <span class="bold">{{ number_format($jabo_total, 0, ',', '.') }}</span>
                         orang;
-                        2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : 'Realisasi' }} pergerakan orang arus
+                        2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'Realisasi & Prediksi' : 'Realisasi') }} pergerakan orang arus
                         keberangkatan TERTINGGI terjadi pada hari <span class="bold">{{ $jabo_highest_date }}</span>
                         sebanyak <span class="bold">{{ number_format($jabo_highest_total, 0, ',', '.') }}</span> orang.
 
@@ -238,12 +238,12 @@
 Dengan hormat, izin melaporkan perkembangan pemantauan pergerakan orang pada periode Angleb 2026 dengan menggunakan _Mobile Positioning Data_ (MPD) posisi dari *{{ $period_string }}* sebagai berikut:
 
 A.	Pergerakan NASIONAL:
-1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : 'realisasi' }} pergerakan orang adalah sebanyak *{{ number_format($nasional_total, 0, ',', '.') }}* orang;
-2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : 'Realisasi' }} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{{ $nasional_highest_date }}* sebanyak *{{ number_format($nasional_highest_total, 0, ',', '.') }}* orang.
+1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'realisasi & prediksi' : 'realisasi') }} pergerakan orang adalah sebanyak *{{ number_format($nasional_total, 0, ',', '.') }}* orang;
+2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'Realisasi & Prediksi' : 'Realisasi') }} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{{ $nasional_highest_date }}* sebanyak *{{ number_format($nasional_highest_total, 0, ',', '.') }}* orang.
 
 B.	Pergerakan JABODETABEK:
-1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : 'realisasi' }} pergerakan orang adalah sebanyak *{{ number_format($jabo_total, 0, ',', '.') }}* orang;
-2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : 'Realisasi' }} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{{ $jabo_highest_date }}* sebanyak *{{ number_format($jabo_highest_total, 0, ',', '.') }}* orang.
+1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'realisasi & prediksi' : 'realisasi') }} pergerakan orang adalah sebanyak *{{ number_format($jabo_total, 0, ',', '.') }}* orang;
+2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'Realisasi & Prediksi' : 'Realisasi') }} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{{ $jabo_highest_date }}* sebanyak *{{ number_format($jabo_highest_total, 0, ',', '.') }}* orang.
 
 Demikian disampaikan dan mohon arahannya.
 

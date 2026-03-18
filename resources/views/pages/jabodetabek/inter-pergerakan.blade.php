@@ -26,6 +26,10 @@
                     <input type="radio" class="btn-check type-filter" name="data_type" id="dt_fore" value="FORECAST"
                         autocomplete="off" {{ $activeType === 'FORECAST' ? 'checked' : '' }}>
                     <label class="btn" for="dt_fore" style="font-size: 0.85rem;">FORECAST</label>
+
+                    <input type="radio" class="btn-check type-filter" name="data_type" id="dt_comb" value="COMBINED"
+                        autocomplete="off" {{ $activeType === 'COMBINED' ? 'checked' : '' }}>
+                    <label class="btn" for="dt_comb" style="font-size: 0.85rem;">COMBINED</label>
                 </div>
             </div>
         </div>
@@ -485,7 +489,8 @@
                                             style="width: 25%; background-color: #dbe4eb; font-weight: bold;">AKUMULASI
                                         </th>
                                         <th colspan="4" class="py-2 text-center border-dark"
-                                            style="background-color: #dbe4eb; font-weight: bold;">DATA {{ $activeType }}</th>
+                                            style="background-color: #dbe4eb; font-weight: bold;">DATA {{ $activeType }}
+                                        </th>
                                     </tr>
                                     <tr>
                                         <th colspan="2" class="py-2 text-center border-dark"

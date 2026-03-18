@@ -241,6 +241,9 @@
                         <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_fore"
                             value="forecast" autocomplete="off">
                         <label class="btn" for="dt_fore" style="font-size: 0.95rem;">Forecast</label>
+                        <input type="radio" class="btn-check filter-toggle" name="data_type" id="dt_combined"
+                            value="combined" autocomplete="off">
+                        <label class="btn" for="dt_combined" style="font-size: 0.95rem;">Combined</label>
                     </div>
                 </div>
                 <div class="d-flex flex-column">

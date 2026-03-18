@@ -30,6 +30,10 @@
                     <input type="radio" class="btn-check type-filter" name="data_type" id="dt_fore" value="FORECAST"
                         autocomplete="off" {{ $activeType === 'FORECAST' ? 'checked' : '' }}>
                     <label class="btn" for="dt_fore" style="font-size: 0.85rem;">FORECAST</label>
+
+                    <input type="radio" class="btn-check type-filter" name="data_type" id="dt_comb" value="COMBINED"
+                        autocomplete="off" {{ $activeType === 'COMBINED' ? 'checked' : '' }}>
+                    <label class="btn" for="dt_comb" style="font-size: 0.85rem;">COMBINED</label>
                 </div>
             </div>
         </div>
@@ -223,7 +227,8 @@
             .custom-toggle-group .btn-check:checked+.btn {
                 background-color: #2a3042;
                 color: white;
-                border-color: #2a3042; box-shadow: none;
+                border-color: #2a3042;
+                box-shadow: none;
             }
 
             .custom-toggle-group .btn:hover {
