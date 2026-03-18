@@ -1994,7 +1994,7 @@ class DataMpdController extends Controller
             /** @var \Illuminate\Database\Query\Builder $outflowBuilder */
             $outflowBuilder = DB::table('spatial_movements');
 
-            $this->applyTypeFilter($outflowBuilder, $type, 'PERGERAKAN', null, 'sm');
+            $this->applyTypeFilter($outflowBuilder, $type, 'PERGERAKAN');
 
             /** @var \Illuminate\Support\Collection $outflowQuery */
             $outflowQuery = $outflowBuilder
@@ -2011,7 +2011,7 @@ class DataMpdController extends Controller
             /** @var \Illuminate\Database\Query\Builder $inflowBuilder */
             $inflowBuilder = DB::table('spatial_movements');
 
-            $this->applyTypeFilter($inflowBuilder, $type, 'PERGERAKAN', null, 'sm');
+            $this->applyTypeFilter($inflowBuilder, $type, 'PERGERAKAN');
 
             /** @var \Illuminate\Support\Collection $inflowQuery */
             $inflowQuery = $inflowBuilder
