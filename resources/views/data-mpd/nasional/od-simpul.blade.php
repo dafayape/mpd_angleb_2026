@@ -507,7 +507,7 @@
                                         <tbody>
                                             @php
                                                 $maxRows = max(count($top_origin_kab), count($top_dest_kab));
-                                                $maxRows = $maxRows > 10 ? 10 : $maxRows;
+                                                $maxRows = $maxRows > 30 ? 30 : $maxRows;
                                             @endphp
                                             @if ($maxRows > 0)
                                                 @for ($i = 0; $i < $maxRows; $i++)
