@@ -743,7 +743,7 @@ class DataMpdController extends Controller
                 ];
             })
             ->sortByDesc('total')
-            ->take(10)
+            ->take(30)
             ->values();
 
         /** @var \Illuminate\Support\Collection $topDest */
@@ -758,7 +758,7 @@ class DataMpdController extends Controller
                 ];
             })
             ->sortByDesc('total')
-            ->take(10)
+            ->take(30)
             ->values();
 
         // Top 50 overall routes for Sankey diagram (Reverted from 300 to 50 for clarity)

@@ -34,7 +34,7 @@ class KeynoteController extends Controller
             ['no' => 16, 'content' => 'Persandingan pergerakan harian total berdasarkan masing-masing opsel (Pergerakan per hari dan orang per hari)', 'group' => 'Pergerakan Nasional', 'route' => 'pages.nasional.pergerakan-harian'],
             ['no' => 17, 'content' => 'O-D Provinsi Asal (10 besar provinsi asal favorit Nasional) & Desire line', 'group' => 'Pergerakan Nasional', 'route' => 'pages.nasional.od'],
             ['no' => 18, 'content' => 'O-D Provinsi Tujuan (10 besar provinsi tujuan favorit Nasional) & Desire line', 'group' => 'Pergerakan Nasional', 'route' => 'pages.nasional.od'],
-            ['no' => 19, 'content' => 'Top 10 Kab/Kota (10 besar kab/kota asal favorit nasional dan 10 besar kab/kota tujuan favorit nasional)', 'group' => 'Pergerakan Nasional', 'route' => 'pages.nasional.od'],
+            ['no' => 19, 'content' => 'Top 30 Kab/Kota (30 besar kab/kota asal favorit nasional dan 30 besar kab/kota tujuan favorit nasional)', 'group' => 'Pergerakan Nasional', 'route' => 'pages.nasional.od'],
             ['no' => 20, 'content' => 'Mode share (pemilihan moda transportasi) berdasarkan jumlah pergerakan dan jumlah orang', 'group' => 'Pergerakan Nasional', 'route' => 'pages.nasional.mode-share'],
             ['no' => 21, 'content' => 'Pergerakan harian berdasarkan mode share (pemilihan moda transportasi)', 'group' => 'Pergerakan Nasional', 'route' => 'pages.nasional.mode-share'],
 
