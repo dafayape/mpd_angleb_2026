@@ -201,8 +201,8 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 $modaCode         = trim($cols[15] ?? '');
                 $modaName         = trim($cols[16] ?? '');
 
-                // Auto-Map anomali K ke A (Mobil) sesuai request
-                if ($modaCode === 'K') {
+                // Auto-Map anomali K ke A (Mobil) sesuai request (harden case dan quote jika ada)
+                if (trim(strtoupper($modaCode), " \t\n\r\0\x0B\"'") === 'K') {
                     $modaCode = 'A';
                     $modaName = 'Mobil Pribadi';
                 }

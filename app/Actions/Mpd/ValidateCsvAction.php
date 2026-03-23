@@ -288,8 +288,8 @@ class ValidateCsvAction
         // KODE_MODA (15) → ref_transport_modes
         $modaVal = trim($cols[15]);
         
-        // Auto-Map anomali K ke A (Mobil) sesuai request
-        if ($modaVal === 'K') {
+        // Auto-Map anomali K ke A (Mobil) sesuai request (harden case dan quote jika ada)
+        if (trim(strtoupper($modaVal), " \t\n\r\0\x0B\"'") === 'K') {
             $modaVal = 'A';
         }
 
