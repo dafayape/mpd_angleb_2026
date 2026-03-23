@@ -287,6 +287,12 @@ class ValidateCsvAction
 
         // KODE_MODA (15) → ref_transport_modes
         $modaVal = trim($cols[15]);
+        
+        // Auto-Map anomali K ke A (Mobil) sesuai request
+        if ($modaVal === 'K') {
+            $modaVal = 'A';
+        }
+
         if ($modaVal !== '' && ! isset($this->refModes[$modaVal])) {
             $issues[] = ['field' => 'KODE_MODA', 'type' => 'REF_NOT_FOUND', 'detail' => "Kode moda \"{$modaVal}\" tidak terdaftar di database"];
         }

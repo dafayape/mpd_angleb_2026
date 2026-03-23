@@ -137,8 +137,8 @@ class ImportFastCommand extends Command
                     CASE WHEN {$isForecastStr} THEN '' ELSE MAX(origin_simpul) END,
                     CASE WHEN {$isForecastStr} THEN '' ELSE kode_dest_simpul END,
                     CASE WHEN {$isForecastStr} THEN '' ELSE MAX(dest_simpul) END,
-                    CASE WHEN {$isForecastStr} THEN '' ELSE kode_moda END,
-                    CASE WHEN {$isForecastStr} THEN '' ELSE MAX(moda) END,
+                    CASE WHEN {$isForecastStr} THEN '' WHEN kode_moda = 'K' THEN 'A' ELSE kode_moda END,
+                    CASE WHEN {$isForecastStr} THEN '' WHEN kode_moda = 'K' THEN 'Mobil Pribadi' ELSE MAX(moda) END,
                     SUM(total)
                 FROM {$tempTable}
                 GROUP BY 
@@ -147,7 +147,7 @@ class ImportFastCommand extends Command
                     -- Kolom unik harus konsisten dengan SELECT agar GROUP BY jalan
                     CASE WHEN {$isForecastStr} THEN '' ELSE kode_origin_simpul END,
                     CASE WHEN {$isForecastStr} THEN '' ELSE kode_dest_simpul END,
-                    CASE WHEN {$isForecastStr} THEN '' ELSE kode_moda END
+                    CASE WHEN {$isForecastStr} THEN '' WHEN kode_moda = 'K' THEN 'A' ELSE kode_moda END
                 ON CONFLICT ({$uniqueColumns}) 
                 DO UPDATE SET 
                     total = raw_mpd_data.total + EXCLUDED.total,

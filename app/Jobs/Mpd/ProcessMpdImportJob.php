@@ -201,6 +201,12 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 $modaCode         = trim($cols[15] ?? '');
                 $modaName         = trim($cols[16] ?? '');
 
+                // Auto-Map anomali K ke A (Mobil) sesuai request
+                if ($modaCode === 'K') {
+                    $modaCode = 'A';
+                    $modaName = 'Mobil Pribadi';
+                }
+
                 // HANYA jika FORECAST maka kita paksa kosong. 
                 // Jika REAL (is_forecast false), maka tetap gunakan nilai di atas.
                 if ($isForecast) {
