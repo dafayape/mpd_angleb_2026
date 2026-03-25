@@ -2438,6 +2438,7 @@ class DataMpdController extends Controller
                 ->where('sm.is_forecast', $isForecast)
                 ->where('sm.kode_origin_simpul', '!=', '')
                 ->where('sm.kode_dest_simpul', '!=', '')
+                ->whereColumn('sm.kode_origin_simpul', '!=', 'sm.kode_dest_simpul') // FIX: Hapus rute A ke A (self-loop)
                 // Strict Filter Origin
                 ->where(function ($q) use ($category, $subCat, $kodeModa) {
                     $q->where('o.category', $category);
