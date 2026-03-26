@@ -66,6 +66,13 @@ class DailyReportController extends Controller
                     ->where('kategori', 'ORANG')
             )->sum('total');
 
+            $jaboTotal = $applyOpsel(
+                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('is_forecast', $isForecast)
+                    ->where('kategori', 'PERGERAKAN')
+                    ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+            )->sum('total');
+
             // --- Top 5 Provinsi Asal ---
             $top5Asal = $applyOpsel(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
@@ -107,6 +114,7 @@ class DailyReportController extends Controller
                 'formatted_end_day' => $formattedEndWithDay,
                 'nasional_total' => $nasionalTotal,
                 'nasional_unique' => $nasionalUnique,
+                'jabo_total' => $jaboTotal,
                 'top5_asal' => $top5Asal,
                 'top5_tujuan' => $top5Tujuan,
             ];
