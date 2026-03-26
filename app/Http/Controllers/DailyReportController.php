@@ -30,7 +30,7 @@ class DailyReportController extends Controller
 
         // Cache data for report
         $cacheKey = "dailyreport:text:v4:{$startDate}:{$endDate}:{$isForecast}:{$opselFilter}";
-        $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $isForecast, $opselFilter) {
+        $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $isForecast, $opselFilter, $kategoriFilter) {
 
             // Jabodetabek codes
             $jabodetabekCodes = config('mpd.jabodetabek_codes');
@@ -60,46 +60,55 @@ class DailyReportController extends Controller
                 ->orderByDesc('daily_total')
                 ->first();
 
-            // --- B. JABODETABEK ---
-            $jaboTotal = $applyOpsel(
+            $nasionalUnique = $applyOpsel(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                     ->where('is_forecast', $isForecast)
-                    ->where('kategori', 'PERGERAKAN')
-                    ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                    ->where('kategori', 'ORANG')
             )->sum('total');
 
-            $jaboHighest = $applyOpsel(
+            // --- Top 5 Provinsi Asal ---
+            $top5Asal = $applyOpsel(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                     ->where('is_forecast', $isForecast)
                     ->where('kategori', 'PERGERAKAN')
-                    ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
-            )->select('tanggal', DB::raw('SUM(total) as daily_total'))
-                ->groupBy('tanggal')
-                ->orderByDesc('daily_total')
-                ->first();
+            )->join('ref_provinces', 'spatial_movements.kode_origin_provinsi', '=', 'ref_provinces.code')
+             ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
+             ->groupBy('ref_provinces.name')
+             ->orderByDesc('total')
+             ->limit(5)
+             ->get();
+
+            // --- Top 5 Provinsi Tujuan ---
+            $top5Tujuan = $applyOpsel(
+                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('is_forecast', $isForecast)
+                    ->where('kategori', 'PERGERAKAN')
+            )->join('ref_provinces', 'spatial_movements.kode_dest_provinsi', '=', 'ref_provinces.code')
+             ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
+             ->groupBy('ref_provinces.name')
+             ->orderByDesc('total')
+             ->limit(5)
+             ->get();
 
             // Formatted Dates
             Carbon::setLocale('id');
-            $formattedStart = Carbon::parse($startDate)->isoFormat('D MMM YYYY');
-            $formattedEnd = Carbon::parse($endDate)->isoFormat('D MMM YYYY');
-
-            $nasionalHighestDate = $nasionalHighest
-                ? Carbon::parse($nasionalHighest->tanggal)->isoFormat('dddd, D MMMM YYYY')
-                : '-';
-            $jaboHighestDate = $jaboHighest
-                ? Carbon::parse($jaboHighest->tanggal)->isoFormat('dddd, D MMMM YYYY')
-                : '-';
+            $formattedStart = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
+            $formattedEnd = Carbon::parse($endDate)->isoFormat('D MMMM YYYY');
+            $formattedEndWithDay = Carbon::parse($endDate)->isoFormat('dddd, D MMMM YYYY');
 
             return [
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'period_string' => "tgl {$formattedStart} s.d. {$formattedEnd}",
+                'kategori' => $kategoriFilter,
+                'opsel' => $opselFilter,
+                'formatted_start' => $formattedStart,
+                'formatted_end' => $formattedEnd,
+                'formatted_end_day' => $formattedEndWithDay,
                 'nasional_total' => $nasionalTotal,
-                'nasional_highest_date' => $nasionalHighestDate,
-                'nasional_highest_total' => $nasionalHighest ? $nasionalHighest->daily_total : 0,
-                'jabo_total' => $jaboTotal,
-                'jabo_highest_date' => $jaboHighestDate,
-                'jabo_highest_total' => $jaboHighest ? $jaboHighest->daily_total : 0,
+                'nasional_unique' => $nasionalUnique,
+                'top5_asal' => $top5Asal,
+                'top5_tujuan' => $top5Tujuan,
             ];
         });
 
@@ -265,50 +274,56 @@ class DailyReportController extends Controller
                 ->where('is_forecast', $isForecast)->where('kategori', 'PERGERAKAN')
         )->sum('total');
 
-        $nasionalHighest = $applyOpsel(
+        $nasionalUnique = $applyOpsel(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', $isForecast)->where('kategori', 'PERGERAKAN')
-        )->select('tanggal', DB::raw('SUM(total) as daily_total'))
-            ->groupBy('tanggal')->orderByDesc('daily_total')->first();
-
-        $jaboTotal = $applyOpsel(
-            \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('is_forecast', $isForecast)->where('kategori', 'PERGERAKAN')
-                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                ->where('is_forecast', $isForecast)->where('kategori', 'ORANG')
         )->sum('total');
 
-        $jaboHighest = $applyOpsel(
+        $top5Asal = $applyOpsel(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', $isForecast)->where('kategori', 'PERGERAKAN')
-                ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
-        )->select('tanggal', DB::raw('SUM(total) as daily_total'))
-            ->groupBy('tanggal')->orderByDesc('daily_total')->first();
+        )->join('ref_provinces', 'spatial_movements.kode_origin_provinsi', '=', 'ref_provinces.code')
+         ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
+         ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
+
+        $top5Tujuan = $applyOpsel(
+            \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                ->where('is_forecast', $isForecast)->where('kategori', 'PERGERAKAN')
+        )->join('ref_provinces', 'spatial_movements.kode_dest_provinsi', '=', 'ref_provinces.code')
+         ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
+         ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
 
         Carbon::setLocale('id');
-        $formattedStart = Carbon::parse($startDate)->isoFormat('D MMM YYYY');
-        $formattedEnd = Carbon::parse($endDate)->isoFormat('D MMM YYYY');
-        $periodStr = "tgl {$formattedStart} s.d. {$formattedEnd}";
-
-        $nasHighDate = $nasionalHighest ? Carbon::parse($nasionalHighest->tanggal)->isoFormat('dddd, D MMMM YYYY') : '-';
-        $jabHighDate = $jaboHighest ? Carbon::parse($jaboHighest->tanggal)->isoFormat('dddd, D MMMM YYYY') : '-';
-
+        $formattedStart = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
+        $formattedEnd = Carbon::parse($endDate)->isoFormat('D MMMM YYYY');
+        $formattedEndDay = Carbon::parse($endDate)->isoFormat('dddd, D MMMM YYYY');
+        
         $nasTotal = number_format($nasionalTotal, 0, ',', '.');
-        $nasHighVal = number_format($nasionalHighest ? $nasionalHighest->daily_total : 0, 0, ',', '.');
-        $jabTotal = number_format($jaboTotal, 0, ',', '.');
-        $jabHighVal = number_format($jaboHighest ? $jaboHighest->daily_total : 0, 0, ',', '.');
+        $nasUnique = number_format($nasionalUnique, 0, ',', '.');
 
-        $opselLabel = $opsel === 'ALL' ? '' : " (Opsel: {$opsel})";
+        $str = "Yth. Bapak Kepala Badan Kebijakan Transportasi\n\n";
+        $str .= "Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari {$formattedEndDay} (akumulasi data {$tipeTeks} dari tgl {$formattedStart} s.d. {$formattedEnd}), sbb:\n\n";
+        $str .= "A.  Jumlah total Nasional sebesar {$nasTotal} pergerakan dengan jumlah unique subscriber sebesar {$nasUnique} orang\n\n";
+        $str .= "B.  Top 5 Provinsi Asal dan Tujuan, sbb:\n\n";
+        $str .= "1.  Provinsi Asal\n";
+        
+        $letters = ['a', 'b', 'c', 'd', 'e'];
+        foreach ($top5Asal as $idx => $item) {
+            $ltr = $letters[$idx] ?? 'a';
+            $val = number_format($item->total, 0, ',', '.');
+            $str .= "{$ltr}.  {$item->nama_provinsi} sebesar {$val} pergerakan;\n";
+        }
 
-        return "Yth. *Bapak Kepala Badan Kebijakan Transportasi*\n\n"
-             ."Dengan hormat, izin melaporkan perkembangan pemantauan pergerakan orang pada periode Angleb 2026 "
-             ."dengan menggunakan _Mobile Positioning Data_ (MPD){$opselLabel} posisi dari *{$periodStr}* sebagai berikut:\n"
-             ."A.\tPergerakan NASIONAL:\n"
-             ."1. Total/akumulasi {$tipeTeks} pergerakan orang adalah sebanyak *{$nasTotal}* orang;\n"
-             ."2. {$tipeTeksUc} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{$nasHighDate}* sebanyak *{$nasHighVal}* orang.\n\n"
-             ."B.\tPergerakan JABODETABEK:\n"
-             ."1. Total/akumulasi {$tipeTeks} pergerakan orang adalah sebanyak *{$jabTotal}* orang;\n"
-             ."2. {$tipeTeksUc} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{$jabHighDate}* sebanyak *{$jabHighVal}* orang.\n\n"
-             ."Demikian disampaikan dan mohon arahannya.\n\n"
-             ."Terima kasih.";
+        $str .= "\n2.  Provinsi Tujuan\n";
+        foreach ($top5Tujuan as $idx => $item) {
+            $ltr = $letters[$idx] ?? 'a';
+            $val = number_format($item->total, 0, ',', '.');
+            $str .= "{$ltr}.  {$item->nama_provinsi} sebesar {$val} pergerakan;\n";
+        }
+
+        $str .= "\nDemikian kami sampaikan, atas perkenan dan arahan Bapak Kepala Badan Kebijakan Transportasi diucapkan terima kasih.\n\n";
+        $str .= "Hormat kami,\nKapusjak LLAT\nM. Arief Affandi";
+
+        return $str;
     }
 }

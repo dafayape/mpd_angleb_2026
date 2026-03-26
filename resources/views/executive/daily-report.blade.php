@@ -194,60 +194,67 @@
                         <button id="btnCopy" class="btn btn-copy" onclick="copyReport()">
                             <i class="bx bx-copy me-1"></i> Salin Teks
                         </button>
+                        @if(auth()->check() && auth()->user()->role == 'admin')
                         <button id="btnWa" class="btn btn-wa" onclick="sendWhatsApp()">
                             <i class="bx bxl-whatsapp me-1"></i> Kirim WA
                         </button>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="report-preview" id="reportPreview">Yth. <span class="bold">Bapak Kepala Badan Kebijakan
-                            Transportasi</span>
+                    <div class="report-preview" id="reportPreview">Yth. <span class="bold">Bapak Kepala Badan Kebijakan Transportasi</span>
 
-                        Dengan hormat, izin melaporkan perkembangan pemantauan pergerakan orang pada periode Angleb 2026
-                        dengan menggunakan <span class="italic">Mobile Positioning Data</span> (MPD) posisi dari <span
-                            class="bold">{{ $period_string }}</span> sebagai berikut:
+Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari <span class="bold">{{ $formatted_end_day }}</span> (akumulasi data {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : 'realisasi' }} dari tgl {{ $formatted_start }} s.d. {{ $formatted_end }}), sbb:
 
-                        A. Pergerakan NASIONAL:
-                        1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'realisasi & prediksi' : 'realisasi') }} pergerakan
-                        orang adalah sebanyak <span class="bold">{{ number_format($nasional_total, 0, ',', '.') }}</span>
-                        orang;
-                        2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'Realisasi & Prediksi' : 'Realisasi') }} pergerakan orang arus
-                        keberangkatan TERTINGGI terjadi pada hari <span class="bold">{{ $nasional_highest_date }}</span>
-                        sebanyak <span class="bold">{{ number_format($nasional_highest_total, 0, ',', '.') }}</span>
-                        orang.
+A. Jumlah total Nasional sebesar <span class="bold">{{ number_format($nasional_total, 0, ',', '.') }}</span> pergerakan dengan jumlah unique subscriber sebesar <span class="bold">{{ number_format($nasional_unique, 0, ',', '.') }}</span> orang
 
-                        B. Pergerakan JABODETABEK:
-                        1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'realisasi & prediksi' : 'realisasi') }} pergerakan
-                        orang adalah sebanyak <span class="bold">{{ number_format($jabo_total, 0, ',', '.') }}</span>
-                        orang;
-                        2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'Realisasi & Prediksi' : 'Realisasi') }} pergerakan orang arus
-                        keberangkatan TERTINGGI terjadi pada hari <span class="bold">{{ $jabo_highest_date }}</span>
-                        sebanyak <span class="bold">{{ number_format($jabo_highest_total, 0, ',', '.') }}</span> orang.
+B. Top 5 Provinsi Asal dan Tujuan, sbb:
 
-                        Demikian disampaikan dan mohon arahannya.
+1. Provinsi Asal
+@php $letters = ['a', 'b', 'c', 'd', 'e']; @endphp
+@foreach($top5_asal as $idx => $item)
+{{ $letters[$idx] ?? 'a' }}. {{ $item->nama_provinsi }} sebesar <span class="bold">{{ number_format($item->total, 0, ',', '.') }}</span> pergerakan;
+@endforeach
 
-                        Terima kasih.</div>
+2. Provinsi Tujuan
+@foreach($top5_tujuan as $idx => $item)
+{{ $letters[$idx] ?? 'a' }}. {{ $item->nama_provinsi }} sebesar <span class="bold">{{ number_format($item->total, 0, ',', '.') }}</span> pergerakan;
+@endforeach
+
+Demikian kami sampaikan, atas perkenan dan arahan Bapak Kepala Badan Kebijakan Transportasi diucapkan terima kasih.
+
+Hormat kami,
+Kapusjak LLAT
+M. Arief Affandi</div>
                 </div>
             </div>
         </div>
     </div>
 
     {{-- Hidden plain text for copy --}}
-    <textarea id="plainTextReport" style="position:absolute;left:-9999px" readonly>Yth. *Bapak Kepala Badan Kebijakan Transportasi*
+    <textarea id="plainTextReport" style="position:absolute;left:-9999px" readonly>Yth. Bapak Kepala Badan Kebijakan Transportasi
 
-Dengan hormat, izin melaporkan perkembangan pemantauan pergerakan orang pada periode Angleb 2026 dengan menggunakan _Mobile Positioning Data_ (MPD) posisi dari *{{ $period_string }}* sebagai berikut:
+Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari {{ $formatted_end_day }} (akumulasi data {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : 'realisasi' }} dari tgl {{ $formatted_start }} s.d. {{ $formatted_end }}), sbb:
 
-A.	Pergerakan NASIONAL:
-1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'realisasi & prediksi' : 'realisasi') }} pergerakan orang adalah sebanyak *{{ number_format($nasional_total, 0, ',', '.') }}* orang;
-2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'Realisasi & Prediksi' : 'Realisasi') }} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{{ $nasional_highest_date }}* sebanyak *{{ number_format($nasional_highest_total, 0, ',', '.') }}* orang.
+A.  Jumlah total Nasional sebesar {{ number_format($nasional_total, 0, ',', '.') }} pergerakan dengan jumlah unique subscriber sebesar {{ number_format($nasional_unique, 0, ',', '.') }} orang
 
-B.	Pergerakan JABODETABEK:
-1. Total/akumulasi {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'realisasi & prediksi' : 'realisasi') }} pergerakan orang adalah sebanyak *{{ number_format($jabo_total, 0, ',', '.') }}* orang;
-2. {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'Prediksi' : (($kategori ?? 'REAL') == 'COMBINED' ? 'Realisasi & Prediksi' : 'Realisasi') }} pergerakan orang arus keberangkatan TERTINGGI terjadi pada hari *{{ $jabo_highest_date }}* sebanyak *{{ number_format($jabo_highest_total, 0, ',', '.') }}* orang.
+B.  Top 5 Provinsi Asal dan Tujuan, sbb:
 
-Demikian disampaikan dan mohon arahannya.
+1.  Provinsi Asal
+@foreach($top5_asal as $idx => $item)
+{{ $letters[$idx] ?? 'a' }}.  {{ $item->nama_provinsi }} sebesar {{ number_format($item->total, 0, ',', '.') }} pergerakan;
+@endforeach
 
-Terima kasih.</textarea>
+2.  Provinsi Tujuan
+@foreach($top5_tujuan as $idx => $item)
+{{ $letters[$idx] ?? 'a' }}.  {{ $item->nama_provinsi }} sebesar {{ number_format($item->total, 0, ',', '.') }} pergerakan;
+@endforeach
+
+Demikian kami sampaikan, atas perkenan dan arahan Bapak Kepala Badan Kebijakan Transportasi diucapkan terima kasih.
+
+Hormat kami,
+Kapusjak LLAT
+M. Arief Affandi</textarea>
 @endsection
 
 @push('scripts')
