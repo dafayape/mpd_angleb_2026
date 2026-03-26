@@ -273,7 +273,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:intra-od:v2:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:intra-od:v3:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -305,7 +305,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
+                ->where('sm.kategori', 'PERGERAKAN') // Fix double-count bug (sebelumnya: whereIn PERGERAKAN+ORANG)
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
 
@@ -401,7 +401,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:inter-od:v2:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:inter-od:v3:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -435,7 +435,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(sm.total) as total_volume')
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG']);
+                ->where('sm.kategori', 'PERGERAKAN'); // Fix double-count bug (sebelumnya: whereIn PERGERAKAN+ORANG)
 
             $this->applyTypeFilter($baseQuery, $type, 'PERGERAKAN', null, 'sm');
 
@@ -659,9 +659,9 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:od-simpul:split:v7:{$type}:{$dString}";
-        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v7:{$type}:{$dString}";
-        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v7:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:od-simpul:split:v8:{$type}:{$dString}";
+        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v8:{$type}:{$dString}";
+        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v8:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalOdSimpulData($startDate, $endDate, $type));
         $dataProv = $this->cached($cacheKeyOdProv, $this->dataCacheTtl(), fn () => $this->getNasionalOdProvinsiAsalData($startDate, $endDate, $type));
@@ -702,7 +702,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
+                ->where('kategori', 'PERGERAKAN');  // Hanya pergerakan, bukan ORANG (bug fix: dulu double count)
 
             $this->applyTypeFilter($query, $type, 'PERGERAKAN');
 
@@ -823,7 +823,7 @@ class DataMpdController extends Controller
                 DB::raw('SUM(total) as total_volume')
             )
             ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
+            ->where('kategori', 'PERGERAKAN');  // Hanya pergerakan, bukan ORANG (bug fix: dulu double count)
 
         $this->applyTypeFilter($query, $type, 'PERGERAKAN');
 
