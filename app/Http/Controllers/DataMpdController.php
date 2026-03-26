@@ -2109,7 +2109,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:kesimpulan:nasional:v2:{$dString}";
+        $cacheKey = "mpd:kesimpulan:nasional:v3:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanNasionalData($startDate, $endDate));
 
@@ -2165,9 +2165,9 @@ class DataMpdController extends Controller
                 'XLSMART' => ['pergerakan' => $operatorStats['PERGERAKAN']['XLSMART']],
             ]);
 
-            $operatorStats['ORANG']['TSEL'] = $koefResult['per_opsel']['TSEL']['unique'];
-            $operatorStats['ORANG']['IOH'] = $koefResult['per_opsel']['IOH']['unique'];
-            $operatorStats['ORANG']['XLSMART'] = $koefResult['per_opsel']['XLSMART']['unique'];
+            $operatorStats['ORANG']['TSEL'] = $koefResult['per_opsel']['TSEL']['unique_subscriber'];
+            $operatorStats['ORANG']['IOH'] = $koefResult['per_opsel']['IOH']['unique_subscriber'];
+            $operatorStats['ORANG']['XLSMART'] = $koefResult['per_opsel']['XLSMART']['unique_subscriber'];
 
             $totalOrang = $koefResult['total_unique_subscriber'];
 
