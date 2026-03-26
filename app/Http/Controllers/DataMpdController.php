@@ -1005,7 +1005,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
+                ->where('kategori', 'PERGERAKAN') // Fix double-count bug
                 ->whereNotNull('kode_origin_simpul')
                 ->where('kode_origin_simpul', '!=', '');
 
@@ -2006,7 +2006,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_outflow')
                 )
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
+                ->where('kategori', 'PERGERAKAN') // Fix double count Netflow outflow
                 ->groupBy('kode_origin_kabupaten_kota')
                 ->get()
                 ->keyBy('city_code');
@@ -2023,7 +2023,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_inflow')
                 )
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
+                ->where('kategori', 'PERGERAKAN') // Fix double count Netflow inflow
                 ->groupBy('kode_dest_kabupaten_kota')
                 ->get()
                 ->keyBy('city_code');
