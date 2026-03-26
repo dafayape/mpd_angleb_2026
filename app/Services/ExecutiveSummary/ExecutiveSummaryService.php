@@ -105,18 +105,50 @@ class ExecutiveSummaryService
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional:{$dateKey}";
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v2:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $pergerakan = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->sum('total');
             $orang = (float) $this->baseQuery('ORANG', $dataType, $opsel)->sum('total');
-            $koefisien = $orang > 0 ? round($pergerakan / $orang, 2) : 0.0;
+
+            // Hitung koefisien & unique subscriber menggunakan koefisien per-opsel per-batch
+            // (Konsisten dengan DataMpdController & DailyReportController)
+            $endDate   = $this->getEndDate();
+            $batches   = config('mpd_koefisien.batches', []);
+            $selBatch  = null;
+            foreach ($batches as $batch) {
+                if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
+                    $selBatch = $batch;
+                    break;
+                }
+            }
+            if (! $selBatch && ! empty($batches)) {
+                $selBatch = end($batches);
+            }
+
+            // Ambil pergerakan per-opsel
+            $pergerakanPerOpsel = $this->baseQuery('PERGERAKAN', $dataType, $opsel)
+                ->select('opsel', DB::raw('SUM(total) as t'))
+                ->groupBy('opsel')
+                ->pluck('t', 'opsel');
+
+            $totalUnique     = 0;
+            $totalPergerakan = 0;
+            foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+                $perg   = (float) ($pergerakanPerOpsel[$op] ?? 0);
+                $koef   = (float) ($selBatch[$op] ?? 1.0);
+                $totalUnique += $koef > 0 ? round($perg / $koef) : 0;
+                $totalPergerakan += $perg;
+            }
+
+            // Weighted average koefisien untuk tampilan KPI
+            $koefisien = $totalUnique > 0 ? round($totalPergerakan / $totalUnique, 2) : 0.0;
 
             return [
                 'pergerakan' => $pergerakan,
-                'orang' => $orang,
-                'koefisien' => $koefisien,
-                'narrative' => $this->generateNarrative(['pergerakan' => $pergerakan], 'nasional_pergerakan'),
+                'orang'      => $totalUnique, // unique subscriber per koefisien per-opsel
+                'koefisien'  => $koefisien,
+                'narrative'  => $this->generateNarrative(['pergerakan' => $pergerakan], 'nasional_pergerakan'),
             ];
         });
     }
@@ -217,16 +249,19 @@ class ExecutiveSummaryService
     public function getIntraJabodetabek(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getIntraJabodetabek:{$dataType}:{$opsel}:intra_v2:{$dateKey}";
+        $key = "executive_summary:getIntraJabodetabek:{$dataType}:{$opsel}:intra_v3:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $sums = $this->batchJaboSums($dataType, $opsel, 'intra');
 
+            // Koefisien per-opsel per-batch (konsisten dengan getNasionalMetrics)
+            $koefisien = $this->getKoefisienWeighted($dataType, $opsel, 'intra');
+
             return [
                 'pergerakan' => $sums['PERGERAKAN'],
-                'orang' => $sums['ORANG'],
-                'koefisien' => $sums['ORANG'] > 0 ? round($sums['PERGERAKAN'] / $sums['ORANG'], 2) : 0.0,
-                'narrative' => $this->generateNarrative(['pergerakan' => $sums['PERGERAKAN']], 'intra'),
+                'orang'      => $sums['ORANG'],
+                'koefisien'  => $koefisien,
+                'narrative'  => $this->generateNarrative(['pergerakan' => $sums['PERGERAKAN']], 'intra'),
             ];
         });
     }
@@ -234,16 +269,19 @@ class ExecutiveSummaryService
     public function getInterJabodetabek(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getInterJabodetabek:{$dataType}:{$opsel}:inter_v2:{$dateKey}";
+        $key = "executive_summary:getInterJabodetabek:{$dataType}:{$opsel}:inter_v3:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $sums = $this->batchJaboSums($dataType, $opsel, 'inter');
 
+            // Koefisien per-opsel per-batch (konsisten dengan getNasionalMetrics)
+            $koefisien = $this->getKoefisienWeighted($dataType, $opsel, 'inter');
+
             return [
                 'pergerakan' => $sums['PERGERAKAN'],
-                'orang' => $sums['ORANG'],
-                'koefisien' => $sums['ORANG'] > 0 ? round($sums['PERGERAKAN'] / $sums['ORANG'], 2) : 0.0,
-                'narrative' => $this->generateNarrative(['pergerakan' => $sums['PERGERAKAN']], 'inter'),
+                'orang'      => $sums['ORANG'],
+                'koefisien'  => $koefisien,
+                'narrative'  => $this->generateNarrative(['pergerakan' => $sums['PERGERAKAN']], 'inter'),
             ];
         });
     }
@@ -305,6 +343,45 @@ class ExecutiveSummaryService
 
             return $o > 0 ? round((float) $pQ->sum('total') / $o, 2) : 0.0;
         });
+    }
+
+    /**
+     * Hitung weighted average koefisien per-opsel per-batch.
+     * Konsisten dengan getNasionalMetrics & DataMpdController.
+     */
+    private function getKoefisienWeighted(string $dataType, ?string $opsel, ?string $region = null): float
+    {
+        $q = $this->baseQuery('PERGERAKAN', $dataType, $opsel);
+        if ($region) {
+            $this->applyJaboFilter($q, $region);
+        }
+
+        $pergerakanPerOpsel = $q->select('opsel', DB::raw('SUM(total) as t'))
+            ->groupBy('opsel')
+            ->pluck('t', 'opsel');
+
+        $endDate  = $this->getEndDate();
+        $batches  = config('mpd_koefisien.batches', []);
+        $selBatch = null;
+        foreach ($batches as $batch) {
+            if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
+                $selBatch = $batch;
+                break;
+            }
+        }
+        if (! $selBatch && ! empty($batches)) {
+            $selBatch = end($batches);
+        }
+
+        $totalUnique = $totalPergerakan = 0;
+        foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+            $perg             = (float) ($pergerakanPerOpsel[$op] ?? 0);
+            $koef             = (float) ($selBatch[$op] ?? 1.0);
+            $totalUnique     += $koef > 0 ? round($perg / $koef) : 0;
+            $totalPergerakan += $perg;
+        }
+
+        return $totalUnique > 0 ? round($totalPergerakan / $totalUnique, 2) : 0.0;
     }
 
     public function getForecastComparison(?string $opsel): array

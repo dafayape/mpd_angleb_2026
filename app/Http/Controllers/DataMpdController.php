@@ -232,10 +232,10 @@ class DataMpdController extends Controller
         uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
-        // Calculate unique subscriber
-        // Taking koefisien ~2.542 based on Jabodetabek reference
-        $uniqueSubscriber = $totalAkumulasiMov > 0 ? round($totalAkumulasiMov / 2.542) : 0;
-        $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 3) : 0;
+        // Calculate unique subscriber menggunakan koefisien per-opsel per-batch
+        $subscriberResult = $this->calculateUniqueSubscriberPerOpsel($totals);
+        $uniqueSubscriber = $subscriberResult['total_unique_subscriber'];
+        $koefisien = $subscriberResult['koefisien_rata_rata'];
 
         $akumulasiData = [
             'daily' => $akumulasiDaily,
@@ -617,8 +617,10 @@ class DataMpdController extends Controller
         uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
-        $uniqueSubscriber = $totalAkumulasiMov > 0 ? round($totalAkumulasiMov / 2.542) : 0;
-        $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 3) : 0;
+        // Calculate unique subscriber menggunakan koefisien per-opsel per-batch
+        $subscriberResult = $this->calculateUniqueSubscriberPerOpsel($totals);
+        $uniqueSubscriber = $subscriberResult['total_unique_subscriber'];
+        $koefisien = $subscriberResult['koefisien_rata_rata'];
 
         $akumulasiData = [
             'daily' => $akumulasiDaily,
@@ -1471,9 +1473,10 @@ class DataMpdController extends Controller
         uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
-        // Calculate unique subscriber
-        $uniqueSubscriber = $totalAkumulasiMov > 0 ? round($totalAkumulasiMov / 2.13) : 0;
-        $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 2) : 0;
+        // Calculate unique subscriber menggunakan koefisien per-opsel per-batch
+        $subscriberResult = $this->calculateUniqueSubscriberPerOpsel($totals);
+        $uniqueSubscriber = $subscriberResult['total_unique_subscriber'];
+        $koefisien = $subscriberResult['koefisien_rata_rata'];
 
         $akumulasiData = [
             'daily' => $akumulasiDaily,
@@ -2571,5 +2574,69 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
             'ai_html' => $parsedHtml,
             'title' => 'Rekomendasi Kebijakan',
         ]);
+    }
+
+    /**
+     * Hitung Unique Subscriber per-opsel menggunakan koefisien per-batch.
+     *
+     * Koefisien dipilih otomatis berdasarkan config end_date aktif.
+     * Rumus: unique_opsel = pergerakan_opsel / koefisien_opsel
+     * Total = SUM(unique per opsel)
+     * Koefisien rata-rata (weighted) = total_pergerakan / total_unique
+     *
+     * @param  array  $totals  Array berisi ['TSEL' => ['pergerakan' => X], 'IOH' => ..., 'XLSMART' => ...]
+     * @return array ['total_unique_subscriber', 'koefisien_rata_rata', 'per_opsel']
+     */
+    private function calculateUniqueSubscriberPerOpsel(array $totals): array
+    {
+        $endDate = config('mpd.end_date', '2026-03-29');
+        $batches = config('mpd_koefisien.batches', []);
+
+        // Pilih batch yang tepat: cari batch yang end_date-nya >= end_date aktif
+        // Ambil batch paling awal yang memenuhi syarat (ascending)
+        $selectedBatch = null;
+        foreach ($batches as $batch) {
+            if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
+                $selectedBatch = $batch;
+                break;
+            }
+        }
+
+        // Fallback: jika tidak ada yang cocok, ambil batch terakhir
+        if (! $selectedBatch && ! empty($batches)) {
+            $selectedBatch = end($batches);
+        }
+
+        $opselMap = ['TSEL' => 'TSEL', 'IOH' => 'IOH', 'XLSMART' => 'XLSMART'];
+        $totalUniqueSubscriber = 0;
+        $totalPergerakan = 0;
+        $perOpsel = [];
+
+        foreach ($opselMap as $opselKey => $configKey) {
+            $pergerakan = (float) ($totals[$opselKey]['pergerakan'] ?? 0);
+            $koefisien = (float) ($selectedBatch[$configKey] ?? 1.0);
+            $unique = $koefisien > 0 ? round($pergerakan / $koefisien) : 0;
+
+            $perOpsel[$opselKey] = [
+                'pergerakan'         => $pergerakan,
+                'koefisien'          => $koefisien,
+                'unique_subscriber'  => $unique,
+            ];
+
+            $totalUniqueSubscriber += $unique;
+            $totalPergerakan += $pergerakan;
+        }
+
+        // Weighted average koefisien
+        $koefisienRataRata = $totalUniqueSubscriber > 0
+            ? round($totalPergerakan / $totalUniqueSubscriber, 2)
+            : 0.0;
+
+        return [
+            'total_unique_subscriber' => $totalUniqueSubscriber,
+            'koefisien_rata_rata'     => $koefisienRataRata,
+            'batch_label'            => $selectedBatch['label'] ?? '-',
+            'per_opsel'              => $perOpsel,
+        ];
     }
 }

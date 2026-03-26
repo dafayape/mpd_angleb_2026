@@ -75,10 +75,35 @@ class DailyReportController extends Controller
                     ->where('kategori', 'PERGERAKAN')
             )->sum('total');
 
-            $nasionalUnique = $applyFilters(
+            // Hitung unique subscriber per-opsel menggunakan koefisien per-batch
+            // (Konsisten dengan sistem koefisien di DataMpdController)
+            $pergerakanPerOpsel = $applyFilters(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', 'ORANG')
-            )->sum('total');
+                    ->where('kategori', 'PERGERAKAN')
+            )->select('opsel', DB::raw('SUM(total) as total_pergerakan'))
+             ->groupBy('opsel')
+             ->pluck('total_pergerakan', 'opsel');
+
+            // Pilih batch koefisien berdasarkan end_date
+            $batches = config('mpd_koefisien.batches', []);
+            $selectedBatch = null;
+            foreach ($batches as $batch) {
+                if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
+                    $selectedBatch = $batch;
+                    break;
+                }
+            }
+            if (! $selectedBatch && ! empty($batches)) {
+                $selectedBatch = end($batches);
+            }
+
+            $opselKoefMap = ['TSEL' => 'TSEL', 'IOH' => 'IOH', 'XLSMART' => 'XLSMART'];
+            $nasionalUnique = 0;
+            foreach ($opselKoefMap as $opselKey => $configKey) {
+                $pergerakan = (float) ($pergerakanPerOpsel[$opselKey] ?? 0);
+                $koefisien = (float) ($selectedBatch[$configKey] ?? 1.0);
+                $nasionalUnique += $koefisien > 0 ? round($pergerakan / $koefisien) : 0;
+            }
 
             $jaboTotal = $applyFilters(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
@@ -318,10 +343,32 @@ class DailyReportController extends Controller
                 ->where('kategori', 'PERGERAKAN')
         )->sum('total');
 
-        $nasionalUnique = $applyFilters(
+        // Hitung unique subscriber per-opsel menggunakan koefisien per-batch
+        $pergerakanPerOpsel = $applyFilters(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', 'ORANG')
-        )->sum('total');
+                ->where('kategori', 'PERGERAKAN')
+        )->select('opsel', DB::raw('SUM(total) as total_pergerakan'))
+         ->groupBy('opsel')
+         ->pluck('total_pergerakan', 'opsel');
+
+        $batches = config('mpd_koefisien.batches', []);
+        $selectedBatch = null;
+        foreach ($batches as $batch) {
+            if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
+                $selectedBatch = $batch;
+                break;
+            }
+        }
+        if (! $selectedBatch && ! empty($batches)) {
+            $selectedBatch = end($batches);
+        }
+
+        $nasionalUnique = 0;
+        foreach (['TSEL', 'IOH', 'XLSMART'] as $opselKey) {
+            $pergerakan = (float) ($pergerakanPerOpsel[$opselKey] ?? 0);
+            $koefisien = (float) ($selectedBatch[$opselKey] ?? 1.0);
+            $nasionalUnique += $koefisien > 0 ? round($pergerakan / $koefisien) : 0;
+        }
 
         $top5Asal = $applyFilters(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
