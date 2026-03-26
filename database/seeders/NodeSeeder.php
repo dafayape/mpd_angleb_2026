@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Node;
+use App\Models\Simpul;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -1512,6 +1512,6 @@ class NodeSeeder extends Seeder
             ];
         }, $nodes);
 
-        Node::upsert($insertData, ['code'], ['name', 'category', 'sub_category', 'location', 'radius', 'updated_at']);
+        Simpul::upsert($insertData, ['code'], ['name', 'category', 'sub_category', 'location', 'radius', 'updated_at']);
     }
 }

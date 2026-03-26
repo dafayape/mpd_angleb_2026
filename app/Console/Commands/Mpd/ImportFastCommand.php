@@ -32,15 +32,15 @@ class ImportFastCommand extends Command
         // 1. Validasi Input Dasar
         if (!file_exists($path)) {
             $this->error("❌ File tidak ditemukan di: {$path}");
-            return Command::FAILURE;
+            return self::FAILURE;
         }
         if (!in_array($opsel, ['TSEL', 'IOH', 'XLSMART'])) {
             $this->error("❌ Opsel tidak valid! Harus TSEL, IOH, atau XL.");
-            return Command::FAILURE;
+            return self::FAILURE;
         }
         if (!in_array($kategori, ['REAL', 'FORECAST'])) {
             $this->error("❌ Kategori tidak valid! Harus REAL atau FORECAST.");
-            return Command::FAILURE;
+            return self::FAILURE;
         }
 
         $this->info("🚀 Memulai proses Import Kilat (Jalur Tol PostgreSQL)");
@@ -76,7 +76,7 @@ class ImportFastCommand extends Command
                 'status' => 'validation_failed',
                 'error_message' => 'Gagal validasi via Artisan. Cek struktur file/tanggal/opsel.'
             ]);
-            return Command::FAILURE;
+            return self::FAILURE;
         }
 
         $this->info("✅ [2/4] Validasi Lolos! Memulai injeksi langsung ke Database...");
@@ -168,7 +168,7 @@ class ImportFastCommand extends Command
 
             $this->info("✅ [4/4] {$insertedRows} Baris berhasil masuk & History Web diupdate!");
             
-            return Command::SUCCESS;
+            return self::SUCCESS;
 
 
         } catch (\Exception $e) {
@@ -180,7 +180,7 @@ class ImportFastCommand extends Command
                 'error_message' => substr($e->getMessage(), 0, 250) // Simpan cuplikan error ke web
             ]);
 
-            return Command::FAILURE;
+            return self::FAILURE;
         }
     }
 }
