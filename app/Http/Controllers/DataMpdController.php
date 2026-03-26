@@ -2108,10 +2108,11 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
+        $type = strtoupper($request->get('type', 'COMBINED')); // Default to COMBINED
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:kesimpulan:nasional:v3:{$dString}";
+        $cacheKey = "mpd:kesimpulan:nasional:v4:{$type}:{$dString}";
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanNasionalData($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanNasionalData($startDate, $endDate, $type));
 
         return view('pages.kesimpulan.nasional', [
             'title' => 'Kesimpulan Nasional',
@@ -2121,16 +2122,18 @@ class DataMpdController extends Controller
         ]);
     }
 
-    private function getKesimpulanNasionalData($startDate, $endDate)
+    private function getKesimpulanNasionalData($startDate, $endDate, $type = 'COMBINED')
     {
         $startDateStr = $startDate->format('Y-m-d');
         $endDateStr = $endDate->format('Y-m-d');
 
         try {
-            $dailyMovements = DB::table('spatial_movements')
-                ->select('tanggal', DB::raw('SUM(total) as daily_total'))
+            $dailyBuilder = DB::table('spatial_movements')
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-                ->where('kategori', 'PERGERAKAN')
+                ->where('kategori', 'PERGERAKAN');
+            $this->applyTypeFilter($dailyBuilder, $type, 'PERGERAKAN');
+
+            $dailyMovements = $dailyBuilder->select('tanggal', DB::raw('SUM(total) as daily_total'))
                 ->groupBy('tanggal')
                 ->orderByDesc('daily_total')
                 ->get();
@@ -2139,10 +2142,12 @@ class DataMpdController extends Controller
             $peakDays = $dailyMovements->take(2);
 
             // 2. Kontribusi Operator (TSEL, IOH, XL)
-            $opselPergerakan = DB::table('spatial_movements')
-                ->select('opsel', DB::raw('SUM(total) as op_total'))
+            $opselBuilder = DB::table('spatial_movements')
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-                ->where('kategori', 'PERGERAKAN')
+                ->where('kategori', 'PERGERAKAN');
+            $this->applyTypeFilter($opselBuilder, $type, 'PERGERAKAN');
+
+            $opselPergerakan = $opselBuilder->select('opsel', DB::raw('SUM(total) as op_total'))
                 ->groupBy('opsel')
                 ->get();
 
@@ -2172,46 +2177,50 @@ class DataMpdController extends Controller
             $totalOrang = $koefResult['total_unique_subscriber'];
 
             // 4. Top 5 Provinsi Asal
-            $top5ProvAsal = DB::table('spatial_movements as sm')
+            $provAsalBuilder = DB::table('spatial_movements as sm')
                 ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
                 ->join('ref_provinces as p', 'oc.province_code', '=', 'p.code')
-                ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
                 ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-                ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.kategori', 'PERGERAKAN');
+            $this->applyTypeFilter($provAsalBuilder, $type, 'PERGERAKAN', null, 'sm');
+            $top5ProvAsal = $provAsalBuilder->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
                 ->groupBy('p.name')
                 ->orderByDesc('prov_total')
                 ->take(5)
                 ->get();
 
             // 5. Top 5 Provinsi Tujuan
-            $top5ProvTujuan = DB::table('spatial_movements as sm')
+            $provTujuanBuilder = DB::table('spatial_movements as sm')
                 ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
                 ->join('ref_provinces as p', 'dc.province_code', '=', 'p.code')
-                ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
                 ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-                ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.kategori', 'PERGERAKAN');
+            $this->applyTypeFilter($provTujuanBuilder, $type, 'PERGERAKAN', null, 'sm');
+            $top5ProvTujuan = $provTujuanBuilder->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
                 ->groupBy('p.name')
                 ->orderByDesc('prov_total')
                 ->take(5)
                 ->get();
 
             // 6. Top 5 Kota/Kab Asal
-            $top3KotaAsal = DB::table('spatial_movements as sm')
+            $kotaAsalBuilder = DB::table('spatial_movements as sm')
                 ->join('ref_cities as c', 'sm.kode_origin_kabupaten_kota', '=', 'c.code')
-                ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
                 ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-                ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.kategori', 'PERGERAKAN');
+            $this->applyTypeFilter($kotaAsalBuilder, $type, 'PERGERAKAN', null, 'sm');
+            $top3KotaAsal = $kotaAsalBuilder->select('c.name', DB::raw('SUM(sm.total) as city_total'))
                 ->groupBy('c.name')
                 ->orderByDesc('city_total')
                 ->take(3)
                 ->get();
 
             // 7. Top 5 Kota/Kab Tujuan
-            $top5KotaTujuan = DB::table('spatial_movements as sm')
+            $kotaTujuanBuilder = DB::table('spatial_movements as sm')
                 ->join('ref_cities as c', 'sm.kode_dest_kabupaten_kota', '=', 'c.code')
-                ->select('c.name', DB::raw('SUM(sm.total) as city_total'))
                 ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
-                ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.kategori', 'PERGERAKAN');
+            $this->applyTypeFilter($kotaTujuanBuilder, $type, 'PERGERAKAN', null, 'sm');
+            $top5KotaTujuan = $kotaTujuanBuilder->select('c.name', DB::raw('SUM(sm.total) as city_total'))
                 ->groupBy('c.name')
                 ->orderByDesc('city_total')
                 ->take(5)
@@ -2250,10 +2259,11 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
+        $type = strtoupper($request->get('type', 'COMBINED')); // Default to COMBINED
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:kesimpulan:jabodetabek:v2:{$dString}";
+        $cacheKey = "mpd:kesimpulan:jabodetabek:v4:{$type}:{$dString}";
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanJabodetabekData($startDate, $endDate));
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanJabodetabekData($startDate, $endDate, $type));
 
         return view('pages.kesimpulan.jabodetabek', [
             'title' => 'Kesimpulan Jabodetabek',
@@ -2263,7 +2273,7 @@ class DataMpdController extends Controller
         ]);
     }
 
-    private function getKesimpulanJabodetabekData($startDate, $endDate)
+    private function getKesimpulanJabodetabekData($startDate, $endDate, $type = 'COMBINED')
     {
         $startDateStr = $startDate->format('Y-m-d');
         $endDateStr = $endDate->format('Y-m-d');
@@ -2271,12 +2281,13 @@ class DataMpdController extends Controller
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
         // 1. INTRA JABODETABEK Peak Days
-        $intraDaily = DB::table('spatial_movements as sm')
-            ->select('sm.tanggal', DB::raw('SUM(sm.total) as daily_total'))
+        $intraBuilder = DB::table('spatial_movements as sm')
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+        $this->applyTypeFilter($intraBuilder, $type, 'PERGERAKAN', null, 'sm');
+        $intraDaily = $intraBuilder->select('sm.tanggal', DB::raw('SUM(sm.total) as daily_total'))
             ->groupBy('sm.tanggal')
             ->orderByDesc('daily_total')
             ->get();
@@ -2284,12 +2295,13 @@ class DataMpdController extends Controller
         $intraPeakDays = $intraDaily->take(2);
 
         // 2. INTER JABODETABEK Peak Days (Jabodetabek to National)
-        $interDaily = DB::table('spatial_movements as sm')
-            ->select('sm.tanggal', DB::raw('SUM(sm.total) as daily_total'))
+        $interBuilder = DB::table('spatial_movements as sm')
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-            ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+            ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+        $this->applyTypeFilter($interBuilder, $type, 'PERGERAKAN', null, 'sm');
+        $interDaily = $interBuilder->select('sm.tanggal', DB::raw('SUM(sm.total) as daily_total'))
             ->groupBy('sm.tanggal')
             ->orderByDesc('daily_total')
             ->get();
@@ -2297,44 +2309,45 @@ class DataMpdController extends Controller
         $interPeakDays = $interDaily->take(2);
 
         // 3. Daerah Asal Pergerakan Masyarakat Jabodetabek (Top Origin) ALL JABO?
-        // Based on the text: "Kabupaten Bogor menjadi daerah asal... disusul Jaktim, Jaksel". This implies we look at overall origins starting FROM Jabodetabek.
-        $topOriginJabo = DB::table('spatial_movements as sm')
+        $topOriginBuilder = DB::table('spatial_movements as sm')
             ->join('ref_cities as oc', 'sm.kode_origin_kabupaten_kota', '=', 'oc.code')
-            ->select('oc.name', DB::raw('SUM(sm.total) as city_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
-            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-            // It says "pergerakan Masyarakat Jabodetabek", implies origin is Jabo, regardless of destination (could be intra + inter)
+            ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes);
+        $this->applyTypeFilter($topOriginBuilder, $type, 'PERGERAKAN', null, 'sm');
+        $topOriginJabo = $topOriginBuilder->select('oc.name', DB::raw('SUM(sm.total) as city_total'))
             ->groupBy('oc.name')
             ->orderByDesc('city_total')
             ->take(3)
             ->get();
 
         // 4. Tujuan Intra Jabodetabek (Top Dest INTRA)
-        $topDestIntraJabo = DB::table('spatial_movements as sm')
+        $topDestIntraBuilder = DB::table('spatial_movements as sm')
             ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
-            ->select('dc.name', DB::raw('SUM(sm.total) as city_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes) // Intra
+            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+        $this->applyTypeFilter($topDestIntraBuilder, $type, 'PERGERAKAN', null, 'sm');
+        $topDestIntraJabo = $topDestIntraBuilder->select('dc.name', DB::raw('SUM(sm.total) as city_total'))
             ->groupBy('dc.name')
             ->orderByDesc('city_total')
             ->take(3)
             ->get();
 
         // 5. Tujuan Inter Jabodetabek (Top Prov Dest INTER)
-        $topProvDestInterJabo = DB::table('spatial_movements as sm')
+        $topProvDestInterBuilder = DB::table('spatial_movements as sm')
             ->join('ref_cities as dc', 'sm.kode_dest_kabupaten_kota', '=', 'dc.code')
             ->join('ref_provinces as dp', 'dc.province_code', '=', 'dp.code')
-            ->select('dp.name', DB::raw('SUM(sm.total) as prov_total'))
             ->whereBetween('sm.tanggal', [$startDateStr, $endDateStr])
             ->where('sm.kategori', 'PERGERAKAN')
             ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-            ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes) // Inter
+            ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+        $this->applyTypeFilter($topProvDestInterBuilder, $type, 'PERGERAKAN', null, 'sm');
+        $topProvDestInterJabo = $topProvDestInterBuilder->select('dp.name', DB::raw('SUM(sm.total) as prov_total'))
             ->groupBy('dp.name')
             ->orderByDesc('prov_total')
-            ->take(1) // Usually West Java dominates as per text
+            ->take(1)
             ->get();
 
         return [
