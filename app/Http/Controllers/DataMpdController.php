@@ -2109,7 +2109,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:kesimpulan:nasional:v1:{$dString}";
+        $cacheKey = "mpd:kesimpulan:nasional:v2:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanNasionalData($startDate, $endDate));
 
@@ -2138,20 +2138,12 @@ class DataMpdController extends Controller
             $totalPergerakan = $dailyMovements->sum('daily_total');
             $peakDays = $dailyMovements->take(2);
 
-            // 2. Total unique subscriber (approximated by Total Orang or Total Pergerakan / factor)
-            // From previous logic, total orang / 2.13 ratio can be mentioned. Let's get Total ORANG
-            $totalOrang = DB::table('spatial_movements')
+            // 2. Kontribusi Operator (TSEL, IOH, XL)
+            $opselPergerakan = DB::table('spatial_movements')
+                ->select('opsel', DB::raw('SUM(total) as op_total'))
                 ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-                ->where('kategori', 'ORANG')
-                ->sum('total');
-
-            // 3. Kontribusi Operator (TSEL, IOH, XL)
-            // Batched: Single query for both PERGERAKAN and ORANG opsel stats
-            $opselAll = DB::table('spatial_movements')
-                ->select('opsel', 'kategori', DB::raw('SUM(total) as op_total'))
-                ->whereBetween('tanggal', [$startDateStr, $endDateStr])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
-                ->groupBy('opsel', 'kategori')
+                ->where('kategori', 'PERGERAKAN')
+                ->groupBy('opsel')
                 ->get();
 
             $operatorStats = [
@@ -2159,13 +2151,25 @@ class DataMpdController extends Controller
                 'ORANG' => ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0],
             ];
 
-            foreach ($opselAll as $row) {
-                $cat = strtoupper($row->kategori);
+            foreach ($opselPergerakan as $row) {
                 $normalized = $this->normalizeOpsel($row->opsel);
-                if ($normalized !== 'OTHER' && isset($operatorStats[$cat][$normalized])) {
-                    $operatorStats[$cat][$normalized] += $row->op_total;
+                if ($normalized !== 'OTHER' && isset($operatorStats['PERGERAKAN'][$normalized])) {
+                    $operatorStats['PERGERAKAN'][$normalized] += $row->op_total;
                 }
             }
+
+            // Hitung unique subscriber per opsel (ORANG) dengan helper dinamis
+            $koefResult = $this->calculateUniqueSubscriberPerOpsel([
+                'TSEL' => ['pergerakan' => $operatorStats['PERGERAKAN']['TSEL']],
+                'IOH' => ['pergerakan' => $operatorStats['PERGERAKAN']['IOH']],
+                'XLSMART' => ['pergerakan' => $operatorStats['PERGERAKAN']['XLSMART']],
+            ]);
+
+            $operatorStats['ORANG']['TSEL'] = $koefResult['per_opsel']['TSEL']['unique'];
+            $operatorStats['ORANG']['IOH'] = $koefResult['per_opsel']['IOH']['unique'];
+            $operatorStats['ORANG']['XLSMART'] = $koefResult['per_opsel']['XLSMART']['unique'];
+
+            $totalOrang = $koefResult['total_unique_subscriber'];
 
             // 4. Top 5 Provinsi Asal
             $top5ProvAsal = DB::table('spatial_movements as sm')
@@ -2247,7 +2251,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:kesimpulan:jabodetabek:v1:{$dString}";
+        $cacheKey = "mpd:kesimpulan:jabodetabek:v2:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanJabodetabekData($startDate, $endDate));
 
