@@ -71,7 +71,7 @@ class DailyReportController extends Controller
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                     ->where('is_forecast', $isForecast)
                     ->where('kategori', 'PERGERAKAN')
-            )->join('ref_provinces', 'spatial_movements.kode_origin_provinsi', '=', 'ref_provinces.code')
+            )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
              ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
              ->groupBy('ref_provinces.name')
              ->orderByDesc('total')
@@ -83,7 +83,7 @@ class DailyReportController extends Controller
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                     ->where('is_forecast', $isForecast)
                     ->where('kategori', 'PERGERAKAN')
-            )->join('ref_provinces', 'spatial_movements.kode_dest_provinsi', '=', 'ref_provinces.code')
+            )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
              ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
              ->groupBy('ref_provinces.name')
              ->orderByDesc('total')
@@ -282,14 +282,14 @@ class DailyReportController extends Controller
         $top5Asal = $applyOpsel(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', $isForecast)->where('kategori', 'PERGERAKAN')
-        )->join('ref_provinces', 'spatial_movements.kode_origin_provinsi', '=', 'ref_provinces.code')
+        )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
          ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
          ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
 
         $top5Tujuan = $applyOpsel(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
                 ->where('is_forecast', $isForecast)->where('kategori', 'PERGERAKAN')
-        )->join('ref_provinces', 'spatial_movements.kode_dest_provinsi', '=', 'ref_provinces.code')
+        )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
          ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
          ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
 
