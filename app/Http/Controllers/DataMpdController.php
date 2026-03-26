@@ -2613,7 +2613,7 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
         $perOpsel = [];
 
         foreach ($opselMap as $opselKey => $configKey) {
-            $pergerakan = (float) ($totals[$opselKey]['pergerakan'] ?? 0);
+            $pergerakan = (float) ($totals[$opselKey]['pergerakan'] ?? $totals[$opselKey]['movement'] ?? 0);
             $koefisien = (float) ($selectedBatch[$configKey] ?? 1.0);
             $unique = $koefisien > 0 ? round($pergerakan / $koefisien) : 0;
 
