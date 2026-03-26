@@ -24,7 +24,7 @@ class DailyReportController extends Controller
         $startDate = max($minDate, min($maxDate, $startDate));
         $endDate = max($minDate, min($maxDate, $endDate));
 
-        $kategoriFilter = $request->input('kategori', 'REAL');
+        $kategoriFilter = $request->input('kategori', 'COMBINED');
         $isForecast = ($kategoriFilter === 'FORECAST');
         $opselFilter = $request->input('opsel', 'ALL');
 

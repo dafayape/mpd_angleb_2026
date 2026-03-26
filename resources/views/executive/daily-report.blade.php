@@ -130,11 +130,11 @@
                         </div>
                         <div class="col-lg-2 col-md-3">
                             <label class="filter-label">Tipe Data</label>
-                            <select name="kategori" class="form-select">
-                                <option value="REAL" {{ ($kategori ?? 'REAL') == 'REAL' ? 'selected' : '' }}>Real</option>
-                                <option value="FORECAST" {{ ($kategori ?? '') == 'FORECAST' ? 'selected' : '' }}>Forecast</option>
-                                <option value="COMBINED" {{ ($kategori ?? '') == 'COMBINED' ? 'selected' : '' }}>Combined</option>
-                            </select>
+                                <select name="kategori" class="form-select">
+                                    <option value="REAL" {{ $kategori === 'REAL' ? 'selected' : '' }}>Real</option>
+                                    <option value="FORECAST" {{ $kategori === 'FORECAST' ? 'selected' : '' }}>Forecast</option>
+                                    <option value="COMBINED" {{ $kategori === 'COMBINED' ? 'selected' : '' }}>Combined</option>
+                                </select>
                         </div>
                         <div class="col-lg-2 col-md-3">
                             <label class="filter-label">Operator Seluler</label>
@@ -204,7 +204,7 @@
                 <div class="card-body">
                     <div class="report-preview" id="reportPreview">Yth. <span class="bold">Bapak Kepala Badan Kebijakan Transportasi</span>
 
-Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari <span class="bold">{{ $formatted_end_day }}</span> (akumulasi data {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : 'realisasi' }} dari tgl {{ $formatted_start }} s.d. {{ $formatted_end }}), sbb:
+Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari <span class="bold">{{ $formatted_end_day }}</span> (akumulasi data {{ $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi') }} dari tgl {{ $formatted_start }} s.d. {{ $formatted_end }}), sbb:
 
 A. Jumlah total Nasional sebesar <span class="bold">{{ number_format($nasional_total, 0, ',', '.') }}</span> pergerakan dengan jumlah unique subscriber sebesar <span class="bold">{{ number_format($nasional_unique, 0, ',', '.') }}</span> orang
 
@@ -234,7 +234,7 @@ M. Arief Affandi</div>
     {{-- Hidden plain text for copy --}}
     <textarea id="plainTextReport" style="position:absolute;left:-9999px" readonly>Yth. Bapak Kepala Badan Kebijakan Transportasi
 
-Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari {{ $formatted_end_day }} (akumulasi data {{ ($kategori ?? 'REAL') == 'FORECAST' ? 'prediksi' : 'realisasi' }} dari tgl {{ $formatted_start }} s.d. {{ $formatted_end }}), sbb:
+Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari {{ $formatted_end_day }} (akumulasi data {{ $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi') }} dari tgl {{ $formatted_start }} s.d. {{ $formatted_end }}), sbb:
 
 A.  Jumlah total Nasional sebesar {{ number_format($nasional_total, 0, ',', '.') }} pergerakan dengan jumlah unique subscriber sebesar {{ number_format($nasional_unique, 0, ',', '.') }} orang
 
