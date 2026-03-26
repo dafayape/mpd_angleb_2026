@@ -202,59 +202,26 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="report-preview" id="reportPreview">Yth. <span class="bold">Bapak Kepala Badan Kebijakan Transportasi</span>
+                    <div class="report-preview" id="reportPreview">Yth. <span class="bold">Bapak Kepala Badan Kebijakan Transportasi,</span>
 
-Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari <span class="bold">{{ $formatted_end_day }}</span> (akumulasi data {{ $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi') }} dari tgl {{ $formatted_start }} s.d. {{ $formatted_end }}), sbb:
+Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang menggunakan Mobile Positioning Data (MPD) dari 3 operator seluler (Telkomsel, Indosat, dan XLSmart), bersama ini kami sampaikan capaian data MPD per <span class="bold">{{ $formatted_end_day }}</span>.
 
-A. Jumlah total Nasional sebesar <span class="bold">{{ number_format($nasional_total, 0, ',', '.') }}</span> pergerakan dengan jumlah unique subscriber sebesar <span class="bold">{{ number_format($nasional_unique, 0, ',', '.') }}</span> orang
+Data tersebut merupakan akumulasi {{ $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi') }} periode {{ $formatted_start }} s.d. {{ $formatted_end }} ({{ $h_start }} s.d. {{ $h_end }}). Secara nasional tercatat sebanyak <span class="bold">{{ number_format($nasional_unique, 0, ',', '.') }}</span> orang melakukan perjalanan di periode tersebut.
 
-B. Top 5 Provinsi Asal dan Tujuan, sbb:
-
-1. Provinsi Asal
-@php $letters = ['a', 'b', 'c', 'd', 'e']; @endphp
-@foreach($top5_asal as $idx => $item)
-{{ $letters[$idx] ?? 'a' }}. {{ $item->nama_provinsi }} sebesar <span class="bold">{{ number_format($item->total, 0, ',', '.') }}</span> pergerakan;
-@endforeach
-
-2. Provinsi Tujuan
-@foreach($top5_tujuan as $idx => $item)
-{{ $letters[$idx] ?? 'a' }}. {{ $item->nama_provinsi }} sebesar <span class="bold">{{ number_format($item->total, 0, ',', '.') }}</span> pergerakan;
-@endforeach
-
-Demikian kami sampaikan, atas perkenan dan arahan Bapak Kepala Badan Kebijakan Transportasi diucapkan terima kasih.
-
-Hormat kami,
-Kapusjak LLAT
-M. Arief Affandi</div>
+Demikian kami sampaikan. Atas perkenan dan arahan Bapak, kami ucapkan terima kasih.</div>
                 </div>
             </div>
         </div>
     </div>
 
     {{-- Hidden plain text for copy --}}
-    <textarea id="plainTextReport" style="position:absolute;left:-9999px" readonly>Yth. Bapak Kepala Badan Kebijakan Transportasi
+    <textarea id="plainTextReport" style="position:absolute;left:-9999px" readonly>Yth. Bapak Kepala Badan Kebijakan Transportasi,
 
-Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari {{ $formatted_end_day }} (akumulasi data {{ $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi') }} dari tgl {{ $formatted_start }} s.d. {{ $formatted_end }}), sbb:
+Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang menggunakan Mobile Positioning Data (MPD) dari 3 operator seluler (Telkomsel, Indosat, dan XLSmart), bersama ini kami sampaikan capaian data MPD per {{ $formatted_end_day }}.
 
-A.  Jumlah total Nasional sebesar {{ number_format($nasional_total, 0, ',', '.') }} pergerakan dengan jumlah unique subscriber sebesar {{ number_format($nasional_unique, 0, ',', '.') }} orang
+Data tersebut merupakan akumulasi {{ $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi') }} periode {{ $formatted_start }} s.d. {{ $formatted_end }} ({{ $h_start }} s.d. {{ $h_end }}). Secara nasional tercatat sebanyak {{ number_format($nasional_unique, 0, ',', '.') }} orang melakukan perjalanan di periode tersebut.
 
-B.  Top 5 Provinsi Asal dan Tujuan, sbb:
-
-1.  Provinsi Asal
-@foreach($top5_asal as $idx => $item)
-{{ $letters[$idx] ?? 'a' }}.  {{ $item->nama_provinsi }} sebesar {{ number_format($item->total, 0, ',', '.') }} pergerakan;
-@endforeach
-
-2.  Provinsi Tujuan
-@foreach($top5_tujuan as $idx => $item)
-{{ $letters[$idx] ?? 'a' }}.  {{ $item->nama_provinsi }} sebesar {{ number_format($item->total, 0, ',', '.') }} pergerakan;
-@endforeach
-
-Demikian kami sampaikan, atas perkenan dan arahan Bapak Kepala Badan Kebijakan Transportasi diucapkan terima kasih.
-
-Hormat kami,
-Kapusjak LLAT
-M. Arief Affandi</textarea>
+Demikian kami sampaikan. Atas perkenan dan arahan Bapak, kami ucapkan terima kasih.</textarea>
 @endsection
 
 @push('scripts')

@@ -139,6 +139,16 @@ class DailyReportController extends Controller
             $formattedEnd = Carbon::parse($endDate)->isoFormat('D MMMM YYYY');
             $formattedEndWithDay = Carbon::now()->isoFormat('dddd, D MMMM YYYY');
 
+            $hariRaya = Carbon::parse('2026-03-21');
+            $diffStart = (int) $hariRaya->diffInDays(Carbon::parse($startDate), false);
+            $diffEnd = (int) $hariRaya->diffInDays(Carbon::parse($endDate), false);
+            
+            $formatHDay = function($diff) {
+                if ($diff < 0) return 'H' . $diff;
+                if ($diff > 0) return 'H+' . $diff;
+                return 'Hari Raya';
+            };
+
             return [
                 'start_date' => $startDate,
                 'end_date' => $endDate,
@@ -148,6 +158,8 @@ class DailyReportController extends Controller
                 'formatted_start' => $formattedStart,
                 'formatted_end' => $formattedEnd,
                 'formatted_end_day' => $formattedEndWithDay,
+                'h_start' => $formatHDay($diffStart),
+                'h_end' => $formatHDay($diffEnd),
                 'nasional_total' => $nasionalTotal,
                 'nasional_unique' => $nasionalUnique,
                 'jabo_total' => $jaboTotal,
@@ -294,9 +306,7 @@ class DailyReportController extends Controller
      */
     public function buildPlainText($startDate, $endDate, $kategori, $opsel = 'ALL')
     {
-        $isForecast = ($kategori === 'FORECAST');
-        $tipeTeks = $isForecast ? 'prediksi' : 'realisasi';
-        $tipeTeksUc = $isForecast ? 'Prediksi' : 'Realisasi';
+        $tipeTeks = $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi');
 
         $jabodetabekCodes = [
             '3171', '3172', '3173', '3174', '3175', '3101',
@@ -389,31 +399,22 @@ class DailyReportController extends Controller
         $formattedEnd = Carbon::parse($endDate)->isoFormat('D MMMM YYYY');
         $formattedEndDay = Carbon::now()->isoFormat('dddd, D MMMM YYYY');
         
+        $hariRaya = Carbon::parse('2026-03-21');
+        $formatHDay = function($diff) {
+            if ($diff < 0) return 'H' . $diff;
+            if ($diff > 0) return 'H+' . $diff;
+            return 'Hari Raya';
+        };
+        $hStart = $formatHDay((int) $hariRaya->diffInDays(Carbon::parse($startDate), false));
+        $hEnd = $formatHDay((int) $hariRaya->diffInDays(Carbon::parse($endDate), false));
+        
         $nasTotal = number_format($nasionalTotal, 0, ',', '.');
         $nasUnique = number_format($nasionalUnique, 0, ',', '.');
 
-        $str = "Yth. Bapak Kepala Badan Kebijakan Transportasi\n\n";
-        $str .= "Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang dengan menggunakan MPD dari 3 Operator Seluler (Tsel, Indosat & XLSmart), dengan ini kami laporkan perolehan data MPD tersebut dengan posisi hari {$formattedEndDay} (akumulasi data {$tipeTeks} dari tgl {$formattedStart} s.d. {$formattedEnd}), sbb:\n\n";
-        $str .= "A.  Jumlah total Nasional sebesar {$nasTotal} pergerakan dengan jumlah unique subscriber sebesar {$nasUnique} orang\n\n";
-        $str .= "B.  Top 5 Provinsi Asal dan Tujuan, sbb:\n\n";
-        $str .= "1.  Provinsi Asal\n";
-        
-        $letters = ['a', 'b', 'c', 'd', 'e'];
-        foreach ($top5Asal as $idx => $item) {
-            $ltr = $letters[$idx] ?? 'a';
-            $val = number_format($item->total, 0, ',', '.');
-            $str .= "{$ltr}.  {$item->nama_provinsi} sebesar {$val} pergerakan;\n";
-        }
-
-        $str .= "\n2.  Provinsi Tujuan\n";
-        foreach ($top5Tujuan as $idx => $item) {
-            $ltr = $letters[$idx] ?? 'a';
-            $val = number_format($item->total, 0, ',', '.');
-            $str .= "{$ltr}.  {$item->nama_provinsi} sebesar {$val} pergerakan;\n";
-        }
-
-        $str .= "\nDemikian kami sampaikan, atas perkenan dan arahan Bapak Kepala Badan Kebijakan Transportasi diucapkan terima kasih.\n\n";
-        $str .= "Hormat kami,\nKapusjak LLAT\nM. Arief Affandi";
+        $str = "Yth. Bapak Kepala Badan Kebijakan Transportasi,\n\n";
+        $str .= "Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang menggunakan Mobile Positioning Data (MPD) dari 3 operator seluler (Telkomsel, Indosat, dan XLSmart), bersama ini kami sampaikan capaian data MPD per {$formattedEndDay}.\n\n";
+        $str .= "Data tersebut merupakan akumulasi {$tipeTeks} periode {$formattedStart} s.d. {$formattedEnd} ({$hStart} s.d. {$hEnd}). Secara nasional tercatat sebanyak {$nasUnique} orang melakukan perjalanan di periode tersebut.\n\n";
+        $str .= "Demikian kami sampaikan. Atas perkenan dan arahan Bapak, kami ucapkan terima kasih.";
 
         return $str;
     }
