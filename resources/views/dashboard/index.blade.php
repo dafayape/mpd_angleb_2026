@@ -246,27 +246,7 @@
                         <label class="btn" for="dt_combined" style="font-size: 0.95rem;">Combined</label>
                     </div>
                 </div>
-                <div class="d-flex flex-column">
-                    <label class="small fw-bold text-muted mb-2 text-uppercase" style="letter-spacing: 0.5px;">Operator
-                        Seluler</label>
-                    <select class="form-select form-select-sm shadow-sm fw-medium" id="opselSelect"
-                        style="width: auto; min-width: 200px; cursor: pointer; height: 38px;">
-                        <option value="">Semua Operator</option>
-                        <option value="TSEL">Telkomsel</option>
-                        <option value="IOH">Indosat Ooredoo</option>
-                        <option value="XLSMART">XLSMART</option>
-                    </select>
-                </div>
-                <div class="d-flex flex-column">
-                    <label class="small fw-bold text-muted mb-2 text-uppercase" style="letter-spacing: 0.5px;">Satuan
-                        Data</label>
-                    <select class="form-select form-select-sm shadow-sm fw-medium" id="satuanSelect"
-                        style="width: auto; min-width: 150px; cursor: pointer; height: 38px;">
-                        <option value="auto">Auto</option>
-                        <option value="angka">Angka</option>
-                        <option value="persen">Persentase</option>
-                    </select>
-                </div>
+
             </div>
             <div class="d-flex align-items-center bg-light px-4 py-3 rounded-pill border shadow-sm">
                 <i class="bx bx-calendar-event fs-4 me-3 text-primary"></i>
@@ -708,7 +688,7 @@
         };
 
         $(document).ready(function() {
-            $('.filter-toggle, #opselSelect, #satuanSelect').on('change', fetchExecutiveSummary);
+            $('.filter-toggle').on('change', fetchExecutiveSummary);
             fetchExecutiveSummary(); // initial load
         });
 
@@ -717,14 +697,12 @@
             $('#contentSkeletons').fadeIn(200);
 
             const dataType = $('input[name="data_type"]:checked').val();
-            const opsel = $('#opselSelect').val();
-            const satuan = $('#satuanSelect').val();
+            const satuan = 'auto'; // Default: auto format
 
             $.ajax({
                 url: '{{ route('executive.summary.data') }}',
                 data: {
-                    data_type: dataType,
-                    opsel: opsel
+                    data_type: dataType
                 },
                 success: function(res) {
                     $('#contentSkeletons').hide();
