@@ -1400,14 +1400,18 @@ class DataMpdController extends Controller
                     'tanggal',
                     'opsel',
                     'kategori',
+                    'kode_moda',
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
+                ->where(function($q) {
+                    $q->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
+                      ->orWhere('kode_moda', 'K'); // Pastikan Kode K masuk
+                });
 
             $this->applyTypeFilter($query, $type, 'PERGERAKAN');
 
-            $results = $query->groupBy('tanggal', 'opsel', 'kategori')->get();
+            $results = $query->groupBy('tanggal', 'opsel', 'kategori', 'kode_moda')->get();
 
             $hasOrang = [];
             foreach ($results as $row) {
@@ -1421,7 +1425,7 @@ class DataMpdController extends Controller
                     continue;
                 }
 
-                if ($cat === 'PERGERAKAN') {
+                if ($cat === 'PERGERAKAN' || $row->kode_moda === 'K') {
                     $dates[$date][$opsel]['movement'] += $vol;
                 } elseif ($cat === 'ORANG') {
                     $dates[$date][$opsel]['people'] += $vol;
