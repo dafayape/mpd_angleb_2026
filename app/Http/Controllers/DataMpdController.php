@@ -1425,11 +1425,13 @@ class DataMpdController extends Controller
                     continue;
                 }
 
-                if ($cat === 'PERGERAKAN' || $row->kode_moda === 'K') {
-                    $dates[$date][$opsel]['movement'] += $vol;
-                } elseif ($cat === 'ORANG') {
+                if ($cat === 'ORANG') {
                     $dates[$date][$opsel]['people'] += $vol;
                     $hasOrang[$date][$opsel] = true;
+                } else {
+                    // Semua yang bukan 'ORANG' otomatis dianggap 'MOVEMENT/PERGERAKAN'
+                    // Termasuk Kode K, atau kategori lain yang dikirim TSEL
+                    $dates[$date][$opsel]['movement'] += $vol;
                 }
             }
 
