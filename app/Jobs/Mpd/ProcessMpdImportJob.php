@@ -332,16 +332,39 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
      */
     private function upsertBatch(array $batch): void
     {
-        DB::table('raw_mpd_data')->upsert(
-            $batch,
-            [
-                'tanggal', 'opsel', 'kategori',
-                'kode_origin_kabupaten_kota', 'kode_dest_kabupaten_kota',
-                'kode_origin_simpul', 'kode_dest_simpul',
-                'kode_moda', 'is_forecast',
-            ],
-            ['total', 'import_job_id', 'updated_at']
-        );
+        if (empty($batch)) return;
+
+        // Kita gunakan Raw SQL agar bisa melakukan 'total = raw_mpd_data.total + EXCLUDED.total'
+        // Karena Laravel upsert() bawaan hanya mendukung overwrite (menimpa value lama).
+        
+        $table = 'raw_mpd_data';
+        $columns = array_keys($batch[0]);
+        $columnsStr = implode('", "', $columns);
+        $placeholders = implode(', ', array_fill(0, count($batch), '(' . implode(', ', array_fill(0, count($columns), '?')) . ')'));
+        
+        $values = [];
+        foreach ($batch as $row) {
+            foreach ($columns as $col) {
+                $values[] = $row[$col];
+            }
+        }
+
+        $sql = "
+            INSERT INTO \"{$table}\" (\"{$columnsStr}\")
+            VALUES {$placeholders}
+            ON CONFLICT (
+                tanggal, opsel, kategori, 
+                kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, 
+                kode_origin_simpul, kode_dest_simpul, 
+                kode_moda, is_forecast
+            )
+            DO UPDATE SET 
+                total = \"{$table}\".total + EXCLUDED.total,
+                import_job_id = EXCLUDED.import_job_id,
+                updated_at = EXCLUDED.updated_at
+        ";
+
+        DB::statement($sql, $values);
     }
 
     /**
