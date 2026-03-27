@@ -1561,17 +1561,21 @@ class DataMpdController extends Controller
                     'tanggal',
                     'opsel',
                     'is_forecast',
+                    'kode_moda',
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('kategori', 'PERGERAKAN');
+                ->where(function($q) {
+                    $q->where('kategori', 'PERGERAKAN')
+                      ->orWhere('kode_moda', 'K'); // Pastikan Kode K masuk hitungan pergerakan total
+                });
 
             // Apply Filters if provided (e.g. Jabodetabek)
             if (! empty($filterCodes)) {
                 $query->whereIn('kode_origin_kabupaten_kota', $filterCodes);
             }
 
-            $rows = $query->groupBy('tanggal', 'opsel', 'is_forecast')->get();
+            $rows = $query->groupBy('tanggal', 'opsel', 'is_forecast', 'kode_moda')->get();
 
             foreach ($rows as $row) {
                 $type = $row->is_forecast ? 'FORECAST' : 'REAL';
