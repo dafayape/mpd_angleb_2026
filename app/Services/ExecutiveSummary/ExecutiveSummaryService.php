@@ -30,7 +30,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v5:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v7_sapu_bersih:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -77,7 +77,7 @@ class ExecutiveSummaryService
     private function baseQuery(string $kategori, string $dataType, ?string $opsel)
     {
         $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-            ->where('kategori', $kategori);
+            ->where('kategori', '!=', 'ORANG'); // Sapu bersih: semua data volume masuk kecuali kategori ORANG
 
         if ($dataType === 'combined') {
             $realDates = $this->getRealDates($kategori, $opsel);
@@ -292,7 +292,7 @@ class ExecutiveSummaryService
     private function batchJaboSums(string $dataType, ?string $opsel, string $region): array
     {
         $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-            ->whereIn('kategori', ['PERGERAKAN', 'ORANG']);
+            ->where('kategori', '!=', 'ORANG'); // Sapu bersih: semua data volume masuk kecuali kategori ORANG
 
         if ($dataType === 'combined') {
             // Need to merge logic for both categories, but in combined usually we fetch each distinct category's real dates

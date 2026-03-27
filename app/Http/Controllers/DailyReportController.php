@@ -29,7 +29,7 @@ class DailyReportController extends Controller
         $opselFilter = $request->input('opsel', 'ALL');
 
         // Cache data for report
-        $cacheKey = "dailyreport:text:v4.1:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
+        $cacheKey = "dailyreport:text:v6_ultimate:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
         $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $isForecast, $opselFilter, $kategoriFilter) {
 
             // Jabodetabek codes
@@ -72,14 +72,14 @@ class DailyReportController extends Controller
             // --- A. NASIONAL ---
             $nasionalTotal = $applyFilters(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', 'PERGERAKAN')
+                    ->where('kategori', '!=', 'ORANG')
             )->sum('total');
 
             // Hitung unique subscriber per-opsel menggunakan koefisien per-batch
             // (Konsisten dengan sistem koefisien di DataMpdController)
             $pergerakanPerOpsel = $applyFilters(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', 'PERGERAKAN')
+                    ->where('kategori', '!=', 'ORANG')
             )->select('opsel', DB::raw('SUM(total) as total_pergerakan'))
              ->groupBy('opsel')
              ->pluck('total_pergerakan', 'opsel');
@@ -107,14 +107,14 @@ class DailyReportController extends Controller
 
             $jaboTotal = $applyFilters(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', 'PERGERAKAN')
+                    ->where('kategori', '!=', 'ORANG')
                     ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
             )->sum('total');
 
             // --- Top 5 Provinsi Asal ---
             $top5Asal = $applyFilters(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', 'PERGERAKAN')
+                    ->where('kategori', '!=', 'ORANG')
             )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
              ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
              ->groupBy('ref_provinces.name')
@@ -125,7 +125,7 @@ class DailyReportController extends Controller
             // --- Top 5 Provinsi Tujuan ---
             $top5Tujuan = $applyFilters(
                 \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', 'PERGERAKAN')
+                    ->where('kategori', '!=', 'ORANG')
             )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
              ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
              ->groupBy('ref_provinces.name')
@@ -350,13 +350,13 @@ class DailyReportController extends Controller
 
         $nasionalTotal = $applyFilters(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', 'PERGERAKAN')
+                ->where('kategori', '!=', 'ORANG')
         )->sum('total');
 
         // Hitung unique subscriber per-opsel menggunakan koefisien per-batch
         $pergerakanPerOpsel = $applyFilters(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', 'PERGERAKAN')
+                ->where('kategori', '!=', 'ORANG')
         )->select('opsel', DB::raw('SUM(total) as total_pergerakan'))
          ->groupBy('opsel')
          ->pluck('total_pergerakan', 'opsel');
@@ -382,14 +382,14 @@ class DailyReportController extends Controller
 
         $top5Asal = $applyFilters(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', 'PERGERAKAN')
+                ->where('kategori', '!=', 'ORANG')
         )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
          ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
          ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
 
         $top5Tujuan = $applyFilters(
             \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', 'PERGERAKAN')
+                ->where('kategori', '!=', 'ORANG')
         )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
          ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
          ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
