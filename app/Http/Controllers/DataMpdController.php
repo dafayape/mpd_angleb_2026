@@ -98,6 +98,20 @@ class DataMpdController extends Controller
         return $query;
     }
 
+    /**
+     * Normalisasi kode moda transportasi.
+     * Kode yang tidak dikenal (misal: K = Uncategorized) di-remap ke kode yang sesuai.
+     * K → A (Mobil/Kendaraan Pribadi), karena secara karakteristik pergerakan-nya setara.
+     */
+    private function normalizeModa(string $rawCode): string
+    {
+        $code = strtoupper(trim($rawCode));
+        $remap = [
+            'K' => 'A', // Uncategorized → Mobil
+        ];
+        return $remap[$code] ?? $code;
+    }
+
     public function jabodetabekIntraPergerakanPage(Request $request)
     {
         [$startDate, $endDate] = $this->getPeriodDates();
@@ -1146,9 +1160,10 @@ class DataMpdController extends Controller
         // 2. Fetch Data
         try {
             $query = DB::table('spatial_movements as sm')
-                ->join('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
+                ->leftJoin('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
                 ->select(
-                    'moda.name as moda_name',
+                    DB::raw("COALESCE(moda.name, sm.kode_moda) as moda_name"),
+                    'sm.kode_moda',
                     'sm.tanggal',
                     'sm.opsel',
                     'sm.is_forecast',
@@ -1157,13 +1172,16 @@ class DataMpdController extends Controller
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
                 ->where('sm.kode_moda', '!=', '') // Exclude forecast tanpa moda
-                ->groupBy('moda.name', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
+                ->groupBy('moda.name', 'sm.kode_moda', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
                 ->get();
 
             foreach ($query as $row) {
                 $date = $row->tanggal;
-                $modeName = $row->moda_name;
-                $vol = $row->total_volume;
+                // Normalisasi: K → A (Mobil), lalu ambil nama dari config
+                $normalizedCode = $this->normalizeModa($row->kode_moda);
+                $modes        = config('mpd.transport_modes', []);
+                $modeName     = $modes[$normalizedCode] ?? $row->moda_name;
+                $vol  = $row->total_volume;
                 $type = $row->is_forecast ? 'FORECAST' : 'REAL';
 
                 $opsel = $this->normalizeOpsel($row->opsel);
@@ -1252,7 +1270,7 @@ class DataMpdController extends Controller
         $totalOrang = 0;
 
         foreach ($query as $row) {
-            $code = strtoupper($row->kode_moda);
+            $code = $this->normalizeModa($row->kode_moda);
             $kat = strtoupper($row->kategori);
             $vol = (int) $row->total_volume;
 
@@ -1326,7 +1344,7 @@ class DataMpdController extends Controller
 
             foreach ($query as $row) {
                 $date = $row->tanggal;
-                $code = strtoupper($row->kode_moda);
+                $code = $this->normalizeModa($row->kode_moda);
                 $vol = (int) $row->total_volume;
 
                 if (isset($dailyData[$code]) && isset($dailyData[$code]['daily'][$date])) {
@@ -1776,9 +1794,10 @@ class DataMpdController extends Controller
         // B. Query Movement Data
         try {
             $query = DB::table('spatial_movements as sm')
-                ->join('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
+                ->leftJoin('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
                 ->select(
-                    'moda.name as moda_name',
+                    DB::raw("COALESCE(moda.name, sm.kode_moda) as moda_name"),
+                    'sm.kode_moda',
                     'sm.tanggal',
                     DB::raw('SUM(sm.total) as total_volume')
                 )
@@ -1789,11 +1808,14 @@ class DataMpdController extends Controller
                 $query->whereIn('sm.kode_origin_kabupaten_kota', $filterCodes);
             }
 
-            $results = $query->groupBy('moda.name', 'sm.tanggal')->get();
+            $results = $query->groupBy('moda.name', 'sm.kode_moda', 'sm.tanggal')->get();
 
             // C. Merge Data
+            $modesConfig = config('mpd.transport_modes', []);
             foreach ($results as $row) {
-                $cat = $row->moda_name;
+                // Normalisasi: K → A (Mobil)
+                $normalizedCode = $this->normalizeModa($row->kode_moda);
+                $cat  = $modesConfig[$normalizedCode] ?? $row->moda_name;
                 $date = $row->tanggal;
                 $vol = $row->total_volume;
 
