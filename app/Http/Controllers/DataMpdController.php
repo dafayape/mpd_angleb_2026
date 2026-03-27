@@ -1521,7 +1521,7 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v4_force'; // Naikin versi paksa ke v4
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v5_ultimate'; // VERSI ULTIMATE
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
@@ -1568,11 +1568,8 @@ class DataMpdController extends Controller
                     'kode_moda',
                     DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where(function($q) {
-                    $q->where('kategori', 'PERGERAKAN')
-                      ->orWhere('kode_moda', 'K'); // Pastikan Kode K masuk hitungan pergerakan total
-                });
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                // Filter kategori dihapus total agar semua data terserap
 
             // Apply Filters if provided (e.g. Jabodetabek)
             if (! empty($filterCodes)) {
