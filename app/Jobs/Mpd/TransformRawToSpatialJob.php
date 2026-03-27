@@ -102,15 +102,7 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
         foreach ($combinations as $combo) {
             // Use Transaction to prevent data loss if insert fails
             DB::transaction(function () use ($date, $combo) {
-                // DELETE based on specific combinations
-                DB::table('spatial_movements')
-                    ->where('tanggal', $date)
-                    ->where('opsel', $combo->opsel)
-                    ->where('kategori', $combo->kategori)
-                    ->where('is_forecast', $combo->is_forecast)
-                    ->delete();
-
-                // INSERT from aggregated raw data
+                // INSERT from aggregated raw data with UPSERT SUM to prevent wiping out other jobs
                 $sql = "
                     INSERT INTO spatial_movements (
                         tanggal, opsel, kategori,
@@ -142,6 +134,10 @@ class TransformRawToSpatialJob implements ShouldQueue, ShouldBeUnique
                              r.kode_origin_kabupaten_kota, r.kode_dest_kabupaten_kota,
                              r.kode_origin_simpul, r.kode_dest_simpul, r.kode_moda, r.is_forecast,
                              n1.location, n2.location
+                    ON CONFLICT (tanggal, opsel, kategori, kode_origin_kabupaten_kota, kode_dest_kabupaten_kota, kode_origin_simpul, kode_dest_simpul, kode_moda, is_forecast)
+                    DO UPDATE SET
+                        total = spatial_movements.total + EXCLUDED.total,
+                        updated_at = NOW()
                 ";
 
                 DB::statement($sql, [
