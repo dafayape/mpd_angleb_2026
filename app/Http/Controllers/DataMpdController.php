@@ -1367,7 +1367,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v8:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v10_force:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
@@ -1521,7 +1521,7 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v3';
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v4_force'; // Naikin versi paksa ke v4
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
