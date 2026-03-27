@@ -64,8 +64,14 @@ class DataMpdController extends Controller
         return Cache::remember($key, $this->dataCacheTtl(), function () use ($kategori, $opsel, $startDate, $endDate) {
             $q = DB::table('spatial_movements')
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('kategori', $kategori)
                 ->where('is_forecast', false);
+
+            if ($kategori === 'PERGERAKAN') {
+                $q->where('kategori', '!=', 'ORANG');
+            } else {
+                $q->where('kategori', $kategori);
+            }
+
             if ($opsel) {
                 $q->where('opsel', $opsel);
             }
@@ -673,9 +679,9 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:od-simpul:split:v8:{$type}:{$dString}";
-        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v8:{$type}:{$dString}";
-        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v8:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:od-simpul:split:v9_inclusive:{$type}:{$dString}";
+        $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v9_inclusive:{$type}:{$dString}";
+        $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v9_inclusive:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalOdSimpulData($startDate, $endDate, $type));
         $dataProv = $this->cached($cacheKeyOdProv, $this->dataCacheTtl(), fn () => $this->getNasionalOdProvinsiAsalData($startDate, $endDate, $type));
@@ -1033,15 +1039,16 @@ class DataMpdController extends Controller
 
             $query = collect();
             foreach ($baseQuery as $row) {
-                if (isset($simpulCategories[$row->kode_origin_simpul])) {
-                    $query->push((object) [
-                        'kategori_simpul' => $simpulCategories[$row->kode_origin_simpul],
-                        'tanggal' => $row->tanggal,
-                        'opsel' => $row->opsel,
-                        'is_forecast' => $row->is_forecast,
-                        'total_volume' => $row->total_volume,
-                    ]);
-                }
+                // SINKRONISASI: Jika simpul kosong atau tidak terdaftar, tetap masukkan ke kategori Default (Terminal/Darat) agar tidak hilang dari Total!
+                $simpulKategori = $simpulCategories[$row->kode_origin_simpul] ?? 'Terminal';
+                
+                $query->push((object) [
+                    'kategori_simpul' => $simpulKategori,
+                    'tanggal' => $row->tanggal,
+                    'opsel' => $row->opsel,
+                    'is_forecast' => $row->is_forecast,
+                    'total_volume' => $row->total_volume,
+                ]);
             }
 
             foreach ($query as $row) {
@@ -1171,7 +1178,6 @@ class DataMpdController extends Controller
                 )
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('sm.kategori', 'PERGERAKAN')
-                ->where('sm.kode_moda', '!=', '') // Exclude forecast tanpa moda
                 ->groupBy('moda.name', 'sm.kode_moda', 'sm.tanggal', 'sm.opsel', 'sm.is_forecast')
                 ->get();
 
@@ -1367,7 +1373,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v10_force:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v11_inclusive:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
@@ -1403,11 +1409,7 @@ class DataMpdController extends Controller
                     'kode_moda',
                     DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where(function($q) {
-                    $q->whereIn('kategori', ['PERGERAKAN', 'ORANG'])
-                      ->orWhere('kode_moda', 'K'); // Pastikan Kode K masuk
-                });
+                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
 
             $this->applyTypeFilter($query, $type, 'PERGERAKAN');
 

@@ -20,7 +20,7 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
         
         // Cache Key
-        $cacheKey = 'grafik:nasional:pergerakan:v3_upgraded';
+        $cacheKey = 'grafik:nasional:pergerakan:v4_inclusive';
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getChartData($startDate, $endDate));
 
         return view('grafik-mpd.nasional.pergerakan', [

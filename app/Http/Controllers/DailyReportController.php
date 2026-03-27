@@ -29,7 +29,7 @@ class DailyReportController extends Controller
         $opselFilter = $request->input('opsel', 'ALL');
 
         // Cache data for report
-        $cacheKey = "dailyreport:text:v6_ultimate:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
+        $cacheKey = "dailyreport:text:v7_sapu_bersih:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
         $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $isForecast, $opselFilter, $kategoriFilter) {
 
             // Jabodetabek codes
