@@ -266,11 +266,13 @@
                                                     title="View Raw Data">
                                                     <i class="bx bx-show-alt"></i>
                                                 </a>
+                                                @if(auth()->check() && auth()->user()->role == 'admin')
                                                 <button type="button" class="btn btn-sm btn-danger"
                                                     onclick="confirmDelete({{ $history->id }}, {{ $history->total_rows ?: $history->processed_rows }})"
                                                     data-bs-toggle="tooltip" title="Hapus Data">
                                                     <i class="bx bx-trash"></i>
                                                 </button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
