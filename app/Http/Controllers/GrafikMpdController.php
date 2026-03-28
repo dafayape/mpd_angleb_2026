@@ -342,7 +342,7 @@ class GrafikMpdController extends Controller
         $startDate = Carbon::create(2026, 3, 13);
         $endDate = Carbon::create(2026, 3, 30);
 
-        $cacheKey = 'grafik:nasional:mode-share:v8_upgraded';
+        $cacheKey = 'grafik:nasional:mode-share:v9_consolidated_k';
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getModeShareData($startDate, $endDate));
 
         return view('grafik-mpd.nasional.mode-share', [
@@ -397,6 +397,9 @@ class GrafikMpdController extends Controller
 
         foreach ($dailyQuery as $row) {
             $code = $row->mode_code;
+            // Map 'K' to 'A' (Mobil) to consolidate data as per user request
+            if ($code === 'K') $code = 'A';
+
             $date = $row->tanggal;
             $ppl = (int) $row->total;
             $isForecast = (bool) $row->is_forecast;
@@ -1088,7 +1091,7 @@ class GrafikMpdController extends Controller
         $endDate = Carbon::create(2026, 3, 30);
 
         // Cache Key
-        $cacheKey = 'grafik:jabodetabek:mode-share:v3';
+        $cacheKey = 'grafik:jabodetabek:mode-share:v4_consolidated_k';
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn() => $this->getJabodetabekModeShareData($startDate, $endDate));
 
         return view('grafik-mpd.jabodetabek.mode-share', [
@@ -1131,8 +1134,17 @@ class GrafikMpdController extends Controller
             ->where('sm.kategori', 'PERGERAKAN')
             ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
             ->groupBy('kode_moda')
-            ->get()
-            ->keyBy('kode_moda');
+            ->get();
+
+        // Consolidated Mapping for Jabo
+        $consolidated = [];
+        foreach ($query as $row) {
+            $code = $row->kode_moda;
+            if ($code === 'K') $code = 'A';
+            
+            if (!isset($consolidated[$code])) $consolidated[$code] = 0;
+            $consolidated[$code] += (int) $row->total_people;
+        }
 
         $pieMovement = [];
         $piePeople = [];
@@ -1141,8 +1153,11 @@ class GrafikMpdController extends Controller
             $code = $mode->code;
             $name = $mode->name;
             
+            // Skip 'K' from the loop because its data is now inside 'A'
+            if ($code === 'K') continue;
+
             // Get Data or 0
-            $ppl = isset($query[$code]) ? (int) $query[$code]->total_people : 0;
+            $ppl = $consolidated[$code] ?? 0;
             
             // Calculate Movement (Vehicle units)
             $factor = $occupancy[$code] ?? 1;
