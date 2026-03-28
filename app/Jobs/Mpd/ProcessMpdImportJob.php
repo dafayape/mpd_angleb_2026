@@ -181,55 +181,46 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
 
                 if (count($cols) < $expectedCount) {
                     $skippedRows++;
+
                     continue;
                 }
 
                 $rowsRead++;
 
-                // Normalize Date for DB (must be YYYY-MM-DD)
                 $rawTanggal = trim($cols[0] ?? '');
                 $normalizedTanggal = str_replace('/', '-', $rawTanggal);
                 $dbTanggal = date('Y-m-d', strtotime($normalizedTanggal));
 
-                // ═══════════════════════════════════════════════════════
-                // DATA LOGIC: REAL keep values, FORECAST must be empty ('')
-                // ═══════════════════════════════════════════════════════
                 $originSimpulCode = trim($cols[11] ?? '');
                 $originSimpulName = trim($cols[12] ?? '');
-                $destSimpulCode   = trim($cols[13] ?? '');
-                $destSimpulName   = trim($cols[14] ?? '');
-                $modaCode         = trim($cols[15] ?? '');
-                $modaName         = trim($cols[16] ?? '');
+                $destSimpulCode = trim($cols[13] ?? '');
+                $destSimpulName = trim($cols[14] ?? '');
+                $modaCode = trim($cols[15] ?? '');
+                $modaName = trim($cols[16] ?? '');
 
-                // Auto-Map anomali K ke A (Mobil) sesuai request (harden case dan quote jika ada)
                 if (trim(strtoupper($modaCode), " \t\n\r\0\x0B\"'") === 'K') {
                     $modaCode = 'A';
                     $modaName = 'Mobil Pribadi';
                 }
 
-                // HANYA jika FORECAST maka kita paksa kosong. 
-                // Jika REAL (is_forecast false), maka tetap gunakan nilai di atas.
                 if ($isForecast) {
                     $originSimpulCode = '';
                     $originSimpulName = '';
-                    $destSimpulCode   = '';
-                    $destSimpulName   = '';
-                    $modaCode         = '';
-                    $modaName         = '';
+                    $destSimpulCode = '';
+                    $destSimpulName = '';
+                    $modaCode = '';
+                    $modaName = '';
                 }
 
-                // Sanitize Category: Ensure only ORANG or PERGERAKAN
                 $dataKategori = strtoupper(trim($cols[2] ?? ''));
-                if (!in_array($dataKategori, ['ORANG', 'PERGERAKAN'])) {
+                if (! in_array($dataKategori, ['ORANG', 'PERGERAKAN'])) {
                     $dataKategori = 'PERGERAKAN';
                 }
-
-
 
                 // ═══════════════════════════════════════════════════════
                 // DEDUPLICATION KEY (Standardized)
                 // ═══════════════════════════════════════════════════════
-                $key = "{$dbTanggal}|{$cols[1]}|{$dataKategori}|{$cols[5]}|{$cols[9]}|{$originSimpulCode}|{$destSimpulCode}|{$modaCode}|" . 
+                $key = "{$dbTanggal}|{$cols[1]}|{$dataKategori}|{$cols[5]}|{$cols[9]}|{$originSimpulCode}|{$destSimpulCode}|{$modaCode}|".
                        ($isForecast ? '1' : '0');
 
                 if (isset($batch[$key])) {
@@ -238,7 +229,7 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                     $batch[$key] = [
                         'tanggal' => $dbTanggal,
                         'opsel' => $cols[1],
-                        'kategori' => $dataKategori, 
+                        'kategori' => $dataKategori,
                         'kode_origin_provinsi' => $cols[3],
                         'origin_provinsi' => $cols[4],
                         'kode_origin_kabupaten_kota' => $cols[5],
@@ -274,7 +265,6 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                         'progress' => $percent,
                     ]);
 
-
                     if (memory_get_usage() > 64 * 1024 * 1024) {
                         gc_collect_cycles();
                     }
@@ -286,7 +276,6 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
                 $this->upsertBatch(array_values($batch));
                 $processedRows += count($batch);
             }
-
 
             fclose($handle);
 
@@ -332,16 +321,18 @@ class ProcessMpdImportJob implements ShouldBeUnique, ShouldQueue
      */
     private function upsertBatch(array $batch): void
     {
-        if (empty($batch)) return;
+        if (empty($batch)) {
+            return;
+        }
 
         // Kita gunakan Raw SQL agar bisa melakukan 'total = raw_mpd_data.total + EXCLUDED.total'
         // Karena Laravel upsert() bawaan hanya mendukung overwrite (menimpa value lama).
-        
+
         $table = 'raw_mpd_data';
         $columns = array_keys($batch[0]);
         $columnsStr = implode('", "', $columns);
-        $placeholders = implode(', ', array_fill(0, count($batch), '(' . implode(', ', array_fill(0, count($columns), '?')) . ')'));
-        
+        $placeholders = implode(', ', array_fill(0, count($batch), '('.implode(', ', array_fill(0, count($columns), '?')).')'));
+
         $values = [];
         foreach ($batch as $row) {
             foreach ($columns as $col) {
