@@ -124,11 +124,39 @@
     }
 @endphp
 
-{{-- 1. Table REAL --}}
-{{ renderMainTable('REAL PERGERAKAN & ORANG NASIONAL PER OPSEL', $real, $dates, 'REAL') }}
+{{-- Filter Type --}}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body py-2">
+                <form method="GET" class="d-flex align-items-center gap-3">
+                    <label class="fw-bold mb-0 small">Tipe Data:</label>
+                    @foreach(['REAL' => 'Real', 'FORECAST' => 'Forecast', 'COMBINED' => 'Combined (Real + Forecast)'] as $val => $lbl)
+                        <a href="?type={{ $val }}"
+                           class="btn btn-sm {{ ($activeType ?? 'REAL') === $val ? 'btn-primary' : 'btn-outline-secondary' }}">
+                            {{ $lbl }}
+                        </a>
+                    @endforeach
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-{{-- 2. Table FORECAST --}}
+{{-- 1. Table REAL (tampil jika type = REAL) --}}
+@if(($activeType ?? 'REAL') === 'REAL')
+{{ renderMainTable('REAL PERGERAKAN & ORANG NASIONAL PER OPSEL', $real, $dates, 'REAL') }}
+@endif
+
+{{-- 2. Table FORECAST (tampil jika type = FORECAST) --}}
+@if(($activeType ?? 'REAL') === 'FORECAST')
 {{ renderMainTable('FORECAST PERGERAKAN & ORANG NASIONAL PER OPSEL', $forecast, $dates, 'FORECAST') }}
+@endif
+
+{{-- 3. Table COMBINED (tampil jika type = COMBINED) --}}
+@if(($activeType ?? 'REAL') === 'COMBINED')
+{{ renderMainTable('COMBINED PERGERAKAN & ORANG NASIONAL PER OPSEL (Real + Fallback Forecast)', $combined, $dates, 'FORECAST') }}
+@endif
 
 {{-- 3. Table Akumulasi --}}
 <div class="row">

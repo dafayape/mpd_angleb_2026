@@ -64,7 +64,7 @@ class DataMpdController extends Controller
         $opselKey = $opsel ?? 'ALL';
         $key = "mpd:real_dates:v2:{$kategori}:{$opselKey}:{$startDate->format('Ymd')}:{$endDate->format('Ymd')}";
 
-        return Cache::remember($key, now()->addMinutes(15), function () use ($kategori, $opsel, $startDate, $endDate) {
+        return Cache::remember($key, 900, function () use ($kategori, $opsel, $startDate, $endDate) {
             $q = DB::table('spatial_movements')
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('is_forecast', false);
@@ -1381,9 +1381,9 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v12_inclusive:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v13_fresh:{$type}:{$dString}";
 
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
+        $data = $this->cached($cacheKey, 900, fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
             'dates' => $dates,
@@ -1534,8 +1534,8 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v8_ultimate_combined'; // VERSI BARU: v8
-        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v9_with_combined'; // VERSI BARU: v9
+        $data = $this->cached($cacheKey, 900, fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
             'title' => 'Pergerakan Nasional',
@@ -1543,8 +1543,9 @@ class DataMpdController extends Controller
             'dates' => $dates,
             'real' => $data['real'],
             'forecast' => $data['forecast'],
+            'combined' => $data['combined'], // DATA COMBINED: Real + Fallback Forecast
             'accum' => $data['accum'],
-            'activeType' => $type, // TAMBAHKAN INI AGAR TIDAK ERROR
+            'activeType' => $type,
         ]);
     }
 
@@ -1715,6 +1716,63 @@ class DataMpdController extends Controller
         foreach ($final['accum'] as $date => &$row) {
             $row['mov']['pct'] = $grandTotalMov > 0 ? ($row['mov']['vol'] / $grandTotalMov) * 100 : 0;
             $row['ppl']['pct'] = $grandTotalPpl > 0 ? ($row['ppl']['vol'] / $grandTotalPpl) * 100 : 0;
+        }
+
+        // ---------------------------------------------------------------
+        // Build COMBINED: Jika ada data REAL untuk tanggal+opsel => pakai REAL
+        //                 Jika tidak ada => pakai FORECAST sebagai fallback
+        // ---------------------------------------------------------------
+        $combinedTemp = [];
+        $combinedOpselTotals = array_fill_keys($opsels, 0);
+
+        foreach ($dateKeys as $date) {
+            $combinedTemp[$date] = [];
+            foreach ($opsels as $op) {
+                $realVol     = $temp['REAL'][$date][$op] ?? 0;
+                $forecastVol = $temp['FORECAST'][$date][$op] ?? 0;
+                // Pakai Real kalau ada, kalau tidak pakai Forecast
+                $vol = $realVol > 0 ? $realVol : $forecastVol;
+                $combinedTemp[$date][$op] = $vol;
+                $combinedOpselTotals[$op] += $vol;
+            }
+        }
+
+        $runningAccumCombined = ['total_mov' => 0, 'total_ppl' => 0];
+        $final['combined'] = [];
+
+        foreach ($dateKeys as $date) {
+            $row = [
+                'date'      => $date,
+                'opsels'    => [],
+                'total_mov' => 0,
+                'total_ppl' => 0,
+                'accum_mov' => 0,
+                'accum_ppl' => 0,
+            ];
+
+            foreach ($opsels as $op) {
+                $vol   = $combinedTemp[$date][$op] ?? 0;
+                $grand = $combinedOpselTotals[$op];
+                $pct   = $grand > 0 ? ($vol / $grand) * 100 : 0;
+
+                $row['opsels'][$op] = [
+                    'vol'   => $vol,
+                    'pct'   => $pct,
+                    'label' => $formatLabel($vol),
+                ];
+
+                $row['total_mov'] += $vol;
+            }
+
+            $row['total_ppl'] = $row['total_mov'];
+
+            $runningAccumCombined['total_mov'] += $row['total_mov'];
+            $runningAccumCombined['total_ppl'] += $row['total_ppl'];
+
+            $row['accum_mov'] = $runningAccumCombined['total_mov'];
+            $row['accum_ppl'] = $runningAccumCombined['total_ppl'];
+
+            $final['combined'][$date] = $row;
         }
 
         return $final;

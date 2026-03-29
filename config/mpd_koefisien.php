@@ -51,7 +51,7 @@ return [
         'batch_4' => [
             'end_date' => '2026-03-29',
             'label' => 'Batch 4 (H-8 s.d. H+8)',
-            'TSEL' => 2.4,
+            // 'TSEL' => 2.4,
             'IOH' => 2.86,
             'XLSMART' => 2.8503,
         ],
