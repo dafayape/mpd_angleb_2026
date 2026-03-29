@@ -128,7 +128,17 @@ class ExecutiveSummaryService
             $q->where('is_forecast', $dataType === 'forecast');
         }
         if ($opsel) {
-            $q->where('opsel', $opsel);
+            // Kita tidak bisa langsung where('opsel', $opsel) karena DB mungkin punya 'TELKOMSEL' untuk 'TSEL'
+            // Tapi baseQuery harus mengembalikan query builder.
+            // Strategi: Jika opsel difilter, kita ambil variasi namanya dari helper.
+            $searchOpsels = [];
+            if (in_array($this->normalizeOpsel($opsel), ['TSEL', 'IOH', 'XLSMART'])) {
+                 // Untuk filter dashboard, kita percayakan normalisasi di level aggregation.
+                 // Namun untuk query dasar, kita filter string mentahnya agar performant.
+                 $q->where('opsel', 'LIKE', '%' . $opsel . '%');
+            } else {
+                 $q->where('opsel', $opsel);
+            }
         }
 
         return $q;
@@ -137,39 +147,41 @@ class ExecutiveSummaryService
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v2:{$dateKey}";
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v3_synchronized:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
-            $pergerakan = (float) $this->baseQuery('PERGERAKAN', $dataType, $opsel)->sum('total');
-            $orang = (float) $this->baseQuery('ORANG', $dataType, $opsel)->sum('total');
-
-            // Hitung koefisien & unique subscriber menggunakan koefisien per-opsel per-batch
-            // (Konsisten dengan DataMpdController & DailyReportController)
             $selBatch = $this->getKoefisienArray();
 
             // Ambil pergerakan per-opsel
             $pergerakanPerOpsel = $this->baseQuery('PERGERAKAN', $dataType, $opsel)
                 ->select('opsel', DB::raw('SUM(total) as t'))
                 ->groupBy('opsel')
-                ->pluck('t', 'opsel');
+                ->get()
+                ->mapWithKeys(fn ($item) => [$this->normalizeOpsel($item->opsel) => (float) $item->t]);
 
             $totalUnique     = 0;
             $totalPergerakan = 0;
             foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-                $perg   = (float) ($pergerakanPerOpsel[$op] ?? 0);
-                $koef   = (float) ($selBatch[$op] ?? 1.0);
-                $totalUnique += $koef > 0 ? round($perg / $koef) : 0;
+                // Jika sedang filter opsel tertentu, lewati yang lain
+                if ($opsel && $this->normalizeOpsel($op) !== $this->normalizeOpsel($opsel)) {
+                    continue;
+                }
+                
+                $perg = (float) ($pergerakanPerOpsel[$op] ?? 0);
+                $koef = (float) ($selBatch[$op] ?? 1.0);
+                
+                $totalUnique     += $koef > 0 ? round($perg / $koef) : 0;
                 $totalPergerakan += $perg;
             }
 
             // Weighted average koefisien untuk tampilan KPI
-            $koefisien = $totalUnique > 0 ? round($totalPergerakan / $totalUnique, 2) : 0.0;
+            $koefisienAvgValue = $totalUnique > 0 ? round($totalPergerakan / $totalUnique, 2) : 0.0;
 
             return [
-                'pergerakan' => $pergerakan,
-                'orang'      => $totalUnique, // unique subscriber per koefisien per-opsel
-                'koefisien'  => $koefisien,
-                'narrative'  => $this->generateNarrative(['pergerakan' => $pergerakan], 'nasional_pergerakan'),
+                'pergerakan' => $totalPergerakan, // Sekarang konsisten dengan sum of normalized opsels
+                'orang'      => $totalUnique,     // unique subscriber per koefisien per-opsel
+                'koefisien'  => $koefisienAvgValue,
+                'narrative'  => $this->generateNarrative(['pergerakan' => $totalPergerakan], 'nasional_pergerakan'),
             ];
         });
     }
@@ -231,7 +243,6 @@ class ExecutiveSummaryService
                 ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
                 ->get();
 
-            $result = [];
             $selBatch = $this->getKoefisienArray();
             $period = new \DatePeriod(
                 new \DateTime($this->getStartDate()),
@@ -239,31 +250,37 @@ class ExecutiveSummaryService
                 (new \DateTime($this->getEndDate()))->modify('+1 day')
             );
             
+            $results = [];
             foreach ($period as $date) {
-                $result[$date->format('Y-m-d')] = 0.0;
+                $results[$date->format('Y-m-d')] = [
+                    'tanggal'    => $date->format('Y-m-d'),
+                    'pergerakan' => 0.0,
+                    'orang'      => 0.0,
+                ];
             }
 
-            foreach ($dbData as $item) {
-                $dateStr = $item->date_val;
-                if (isset($result[$dateStr])) {
-                    $op = $item->opsel;
-                    $val = (float) $item->t;
-                    
-                    if ($kategori === 'ORANG') {
+            foreach ($dbData as $row) {
+                $date = $row->date_val;
+                $op   = $this->normalizeOpsel($row->opsel);
+                $vol  = (float) $row->t;
+
+                if (isset($results[$date])) {
+                    if ($kategori === 'PERGERAKAN') {
+                        $results[$date]['pergerakan'] += $vol;
+                    } else {
                         $koef = (float) ($selBatch[$op] ?? 1.0);
-                        $val = $koef > 0 ? ($val / $koef) : 0;
+                        $results[$date]['orang'] += $koef > 0 ? round($vol / $koef) : 0;
                     }
-                    $result[$dateStr] += $val;
                 }
             }
 
-            if ($kategori === 'ORANG') {
-                foreach ($result as $d => $v) {
-                    $result[$d] = round($v);
-                }
+            // Return in the format expected by the dashboard (array of volumes)
+            $finalData = [];
+            foreach ($results as $dateStr => $val) {
+                $finalData[$dateStr] = ($kategori === 'PERGERAKAN') ? $val['pergerakan'] : $val['orang'];
             }
 
-            return $result;
+            return $finalData;
         });
     }
 
@@ -539,5 +556,21 @@ class ExecutiveSummaryService
         }
 
         return 'Distribusi pergerakan penduduk relatif stabil selama periode pengamatan.';
+    }
+
+    private function normalizeOpsel(string $opsel): string
+    {
+        $opsel = strtoupper($opsel);
+        if (str_contains($opsel, 'TSEL') || str_contains($opsel, 'TELKOMSEL')) {
+            return 'TSEL';
+        }
+        if (str_contains($opsel, 'IOH') || str_contains($opsel, 'INDOSAT')) {
+            return 'IOH';
+        }
+        if (str_contains($opsel, 'XL')) {
+            return 'XLSMART';
+        }
+
+        return $opsel;
     }
 }

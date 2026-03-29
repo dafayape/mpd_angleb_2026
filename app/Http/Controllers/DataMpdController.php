@@ -1474,20 +1474,20 @@ class DataMpdController extends Controller
                 // Merge per-opsel per-date: prefer REAL jika ada, else FORECAST
                 $dKeys = array_keys($dates);
                 $forcedDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
+                $koefArray = $this->getKoefisienArray();
 
                 foreach ($dKeys as $dateKey) {
                     $isForced = in_array($dateKey, $forcedDates);
                     foreach ($opsels as $op) {
                         $realMov  = $isForced ? 0 : ($realAcc[$dateKey][$op]['movement'] ?? 0);
+                        $k = (float) ($koefArray[$op] ?? 1.0);
                         if ($realMov > 0) {
                             $dates[$dateKey][$op]['movement'] = $realMov;
-                            $ppl = $realAcc[$dateKey][$op]['people'] ?? 0;
-                            $dates[$dateKey][$op]['people']   = $ppl > 0 ? $ppl : $realMov;
+                            $dates[$dateKey][$op]['people']   = $k > 0 ? round($realMov / $k) : 0;
                         } else {
                             $fMov = $forecastAcc[$dateKey][$op]['movement'] ?? 0;
                             $dates[$dateKey][$op]['movement'] = $fMov;
-                            $ppl = $forecastAcc[$dateKey][$op]['people'] ?? 0;
-                            $dates[$dateKey][$op]['people']   = $ppl > 0 ? $ppl : $fMov;
+                            $dates[$dateKey][$op]['people']   = $k > 0 ? round($fMov / $k) : 0;
                         }
                     }
                 }
@@ -1767,10 +1767,21 @@ class DataMpdController extends Controller
 
                 // Update Accumulation
                 $runningAccum[$type]['total_mov'] += $row['total_mov'];
-                $runningAccum[$type]['total_ppl'] += $row['total_ppl'];
-
+                
+                // Calculate Accumulation PPL carefully to match Dashboard (sum of rounded total opsel)
+                $accPpl = 0;
+                foreach ($opsels as $op) {
+                    $k = (float) ($koefArray[$op] ?? 1.0);
+                    $accPerg = 0;
+                    foreach ($dateKeys as $dKey) {
+                        $accPerg += $temp[$type][$dKey][$op] ?? 0;
+                        if ($dKey === $date) break;
+                    }
+                    $accPpl += $k > 0 ? round($accPerg / $k) : 0;
+                }
+                
                 $row['accum_mov'] = $runningAccum[$type]['total_mov'];
-                $row['accum_ppl'] = $runningAccum[$type]['total_ppl'];
+                $row['accum_ppl'] = $accPpl;
 
                 $final[$arrKey][$date] = $row;
             }
@@ -1843,6 +1854,8 @@ class DataMpdController extends Controller
                 'accum_ppl' => 0,
             ];
 
+            $cRow['total_mov'] = 0;
+            $cRow['total_ppl'] = 0;
             foreach ($opsels as $op) {
                 $vol   = $combinedTemp[$date][$op] ?? 0;
                 $grand = $combinedOpselTotals[$op];
@@ -1860,10 +1873,20 @@ class DataMpdController extends Controller
             }
 
             $runningAccumCombined['total_mov'] += $cRow['total_mov'];
-            $runningAccumCombined['total_ppl'] += $cRow['total_ppl'];
+            
+            $accPplCombined = 0;
+            foreach ($opsels as $op) {
+                $k = (float) ($koefArray[$op] ?? 1.0);
+                $accPerg = 0;
+                foreach ($dateKeys as $dKey) {
+                    $accPerg += $combinedTemp[$dKey][$op] ?? 0;
+                    if ($dKey === $date) break;
+                }
+                $accPplCombined += $k > 0 ? round($accPerg / $k) : 0;
+            }
 
             $cRow['accum_mov'] = $runningAccumCombined['total_mov'];
-            $cRow['accum_ppl'] = $runningAccumCombined['total_ppl'];
+            $cRow['accum_ppl'] = $accPplCombined;
 
             $final['combined'][$date] = $cRow;
         }
