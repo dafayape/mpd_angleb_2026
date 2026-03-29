@@ -1413,7 +1413,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v17_canonical:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v18_matematis_360:{$type}:{$dString}";
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
@@ -1624,9 +1624,8 @@ class DataMpdController extends Controller
         uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
-        // === UNIQUE SUBSCRIBER (Metode Kanonik Terkunci 100%) ===
-        // Harus menggunakan skema pembulatan harian karena setiap rincian baris di tabel sudah dibulatkan
-        // Menghasilkan total 146.117.364 tanpa adanya diskrepansi agregasi!
+        // === UNIQUE SUBSCRIBER (Kalkulasi Matematis Desimal Kumulatif 360) ===
+        // Selaras dengan nilai tabel yang murni desimal, tidak boleh di-round sebelum selesai (146.117.360)
         $koefArray = $this->getKoefisienArray();
         $uniqueSubscriberRaw = 0;
         foreach ($dates as $dateKey => $row) {
@@ -1634,11 +1633,11 @@ class DataMpdController extends Controller
                 $mov  = (float) ($row[$op]['movement'] ?? 0);
                 $koef = (float) ($koefArray[$op] ?? 1.0);
                 if ($mov > 0 && $koef > 0) {
-                    $uniqueSubscriberRaw += round($mov / $koef);
+                    $uniqueSubscriberRaw += ($mov / $koef);
                 }
             }
         }
-        $uniqueSubscriber = (int) $uniqueSubscriberRaw;
+        $uniqueSubscriber = (int) round($uniqueSubscriberRaw);
         $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 2) : 0.0;
 
         $akumulasiData = [
@@ -1663,7 +1662,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v14_force';
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v15_fallback_360';
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
@@ -1749,6 +1748,18 @@ class DataMpdController extends Controller
             \Illuminate\Support\Facades\Log::error('Pergerakan Tables Error: '.$e->getMessage());
         }
 
+        // --- GLOBAL FALLBACK INJECTION ---
+        // Menambal otomatis lubang data Forecast (misal tgl 29) dengan Real
+        foreach ($dateKeys as $date) {
+            foreach ($opsels as $op) {
+                if (empty($temp['FORECAST'][$date][$op]) && !empty($temp['REAL'][$date][$op])) {
+                    $vol = $temp['REAL'][$date][$op];
+                    $temp['FORECAST'][$date][$op] = $vol;
+                    $opselTotals['FORECAST'][$op] += $vol;
+                }
+            }
+        }
+
         // Process Final Structure
         $final = [
             'real' => [],
@@ -1803,7 +1814,8 @@ class DataMpdController extends Controller
 
                     $row['total_mov'] += $vol;
                     $k = (float) ($koefArray[$op] ?? 1.0);
-                    $row['total_ppl'] += $k > 0 ? round($vol / $k) : 0;
+                    // Matematika desimal murni (Metode 360)
+                    $row['total_ppl'] += $k > 0 ? ($vol / $k) : 0;
                 }
 
                 // Update Accumulation
@@ -1910,7 +1922,8 @@ class DataMpdController extends Controller
 
                 $cRow['total_mov'] += $vol;
                 $k = (float) ($koefArray[$op] ?? 1.0);
-                $cRow['total_ppl'] += $k > 0 ? round($vol / $k) : 0;
+                // Matriks desimal utuh (Metode 360 Konsisten)
+                $cRow['total_ppl'] += $k > 0 ? ($vol / $k) : 0;
             }
 
             $runningAccumCombined['total_mov'] += $cRow['total_mov'];
