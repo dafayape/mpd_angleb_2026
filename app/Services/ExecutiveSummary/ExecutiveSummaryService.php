@@ -152,44 +152,79 @@ class ExecutiveSummaryService
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $selBatch = $this->getKoefisienArray();
+            $dType = strtoupper($dataType);
 
-            // Ambil pergerakan per-opsel untuk total periode
-            $pergerakanPerOpsel = $this->baseQuery('PERGERAKAN', $dataType, $opsel)
-                ->select('opsel', DB::raw('SUM(total) as t'))
-                ->groupBy('opsel')
-                ->get()
-                ->mapWithKeys(fn ($item) => [$this->normalizeOpsel($item->opsel) => (float) $item->t]);
+            // Jika mode bukan COMBINED, kita tetap bisa gunakan query agregasi sederhana
+            // Tapi untuk performa maksimal dan konsistensi, kita gunakan agregasi harian per-opsel per-is_forecast
+            $query = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
+                ->where('kategori', '!=', 'ORANG')
+                ->select(
+                    DB::raw('DATE(tanggal) as date_val'), 
+                    'opsel', 
+                    'is_forecast',
+                    DB::raw('SUM(total) as t')
+                )
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'is_forecast');
+
+            if ($opsel) {
+                $query->where('opsel', 'LIKE', '%' . $opsel . '%');
+            }
+
+            $rows = $query->get();
+
+            // Mapping data ke struktur [date][opsel][is_forecast]
+            $temp = [];
+            foreach ($rows as $row) {
+                $d  = $row->date_val;
+                $op = $this->normalizeOpsel($row->opsel);
+                $isF = $row->is_forecast ? 'F' : 'R';
+                $temp[$d][$op][$isF] = (float) $row->t;
+            }
 
             $totalUnique     = 0;
             $totalPergerakan = 0;
-            foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-                // Jika sedang filter opsel tertentu, lewati yang lain
-                if ($opsel && $this->normalizeOpsel($op) !== $this->normalizeOpsel($opsel)) {
-                    continue;
+            $dates = array_keys($temp);
+            sort($dates);
+
+            $opsels = ['TSEL', 'IOH', 'XLSMART'];
+            $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
+
+            foreach ($dates as $d) {
+                foreach ($opsels as $op) {
+                    $realVol     = $temp[$d][$op]['R'] ?? 0;
+                    $forecastVol = $temp[$d][$op]['F'] ?? 0;
+
+                    $vol = 0;
+                    if ($dType === 'COMBINED') {
+                        // Aturan COMBINED: Gunakan Forecast jika TGL 27-29 atau Real tidak ada
+                        $isForced = in_array($d, $forceForecastDates);
+                        $vol = ($realVol > 0 && !$isForced) ? $realVol : $forecastVol;
+                    } elseif ($dType === 'FORECAST') {
+                        $vol = $forecastVol;
+                    } else {
+                        $vol = $realVol;
+                    }
+
+                    if ($vol <= 0) continue;
+
+                    $koef = (float) ($selBatch[$op] ?? 1.0);
+                    $totalUnique     += ($vol / $koef);
+                    $totalPergerakan += $vol;
                 }
-                
-                $perg = (float) ($pergerakanPerOpsel[$op] ?? 0);
-                $koef = (float) ($selBatch[$op] ?? 1.0);
-                
-                // Gunakan pembagian global (Total / Koef) untuk Headline agar presisi dengan Excel
-                $totalUnique     += $koef > 0 ? ($perg / $koef) : 0;
-                $totalPergerakan += $perg;
             }
 
-            // Pembulatan unik subscriber di akhir untuk akurasi KPI Utama
             $finalUnique = round($totalUnique);
-
-            // Weighted average koefisien untuk tampilan KPI
             $koefisienAvgValue = $finalUnique > 0 ? round($totalPergerakan / $finalUnique, 2) : 0.0;
 
             return [
-                'pergerakan' => $totalPergerakan, 
-                'orang'      => $finalUnique,     
+                'pergerakan' => $totalPergerakan,
+                'orang'      => $finalUnique,
                 'koefisien'  => $koefisienAvgValue,
                 'narrative'  => $this->generateNarrative(['pergerakan' => $totalPergerakan], 'nasional_pergerakan'),
             ];
         });
     }
+
 
     public function getOpselContribution(string $dataType, ?string $region = null): array
     {
@@ -197,97 +232,146 @@ class ExecutiveSummaryService
         $key = "executive_summary:getOpselContribution:{$dataType}:all:".($region ?? 'nasional').":v4_{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $region) {
-            $data = [];
             $selBatch = $this->getKoefisienArray();
-            
-            $q = $this->baseQuery('PERGERAKAN', $dataType, null);
+            $dType = strtoupper($dataType);
+
+            // 1. Fetch data per-hari per-opsel per-is_forecast
+            $query = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
+                ->where('kategori', '!=', 'ORANG')
+                ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'is_forecast', DB::raw('SUM(total) as t'))
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'is_forecast');
+
             if ($region) {
-                $this->applyJaboFilter($q, $region);
+                $this->applyJaboFilter($query, $region);
             }
-            $sums = $q->select('opsel', DB::raw('SUM(total) as t'))->groupBy('opsel')->get()->pluck('t', 'opsel');
-            
-            $totalPerg = $sums->sum();
-            $totalOrang = 0;
-            $orangSums = [];
-            
-            foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-                $valP = (float) ($sums[$op] ?? 0);
-                $koef = (float) ($selBatch[$op] ?? 1.0);
-                $valO = $koef > 0 ? round($valP / $koef) : 0;
-                $orangSums[$op] = $valO;
-                $totalOrang += $valO;
+
+            $rows = $query->get();
+
+            // 2. Map ke struktur [date][opsel][is_forecast]
+            $temp = [];
+            foreach ($rows as $row) {
+                $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$row->is_forecast ? 'F' : 'R'] = (float) $row->t;
             }
-            
-            foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-                $valP = (float) ($sums[$op] ?? 0);
-                $valO = $orangSums[$op];
-                
-                $data['pergerakan'][$op] = ['total' => $valP, 'pct' => $totalPerg > 0 ? round(($valP / $totalPerg) * 100, 1) : 0];
-                $data['orang'][$op]      = ['total' => $valO, 'pct' => $totalOrang > 0 ? round(($valO / $totalOrang) * 100, 1) : 0];
+
+            // 3. Process Logic
+            $opStats = ['TSEL' => ['p' => 0, 'o' => 0], 'IOH' => ['p' => 0, 'o' => 0], 'XLSMART' => ['p' => 0, 'o' => 0]];
+            $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
+
+            foreach ($temp as $d => $opselsInDate) {
+                foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+                    $r = $opselsInDate[$op]['R'] ?? 0;
+                    $f = $opselsInDate[$op]['F'] ?? 0;
+
+                    if ($dType === 'COMBINED') {
+                        $vol = ($r > 0 && !in_array($d, $forceForecastDates)) ? $r : $f;
+                    } elseif ($dType === 'FORECAST') {
+                        $vol = $f;
+                    } else {
+                        $vol = $r;
+                    }
+
+                    if ($vol <= 0) continue;
+
+                    $koef = (float) ($selBatch[$op] ?? 1.0);
+                    $opStats[$op]['p'] += $vol;
+                    $opStats[$op]['o'] += ($vol / $koef);
+                }
             }
+
+            // 4. Format Finals
+            $totalP = array_sum(array_column($opStats, 'p'));
+            $totalO = array_sum(array_column($opStats, 'o'));
             
+            $data = ['pergerakan' => [], 'orang' => []];
+            foreach ($opStats as $op => $vals) {
+                $data['pergerakan'][$op] = [
+                    'total' => $vals['p'], 
+                    'pct'   => $totalP > 0 ? round(($vals['p'] / $totalP) * 100, 1) : 0
+                ];
+                $data['orang'][$op] = [
+                    'total' => round($vals['o']), 
+                    'pct'   => $totalO > 0 ? round(($vals['o'] / $totalO) * 100, 1) : 0
+                ];
+            }
+
             $data['narrative'] = $this->generateNarrative($data, 'opsel');
             return $data;
         });
     }
 
+
     public function getDailyTrend(string $kategori, string $dataType, ?string $opsel, string $region = 'nasional'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}:v4_{$dateKey}";
+        $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}:v5_optimized_{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($kategori, $dataType, $opsel, $region) {
-            $q = $this->baseQuery('PERGERAKAN', $dataType, $opsel);
-            if ($region === 'intra') {
-                $this->applyJaboFilter($q, 'intra');
-            } elseif ($region === 'inter') {
-                $this->applyJaboFilter($q, 'inter');
-            }
-
-            $dbData = $q->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as t'))
-                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
-                ->get();
-
             $selBatch = $this->getKoefisienArray();
-            $period = new \DatePeriod(
-                new \DateTime($this->getStartDate()),
-                new \DateInterval('P1D'),
-                (new \DateTime($this->getEndDate()))->modify('+1 day')
-            );
-            
-            $results = [];
-            foreach ($period as $date) {
-                $results[$date->format('Y-m-d')] = [
-                    'tanggal'    => $date->format('Y-m-d'),
-                    'pergerakan' => 0.0,
-                    'orang'      => 0.0,
-                ];
+            $dType = strtoupper($dataType);
+
+            // 1. Fetch Aggregated Daily Data (High Performance)
+            $query = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
+                ->where('kategori', '!=', 'ORANG')
+                ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'is_forecast', DB::raw('SUM(total) as t'))
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'is_forecast');
+
+            if ($opsel) {
+                $query->where('opsel', 'LIKE', '%' . $opsel . '%');
             }
 
-            foreach ($dbData as $row) {
-                $date = $row->date_val;
-                $op   = $this->normalizeOpsel($row->opsel);
-                $vol  = (float) $row->t;
+            if ($region === 'intra' || $region === 'inter') {
+                $this->applyJaboFilter($query, $region);
+            }
 
-                if (isset($results[$date])) {
-                    if ($kategori === 'PERGERAKAN') {
-                        $results[$date]['pergerakan'] += $vol;
-                    } else {
-                        $koef = (float) ($selBatch[$op] ?? 1.0);
-                        $results[$date]['orang'] += $koef > 0 ? round($vol / $koef) : 0;
+            $rows = $query->get();
+
+            // 2. Map ketersediaan data
+            $temp = [];
+            foreach ($rows as $row) {
+                $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$row->is_forecast ? 'F' : 'R'] = (float) $row->t;
+            }
+
+            // 3. Process Per-Hari (PHP Logic)
+            $final = [];
+            $dates = array_keys($temp);
+            sort($dates);
+            $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
+
+            foreach ($dates as $d) {
+                $dailyTotal = 0;
+                $dailyOrang = 0;
+
+                foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+                    if ($opsel && $this->normalizeOpsel($op) !== $this->normalizeOpsel($opsel)) {
+                        continue;
                     }
+
+                    $r = $temp[$d][$op]['R'] ?? 0;
+                    $f = $temp[$d][$op]['F'] ?? 0;
+
+                    if ($dType === 'COMBINED') {
+                        $isForced = in_array($d, $forceForecastDates);
+                        $vol = ($r > 0 && !$isForced) ? $r : $f;
+                    } elseif ($dType === 'FORECAST') {
+                        $vol = $f;
+                    } else {
+                        $vol = $r;
+                    }
+
+                    if ($vol <= 0) continue;
+
+                    $koef = (float) ($selBatch[$op] ?? 1.0);
+                    $dailyTotal += $vol;
+                    $dailyOrang += ($vol / $koef);
                 }
+
+                $final[$d] = ($kategori === 'ORANG') ? round($dailyOrang) : $dailyTotal;
             }
 
-            // Return in the format expected by the dashboard (array of volumes)
-            $finalData = [];
-            foreach ($results as $dateStr => $val) {
-                $finalData[$dateStr] = ($kategori === 'PERGERAKAN') ? $val['pergerakan'] : $val['orang'];
-            }
-
-            return $finalData;
+            return $final;
         });
     }
+
 
     public function getPeakDay(string $dataType, ?string $opsel): array
     {
