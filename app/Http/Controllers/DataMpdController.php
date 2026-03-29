@@ -2247,7 +2247,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:substansi:netflow:v3_force:{$type}:{$dString}";
+        $cacheKey = "mpd:substansi:netflow:v4_fixed:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getSubstansiNetflowData($startDate, $endDate, $type));
 
