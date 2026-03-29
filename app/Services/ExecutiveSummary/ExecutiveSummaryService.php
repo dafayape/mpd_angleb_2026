@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v14_godmode:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v15_legendary:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -459,10 +459,10 @@ class ExecutiveSummaryService
     {
         $dType = strtolower($dataType);
 
-        // Fast Base Query tanpa subquery lambat
+        // Fast Base Query: GRAB ALL (Ignore is_forecast for Jabo aggregates as they often live in REAL only)
         $buildQ = function($isForecastFlag) use ($opsel, $region) {
-            $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-                ->where('is_forecast', $isForecastFlag);
+            $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()]);
+            // Logic: Do not explicitly where('is_forecast') here because Jabo data is often pre-aggregated in REAL
             if ($opsel) {
                 $q->where('opsel', 'LIKE', '%' . $this->normalizeOpsel($opsel) . '%');
             }
