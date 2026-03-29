@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v10_trend_fix:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v11:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -151,7 +151,7 @@ class ExecutiveSummaryService
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v8_final_364:{$dateKey}";
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v9:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $selBatch = $this->getKoefisienArray();
@@ -234,7 +234,7 @@ class ExecutiveSummaryService
     public function getOpselContribution(string $dataType, ?string $region = null): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getOpselContribution:{$dataType}:all:".($region ?? 'nasional').":v4_{$dateKey}";
+        $key = "executive_summary:getOpselContribution:{$dataType}:all:".($region ?? 'nasional').":v5_{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $region) {
             $selBatch = $this->getKoefisienArray();
@@ -308,7 +308,7 @@ class ExecutiveSummaryService
     public function getDailyTrend(string $kategori, string $dataType, ?string $opsel, string $region = 'nasional'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}:v5_optimized_{$dateKey}";
+        $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}:v6_{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($kategori, $dataType, $opsel, $region) {
             $selBatch = $this->getKoefisienArray();
@@ -381,7 +381,7 @@ class ExecutiveSummaryService
     public function getPeakDay(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getPeakDay:{$dataType}:{$opsel}:nasional:{$dateKey}";
+        $key = "executive_summary:getPeakDay:{$dataType}:{$opsel}:nasional:v2_{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $trend = $this->getDailyTrend('PERGERAKAN', $dataType, $opsel);
@@ -415,7 +415,7 @@ class ExecutiveSummaryService
     public function getIntraJabodetabek(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getIntraJabodetabek:{$dataType}:{$opsel}:intra_v3:{$dateKey}";
+        $key = "executive_summary:getIntraJabodetabek:{$dataType}:{$opsel}:intra_v4:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $sums = $this->batchJaboSums($dataType, $opsel, 'intra');
@@ -435,7 +435,7 @@ class ExecutiveSummaryService
     public function getInterJabodetabek(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getInterJabodetabek:{$dataType}:{$opsel}:inter_v3:{$dateKey}";
+        $key = "executive_summary:getInterJabodetabek:{$dataType}:{$opsel}:inter_v4:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $sums = $this->batchJaboSums($dataType, $opsel, 'inter');
@@ -541,7 +541,7 @@ class ExecutiveSummaryService
     public function getKoefisien(string $dataType, ?string $opsel, ?string $region = null): float
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getKoefisien:{$dataType}:{$opsel}:{$region}:{$dateKey}";
+        $key = "executive_summary:getKoefisien:{$dataType}:{$opsel}:{$region}:v2_{$dateKey}";
 
         return (float) Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel, $region) {
             $selBatch = $this->getKoefisienArray();
@@ -607,7 +607,7 @@ class ExecutiveSummaryService
     public function getForecastComparison(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getForecastComparison:{$dataType}:{$opsel}:nasional:v5_dynamic:{$dateKey}";
+        $key = "executive_summary:getForecastComparison:{$dataType}:{$opsel}:nasional:v6:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $real = $this->getDailyTrend('PERGERAKAN', $dataType, $opsel);
@@ -655,7 +655,7 @@ class ExecutiveSummaryService
     public function getYoyComparison(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getYoyComparison:{$dataType}:{$opsel}:nasional:v4_clean:{$dateKey}";
+        $key = "executive_summary:getYoyComparison:{$dataType}:{$opsel}:nasional:v5:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $nasional = $this->getNasionalMetrics($dataType, $opsel);
