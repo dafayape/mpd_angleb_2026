@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v9_fast_jabo:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v10_trend_fix:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -75,7 +75,7 @@ class ExecutiveSummaryService
             'opsel' => $this->getOpselContribution($dataType),
             'opsel_intra' => $this->getOpselContribution($dataType, 'intra'),
             'opsel_inter' => $this->getOpselContribution($dataType, 'inter'),
-            'forecast' => $this->getForecastComparison($opsel),
+            'forecast' => $this->getForecastComparison($dataType, $opsel),
             'yoy' => $this->getYoyComparison($dataType, $opsel),
             'intra' => $this->getIntraJabodetabek($dataType, $opsel),
             'inter' => $this->getInterJabodetabek($dataType, $opsel),
@@ -604,13 +604,13 @@ class ExecutiveSummaryService
         return $this->getKoefisien($dataType, $opsel, $region);
     }
 
-    public function getForecastComparison(?string $opsel): array
+    public function getForecastComparison(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getForecastComparison:all:{$opsel}:nasional:v4_static:{$dateKey}";
+        $key = "executive_summary:getForecastComparison:{$dataType}:{$opsel}:nasional:v5_dynamic:{$dateKey}";
 
-        return Cache::remember($key, $this->cacheTtl(), function () use ($opsel) {
-            $real = $this->getDailyTrend('PERGERAKAN', 'real', $opsel);
+        return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
+            $real = $this->getDailyTrend('PERGERAKAN', $dataType, $opsel);
             
             // Menggunakan ketetapan konstanta proporsi hasil survei kemenhub (prakiraan)
             $forecastConstants = [
