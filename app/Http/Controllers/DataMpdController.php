@@ -1609,7 +1609,8 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $cacheKey = 'mpd:nasional:pergerakan:tables:v10_date_fix'; // v10: fix date key mismatch
-        $data = $this->cached($cacheKey, 900, fn () => $this->getPergerakanDataTables($startDate, $endDate));
+        // TEMP: bypass cache agar data selalu fresh dari DB (hapus setelah dikonfirmasi)
+        $data = $this->getPergerakanDataTables($startDate, $endDate);
 
         return view('data-mpd.nasional.pergerakan', [
             'title' => 'Pergerakan Nasional',
