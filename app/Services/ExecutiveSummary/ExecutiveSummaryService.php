@@ -151,7 +151,7 @@ class ExecutiveSummaryService
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v9:{$dateKey}";
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v11_fix360:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $selBatch = $this->getKoefisienArray();
@@ -211,14 +211,13 @@ class ExecutiveSummaryService
                     if ($vol <= 0) continue;
 
                     $koef = (float) ($selBatch[$op] ?? 1.0);
-                    // Bulatkan per-opsel per-hari (Metode Kanonik Terkunci 100%)
-                    $totalUnique     += $koef > 0 ? round($vol / $koef) : 0;
+                    $totalUnique     += $koef > 0 ? ($vol / $koef) : 0;
                     $totalPergerakan += $vol;
                 }
             }
 
-            // Tidak ada pembulatan tambahan karena sudah dijumlah dari bilangan bulat
-            $finalUnique = (int) $totalUnique;
+            // final round hanyan di akhir (Method 360)
+            $finalUnique = (int) round($totalUnique);
             $koefisienAvgValue = $finalUnique > 0 ? round($totalPergerakan / $finalUnique, 2) : 0.0;
 
             return [
@@ -234,7 +233,7 @@ class ExecutiveSummaryService
     public function getOpselContribution(string $dataType, ?string $region = null): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getOpselContribution:{$dataType}:all:".($region ?? 'nasional').":v5_{$dateKey}";
+        $key = "executive_summary:getOpselContribution:{$dataType}:all:".($region ?? 'nasional').":v11_fix360_{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $region) {
             $selBatch = $this->getKoefisienArray();
