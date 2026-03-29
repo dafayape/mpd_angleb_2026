@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v15_legendary:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v18_true_symmetry:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -457,49 +457,27 @@ class ExecutiveSummaryService
      */
     private function batchJaboSums(string $dataType, ?string $opsel, string $region): array
     {
-        $dType = strtolower($dataType);
+        $dType = strtoupper($dataType);
+        $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
 
-        // Fast Base Query: GRAB ALL (Ignore is_forecast for Jabo aggregates as they often live in REAL only)
-        $buildQ = function($isForecastFlag) use ($opsel, $region) {
-            $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()]);
-            // Logic: Do not explicitly where('is_forecast') here because Jabo data is often pre-aggregated in REAL
-            if ($opsel) {
-                $q->where('opsel', 'LIKE', '%' . $this->normalizeOpsel($opsel) . '%');
-            }
-            $this->applyJaboFilter($q, $region);
-            return $q;
-        };
-
-        if ($dType === 'combined') {
-            $qReal     = $buildQ(false);
-            $qForecast = $buildQ(true);
-
-            $rowsReal = $qReal->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'kategori', DB::raw('SUM(total) as t'))
-                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori')
-                ->get();
-            $rowsForecast = $qForecast->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'kategori', DB::raw('SUM(total) as t'))
-                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori')
-                ->get();
-        } else {
-            $isF = ($dType === 'forecast');
-            $q = $buildQ($isF);
-            $rowsReal = $q->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'kategori', DB::raw('SUM(total) as t'))
-                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori')
-                ->get();
-            $rowsForecast = [];
+        // 1. Fetch BOTH Real and Forecast data (no single is_forecast filter)
+        $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()]);
+        if ($opsel) {
+            $q->where('opsel', 'LIKE', '%' . $this->normalizeOpsel($opsel) . '%');
         }
+        $this->applyJaboFilter($q, $region);
+
+        $rows = $q->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'kategori', 'is_forecast', DB::raw('SUM(total) as t'))
+            ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori', 'is_forecast')
+            ->get();
 
         $temp = [];
-        foreach ($rowsReal as $row) {
+        foreach ($rows as $row) {
             $cat = strtoupper($row->kategori) === 'ORANG' ? 'orang' : 'pergerakan';
-            $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$cat]['R'] = (float) $row->t;
-        }
-        foreach ($rowsForecast as $row) {
-            $cat = strtoupper($row->kategori) === 'ORANG' ? 'orang' : 'pergerakan';
-            $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$cat]['F'] = (float) $row->t;
+            $isF = $row->is_forecast ? 'F' : 'R';
+            $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$cat][$isF] = (float) $row->t;
         }
 
-        $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
         $totPerg   = 0;
         $totOrang  = 0;
         $opsels    = ['TSEL', 'IOH', 'XLSMART'];
@@ -513,19 +491,17 @@ class ExecutiveSummaryService
                 $rOrang = $opData[$op]['orang']['R'] ?? 0;
                 $fOrang = $opData[$op]['orang']['F'] ?? 0;
 
-                if ($dType === 'combined') {
-                    $isForced = in_array($d, ['2026-03-27', '2026-03-28', '2026-03-29']);
+                if ($dType === 'COMBINED') {
+                    $isForced = in_array($d, $forceForecastDates);
                     $volMov   = ($rMov > 0 && !$isForced) ? $rMov : $fMov;
                     $volOrang = ($rMov > 0 && !$isForced) ? $rOrang : $fOrang;
-                } elseif ($dType === 'forecast') {
+                } elseif ($dType === 'FORECAST') {
                     $volMov   = $fMov;
                     $volOrang = $fOrang;
                 } else {
                     $volMov   = $rMov;
                     $volOrang = $rOrang;
                 }
-
-                if ($volMov <= 0 && $volOrang <= 0) continue;
 
                 $totPerg  += $volMov;
                 $totOrang += $volOrang > 0 ? $volOrang : $volMov; 
