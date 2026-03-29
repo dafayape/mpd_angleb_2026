@@ -1381,16 +1381,8 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v14_smart_combined:{$type}:{$dString}";
-        // TEMP BYPASS CACHE
-        $data = $this->getPergerakanHarianData($startDate, $endDate, $type);
-
-        $data = $this->getPergerakanHarianData($startDate, $endDate, $type);
-        
-        \Illuminate\Support\Facades\Log::info("DEBUG HARI INI", [
-            '28' => $data['daily']['2026-03-28']['XLSMART'] ?? null,
-            '29' => $data['daily']['2026-03-29']['XLSMART'] ?? null,
-        ]);
+        $cacheKey = "mpd:nasional:pergerakan-harian:v15_clean:{$type}:{$dString}";
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
             'dates' => $dates,
@@ -1427,15 +1419,16 @@ class DataMpdController extends Controller
                 // -------------------------------------------------------
                 $allRows = DB::table('spatial_movements')
                     ->select(
-                        'tanggal',
+                        DB::raw('DATE(tanggal) as date_val'),
                         'opsel',
                         'kategori',
                         'kode_moda',
                         'is_forecast',
                         DB::raw('SUM(total) as total_volume')
                     )
-                    ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                    ->groupBy('tanggal', 'opsel', 'kategori', 'kode_moda', 'is_forecast')
+                    ->whereDate('tanggal', '>=', $startDate->format('Y-m-d'))
+                    ->whereDate('tanggal', '<=', $endDate->format('Y-m-d'))
+                    ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori', 'kode_moda', 'is_forecast')
                     ->get();
 
                 // Akumulator terpisah untuk real dan forecast
@@ -1443,7 +1436,7 @@ class DataMpdController extends Controller
                 $forecastAcc = [];
 
                 foreach ($allRows as $row) {
-                    $date  = substr($row->tanggal, 0, 10);
+                    $date  = $row->date_val;
                     $opsel = $this->normalizeOpsel($row->opsel);
                     if ($opsel === 'OTHER' || ! isset($dates[$date])) {
                         continue;
@@ -1472,42 +1465,43 @@ class DataMpdController extends Controller
                 }
 
                 // Merge per-opsel per-date: prefer REAL jika ada, else FORECAST
-                foreach ($dates as $date => &$row) {
+                $dKeys = array_keys($dates);
+                foreach ($dKeys as $dateKey) {
                     foreach ($opsels as $op) {
-                        $realMov  = $realAcc[$date][$op]['movement'] ?? 0;
+                        $realMov  = $realAcc[$dateKey][$op]['movement'] ?? 0;
                         if ($realMov > 0) {
-                            $row[$op]['movement'] = $realMov;
-                            $ppl = $realAcc[$date][$op]['people'] ?? 0;
-                            $row[$op]['people']   = $ppl > 0 ? $ppl : $realMov;
+                            $dates[$dateKey][$op]['movement'] = $realMov;
+                            $ppl = $realAcc[$dateKey][$op]['people'] ?? 0;
+                            $dates[$dateKey][$op]['people']   = $ppl > 0 ? $ppl : $realMov;
                         } else {
-                            $fMov = $forecastAcc[$date][$op]['movement'] ?? 0;
-                            $row[$op]['movement'] = $fMov;
-                            $ppl = $forecastAcc[$date][$op]['people'] ?? 0;
-                            $row[$op]['people']   = $ppl > 0 ? $ppl : $fMov;
+                            $fMov = $forecastAcc[$dateKey][$op]['movement'] ?? 0;
+                            $dates[$dateKey][$op]['movement'] = $fMov;
+                            $ppl = $forecastAcc[$dateKey][$op]['people'] ?? 0;
+                            $dates[$dateKey][$op]['people']   = $ppl > 0 ? $ppl : $fMov;
                         }
                     }
                 }
-                unset($row);
 
             } else {
                 // REAL atau FORECAST: gunakan applyTypeFilter seperti biasa
                 $query = DB::table('spatial_movements')
                     ->select(
-                        'tanggal',
+                        DB::raw('DATE(tanggal) as date_val'),
                         'opsel',
                         'kategori',
                         'kode_moda',
                         DB::raw('SUM(total) as total_volume')
                     )
-                    ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                    ->whereDate('tanggal', '>=', $startDate->format('Y-m-d'))
+                    ->whereDate('tanggal', '<=', $endDate->format('Y-m-d'));
 
                 $this->applyTypeFilter($query, $type, 'PERGERAKAN');
 
-                $results = $query->groupBy('tanggal', 'opsel', 'kategori', 'kode_moda')->get();
+                $results = $query->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori', 'kode_moda')->get();
 
                 $hasOrang = [];
                 foreach ($results as $row) {
-                    $date  = substr($row->tanggal, 0, 10);
+                    $date  = $row->date_val;
                     $cat   = strtoupper($row->kategori);
                     $vol   = (int) $row->total_volume;
                     $opsel = $this->normalizeOpsel($row->opsel);
@@ -1525,14 +1519,14 @@ class DataMpdController extends Controller
                 }
 
                 // Fallback for missing ORANG data (1:1 with movement)
-                foreach ($dates as $date => &$row) {
+                $dKeys = array_keys($dates);
+                foreach ($dKeys as $dateKey) {
                     foreach ($opsels as $op) {
-                        if (! isset($hasOrang[$date][$op]) && $row[$op]['movement'] > 0) {
-                            $row[$op]['people'] = $row[$op]['movement'];
+                        if (! isset($hasOrang[$dateKey][$op]) && $dates[$dateKey][$op]['movement'] > 0) {
+                            $dates[$dateKey][$op]['people'] = $dates[$dateKey][$op]['movement'];
                         }
                     }
                 }
-                unset($row);
             }
 
         } catch (\Throwable $e) {
@@ -1542,19 +1536,22 @@ class DataMpdController extends Controller
         $totals = [];
         foreach ($opsels as $op) {
             $totals[$op] = ['movement' => 0, 'people' => 0];
-            foreach ($dates as $date => $row) {
-                $totals[$op]['movement'] += $row[$op]['movement'];
-                $totals[$op]['people'] += $row[$op]['people'];
+            foreach ($dates as $date => $rowValue) {
+                $totals[$op]['movement'] += $rowValue[$op]['movement'];
+                $totals[$op]['people'] += $rowValue[$op]['people'];
             }
         }
 
-        foreach ($dates as $date => &$row) {
+        $dKeys = array_keys($dates);
+        foreach ($dKeys as $dateKey) {
             foreach ($opsels as $op) {
                 $gMov = $totals[$op]['movement'];
                 $gPpl = $totals[$op]['people'];
+                $mVol = $dates[$dateKey][$op]['movement'];
+                $pVol = $dates[$dateKey][$op]['people'];
 
-                $row[$op]['movement_pct'] = $gMov > 0 ? ($row[$op]['movement'] / $gMov) * 100 : 0;
-                $row[$op]['people_pct'] = $gPpl > 0 ? ($row[$op]['people'] / $gPpl) * 100 : 0;
+                $dates[$dateKey][$op]['movement_pct'] = $gMov > 0 ? ($mVol / $gMov) * 100 : 0;
+                $dates[$dateKey][$op]['people_pct'] = $gPpl > 0 ? ($pVol / $gPpl) * 100 : 0;
             }
         }
 
@@ -1615,9 +1612,8 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v10_date_fix'; // v10: fix date key mismatch
-        // TEMP: bypass cache agar data selalu fresh dari DB (hapus setelah dikonfirmasi)
-        $data = $this->getPergerakanDataTables($startDate, $endDate);
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v12_clean';
+        $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
             'title' => 'Pergerakan Nasional',
@@ -1659,13 +1655,14 @@ class DataMpdController extends Controller
         try {
             $query = DB::table('spatial_movements')
                 ->select(
-                    'tanggal',
+                    DB::raw('DATE(tanggal) as date_val'),
                     'opsel',
                     'is_forecast',
                     'kode_moda',
                     DB::raw('SUM(total) as total_volume')
                 )
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                ->whereDate('tanggal', '>=', $startDate->format('Y-m-d'))
+                ->whereDate('tanggal', '<=', $endDate->format('Y-m-d'));
             // Filter kategori dihapus total agar semua data terserap
 
             // Apply Filters if provided (e.g. Jabodetabek)
@@ -1673,11 +1670,11 @@ class DataMpdController extends Controller
                 $query->whereIn('kode_origin_kabupaten_kota', $filterCodes);
             }
 
-            $rows = $query->groupBy('tanggal', 'opsel', 'is_forecast', 'kode_moda')->get();
+            $rows = $query->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'is_forecast', 'kode_moda')->get();
 
             foreach ($rows as $row) {
                 $type  = $row->is_forecast ? 'FORECAST' : 'REAL';
-                $date  = substr($row->tanggal, 0, 10); // pastikan format 'Y-m-d', bukan full timestamp
+                $date  = $row->date_val;
 
                 $opsel = $this->normalizeOpsel($row->opsel);
 
@@ -1769,24 +1766,24 @@ class DataMpdController extends Controller
         }
 
         // Accumulation Table (Derived from Real)
-        foreach ($final['real'] as $date => $row) {
+        foreach ($final['real'] as $date => $rowValue) {
             $grandTotalReal = $runningAccum['REAL']['total_mov'];
 
-            $pctMov = $grandTotalReal > 0 ? ($row['total_mov'] / $grandTotalReal) * 100 : 0;
-            $pctPpl = $grandTotalReal > 0 ? ($row['total_ppl'] / $grandTotalReal) * 100 : 0;
+            $pctMov = $grandTotalReal > 0 ? ($rowValue['total_mov'] / $grandTotalReal) * 100 : 0;
+            $pctPpl = $grandTotalReal > 0 ? ($rowValue['total_ppl'] / $grandTotalReal) * 100 : 0;
 
             $final['accum'][$date] = [
                 'mov' => [
-                    'vol' => $row['total_mov'],
+                    'vol' => $rowValue['total_mov'],
                     'pct' => $pctMov,
-                    'label' => $formatLabel($row['total_mov']),
-                    'accum' => $row['accum_mov'],
+                    'label' => $formatLabel($rowValue['total_mov']),
+                    'accum' => $rowValue['accum_mov'],
                 ],
                 'ppl' => [
-                    'vol' => $row['total_ppl'],
+                    'vol' => $rowValue['total_ppl'],
                     'pct' => $pctPpl,
-                    'label' => $formatLabel($row['total_ppl']),
-                    'accum' => $row['accum_ppl'],
+                    'label' => $formatLabel($rowValue['total_ppl']),
+                    'accum' => $rowValue['accum_ppl'],
                 ],
             ];
         }
@@ -1795,9 +1792,10 @@ class DataMpdController extends Controller
         $grandTotalMov = $runningAccum['REAL']['total_mov'];
         $grandTotalPpl = $runningAccum['REAL']['total_ppl'];
 
-        foreach ($final['accum'] as $date => &$row) {
-            $row['mov']['pct'] = $grandTotalMov > 0 ? ($row['mov']['vol'] / $grandTotalMov) * 100 : 0;
-            $row['ppl']['pct'] = $grandTotalPpl > 0 ? ($row['ppl']['vol'] / $grandTotalPpl) * 100 : 0;
+        $fKeys = array_keys($final['accum']);
+        foreach ($fKeys as $fDateKey) {
+            $final['accum'][$fDateKey]['mov']['pct'] = $grandTotalMov > 0 ? ($final['accum'][$fDateKey]['mov']['vol'] / $grandTotalMov) * 100 : 0;
+            $final['accum'][$fDateKey]['ppl']['pct'] = $grandTotalPpl > 0 ? ($final['accum'][$fDateKey]['ppl']['vol'] / $grandTotalPpl) * 100 : 0;
         }
 
         // ---------------------------------------------------------------
@@ -1823,7 +1821,7 @@ class DataMpdController extends Controller
         $final['combined'] = [];
 
         foreach ($dateKeys as $date) {
-            $row = [
+            $cRow = [
                 'date'      => $date,
                 'opsels'    => [],
                 'total_mov' => 0,
@@ -1837,24 +1835,24 @@ class DataMpdController extends Controller
                 $grand = $combinedOpselTotals[$op];
                 $pct   = $grand > 0 ? ($vol / $grand) * 100 : 0;
 
-                $row['opsels'][$op] = [
+                $cRow['opsels'][$op] = [
                     'vol'   => $vol,
                     'pct'   => $pct,
                     'label' => $formatLabel($vol),
                 ];
 
-                $row['total_mov'] += $vol;
+                $cRow['total_mov'] += $vol;
             }
 
-            $row['total_ppl'] = $row['total_mov'];
+            $cRow['total_ppl'] = $cRow['total_mov'];
 
-            $runningAccumCombined['total_mov'] += $row['total_mov'];
-            $runningAccumCombined['total_ppl'] += $row['total_ppl'];
+            $runningAccumCombined['total_mov'] += $cRow['total_mov'];
+            $runningAccumCombined['total_ppl'] += $cRow['total_ppl'];
 
-            $row['accum_mov'] = $runningAccumCombined['total_mov'];
-            $row['accum_ppl'] = $runningAccumCombined['total_ppl'];
+            $cRow['accum_mov'] = $runningAccumCombined['total_mov'];
+            $cRow['accum_ppl'] = $runningAccumCombined['total_ppl'];
 
-            $final['combined'][$date] = $row;
+            $final['combined'][$date] = $cRow;
         }
 
         return $final;
