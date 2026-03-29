@@ -2388,7 +2388,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'COMBINED')); // Default to COMBINED
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:kesimpulan:nasional:v8_final_364:{$type}:{$dString}";
+        $cacheKey = "mpd:kesimpulan:nasional:v12_FINAL_360:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanNasionalData($startDate, $endDate, $type));
 
@@ -2455,19 +2455,18 @@ class DataMpdController extends Controller
                 $vol  = (float) $stat->t;
                 $koef = (float) ($koefArray[$op] ?? 1.0);
                 
-                // Pembulatan dilakukan SETIAP perhitungan per-opsel per-hari (Metode Kanonik Terkunci Eksekusi)
-                $uniqueRaw = $koef > 0 ? round($vol / $koef) : 0;
+                $uniqueRaw = $koef > 0 ? ($vol / $koef) : 0;
                 $totalOrangRaw += $uniqueRaw;
                 if ($op !== 'OTHER' && isset($opStatsOrangRaw[$op])) {
                     $opStatsOrangRaw[$op] += $uniqueRaw;
                 }
             }
 
-            $operatorStats['ORANG']['TSEL'] = $opStatsOrangRaw['TSEL'];
-            $operatorStats['ORANG']['IOH'] = $opStatsOrangRaw['IOH'];
-            $operatorStats['ORANG']['XLSMART'] = $opStatsOrangRaw['XLSMART'];
+            $operatorStats['ORANG']['TSEL'] = (int) round($opStatsOrangRaw['TSEL']);
+            $operatorStats['ORANG']['IOH'] = (int) round($opStatsOrangRaw['IOH']);
+            $operatorStats['ORANG']['XLSMART'] = (int) round($opStatsOrangRaw['XLSMART']);
             
-            $totalOrang = $totalOrangRaw;
+            $totalOrang = (int) round($totalOrangRaw);
 
             // 4. Top 5 Provinsi Asal
             $provAsalBuilder = DB::table('spatial_movements as sm')
