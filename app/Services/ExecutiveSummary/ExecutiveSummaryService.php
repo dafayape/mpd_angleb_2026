@@ -27,6 +27,26 @@ class ExecutiveSummaryService
         return (int) config('mpd.cache_ttl.dashboard', 10800);
     }
 
+    private function getKoefisienArray(): array
+    {
+        $endDate  = $this->getEndDate();
+        $batches  = config('mpd_koefisien.batches', []);
+        $selBatch = null;
+
+        foreach ($batches as $batch) {
+            if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
+                $selBatch = $batch;
+                break;
+            }
+        }
+
+        if (! $selBatch && ! empty($batches)) {
+            $selBatch = end($batches);
+        }
+
+        return $selBatch ?: ['TSEL' => 1.0, 'IOH' => 1.0, 'XLSMART' => 1.0];
+    }
+
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
@@ -77,19 +97,21 @@ class ExecutiveSummaryService
     private function baseQuery(string $kategori, string $dataType, ?string $opsel)
     {
         $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-            ->where('kategori', '!=', 'ORANG'); // Sapu bersih: semua data volume masuk kecuali kategori ORANG
+            ->where('kategori', '!=', 'ORANG');
 
         if ($dataType === 'combined') {
-            $realDates = $this->getRealDates($kategori, $opsel);
-            $q->where(function ($query) use ($realDates) {
+            $q->where(function ($query) {
                 $query->where('is_forecast', false)
-                    ->orWhere(function ($sub) use ($realDates) {
-                        if (!empty($realDates)) {
-                            $sub->where('is_forecast', true)
-                                ->whereNotIn('tanggal', $realDates);
-                        } else {
-                            $sub->where('is_forecast', true);
-                        }
+                    ->orWhere(function ($sub) {
+                        $sub->where('is_forecast', true)
+                            ->whereNotExists(function ($exists) {
+                                $exists->select(DB::raw(1))
+                                    ->from('spatial_movements as sm2')
+                                    ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
+                                    ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
+                                    ->where('sm2.kategori', '!=', 'ORANG')
+                                    ->where('sm2.is_forecast', false);
+                            });
                     });
             });
         } else {
@@ -113,18 +135,7 @@ class ExecutiveSummaryService
 
             // Hitung koefisien & unique subscriber menggunakan koefisien per-opsel per-batch
             // (Konsisten dengan DataMpdController & DailyReportController)
-            $endDate   = $this->getEndDate();
-            $batches   = config('mpd_koefisien.batches', []);
-            $selBatch  = null;
-            foreach ($batches as $batch) {
-                if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
-                    $selBatch = $batch;
-                    break;
-                }
-            }
-            if (! $selBatch && ! empty($batches)) {
-                $selBatch = end($batches);
-            }
+            $selBatch = $this->getKoefisienArray();
 
             // Ambil pergerakan per-opsel
             $pergerakanPerOpsel = $this->baseQuery('PERGERAKAN', $dataType, $opsel)
@@ -156,24 +167,39 @@ class ExecutiveSummaryService
     public function getOpselContribution(string $dataType, ?string $region = null): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getOpselContribution:{$dataType}:all:".($region ?? 'nasional').":{$dateKey}";
+        $key = "executive_summary:getOpselContribution:{$dataType}:all:".($region ?? 'nasional').":v4_{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $region) {
             $data = [];
-            foreach (['PERGERAKAN', 'ORANG'] as $kat) {
-                $q = $this->baseQuery($kat, $dataType, null);
-                if ($region) {
-                    $this->applyJaboFilter($q, $region);
-                }
-                $sums = $q->select('opsel', DB::raw('SUM(total) as t'))->groupBy('opsel')->get()->pluck('t', 'opsel');
-                $total = $sums->sum();
-                foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-                    $val = $sums[$op] ?? 0;
-                    $data[strtolower($kat)][$op] = ['total' => $val, 'pct' => $total > 0 ? round(($val / $total) * 100, 1) : 0];
-                }
+            $selBatch = $this->getKoefisienArray();
+            
+            $q = $this->baseQuery('PERGERAKAN', $dataType, null);
+            if ($region) {
+                $this->applyJaboFilter($q, $region);
             }
+            $sums = $q->select('opsel', DB::raw('SUM(total) as t'))->groupBy('opsel')->get()->pluck('t', 'opsel');
+            
+            $totalPerg = $sums->sum();
+            $totalOrang = 0;
+            $orangSums = [];
+            
+            foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+                $valP = (float) ($sums[$op] ?? 0);
+                $koef = (float) ($selBatch[$op] ?? 1.0);
+                $valO = $koef > 0 ? round($valP / $koef) : 0;
+                $orangSums[$op] = $valO;
+                $totalOrang += $valO;
+            }
+            
+            foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+                $valP = (float) ($sums[$op] ?? 0);
+                $valO = $orangSums[$op];
+                
+                $data['pergerakan'][$op] = ['total' => $valP, 'pct' => $totalPerg > 0 ? round(($valP / $totalPerg) * 100, 1) : 0];
+                $data['orang'][$op]      = ['total' => $valO, 'pct' => $totalOrang > 0 ? round(($valO / $totalOrang) * 100, 1) : 0];
+            }
+            
             $data['narrative'] = $this->generateNarrative($data, 'opsel');
-
             return $data;
         });
     }
@@ -181,31 +207,50 @@ class ExecutiveSummaryService
     public function getDailyTrend(string $kategori, string $dataType, ?string $opsel, string $region = 'nasional'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}:{$dateKey}";
+        $key = "executive_summary:getDailyTrend:{$dataType}:{$opsel}:{$region}_{$kategori}:v4_{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($kategori, $dataType, $opsel, $region) {
-            $q = $this->baseQuery($kategori, $dataType, $opsel);
+            $q = $this->baseQuery('PERGERAKAN', $dataType, $opsel);
             if ($region === 'intra') {
                 $this->applyJaboFilter($q, 'intra');
             } elseif ($region === 'inter') {
                 $this->applyJaboFilter($q, 'inter');
             }
 
-            $dbData = $q->select('tanggal', DB::raw('SUM(total) as t'))
-                ->groupBy('tanggal')->orderBy('tanggal')
-                ->get()
-                ->mapWithKeys(fn ($item) => [\Carbon\Carbon::parse($item->tanggal)->format('Y-m-d') => $item->t])
-                ->toArray();
+            $dbData = $q->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as t'))
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+                ->get();
 
             $result = [];
+            $selBatch = $this->getKoefisienArray();
             $period = new \DatePeriod(
                 new \DateTime($this->getStartDate()),
                 new \DateInterval('P1D'),
                 (new \DateTime($this->getEndDate()))->modify('+1 day')
             );
+            
             foreach ($period as $date) {
-                $dateStr = $date->format('Y-m-d');
-                $result[$dateStr] = isset($dbData[$dateStr]) ? (float) $dbData[$dateStr] : 0.0;
+                $result[$date->format('Y-m-d')] = 0.0;
+            }
+
+            foreach ($dbData as $item) {
+                $dateStr = $item->date_val;
+                if (isset($result[$dateStr])) {
+                    $op = $item->opsel;
+                    $val = (float) $item->t;
+                    
+                    if ($kategori === 'ORANG') {
+                        $koef = (float) ($selBatch[$op] ?? 1.0);
+                        $val = $koef > 0 ? ($val / $koef) : 0;
+                    }
+                    $result[$dateStr] += $val;
+                }
+            }
+
+            if ($kategori === 'ORANG') {
+                foreach ($result as $d => $v) {
+                    $result[$d] = round($v);
+                }
             }
 
             return $result;
@@ -292,21 +337,21 @@ class ExecutiveSummaryService
     private function batchJaboSums(string $dataType, ?string $opsel, string $region): array
     {
         $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-            ->where('kategori', '!=', 'ORANG'); // Sapu bersih: semua data volume masuk kecuali kategori ORANG
+            ->where('kategori', '!=', 'ORANG');
 
         if ($dataType === 'combined') {
-            // Need to merge logic for both categories, but in combined usually we fetch each distinct category's real dates
-            // For simplicity, we assume real dates for PERGERAKAN and ORANG are the same
-            $realDates = $this->getRealDates('PERGERAKAN', $opsel);
-            $q->where(function ($query) use ($realDates) {
+            $q->where(function ($query) {
                 $query->where('is_forecast', false)
-                    ->orWhere(function ($sub) use ($realDates) {
-                        if (!empty($realDates)) {
-                            $sub->where('is_forecast', true)
-                                ->whereNotIn('tanggal', $realDates);
-                        } else {
-                            $sub->where('is_forecast', true);
-                        }
+                    ->orWhere(function ($sub) {
+                        $sub->where('is_forecast', true)
+                            ->whereNotExists(function ($exists) {
+                                $exists->select(DB::raw(1))
+                                    ->from('spatial_movements as sm2')
+                                    ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
+                                    ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
+                                    ->where('sm2.kategori', '!=', 'ORANG')
+                                    ->where('sm2.is_forecast', false);
+                            });
                     });
             });
         } else {
@@ -317,13 +362,24 @@ class ExecutiveSummaryService
         }
         $this->applyJaboFilter($q, $region);
 
-        $rows = $q->select('kategori', DB::raw('SUM(total) as t'))
-            ->groupBy('kategori')
-            ->pluck('t', 'kategori');
+        $pergPerOpsel = $q->select('opsel', DB::raw('SUM(total) as t'))
+            ->groupBy('opsel')
+            ->pluck('t', 'opsel');
+
+        $selBatch = $this->getKoefisienArray();
+        $totPerg = 0;
+        $totOrang = 0;
+        
+        foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+            $p = (float) ($pergPerOpsel[$op] ?? 0);
+            $k = (float) ($selBatch[$op] ?? 1.0);
+            $totPerg += $p;
+            $totOrang += $k > 0 ? round($p / $k) : 0;
+        }
 
         return [
-            'PERGERAKAN' => (float) ($rows['PERGERAKAN'] ?? 0),
-            'ORANG' => (float) ($rows['ORANG'] ?? 0),
+            'PERGERAKAN' => $totPerg,
+            'ORANG'      => $totOrang,
         ];
     }
 
@@ -360,20 +416,10 @@ class ExecutiveSummaryService
             ->groupBy('opsel')
             ->pluck('t', 'opsel');
 
-        $endDate  = $this->getEndDate();
-        $batches  = config('mpd_koefisien.batches', []);
-        $selBatch = null;
-        foreach ($batches as $batch) {
-            if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
-                $selBatch = $batch;
-                break;
-            }
-        }
-        if (! $selBatch && ! empty($batches)) {
-            $selBatch = end($batches);
-        }
+        $selBatch = $this->getKoefisienArray();
+        $totalUnique = 0;
+        $totalPergerakan = 0;
 
-        $totalUnique = $totalPergerakan = 0;
         foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
             $perg             = (float) ($pergerakanPerOpsel[$op] ?? 0);
             $koef             = (float) ($selBatch[$op] ?? 1.0);
@@ -435,16 +481,17 @@ class ExecutiveSummaryService
     public function getYoyComparison(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getYoyComparison:{$dataType}:{$opsel}:nasional:v3:{$dateKey}";
+        $key = "executive_summary:getYoyComparison:{$dataType}:{$opsel}:nasional:v4_clean:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
-            $curr = (float) $this->baseQuery('ORANG', $dataType, $opsel)->sum('total');
+            $nasional = $this->getNasionalMetrics($dataType, $opsel);
+            $curr = (float) $nasional['orang'];
             $prev = config('mpd.historical_baselines.2025_orang', 115197227); // default fallback
 
             return [
                 'current' => $curr, 'previous' => $prev,
                 'growth_pct' => $prev > 0 ? round((($curr - $prev) / $prev) * 100, 2) : 0,
-                'narrative' => 'Angka tersebut lebih besar sekitar '.($prev > 0 ? round((($curr - $prev) / $prev) * 100, 2) : 0).'% dari estimasi masyarakat tahun sebelumnya.',
+                'narrative' => 'Angka tersebut berada pada selisih sekitar '.($prev > 0 ? round((($curr - $prev) / $prev) * 100, 2) : 0).'% terhadap estimasi masyarakat tahun sebelumnya.',
             ];
         });
     }
