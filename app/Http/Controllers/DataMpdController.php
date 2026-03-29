@@ -1413,7 +1413,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v19_trace_debug:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v20_final:{$type}:{$dString}";
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
@@ -1520,12 +1520,6 @@ class DataMpdController extends Controller
                         }
                     }
                 }
-                
-                // --- DIAGNOSTIC INJECTION HARIAN ---
-                if (isset($dates['2026-03-29']['TSEL'])) {
-                    $dates['2026-03-29']['TSEL']['movement'] += 1111111;
-                    $dates['2026-03-29']['TSEL']['people'] += 1111111 / ($koefArray['TSEL'] ?? 1.0);
-                }
 
             } else {
                 // REAL atau FORECAST: gunakan applyTypeFilter seperti biasa
@@ -1571,12 +1565,6 @@ class DataMpdController extends Controller
                             $dates[$dateKey][$op]['people'] = $dates[$dateKey][$op]['movement'];
                         }
                     }
-                }
-                
-                // --- DIAGNOSTIC INJECTION HARIAN (ELSE) ---
-                if (isset($dates['2026-03-29']['TSEL'])) {
-                    $dates['2026-03-29']['TSEL']['movement'] += 1111111;
-                    $dates['2026-03-29']['TSEL']['people'] += 1111111 / ($koefArray['TSEL'] ?? 1.0);
                 }
             }
 
@@ -1760,23 +1748,24 @@ class DataMpdController extends Controller
             \Illuminate\Support\Facades\Log::error('Pergerakan Tables Error: '.$e->getMessage());
         }
 
-        // --- GLOBAL FALLBACK INJECTION ---
-        // Menambal otomatis lubang data Forecast (misal tgl 29) dengan Real
+        // --- GLOBAL TWO-WAY FALLBACK INJECTION ---
+        // Saling menambal antara REAL dan FORECAST agar tidak ada tabel (terutama tabel bawah Akumulasi) yang bolong
         foreach ($dateKeys as $date) {
             foreach ($opsels as $op) {
-                if (empty($temp['FORECAST'][$date][$op]) && !empty($temp['REAL'][$date][$op])) {
+                $realEmpty = empty($temp['REAL'][$date][$op]);
+                $foreEmpty = empty($temp['FORECAST'][$date][$op]);
+
+                if ($foreEmpty && !$realEmpty) {
                     $vol = $temp['REAL'][$date][$op];
                     $temp['FORECAST'][$date][$op] = $vol;
                     $opselTotals['FORECAST'][$op] += $vol;
+                } elseif ($realEmpty && !$foreEmpty) {
+                    $vol = $temp['FORECAST'][$date][$op];
+                    $temp['REAL'][$date][$op] = $vol;
+                    $opselTotals['REAL'][$op] += $vol;
                 }
             }
         }
-        
-        // --- DIAGNOSTIC INJECTION ---
-        $temp['FORECAST']['2026-03-29']['TSEL'] = 1111111;
-        $temp['REAL']['2026-03-29']['TSEL'] = 1111111;
-        $opselTotals['FORECAST']['TSEL'] += 1111111;
-        $opselTotals['REAL']['TSEL'] += 1111111;
 
         // Process Final Structure
         $final = [
