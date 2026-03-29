@@ -36,29 +36,30 @@ class DailyReportController extends Controller
             $jabodetabekCodes = config('mpd.jabodetabek_codes');
 
             // Opsel & Type filter helper
-            $applyFilters = function ($query) use ($opselFilter, $kategoriFilter, $startDate, $endDate) {
+            $applyFilters = function ($query) use ($opselFilter, $kategoriFilter) {
                 if ($opselFilter !== 'ALL') {
                     $query->where('spatial_movements.opsel', $opselFilter);
                 }
 
                 if ($kategoriFilter === 'COMBINED') {
-                    $realDatesQuery = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                        ->where('is_forecast', false);
-                    if ($opselFilter !== 'ALL') {
-                        $realDatesQuery->where('opsel', $opselFilter);
-                    }
-                    $realDates = $realDatesQuery->distinct()->pluck('tanggal')->toArray();
-
-                    $query->where(function ($q) use ($realDates) {
-                        $q->where('spatial_movements.is_forecast', false)
-                          ->orWhere(function ($sub) use ($realDates) {
-                              if (!empty($realDates)) {
-                                  $sub->where('spatial_movements.is_forecast', true)
-                                      ->whereNotIn('spatial_movements.tanggal', $realDates);
-                              } else {
-                                  $sub->where('spatial_movements.is_forecast', true);
-                              }
-                          });
+                    $query->where(function ($q) {
+                        $q->where(function ($realQ) {
+                            $realQ->where('spatial_movements.is_forecast', false)
+                                  ->whereNotIn(DB::raw('DATE(spatial_movements.tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
+                        })->orWhere(function ($forecastQ) {
+                            $forecastQ->where('spatial_movements.is_forecast', true)
+                                      ->where(function ($cond) {
+                                          $cond->whereIn(DB::raw('DATE(spatial_movements.tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
+                                               ->orWhereNotExists(function ($exists) {
+                                                   $exists->select(DB::raw(1))
+                                                          ->from('spatial_movements as sm2')
+                                                          ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
+                                                          ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
+                                                          ->where('sm2.kategori', '!=', 'ORANG')
+                                                          ->where('sm2.is_forecast', false);
+                                               });
+                                      });
+                        });
                     });
                 } elseif ($kategoriFilter === 'FORECAST') {
                     $query->where('spatial_movements.is_forecast', true);
@@ -84,17 +85,22 @@ class DailyReportController extends Controller
              ->groupBy('opsel')
              ->pluck('total_pergerakan', 'opsel');
 
-            // Pilih batch koefisien berdasarkan end_date
-            $batches = config('mpd_koefisien.batches', []);
-            $selectedBatch = null;
-            foreach ($batches as $batch) {
-                if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
-                    $selectedBatch = $batch;
-                    break;
+            // Pilih batch koefisien berdasarkan end_date atau final override
+            $finalKoef = config('mpd_koefisien.final');
+            if (!empty($finalKoef) && is_array($finalKoef)) {
+                $selectedBatch = $finalKoef;
+            } else {
+                $batches = config('mpd_koefisien.batches', []);
+                $selectedBatch = null;
+                foreach ($batches as $batch) {
+                    if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
+                        $selectedBatch = $batch;
+                        break;
+                    }
                 }
-            }
-            if (! $selectedBatch && ! empty($batches)) {
-                $selectedBatch = end($batches);
+                if (! $selectedBatch && ! empty($batches)) {
+                    $selectedBatch = end($batches);
+                }
             }
 
             $opselKoefMap = ['TSEL' => 'TSEL', 'IOH' => 'IOH', 'XLSMART' => 'XLSMART'];
@@ -308,36 +314,30 @@ class DailyReportController extends Controller
     {
         $tipeTeks = $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi');
 
-        $jabodetabekCodes = [
-            '3171', '3172', '3173', '3174', '3175', '3101',
-            '3201', '3271', '3276',
-            '3603', '3671', '3674',
-            '3216', '3275',
-        ];
-
-        $applyFilters = function ($query) use ($opsel, $kategori, $startDate, $endDate) {
+        $applyFilters = function ($query) use ($opsel, $kategori) {
             if ($opsel !== 'ALL') {
                 $query->where('spatial_movements.opsel', $opsel);
             }
 
             if ($kategori === 'COMBINED') {
-                $realDatesQuery = \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('is_forecast', false);
-                if ($opsel !== 'ALL') {
-                    $realDatesQuery->where('opsel', $opsel);
-                }
-                $realDates = $realDatesQuery->distinct()->pluck('tanggal')->toArray();
-
-                $query->where(function ($q) use ($realDates) {
-                    $q->where('spatial_movements.is_forecast', false)
-                      ->orWhere(function ($sub) use ($realDates) {
-                          if (!empty($realDates)) {
-                              $sub->where('spatial_movements.is_forecast', true)
-                                  ->whereNotIn('spatial_movements.tanggal', $realDates);
-                          } else {
-                              $sub->where('spatial_movements.is_forecast', true);
-                          }
-                      });
+                $query->where(function ($q) {
+                    $q->where(function ($realQ) {
+                        $realQ->where('spatial_movements.is_forecast', false)
+                              ->whereNotIn(DB::raw('DATE(spatial_movements.tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
+                    })->orWhere(function ($forecastQ) {
+                        $forecastQ->where('spatial_movements.is_forecast', true)
+                                  ->where(function ($cond) {
+                                      $cond->whereIn(DB::raw('DATE(spatial_movements.tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
+                                           ->orWhereNotExists(function ($exists) {
+                                               $exists->select(DB::raw(1))
+                                                      ->from('spatial_movements as sm2')
+                                                      ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
+                                                      ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
+                                                      ->where('sm2.kategori', '!=', 'ORANG')
+                                                      ->where('sm2.is_forecast', false);
+                                           });
+                                  });
+                    });
                 });
             } elseif ($kategori === 'FORECAST') {
                 $query->where('spatial_movements.is_forecast', true);
@@ -361,16 +361,21 @@ class DailyReportController extends Controller
          ->groupBy('opsel')
          ->pluck('total_pergerakan', 'opsel');
 
-        $batches = config('mpd_koefisien.batches', []);
-        $selectedBatch = null;
-        foreach ($batches as $batch) {
-            if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
-                $selectedBatch = $batch;
-                break;
+        $finalKoef = config('mpd_koefisien.final');
+        if (!empty($finalKoef) && is_array($finalKoef)) {
+            $selectedBatch = $finalKoef;
+        } else {
+            $batches = config('mpd_koefisien.batches', []);
+            $selectedBatch = null;
+            foreach ($batches as $batch) {
+                if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
+                    $selectedBatch = $batch;
+                    break;
+                }
             }
-        }
-        if (! $selectedBatch && ! empty($batches)) {
-            $selectedBatch = end($batches);
+            if (! $selectedBatch && ! empty($batches)) {
+                $selectedBatch = end($batches);
+            }
         }
 
         $nasionalUnique = 0;

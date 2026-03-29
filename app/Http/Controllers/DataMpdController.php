@@ -1733,17 +1733,7 @@ class DataMpdController extends Controller
             'FORECAST' => ['total_mov' => 0, 'total_ppl' => 0],
         ];
 
-        $endDateConfig = config('mpd.end_date', '2026-03-29');
-        $batches = config('mpd_koefisien.batches', []);
-        $koefArray = null;
-        foreach ($batches as $batch) {
-            if (isset($batch['end_date']) && $batch['end_date'] >= $endDateConfig) {
-                $koefArray = $batch;
-                break;
-            }
-        }
-        if (!$koefArray && !empty($batches)) { $koefArray = end($batches); }
-        if (!$koefArray) { $koefArray = ['TSEL' => 1.0, 'IOH' => 1.0, 'XLSMART' => 1.0]; }
+        $koefArray = $this->getKoefisienArray();
 
         foreach ($types as $type) {
             $arrKey = strtolower($type);
@@ -2806,25 +2796,34 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
      * @param  array  $totals  Array berisi ['TSEL' => ['pergerakan' => X], 'IOH' => ..., 'XLSMART' => ...]
      * @return array ['total_unique_subscriber', 'koefisien_rata_rata', 'per_opsel']
      */
-    private function calculateUniqueSubscriberPerOpsel(array $totals): array
+    private function getKoefisienArray(): array
     {
-        $endDate = config('mpd.end_date', '2026-03-29');
-        $batches = config('mpd_koefisien.batches', []);
+        $finalKoef = config('mpd_koefisien.final');
+        if (!empty($finalKoef) && is_array($finalKoef)) {
+            return $finalKoef;
+        }
 
-        // Pilih batch yang tepat: cari batch yang end_date-nya >= end_date aktif
-        // Ambil batch paling awal yang memenuhi syarat (ascending)
-        $selectedBatch = null;
+        $endDateConfig = config('mpd.end_date', '2026-03-29');
+        $batches = config('mpd_koefisien.batches', []);
+        $koefArray = null;
+
         foreach ($batches as $batch) {
-            if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
-                $selectedBatch = $batch;
+            if (isset($batch['end_date']) && $batch['end_date'] >= $endDateConfig) {
+                $koefArray = $batch;
                 break;
             }
         }
 
-        // Fallback: jika tidak ada yang cocok, ambil batch terakhir
-        if (! $selectedBatch && ! empty($batches)) {
-            $selectedBatch = end($batches);
+        if (!$koefArray && !empty($batches)) {
+            $koefArray = end($batches);
         }
+
+        return $koefArray ?: ['TSEL' => 1.0, 'IOH' => 1.0, 'XLSMART' => 1.0];
+    }
+
+    private function calculateUniqueSubscriberPerOpsel(array $totals): array
+    {
+        $selectedBatch = $this->getKoefisienArray();
 
         $opselMap = ['TSEL' => 'TSEL', 'IOH' => 'IOH', 'XLSMART' => 'XLSMART'];
         $totalUniqueSubscriber = 0;

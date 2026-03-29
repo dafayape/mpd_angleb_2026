@@ -29,6 +29,11 @@ class ExecutiveSummaryService
 
     private function getKoefisienArray(): array
     {
+        $finalKoef = config('mpd_koefisien.final');
+        if (!empty($finalKoef) && is_array($finalKoef)) {
+            return $finalKoef;
+        }
+
         $endDate  = $this->getEndDate();
         $batches  = config('mpd_koefisien.batches', []);
         $selBatch = null;
