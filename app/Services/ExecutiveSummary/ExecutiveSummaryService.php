@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v12_final:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v14_godmode:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -105,8 +105,8 @@ class ExecutiveSummaryService
     private function baseQuery(string $kategori, string $dataType, ?string $opsel)
     {
         $dataType = strtolower($dataType);
-        $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-            ->where('kategori', '!=', 'ORANG');
+        $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()]);
+        // Note: Removed 'kategori != ORANG' to allow total data reach for Jabo/Nasional aggregates
 
         if ($dataType === 'combined') {
             $q->where(function ($query) {
