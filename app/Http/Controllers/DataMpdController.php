@@ -1408,7 +1408,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v16_force:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v17_canonical:{$type}:{$dString}";
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
@@ -1615,10 +1615,21 @@ class DataMpdController extends Controller
         uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
-        // Calculate unique subscriber menggunakan koefisien per-opsel per-batch
-        $subscriberResult = $this->calculateUniqueSubscriberPerOpsel($totals);
-        $uniqueSubscriber = $subscriberResult['total_unique_subscriber'];
-        $koefisien = $subscriberResult['koefisien_rata_rata'];
+        // === UNIQUE SUBSCRIBER (Metode Kanonik: sum of daily round) ===
+        // Agar konsisten dengan tabel harian dan Dashboard (146.117.364)
+        $koefArray = $this->getKoefisienArray();
+        $uniqueSubscriberRaw = 0;
+        foreach ($dates as $dateKey => $row) {
+            foreach ($opsels as $op) {
+                $mov  = (float) ($row[$op]['movement'] ?? 0);
+                $koef = (float) ($koefArray[$op] ?? 1.0);
+                if ($mov > 0 && $koef > 0) {
+                    $uniqueSubscriberRaw += round($mov / $koef);
+                }
+            }
+        }
+        $uniqueSubscriber = (int) $uniqueSubscriberRaw;
+        $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 2) : 0.0;
 
         $akumulasiData = [
             'daily' => $akumulasiDaily,
