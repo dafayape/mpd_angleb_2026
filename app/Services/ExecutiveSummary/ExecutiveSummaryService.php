@@ -153,36 +153,38 @@ class ExecutiveSummaryService
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $selBatch = $this->getKoefisienArray();
 
-            // Ambil pergerakan per-date per-opsel
-            $query = $this->baseQuery('PERGERAKAN', $dataType, $opsel)
-                ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as t'))
-                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
-                ->get();
+            // Ambil pergerakan per-opsel untuk total periode
+            $pergerakanPerOpsel = $this->baseQuery('PERGERAKAN', $dataType, $opsel)
+                ->select('opsel', DB::raw('SUM(total) as t'))
+                ->groupBy('opsel')
+                ->get()
+                ->mapWithKeys(fn ($item) => [$this->normalizeOpsel($item->opsel) => (float) $item->t]);
 
             $totalUnique     = 0;
             $totalPergerakan = 0;
-
-            foreach ($query as $row) {
-                $op   = $this->normalizeOpsel($row->opsel);
-                $vol  = (float) $row->t;
-
+            foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
                 // Jika sedang filter opsel tertentu, lewati yang lain
-                if ($opsel && $op !== $this->normalizeOpsel($opsel)) {
+                if ($opsel && $this->normalizeOpsel($op) !== $this->normalizeOpsel($opsel)) {
                     continue;
                 }
-
+                
+                $perg = (float) ($pergerakanPerOpsel[$op] ?? 0);
                 $koef = (float) ($selBatch[$op] ?? 1.0);
                 
-                $totalUnique     += $koef > 0 ? round($vol / $koef) : 0;
-                $totalPergerakan += $vol;
+                // Gunakan pembagian global (Total / Koef) untuk Headline agar presisi dengan Excel
+                $totalUnique     += $koef > 0 ? ($perg / $koef) : 0;
+                $totalPergerakan += $perg;
             }
 
+            // Pembulatan unik subscriber di akhir untuk akurasi KPI Utama
+            $finalUnique = round($totalUnique);
+
             // Weighted average koefisien untuk tampilan KPI
-            $koefisienAvgValue = $totalUnique > 0 ? round($totalPergerakan / $totalUnique, 2) : 0.0;
+            $koefisienAvgValue = $finalUnique > 0 ? round($totalPergerakan / $finalUnique, 2) : 0.0;
 
             return [
-                'pergerakan' => $totalPergerakan,
-                'orang'      => $totalUnique,
+                'pergerakan' => $totalPergerakan, 
+                'orang'      => $finalUnique,     
                 'koefisien'  => $koefisienAvgValue,
                 'narrative'  => $this->generateNarrative(['pergerakan' => $totalPergerakan], 'nasional_pergerakan'),
             ];
