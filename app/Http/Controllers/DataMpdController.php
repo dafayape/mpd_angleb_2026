@@ -1620,8 +1620,9 @@ class DataMpdController extends Controller
         uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
-        // === UNIQUE SUBSCRIBER (Kalkulasi Matematis Desimal Kumulatif) ===
-        // Menghasilkan 146.117.360 untuk perhitungan meminimalkan Cumulative Rounding Error
+        // === UNIQUE SUBSCRIBER (Metode Kanonik Terkunci 100%) ===
+        // Harus menggunakan skema pembulatan harian karena setiap rincian baris di tabel sudah dibulatkan
+        // Menghasilkan total 146.117.364 tanpa adanya diskrepansi agregasi!
         $koefArray = $this->getKoefisienArray();
         $uniqueSubscriberRaw = 0;
         foreach ($dates as $dateKey => $row) {
@@ -1629,11 +1630,11 @@ class DataMpdController extends Controller
                 $mov  = (float) ($row[$op]['movement'] ?? 0);
                 $koef = (float) ($koefArray[$op] ?? 1.0);
                 if ($mov > 0 && $koef > 0) {
-                    $uniqueSubscriberRaw += ($mov / $koef);
+                    $uniqueSubscriberRaw += round($mov / $koef);
                 }
             }
         }
-        $uniqueSubscriber = (int) round($uniqueSubscriberRaw);
+        $uniqueSubscriber = (int) $uniqueSubscriberRaw;
         $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 2) : 0.0;
 
         $akumulasiData = [
@@ -2362,7 +2363,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'COMBINED')); // Default to COMBINED
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:kesimpulan:nasional:v4:{$type}:{$dString}";
+        $cacheKey = "mpd:kesimpulan:nasional:v8_final_364:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getKesimpulanNasionalData($startDate, $endDate, $type));
 
@@ -2415,7 +2416,7 @@ class DataMpdController extends Controller
                 }
             }
 
-            // Hitung Unik Subscriber harian per-opsel agar konsisten dengan Dashboard & Harian Page
+            // Hitung Unik Subscriber harian per-opsel agar konsisten dengan Dashboard & Harian Page (Kanonik Terkunci)
             $dailyStats = $opselBuilder->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as t'))
                  ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
                  ->get();
@@ -2429,18 +2430,19 @@ class DataMpdController extends Controller
                 $vol  = (float) $stat->t;
                 $koef = (float) ($koefArray[$op] ?? 1.0);
                 
-                $uniqueRaw = $koef > 0 ? ($vol / $koef) : 0;
+                // Pembulatan dilakukan SETIAP perhitungan per-opsel per-hari (Metode Kanonik Terkunci Eksekusi)
+                $uniqueRaw = $koef > 0 ? round($vol / $koef) : 0;
                 $totalOrangRaw += $uniqueRaw;
                 if ($op !== 'OTHER' && isset($opStatsOrangRaw[$op])) {
                     $opStatsOrangRaw[$op] += $uniqueRaw;
                 }
             }
 
-            $operatorStats['ORANG']['TSEL'] = round($opStatsOrangRaw['TSEL']);
-            $operatorStats['ORANG']['IOH'] = round($opStatsOrangRaw['IOH']);
-            $operatorStats['ORANG']['XLSMART'] = round($opStatsOrangRaw['XLSMART']);
+            $operatorStats['ORANG']['TSEL'] = $opStatsOrangRaw['TSEL'];
+            $operatorStats['ORANG']['IOH'] = $opStatsOrangRaw['IOH'];
+            $operatorStats['ORANG']['XLSMART'] = $opStatsOrangRaw['XLSMART'];
             
-            $totalOrang = round($totalOrangRaw);
+            $totalOrang = $totalOrangRaw;
 
             // 4. Top 5 Provinsi Asal
             $provAsalBuilder = DB::table('spatial_movements as sm')
