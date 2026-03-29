@@ -95,17 +95,7 @@ class DataMpdController extends Controller
                           ->whereNotIn(DB::raw('DATE('.$prefix.'tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
                 })->orWhere(function ($forecastQ) use ($prefix) {
                     $forecastQ->where($prefix.'is_forecast', true)
-                              ->where(function ($cond) use ($prefix) {
-                                  $cond->whereIn(DB::raw('DATE('.$prefix.'tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
-                                       ->orWhereNotExists(function ($exists) use ($prefix) {
-                                           $exists->select(DB::raw(1))
-                                                  ->from('spatial_movements as sm2')
-                                                  ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE('.$prefix.'tanggal)'))
-                                                  ->whereColumn('sm2.opsel', $prefix.'opsel')
-                                                  ->where('sm2.kategori', '!=', 'ORANG')
-                                                  ->where('sm2.is_forecast', false);
-                                       });
-                              });
+                              ->whereIn(DB::raw('DATE('.$prefix.'tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
                 });
             });
         } elseif ($type === 'FORECAST') {
@@ -326,7 +316,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:intra-od:v4_force:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:intra-od:v5_fast_combined:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -454,7 +444,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:inter-od:v4_force:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:inter-od:v5_fast_combined:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
