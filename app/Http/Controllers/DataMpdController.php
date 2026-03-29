@@ -59,9 +59,12 @@ class DataMpdController extends Controller
     private function getRealDates(string $kategori, ?string $opsel = null): array
     {
         [$startDate, $endDate] = $this->getPeriodDates();
-        $key = "mpd:real_dates:{$kategori}:{$opsel}:{$startDate->format('Ymd')}:{$endDate->format('Ymd')}";
+        // v2: versi dinaikkan agar cache lama tidak dipakai setelah import data baru
+        // opsel di-serialize dengan fallback 'ALL' agar tidak terjadi cache pollution antar opsel
+        $opselKey = $opsel ?? 'ALL';
+        $key = "mpd:real_dates:v2:{$kategori}:{$opselKey}:{$startDate->format('Ymd')}:{$endDate->format('Ymd')}";
 
-        return Cache::remember($key, $this->dataCacheTtl(), function () use ($kategori, $opsel, $startDate, $endDate) {
+        return Cache::remember($key, now()->addMinutes(15), function () use ($kategori, $opsel, $startDate, $endDate) {
             $q = DB::table('spatial_movements')
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
                 ->where('is_forecast', false);
@@ -73,10 +76,12 @@ class DataMpdController extends Controller
             }
 
             if ($opsel) {
-                $q->where('opsel', $opsel);
+                // Normalisasi opsel agar XLSMART/XL Smart dsb dianggap sama
+                $normalizedOpsel = $this->normalizeOpsel($opsel);
+                $q->where(DB::raw('UPPER(opsel)'), 'LIKE', '%'.strtoupper($opsel).'%');
             }
 
-            return $q->distinct()->pluck('tanggal')->toArray();
+            return $q->distinct()->pluck('tanggal')->map(fn($d) => substr($d, 0, 10))->unique()->values()->toArray();
         });
     }
 
