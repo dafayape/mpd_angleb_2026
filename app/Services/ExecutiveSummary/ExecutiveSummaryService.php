@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Services\ExecutiveSummary;
 
 use App\Models\SpatialMovement;
+use App\Traits\MpdHelpers;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ExecutiveSummaryService
 {
+    use MpdHelpers;
+
     public const JABODETABEK_PROVINCES = ['31', '32', '36'];
 
     private function getStartDate(): string
@@ -208,12 +211,14 @@ class ExecutiveSummaryService
                     if ($vol <= 0) continue;
 
                     $koef = (float) ($selBatch[$op] ?? 1.0);
+                    // Hitung TOTAL ORANG dengan presisi tinggi (float)
                     $totalUnique     += ($vol / $koef);
                     $totalPergerakan += $vol;
                 }
             }
 
-            $finalUnique = round($totalUnique);
+            // Pembulatan satu kali di Akhir untuk menghindari akumulasi (Hit 146.117.360)
+            $finalUnique = floor($totalUnique); 
             $koefisienAvgValue = $finalUnique > 0 ? round($totalPergerakan / $finalUnique, 2) : 0.0;
 
             return [
@@ -510,45 +515,64 @@ class ExecutiveSummaryService
         $key = "executive_summary:getKoefisien:{$dataType}:{$opsel}:{$region}:{$dateKey}";
 
         return (float) Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel, $region) {
-            $pQ = $this->baseQuery('PERGERAKAN', $dataType, $opsel);
-            $oQ = $this->baseQuery('ORANG', $dataType, $opsel);
-            if ($region) {
-                $this->applyJaboFilter($pQ, $region);
-                $this->applyJaboFilter($oQ, $region);
-            }
-            $o = (float) $oQ->sum('total');
+            $selBatch = $this->getKoefisienArray();
+            $dType    = strtoupper($dataType);
 
-            return $o > 0 ? round((float) $pQ->sum('total') / $o, 2) : 0.0;
+            $query = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
+                ->where('kategori', '!=', 'ORANG')
+                ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'is_forecast', DB::raw('SUM(total) as t'))
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'is_forecast');
+
+            if ($opsel) {
+                $query->where('opsel', 'LIKE', '%' . $opsel . '%');
+            }
+            if ($region) {
+                $this->applyJaboFilter($query, $region);
+            }
+
+            $rows = $query->get();
+            $temp = [];
+            foreach ($rows as $row) {
+                $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$row->is_forecast ? 'F' : 'R'] = (float) $row->t;
+            }
+
+            $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
+            $totalUnique = 0;
+            $totalPerg   = 0;
+
+            foreach ($temp as $d => $opData) {
+                foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+                    $r = $opData[$op]['R'] ?? 0;
+                    $f = $opData[$op]['F'] ?? 0;
+
+                    if ($dType === 'COMBINED') {
+                        $vol = ($r > 0 && !in_array($d, $forceForecastDates)) ? $r : $f;
+                    } elseif ($dType === 'FORECAST') {
+                        $vol = $f;
+                    } else {
+                        $vol = $r;
+                    }
+
+                    if ($vol <= 0) continue;
+
+                    $koef = (float) ($selBatch[$op] ?? 1.0);
+                    $totalUnique += ($vol / $koef);
+                    $totalPerg   += $vol;
+                }
+            }
+
+            $finalUnique = floor($totalUnique);
+            return $finalUnique > 0 ? round($totalPerg / $finalUnique, 2) : 0.0;
         });
     }
 
     /**
      * Hitung weighted average koefisien per-opsel per-batch.
-     * Konsisten dengan getNasionalMetrics & DataMpdController.
      */
     private function getKoefisienWeighted(string $dataType, ?string $opsel, ?string $region = null): float
     {
-        $q = $this->baseQuery('PERGERAKAN', $dataType, $opsel);
-        if ($region) {
-            $this->applyJaboFilter($q, $region);
-        }
-
-        $pergerakanPerOpsel = $q->select('opsel', DB::raw('SUM(total) as t'))
-            ->groupBy('opsel')
-            ->pluck('t', 'opsel');
-
-        $selBatch = $this->getKoefisienArray();
-        $totalUnique = 0;
-        $totalPergerakan = 0;
-
-        foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-            $perg             = (float) ($pergerakanPerOpsel[$op] ?? 0);
-            $koef             = (float) ($selBatch[$op] ?? 1.0);
-            $totalUnique     += $koef > 0 ? round($perg / $koef) : 0;
-            $totalPergerakan += $perg;
-        }
-
-        return $totalUnique > 0 ? round($totalPergerakan / $totalUnique, 2) : 0.0;
+        // Untuk skalar, gunakan getKoefisien agar konsisten
+        return $this->getKoefisien($dataType, $opsel, $region);
     }
 
     public function getForecastComparison(?string $opsel): array

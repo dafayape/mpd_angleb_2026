@@ -181,30 +181,40 @@ class DataMpdController extends Controller
 
         try {
             $dbQuery = DB::table('spatial_movements as sm')
-                ->select(
-                    'sm.tanggal',
-                    'sm.opsel',
-                    'sm.kategori',
-                    DB::raw('SUM(sm.total) as total_volume')
-                )
+                ->select(DB::raw('DATE(sm.tanggal) as date_val'), 'sm.opsel', 'sm.is_forecast', DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG'])
+                ->where('sm.kategori', '!=', 'ORANG')
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+                ->groupBy(DB::raw('DATE(sm.tanggal)'), 'sm.opsel', 'sm.is_forecast');
 
-            $this->applyTypeFilter($dbQuery, $type, 'PERGERAKAN', null, 'sm');
+            $rows = $dbQuery->get();
+            $temp = [];
+            foreach ($rows as $row) {
+                $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$row->is_forecast ? 'F' : 'R'] = (float) $row->total_volume;
+            }
 
-            $query = $dbQuery->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
-                ->get();
+            $selBatch = $this->getKoefisienArray();
+            $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
 
-            foreach ($query as $row) {
-                $date = $row->tanggal;
-                $kat = strtoupper($row->kategori) === 'PERGERAKAN' ? 'pergerakan' : 'orang';
-                $vol = (int) $row->total_volume;
-                $opsel = $this->normalizeOpsel($row->opsel);
+            foreach ($dateKeys as $date) {
+                foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+                    $r = $temp[$date][$op]['R'] ?? 0;
+                    $f = $temp[$date][$op]['F'] ?? 0;
 
-                if ($opsel !== 'OTHER' && isset($result[$date][$opsel])) {
-                    $result[$date][$opsel][$kat] += $vol;
+                    if ($type === 'COMBINED') {
+                        $vol = ($r > 0 && !in_array($date, $forceForecastDates)) ? $r : $f;
+                    } elseif ($type === 'FORECAST') {
+                        $vol = $f;
+                    } else {
+                        $vol = $r;
+                    }
+
+                    if ($vol <= 0) continue;
+
+                    $koef = (float) ($selBatch[$op] ?? 1.0);
+                    $result[$date][$op]['pergerakan'] = $vol;
+                    $result[$date][$op]['orang'] = round($vol / $koef);
                 }
             }
         } catch (\Throwable $e) {
@@ -563,37 +573,47 @@ class DataMpdController extends Controller
         }
 
         try {
-            $queryBuilder = DB::table('spatial_movements as sm')
-                ->select(
-                    'sm.tanggal',
-                    'sm.opsel',
-                    'sm.kategori',
-                    DB::raw('SUM(sm.total) as total_volume')
-                )
+            $dbQuery = DB::table('spatial_movements as sm')
+                ->select(DB::raw('DATE(sm.tanggal) as date_val'), 'sm.opsel', 'sm.is_forecast', DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->whereIn('sm.kategori', ['PERGERAKAN', 'ORANG']);
+                ->where('sm.kategori', '!=', 'ORANG')
+                ->where(function ($q) use ($jabodetabekCodes) {
+                    $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                        ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
+                        ->orWhere(function ($q2) use ($jabodetabekCodes) {
+                            $q2->whereNotIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
+                                ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
+                        });
+                })
+                ->groupBy(DB::raw('DATE(sm.tanggal)'), 'sm.opsel', 'sm.is_forecast');
 
-            $this->applyTypeFilter($queryBuilder, $type, 'PERGERAKAN', null, 'sm');
+            $rows = $dbQuery->get();
+            $temp = [];
+            foreach ($rows as $row) {
+                $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$row->is_forecast ? 'F' : 'R'] = (float) $row->total_volume;
+            }
 
-            $query = $queryBuilder->where(function ($q) use ($jabodetabekCodes) {
-                $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                    ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
-                    ->orWhere(function ($q2) use ($jabodetabekCodes) {
-                        $q2->whereNotIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
-                            ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
-                    });
-            })
-                ->groupBy('sm.tanggal', 'sm.opsel', 'sm.kategori')
-                ->get();
+            $selBatch = $this->getKoefisienArray();
+            $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
 
-            foreach ($query as $row) {
-                $date = $row->tanggal;
-                $kat = strtoupper($row->kategori) === 'PERGERAKAN' ? 'pergerakan' : 'orang';
-                $vol = (int) $row->total_volume;
-                $opsel = $this->normalizeOpsel($row->opsel);
+            foreach ($dateKeys as $date) {
+                foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+                    $r = $temp[$date][$op]['R'] ?? 0;
+                    $f = $temp[$date][$op]['F'] ?? 0;
 
-                if ($opsel !== 'OTHER' && isset($result[$date][$opsel])) {
-                    $result[$date][$opsel][$kat] += $vol;
+                    if ($type === 'COMBINED') {
+                        $vol = ($r > 0 && !in_array($date, $forceForecastDates)) ? $r : $f;
+                    } elseif ($type === 'FORECAST') {
+                        $vol = $f;
+                    } else {
+                        $vol = $r;
+                    }
+
+                    if ($vol <= 0) continue;
+
+                    $koef = (float) ($selBatch[$op] ?? 1.0);
+                    $result[$date][$op]['pergerakan'] = $vol;
+                    $result[$date][$op]['orang'] = round($vol / $koef);
                 }
             }
         } catch (\Throwable $e) {
@@ -1874,7 +1894,7 @@ class DataMpdController extends Controller
 
             $runningAccumCombined['total_mov'] += $cRow['total_mov'];
             
-            $accPplCombined = 0;
+            $accPplRawCombined = 0;
             foreach ($opsels as $op) {
                 $k = (float) ($koefArray[$op] ?? 1.0);
                 $accPerg = 0;
@@ -1882,8 +1902,9 @@ class DataMpdController extends Controller
                     $accPerg += $combinedTemp[$dKey][$op] ?? 0;
                     if ($dKey === $date) break;
                 }
-                $accPplCombined += $k > 0 ? round($accPerg / $k) : 0;
+                $accPplRawCombined += $k > 0 ? ($accPerg / $k) : 0;
             }
+            $accPplCombined = floor($accPplRawCombined);
 
             $cRow['accum_mov'] = $runningAccumCombined['total_mov'];
             $cRow['accum_ppl'] = $accPplCombined;
@@ -2383,8 +2404,8 @@ class DataMpdController extends Controller
                  ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
                  ->get();
 
-            $totalOrang = 0;
-            $opStatsOrang = ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0];
+            $totalOrangRaw = 0;
+            $opStatsOrangRaw = ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0];
             $koefArray = $this->getKoefisienArray();
 
             foreach ($dailyStats as $stat) {
@@ -2392,16 +2413,18 @@ class DataMpdController extends Controller
                 $vol  = (float) $stat->t;
                 $koef = (float) ($koefArray[$op] ?? 1.0);
                 
-                $unique = $koef > 0 ? round($vol / $koef) : 0;
-                $totalOrang += $unique;
-                if ($op !== 'OTHER' && isset($opStatsOrang[$op])) {
-                    $opStatsOrang[$op] += $unique;
+                $uniqueRaw = $koef > 0 ? ($vol / $koef) : 0;
+                $totalOrangRaw += $uniqueRaw;
+                if ($op !== 'OTHER' && isset($opStatsOrangRaw[$op])) {
+                    $opStatsOrangRaw[$op] += $uniqueRaw;
                 }
             }
 
-            $operatorStats['ORANG']['TSEL'] = $opStatsOrang['TSEL'];
-            $operatorStats['ORANG']['IOH'] = $opStatsOrang['IOH'];
-            $operatorStats['ORANG']['XLSMART'] = $opStatsOrang['XLSMART'];
+            $operatorStats['ORANG']['TSEL'] = round($opStatsOrangRaw['TSEL']);
+            $operatorStats['ORANG']['IOH'] = round($opStatsOrangRaw['IOH']);
+            $operatorStats['ORANG']['XLSMART'] = round($opStatsOrangRaw['XLSMART']);
+            
+            $totalOrang = floor($totalOrangRaw);
 
             // 4. Top 5 Provinsi Asal
             $provAsalBuilder = DB::table('spatial_movements as sm')
