@@ -2378,18 +2378,30 @@ class DataMpdController extends Controller
                 }
             }
 
-            // Hitung unique subscriber per opsel (ORANG) dengan helper dinamis
-            $koefResult = $this->calculateUniqueSubscriberPerOpsel([
-                'TSEL' => ['pergerakan' => $operatorStats['PERGERAKAN']['TSEL']],
-                'IOH' => ['pergerakan' => $operatorStats['PERGERAKAN']['IOH']],
-                'XLSMART' => ['pergerakan' => $operatorStats['PERGERAKAN']['XLSMART']],
-            ]);
+            // Hitung Unik Subscriber harian per-opsel agar konsisten dengan Dashboard & Harian Page
+            $dailyStats = $opselBuilder->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as t'))
+                 ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+                 ->get();
 
-            $operatorStats['ORANG']['TSEL'] = $koefResult['per_opsel']['TSEL']['unique_subscriber'];
-            $operatorStats['ORANG']['IOH'] = $koefResult['per_opsel']['IOH']['unique_subscriber'];
-            $operatorStats['ORANG']['XLSMART'] = $koefResult['per_opsel']['XLSMART']['unique_subscriber'];
+            $totalOrang = 0;
+            $opStatsOrang = ['TSEL' => 0, 'IOH' => 0, 'XLSMART' => 0];
+            $koefArray = $this->getKoefisienArray();
 
-            $totalOrang = $koefResult['total_unique_subscriber'];
+            foreach ($dailyStats as $stat) {
+                $op   = $this->normalizeOpsel($stat->opsel);
+                $vol  = (float) $stat->t;
+                $koef = (float) ($koefArray[$op] ?? 1.0);
+                
+                $unique = $koef > 0 ? round($vol / $koef) : 0;
+                $totalOrang += $unique;
+                if ($op !== 'OTHER' && isset($opStatsOrang[$op])) {
+                    $opStatsOrang[$op] += $unique;
+                }
+            }
+
+            $operatorStats['ORANG']['TSEL'] = $opStatsOrang['TSEL'];
+            $operatorStats['ORANG']['IOH'] = $opStatsOrang['IOH'];
+            $operatorStats['ORANG']['XLSMART'] = $opStatsOrang['XLSMART'];
 
             // 4. Top 5 Provinsi Asal
             $provAsalBuilder = DB::table('spatial_movements as sm')

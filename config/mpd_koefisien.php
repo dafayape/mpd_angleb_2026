@@ -24,9 +24,9 @@ return [
      | Jika end_date tidak cocok, fallback ke batch terakhir yang tersedia.
      */
     'final' => [
-        'TSEL' => 2.18,
-        'IOH' => 2.17,
-        'XLSMART' => 1.85,
+        'TSEL' => 1.848245665226,
+        'IOH' => 2.168024512123,
+        'XLSMART' => 2.168024512123,
     ],   // Isi dengan array (contoh: ['TSEL' => 2.5, 'IOH' => 2.8, 'XLSMART' => 2.9]) jika ingin memotong kompas (force fix) seluruh koefisien sistem.
 
     'batches' => [

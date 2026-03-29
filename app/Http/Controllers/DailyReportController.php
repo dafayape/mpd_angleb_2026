@@ -10,8 +10,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+use App\Traits\MpdHelpers;
+
 class DailyReportController extends Controller
 {
+    use MpdHelpers;
     public function index(Request $request)
     {
         $minDate = config('mpd.start_date');
@@ -104,11 +107,21 @@ class DailyReportController extends Controller
             }
 
             $opselKoefMap = ['TSEL' => 'TSEL', 'IOH' => 'IOH', 'XLSMART' => 'XLSMART'];
+            // Hitung Unik Subscriber harian per-opsel agar konsisten dengan Dashboard & Harian Page
+            $dailyStats = $applyFilters(
+                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('kategori', '!=', 'ORANG')
+            )->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as t'))
+             ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+             ->get();
+
             $nasionalUnique = 0;
-            foreach ($opselKoefMap as $opselKey => $configKey) {
-                $pergerakan = (float) ($pergerakanPerOpsel[$opselKey] ?? 0);
-                $koefisien = (float) ($selectedBatch[$configKey] ?? 1.0);
-                $nasionalUnique += $koefisien > 0 ? round($pergerakan / $koefisien) : 0;
+            foreach ($dailyStats as $stat) {
+                $op   = $this->normalizeOpsel($stat->opsel);
+                $vol  = (float) $stat->t;
+                $koef = (float) ($selectedBatch[$op] ?? 1.0);
+                
+                $nasionalUnique += $koef > 0 ? round($vol / $koef) : 0;
             }
 
             $jaboTotal = $applyFilters(

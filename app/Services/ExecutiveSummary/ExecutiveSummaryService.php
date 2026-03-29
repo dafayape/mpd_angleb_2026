@@ -101,6 +101,7 @@ class ExecutiveSummaryService
 
     private function baseQuery(string $kategori, string $dataType, ?string $opsel)
     {
+        $dataType = strtolower($dataType);
         $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
             ->where('kategori', '!=', 'ORANG');
 
@@ -147,39 +148,41 @@ class ExecutiveSummaryService
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v3_synchronized:{$dateKey}";
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v4_by_date:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $selBatch = $this->getKoefisienArray();
 
-            // Ambil pergerakan per-opsel
-            $pergerakanPerOpsel = $this->baseQuery('PERGERAKAN', $dataType, $opsel)
-                ->select('opsel', DB::raw('SUM(total) as t'))
-                ->groupBy('opsel')
-                ->get()
-                ->mapWithKeys(fn ($item) => [$this->normalizeOpsel($item->opsel) => (float) $item->t]);
+            // Ambil pergerakan per-date per-opsel
+            $query = $this->baseQuery('PERGERAKAN', $dataType, $opsel)
+                ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as t'))
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+                ->get();
 
             $totalUnique     = 0;
             $totalPergerakan = 0;
-            foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
+
+            foreach ($query as $row) {
+                $op   = $this->normalizeOpsel($row->opsel);
+                $vol  = (float) $row->t;
+
                 // Jika sedang filter opsel tertentu, lewati yang lain
-                if ($opsel && $this->normalizeOpsel($op) !== $this->normalizeOpsel($opsel)) {
+                if ($opsel && $op !== $this->normalizeOpsel($opsel)) {
                     continue;
                 }
-                
-                $perg = (float) ($pergerakanPerOpsel[$op] ?? 0);
+
                 $koef = (float) ($selBatch[$op] ?? 1.0);
                 
-                $totalUnique     += $koef > 0 ? round($perg / $koef) : 0;
-                $totalPergerakan += $perg;
+                $totalUnique     += $koef > 0 ? round($vol / $koef) : 0;
+                $totalPergerakan += $vol;
             }
 
             // Weighted average koefisien untuk tampilan KPI
             $koefisienAvgValue = $totalUnique > 0 ? round($totalPergerakan / $totalUnique, 2) : 0.0;
 
             return [
-                'pergerakan' => $totalPergerakan, // Sekarang konsisten dengan sum of normalized opsels
-                'orang'      => $totalUnique,     // unique subscriber per koefisien per-opsel
+                'pergerakan' => $totalPergerakan,
+                'orang'      => $totalUnique,
                 'koefisien'  => $koefisienAvgValue,
                 'narrative'  => $this->generateNarrative(['pergerakan' => $totalPergerakan], 'nasional_pergerakan'),
             ];
