@@ -1608,7 +1608,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v9_with_combined'; // VERSI BARU: v9
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v10_date_fix'; // v10: fix date key mismatch
         $data = $this->cached($cacheKey, 900, fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
@@ -1668,8 +1668,8 @@ class DataMpdController extends Controller
             $rows = $query->groupBy('tanggal', 'opsel', 'is_forecast', 'kode_moda')->get();
 
             foreach ($rows as $row) {
-                $type = $row->is_forecast ? 'FORECAST' : 'REAL';
-                $date = $row->tanggal;
+                $type  = $row->is_forecast ? 'FORECAST' : 'REAL';
+                $date  = substr($row->tanggal, 0, 10); // pastikan format 'Y-m-d', bukan full timestamp
 
                 $opsel = $this->normalizeOpsel($row->opsel);
 
