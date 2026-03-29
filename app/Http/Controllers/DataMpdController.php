@@ -1508,11 +1508,15 @@ class DataMpdController extends Controller
                         $k = (float) ($koefArray[$op] ?? 1.0);
                         if ($realMov > 0) {
                             $dates[$dateKey][$op]['movement'] = $realMov;
-                            $dates[$dateKey][$op]['people']   = $k > 0 ? round($realMov / $k) : 0;
+                            $dates[$dateKey][$op]['people']   = $k > 0 ? ($realMov / $k) : 0; // Metode Matematis Murni 360
                         } else {
                             $fMov = $forecastAcc[$dateKey][$op]['movement'] ?? 0;
+                            // Jaring Pengaman (Fallback) jika data forecast tgl 29 kosong, pakai data real
+                            if ($fMov == 0 && isset($realAcc[$dateKey][$op]['movement']) && $realAcc[$dateKey][$op]['movement'] > 0) {
+                                $fMov = $realAcc[$dateKey][$op]['movement'];
+                            }
                             $dates[$dateKey][$op]['movement'] = $fMov;
-                            $dates[$dateKey][$op]['people']   = $k > 0 ? round($fMov / $k) : 0;
+                            $dates[$dateKey][$op]['people']   = $k > 0 ? ($fMov / $k) : 0; // Tanpa round (Metode 360)
                         }
                     }
                 }
