@@ -1381,7 +1381,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v13_fresh:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v14_smart_combined:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, 900, fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
@@ -1409,49 +1409,123 @@ class DataMpdController extends Controller
         }
 
         try {
-            $query = DB::table('spatial_movements')
-                ->select(
-                    'tanggal',
-                    'opsel',
-                    'kategori',
-                    'kode_moda',
-                    DB::raw('SUM(total) as total_volume')
-                )
-                ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+            if ($type === 'COMBINED') {
+                // -------------------------------------------------------
+                // SMART COMBINED: Fetch real + forecast dalam satu query,
+                // lalu merge di PHP level PER-OPSEL PER-DATE.
+                // Alasan: applyTypeFilter pakai getRealDates(tanpa opsel),
+                // sehingga jika XLSMART punya real untuk tgl X, maka
+                // IOH/TSEL tgl X juga dipaksa ke REAL → hasilnya 0 jika
+                // IOH/TSEL tidak punya real untuk tgl tersebut.
+                // -------------------------------------------------------
+                $allRows = DB::table('spatial_movements')
+                    ->select(
+                        'tanggal',
+                        'opsel',
+                        'kategori',
+                        'kode_moda',
+                        'is_forecast',
+                        DB::raw('SUM(total) as total_volume')
+                    )
+                    ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                    ->groupBy('tanggal', 'opsel', 'kategori', 'kode_moda', 'is_forecast')
+                    ->get();
 
-            $this->applyTypeFilter($query, $type, 'PERGERAKAN');
+                // Akumulator terpisah untuk real dan forecast
+                $realAcc     = []; // [date][opsel] = ['movement' => x, 'people' => y, 'has_orang' => bool]
+                $forecastAcc = [];
 
-            $results = $query->groupBy('tanggal', 'opsel', 'kategori', 'kode_moda')->get();
+                foreach ($allRows as $row) {
+                    $date  = substr($row->tanggal, 0, 10);
+                    $opsel = $this->normalizeOpsel($row->opsel);
+                    if ($opsel === 'OTHER' || ! isset($dates[$date])) {
+                        continue;
+                    }
 
-            $hasOrang = [];
-            foreach ($results as $row) {
-                $date = substr($row->tanggal, 0, 10);
-                $cat = strtoupper($row->kategori);
-                $vol = (int) $row->total_volume;
+                    $cat = strtoupper($row->kategori);
+                    $vol = (int) $row->total_volume;
 
-                $opsel = $this->normalizeOpsel($row->opsel);
-
-                if ($opsel === 'OTHER' || ! isset($dates[$date])) {
-                    continue;
-                }
-
-                if ($cat === 'ORANG') {
-                    $dates[$date][$opsel]['people'] += $vol;
-                    $hasOrang[$date][$opsel] = true;
-                } else {
-                    // Semua yang bukan 'ORANG' otomatis dianggap 'MOVEMENT/PERGERAKAN'
-                    // Termasuk Kode K, atau kategori lain yang dikirim TSEL
-                    $dates[$date][$opsel]['movement'] += $vol;
-                }
-            }
-
-            // Fallback for missing ORANG data (1:1 with movement)
-            foreach ($dates as $date => &$row) {
-                foreach ($opsels as $op) {
-                    if (! isset($hasOrang[$date][$op]) && $row[$op]['movement'] > 0) {
-                        $row[$op]['people'] = $row[$op]['movement'];
+                    if ($row->is_forecast) {
+                        $forecastAcc[$date][$opsel] ??= ['movement' => 0, 'people' => 0, 'has_orang' => false];
+                        if ($cat === 'ORANG') {
+                            $forecastAcc[$date][$opsel]['people'] += $vol;
+                            $forecastAcc[$date][$opsel]['has_orang'] = true;
+                        } else {
+                            $forecastAcc[$date][$opsel]['movement'] += $vol;
+                        }
+                    } else {
+                        $realAcc[$date][$opsel] ??= ['movement' => 0, 'people' => 0, 'has_orang' => false];
+                        if ($cat === 'ORANG') {
+                            $realAcc[$date][$opsel]['people'] += $vol;
+                            $realAcc[$date][$opsel]['has_orang'] = true;
+                        } else {
+                            $realAcc[$date][$opsel]['movement'] += $vol;
+                        }
                     }
                 }
+
+                // Merge per-opsel per-date: prefer REAL jika ada, else FORECAST
+                foreach ($dates as $date => &$row) {
+                    foreach ($opsels as $op) {
+                        $realMov  = $realAcc[$date][$op]['movement'] ?? 0;
+                        if ($realMov > 0) {
+                            $row[$op]['movement'] = $realMov;
+                            $ppl = $realAcc[$date][$op]['people'] ?? 0;
+                            $row[$op]['people']   = $ppl > 0 ? $ppl : $realMov;
+                        } else {
+                            $fMov = $forecastAcc[$date][$op]['movement'] ?? 0;
+                            $row[$op]['movement'] = $fMov;
+                            $ppl = $forecastAcc[$date][$op]['people'] ?? 0;
+                            $row[$op]['people']   = $ppl > 0 ? $ppl : $fMov;
+                        }
+                    }
+                }
+                unset($row);
+
+            } else {
+                // REAL atau FORECAST: gunakan applyTypeFilter seperti biasa
+                $query = DB::table('spatial_movements')
+                    ->select(
+                        'tanggal',
+                        'opsel',
+                        'kategori',
+                        'kode_moda',
+                        DB::raw('SUM(total) as total_volume')
+                    )
+                    ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+
+                $this->applyTypeFilter($query, $type, 'PERGERAKAN');
+
+                $results = $query->groupBy('tanggal', 'opsel', 'kategori', 'kode_moda')->get();
+
+                $hasOrang = [];
+                foreach ($results as $row) {
+                    $date  = substr($row->tanggal, 0, 10);
+                    $cat   = strtoupper($row->kategori);
+                    $vol   = (int) $row->total_volume;
+                    $opsel = $this->normalizeOpsel($row->opsel);
+
+                    if ($opsel === 'OTHER' || ! isset($dates[$date])) {
+                        continue;
+                    }
+
+                    if ($cat === 'ORANG') {
+                        $dates[$date][$opsel]['people'] += $vol;
+                        $hasOrang[$date][$opsel] = true;
+                    } else {
+                        $dates[$date][$opsel]['movement'] += $vol;
+                    }
+                }
+
+                // Fallback for missing ORANG data (1:1 with movement)
+                foreach ($dates as $date => &$row) {
+                    foreach ($opsels as $op) {
+                        if (! isset($hasOrang[$date][$op]) && $row[$op]['movement'] > 0) {
+                            $row[$op]['people'] = $row[$op]['movement'];
+                        }
+                    }
+                }
+                unset($row);
             }
 
         } catch (\Throwable $e) {
