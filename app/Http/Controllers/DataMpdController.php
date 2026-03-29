@@ -1528,7 +1528,8 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v6_ultimate_fresh'; // VERSI ULTIMATE
+        $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v8_ultimate_combined'; // VERSI BARU: v8
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
@@ -1538,6 +1539,7 @@ class DataMpdController extends Controller
             'real' => $data['real'],
             'forecast' => $data['forecast'],
             'accum' => $data['accum'],
+            'activeType' => $type, // TAMBAHKAN INI AGAR TIDAK ERROR
         ]);
     }
 
