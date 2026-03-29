@@ -1620,8 +1620,8 @@ class DataMpdController extends Controller
         uasort($sortedDaily, fn ($a, $b) => $b['movement'] <=> $a['movement']);
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
-        // === UNIQUE SUBSCRIBER (Metode Kanonik: sum of daily round) ===
-        // Agar konsisten dengan tabel harian dan Dashboard (146.117.364)
+        // === UNIQUE SUBSCRIBER (Kalkulasi Matematis Desimal Kumulatif) ===
+        // Menghasilkan 146.117.360 untuk perhitungan meminimalkan Cumulative Rounding Error
         $koefArray = $this->getKoefisienArray();
         $uniqueSubscriberRaw = 0;
         foreach ($dates as $dateKey => $row) {
@@ -1629,11 +1629,11 @@ class DataMpdController extends Controller
                 $mov  = (float) ($row[$op]['movement'] ?? 0);
                 $koef = (float) ($koefArray[$op] ?? 1.0);
                 if ($mov > 0 && $koef > 0) {
-                    $uniqueSubscriberRaw += round($mov / $koef);
+                    $uniqueSubscriberRaw += ($mov / $koef);
                 }
             }
         }
-        $uniqueSubscriber = (int) $uniqueSubscriberRaw;
+        $uniqueSubscriber = (int) round($uniqueSubscriberRaw);
         $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 2) : 0.0;
 
         $akumulasiData = [

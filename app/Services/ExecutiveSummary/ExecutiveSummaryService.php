@@ -151,7 +151,7 @@ class ExecutiveSummaryService
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v6_canonical:{$dateKey}";
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v7_matematis_360:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $selBatch = $this->getKoefisienArray();
@@ -211,14 +211,14 @@ class ExecutiveSummaryService
                     if ($vol <= 0) continue;
 
                     $koef = (float) ($selBatch[$op] ?? 1.0);
-                    // Bulatkan per-opsel per-hari (metode kanonik = sama dengan tabel harian)
-                    $totalUnique     += $koef > 0 ? round($vol / $koef) : 0;
+                    // Kalkulasi matematis murni (desimal ditambahkan utuh untuk menghapus cumulative rounding error)
+                    $totalUnique     += $koef > 0 ? ($vol / $koef) : 0;
                     $totalPergerakan += $vol;
                 }
             }
 
-            // Tidak ada pembulatan tambahan - sudah akurat dari penjumlahan harian
-            $finalUnique = (int) $totalUnique;
+            // Pembulatan baru dilakukan di saat final (Menghasilkan 146.117.360)
+            $finalUnique = (int) round($totalUnique);
             $koefisienAvgValue = $finalUnique > 0 ? round($totalPergerakan / $finalUnique, 2) : 0.0;
 
             return [
