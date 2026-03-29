@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v18_true_symmetry:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v20_omnipotence:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
