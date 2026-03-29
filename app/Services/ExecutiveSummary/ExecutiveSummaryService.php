@@ -101,18 +101,23 @@ class ExecutiveSummaryService
 
         if ($dataType === 'combined') {
             $q->where(function ($query) {
-                $query->where('is_forecast', false)
-                    ->orWhere(function ($sub) {
-                        $sub->where('is_forecast', true)
-                            ->whereNotExists(function ($exists) {
-                                $exists->select(DB::raw(1))
-                                    ->from('spatial_movements as sm2')
-                                    ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
-                                    ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
-                                    ->where('sm2.kategori', '!=', 'ORANG')
-                                    ->where('sm2.is_forecast', false);
-                            });
-                    });
+                $query->where(function ($realQ) {
+                    $realQ->where('is_forecast', false)
+                          ->whereNotIn(DB::raw('DATE(tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
+                })->orWhere(function ($forecastQ) {
+                    $forecastQ->where('is_forecast', true)
+                              ->where(function ($cond) {
+                                  $cond->whereIn(DB::raw('DATE(tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
+                                       ->orWhereNotExists(function ($exists) {
+                                           $exists->select(DB::raw(1))
+                                                  ->from('spatial_movements as sm2')
+                                                  ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
+                                                  ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
+                                                  ->where('sm2.kategori', '!=', 'ORANG')
+                                                  ->where('sm2.is_forecast', false);
+                                       });
+                              });
+                });
             });
         } else {
             $q->where('is_forecast', $dataType === 'forecast');
@@ -341,18 +346,23 @@ class ExecutiveSummaryService
 
         if ($dataType === 'combined') {
             $q->where(function ($query) {
-                $query->where('is_forecast', false)
-                    ->orWhere(function ($sub) {
-                        $sub->where('is_forecast', true)
-                            ->whereNotExists(function ($exists) {
-                                $exists->select(DB::raw(1))
-                                    ->from('spatial_movements as sm2')
-                                    ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
-                                    ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
-                                    ->where('sm2.kategori', '!=', 'ORANG')
-                                    ->where('sm2.is_forecast', false);
-                            });
-                    });
+                $query->where(function ($realQ) {
+                    $realQ->where('is_forecast', false)
+                          ->whereNotIn(DB::raw('DATE(tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
+                })->orWhere(function ($forecastQ) {
+                    $forecastQ->where('is_forecast', true)
+                              ->where(function ($cond) {
+                                  $cond->whereIn(DB::raw('DATE(tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
+                                       ->orWhereNotExists(function ($exists) {
+                                           $exists->select(DB::raw(1))
+                                                  ->from('spatial_movements as sm2')
+                                                  ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
+                                                  ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
+                                                  ->where('sm2.kategori', '!=', 'ORANG')
+                                                  ->where('sm2.is_forecast', false);
+                                       });
+                              });
+                });
             });
         } else {
             $q->where('is_forecast', $dataType === 'forecast');

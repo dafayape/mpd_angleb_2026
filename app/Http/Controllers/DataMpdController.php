@@ -89,17 +89,24 @@ class DataMpdController extends Controller
     {
         $prefix = $alias ? $alias.'.' : '';
         if ($type === 'COMBINED') {
-            $realDates = $this->getRealDates($kategori, $opsel);
-            $query->where(function ($q) use ($realDates, $prefix) {
-                $q->where($prefix.'is_forecast', false)
-                    ->orWhere(function ($sub) use ($realDates, $prefix) {
-                        if (! empty($realDates)) {
-                            $sub->where($prefix.'is_forecast', true)
-                                ->whereNotIn($prefix.'tanggal', $realDates);
-                        } else {
-                            $sub->where($prefix.'is_forecast', true);
-                        }
-                    });
+            $query->where(function ($q) use ($prefix) {
+                $q->where(function ($realQ) use ($prefix) {
+                    $realQ->where($prefix.'is_forecast', false)
+                          ->whereNotIn(DB::raw('DATE('.$prefix.'tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
+                })->orWhere(function ($forecastQ) use ($prefix) {
+                    $forecastQ->where($prefix.'is_forecast', true)
+                              ->where(function ($cond) use ($prefix) {
+                                  $cond->whereIn(DB::raw('DATE('.$prefix.'tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
+                                       ->orWhereNotExists(function ($exists) use ($prefix) {
+                                           $exists->select(DB::raw(1))
+                                                  ->from('spatial_movements as sm2')
+                                                  ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE('.$prefix.'tanggal)'))
+                                                  ->whereColumn('sm2.opsel', $prefix.'opsel')
+                                                  ->where('sm2.kategori', '!=', 'ORANG')
+                                                  ->where('sm2.is_forecast', false);
+                                       });
+                              });
+                });
             });
         } elseif ($type === 'FORECAST') {
             $query->where($prefix.'is_forecast', true);
@@ -132,7 +139,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:intra-pergerakan:v2:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:intra-pergerakan:v3_force:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -301,7 +308,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:intra-od:v3:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:intra-od:v4_force:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -429,7 +436,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:inter-od:v3:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:inter-od:v4_force:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -517,7 +524,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:inter-pergerakan:v2:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:inter-pergerakan:v3_force:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -687,7 +694,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:od-simpul:split:v9_inclusive:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:od-simpul:split:v10_force:{$type}:{$dString}";
         $cacheKeyOdProv = "mpd:nasional:od-simpul:prov:v9_inclusive:{$type}:{$dString}";
         $cacheKeyOdKabKota = "mpd:nasional:od-simpul:kabkota:v9_inclusive:{$type}:{$dString}";
 
@@ -1381,7 +1388,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v15_clean:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v16_force:{$type}:{$dString}";
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
@@ -1466,9 +1473,12 @@ class DataMpdController extends Controller
 
                 // Merge per-opsel per-date: prefer REAL jika ada, else FORECAST
                 $dKeys = array_keys($dates);
+                $forcedDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
+
                 foreach ($dKeys as $dateKey) {
+                    $isForced = in_array($dateKey, $forcedDates);
                     foreach ($opsels as $op) {
-                        $realMov  = $realAcc[$dateKey][$op]['movement'] ?? 0;
+                        $realMov  = $isForced ? 0 : ($realAcc[$dateKey][$op]['movement'] ?? 0);
                         if ($realMov > 0) {
                             $dates[$dateKey][$op]['movement'] = $realMov;
                             $ppl = $realAcc[$dateKey][$op]['people'] ?? 0;
@@ -1612,7 +1622,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v12_clean';
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v14_force';
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
@@ -1723,6 +1733,18 @@ class DataMpdController extends Controller
             'FORECAST' => ['total_mov' => 0, 'total_ppl' => 0],
         ];
 
+        $endDateConfig = config('mpd.end_date', '2026-03-29');
+        $batches = config('mpd_koefisien.batches', []);
+        $koefArray = null;
+        foreach ($batches as $batch) {
+            if (isset($batch['end_date']) && $batch['end_date'] >= $endDateConfig) {
+                $koefArray = $batch;
+                break;
+            }
+        }
+        if (!$koefArray && !empty($batches)) { $koefArray = end($batches); }
+        if (!$koefArray) { $koefArray = ['TSEL' => 1.0, 'IOH' => 1.0, 'XLSMART' => 1.0]; }
+
         foreach ($types as $type) {
             $arrKey = strtolower($type);
 
@@ -1749,10 +1771,9 @@ class DataMpdController extends Controller
                     ];
 
                     $row['total_mov'] += $vol;
+                    $k = (float) ($koefArray[$op] ?? 1.0);
+                    $row['total_ppl'] += $k > 0 ? round($vol / $k) : 0;
                 }
-
-                // People 1:1 ratio assume
-                $row['total_ppl'] = $row['total_mov'];
 
                 // Update Accumulation
                 $runningAccum[$type]['total_mov'] += $row['total_mov'];
@@ -1802,16 +1823,18 @@ class DataMpdController extends Controller
         // Build COMBINED: Jika ada data REAL untuk tanggal+opsel => pakai REAL
         //                 Jika tidak ada => pakai FORECAST sebagai fallback
         // ---------------------------------------------------------------
+        $forcedDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
         $combinedTemp = [];
         $combinedOpselTotals = array_fill_keys($opsels, 0);
 
         foreach ($dateKeys as $date) {
+            $isForced = in_array($date, $forcedDates);
             $combinedTemp[$date] = [];
             foreach ($opsels as $op) {
                 $realVol     = $temp['REAL'][$date][$op] ?? 0;
                 $forecastVol = $temp['FORECAST'][$date][$op] ?? 0;
                 // Pakai Real kalau ada, kalau tidak pakai Forecast
-                $vol = $realVol > 0 ? $realVol : $forecastVol;
+                $vol = ($realVol > 0 && !$isForced) ? $realVol : $forecastVol;
                 $combinedTemp[$date][$op] = $vol;
                 $combinedOpselTotals[$op] += $vol;
             }
@@ -1842,9 +1865,9 @@ class DataMpdController extends Controller
                 ];
 
                 $cRow['total_mov'] += $vol;
+                $k = (float) ($koefArray[$op] ?? 1.0);
+                $cRow['total_ppl'] += $k > 0 ? round($vol / $k) : 0;
             }
-
-            $cRow['total_ppl'] = $cRow['total_mov'];
 
             $runningAccumCombined['total_mov'] += $cRow['total_mov'];
             $runningAccumCombined['total_ppl'] += $cRow['total_ppl'];
@@ -2148,7 +2171,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:substansi:netflow:v2:{$type}:{$dString}";
+        $cacheKey = "mpd:substansi:netflow:v3_force:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getSubstansiNetflowData($startDate, $endDate, $type));
 
