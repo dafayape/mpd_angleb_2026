@@ -75,32 +75,34 @@ class DataMpdController extends Controller
             if ($opsel) {
                 $q->where('opsel', $opsel);
             }
+
             return $q->distinct()->pluck('tanggal')->toArray();
         });
     }
 
     private function applyTypeFilter($query, string $type, string $kategori = 'PERGERAKAN', ?string $opsel = null, string $alias = '')
     {
-        $prefix = $alias ? $alias . '.' : '';
+        $prefix = $alias ? $alias.'.' : '';
         if ($type === 'COMBINED') {
             $realDates = $this->getRealDates($kategori, $opsel);
             $query->where(function ($q) use ($realDates, $prefix) {
-                $q->where($prefix . 'is_forecast', false)
+                $q->where($prefix.'is_forecast', false)
                     ->orWhere(function ($sub) use ($realDates, $prefix) {
-                        if (!empty($realDates)) {
-                            $sub->where($prefix . 'is_forecast', true)
-                                ->whereNotIn($prefix . 'tanggal', $realDates);
+                        if (! empty($realDates)) {
+                            $sub->where($prefix.'is_forecast', true)
+                                ->whereNotIn($prefix.'tanggal', $realDates);
                         } else {
-                            $sub->where($prefix . 'is_forecast', true);
+                            $sub->where($prefix.'is_forecast', true);
                         }
                     });
             });
         } elseif ($type === 'FORECAST') {
-            $query->where($prefix . 'is_forecast', true);
+            $query->where($prefix.'is_forecast', true);
         } else {
             // Default to REAL
-            $query->where($prefix . 'is_forecast', false);
+            $query->where($prefix.'is_forecast', false);
         }
+
         return $query;
     }
 
@@ -115,6 +117,7 @@ class DataMpdController extends Controller
         $remap = [
             'K' => 'A', // Uncategorized → Mobil
         ];
+
         return $remap[$code] ?? $code;
     }
 
@@ -1041,7 +1044,7 @@ class DataMpdController extends Controller
             foreach ($baseQuery as $row) {
                 // SINKRONISASI: Jika simpul kosong atau tidak terdaftar, tetap masukkan ke kategori Default (Terminal/Darat) agar tidak hilang dari Total!
                 $simpulKategori = $simpulCategories[$row->kode_origin_simpul] ?? 'Terminal';
-                
+
                 $query->push((object) [
                     'kategori_simpul' => $simpulKategori,
                     'tanggal' => $row->tanggal,
@@ -1169,7 +1172,7 @@ class DataMpdController extends Controller
             $query = DB::table('spatial_movements as sm')
                 ->leftJoin('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
                 ->select(
-                    DB::raw("COALESCE(moda.name, sm.kode_moda) as moda_name"),
+                    DB::raw('COALESCE(moda.name, sm.kode_moda) as moda_name'),
                     'sm.kode_moda',
                     'sm.tanggal',
                     'sm.opsel',
@@ -1185,9 +1188,9 @@ class DataMpdController extends Controller
                 $date = $row->tanggal;
                 // Normalisasi: K → A (Mobil), lalu ambil nama dari config
                 $normalizedCode = $this->normalizeModa($row->kode_moda);
-                $modes        = config('mpd.transport_modes', []);
-                $modeName     = $modes[$normalizedCode] ?? $row->moda_name;
-                $vol  = $row->total_volume;
+                $modes = config('mpd.transport_modes', []);
+                $modeName = $modes[$normalizedCode] ?? $row->moda_name;
+                $vol = $row->total_volume;
                 $type = $row->is_forecast ? 'FORECAST' : 'REAL';
 
                 $opsel = $this->normalizeOpsel($row->opsel);
@@ -1373,7 +1376,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v11_inclusive:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v12_inclusive:{$type}:{$dString}";
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
@@ -1573,7 +1576,7 @@ class DataMpdController extends Controller
                     DB::raw('SUM(total) as total_volume')
                 )
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                // Filter kategori dihapus total agar semua data terserap
+            // Filter kategori dihapus total agar semua data terserap
 
             // Apply Filters if provided (e.g. Jabodetabek)
             if (! empty($filterCodes)) {
@@ -1805,7 +1808,7 @@ class DataMpdController extends Controller
             $query = DB::table('spatial_movements as sm')
                 ->leftJoin('ref_transport_modes as moda', 'sm.kode_moda', '=', 'moda.code')
                 ->select(
-                    DB::raw("COALESCE(moda.name, sm.kode_moda) as moda_name"),
+                    DB::raw('COALESCE(moda.name, sm.kode_moda) as moda_name'),
                     'sm.kode_moda',
                     'sm.tanggal',
                     DB::raw('SUM(sm.total) as total_volume')
@@ -1824,7 +1827,7 @@ class DataMpdController extends Controller
             foreach ($results as $row) {
                 // Normalisasi: K → A (Mobil)
                 $normalizedCode = $this->normalizeModa($row->kode_moda);
-                $cat  = $modesConfig[$normalizedCode] ?? $row->moda_name;
+                $cat = $modesConfig[$normalizedCode] ?? $row->moda_name;
                 $date = $row->tanggal;
                 $vol = $row->total_volume;
 
@@ -2666,9 +2669,9 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
             $unique = $koefisien > 0 ? round($pergerakan / $koefisien) : 0;
 
             $perOpsel[$opselKey] = [
-                'pergerakan'         => $pergerakan,
-                'koefisien'          => $koefisien,
-                'unique_subscriber'  => $unique,
+                'pergerakan' => $pergerakan,
+                'koefisien' => $koefisien,
+                'unique_subscriber' => $unique,
             ];
 
             $totalUniqueSubscriber += $unique;
@@ -2682,9 +2685,9 @@ PENTING: Di bagian akhir respons Anda (setelah 5 rekomendasi), Anda DIWAJIBKAN m
 
         return [
             'total_unique_subscriber' => $totalUniqueSubscriber,
-            'koefisien_rata_rata'     => $koefisienRataRata,
-            'batch_label'            => $selectedBatch['label'] ?? '-',
-            'per_opsel'              => $perOpsel,
+            'koefisien_rata_rata' => $koefisienRataRata,
+            'batch_label' => $selectedBatch['label'] ?? '-',
+            'per_opsel' => $perOpsel,
         ];
     }
 }
