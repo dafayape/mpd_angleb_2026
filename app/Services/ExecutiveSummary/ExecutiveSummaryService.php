@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v11:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v12_final:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -514,7 +514,7 @@ class ExecutiveSummaryService
                 $fOrang = $opData[$op]['orang']['F'] ?? 0;
 
                 if ($dType === 'combined') {
-                    $isForced = in_array($d, $forceForecastDates);
+                    $isForced = in_array($d, ['2026-03-27', '2026-03-28', '2026-03-29']);
                     $volMov   = ($rMov > 0 && !$isForced) ? $rMov : $fMov;
                     $volOrang = ($rMov > 0 && !$isForced) ? $rOrang : $fOrang;
                 } elseif ($dType === 'forecast') {
