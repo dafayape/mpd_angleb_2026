@@ -1413,7 +1413,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v20_final:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v21_final:{$type}:{$dString}";
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
@@ -1614,10 +1614,11 @@ class DataMpdController extends Controller
             $totalAkumulasiPpl += $appl;
         }
 
-        foreach ($akumulasiDaily as $date => &$row) {
-            $row['movement_pct'] = $totalAkumulasiMov > 0 ? ($row['movement'] / $totalAkumulasiMov) * 100 : 0;
-            $row['people_pct'] = $totalAkumulasiPpl > 0 ? ($row['people'] / $totalAkumulasiPpl) * 100 : 0;
+        foreach ($akumulasiDaily as $date => &$r) {
+            $r['movement_pct'] = $totalAkumulasiMov > 0 ? ($r['movement'] / $totalAkumulasiMov) * 100 : 0;
+            $r['people_pct'] = $totalAkumulasiPpl > 0 ? ($r['people'] / $totalAkumulasiPpl) * 100 : 0;
         }
+        unset($r);
 
         // Find Peak Days
         $sortedDaily = $akumulasiDaily;
