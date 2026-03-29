@@ -32,158 +32,229 @@ class DailyReportController extends Controller
         $opselFilter = $request->input('opsel', 'ALL');
 
         // Cache data for report
-        $cacheKey = "dailyreport:text:v7_sapu_bersih:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
-        $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $isForecast, $opselFilter, $kategoriFilter) {
+        $cacheKey = "dailyreport:text:v8_fast_merge:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
+        $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $opselFilter, $kategoriFilter) {
 
-            // Jabodetabek codes
             $jabodetabekCodes = config('mpd.jabodetabek_codes');
+            $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
 
-            // Opsel & Type filter helper
-            $applyFilters = function ($query) use ($opselFilter, $kategoriFilter) {
+            // ================================================================
+            // STRATEGI: Untuk COMBINED, fetch REAL + FORECAST sekaligus lalu
+            // merge di PHP (tanpa correlated subquery = 100x lebih cepat).
+            // ================================================================
+            $buildBaseQuery = function (bool $isForecastFlag) use ($startDate, $endDate, $opselFilter) {
+                $q = DB::table('spatial_movements')
+                    ->whereBetween('tanggal', [$startDate, $endDate])
+                    ->where('kategori', '!=', 'ORANG')
+                    ->where('is_forecast', $isForecastFlag);
                 if ($opselFilter !== 'ALL') {
-                    $query->where('spatial_movements.opsel', $opselFilter);
+                    $q->where('opsel', $opselFilter);
                 }
-
-                if ($kategoriFilter === 'COMBINED') {
-                    $query->where(function ($q) {
-                        $q->where(function ($realQ) {
-                            $realQ->where('spatial_movements.is_forecast', false)
-                                  ->whereNotIn(DB::raw('DATE(spatial_movements.tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
-                        })->orWhere(function ($forecastQ) {
-                            $forecastQ->where('spatial_movements.is_forecast', true)
-                                      ->where(function ($cond) {
-                                          $cond->whereIn(DB::raw('DATE(spatial_movements.tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
-                                               ->orWhereNotExists(function ($exists) {
-                                                   $exists->select(DB::raw(1))
-                                                          ->from('spatial_movements as sm2')
-                                                          ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
-                                                          ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
-                                                          ->where('sm2.kategori', '!=', 'ORANG')
-                                                          ->where('sm2.is_forecast', false);
-                                               });
-                                      });
-                        });
-                    });
-                } elseif ($kategoriFilter === 'FORECAST') {
-                    $query->where('spatial_movements.is_forecast', true);
-                } else {
-                    $query->where('spatial_movements.is_forecast', false);
-                }
-
-                return $query;
+                return $q;
             };
 
-            // --- A. NASIONAL ---
-            $nasionalTotal = $applyFilters(
-                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', '!=', 'ORANG')
-            )->sum('total');
+            // Helper: reduce raw rows into [date][opsel] = vol
+            $indexByDateOpsel = function ($rows) {
+                $map = [];
+                foreach ($rows as $r) {
+                    $op = $this->normalizeOpsel($r->opsel);
+                    $map[$r->date_val][$op] = ($map[$r->date_val][$op] ?? 0) + (float) $r->total;
+                }
+                return $map;
+            };
 
-            // Hitung unique subscriber per-opsel menggunakan koefisien per-batch
-            // (Konsisten dengan sistem koefisien di DataMpdController)
-            $pergerakanPerOpsel = $applyFilters(
-                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', '!=', 'ORANG')
-            )->select('opsel', DB::raw('SUM(total) as total_pergerakan'))
-             ->groupBy('opsel')
-             ->pluck('total_pergerakan', 'opsel');
+            // Helper: reduce raw rows into [opsel] = vol
+            $indexByOpsel = function ($rows) {
+                $map = [];
+                foreach ($rows as $r) {
+                    $op = $this->normalizeOpsel($r->opsel);
+                    $map[$op] = ($map[$op] ?? 0) + (float) $r->total;
+                }
+                return $map;
+            };
 
-            // Pilih batch koefisien berdasarkan end_date atau final override
-            $finalKoef = config('mpd_koefisien.final');
-            if (!empty($finalKoef) && is_array($finalKoef)) {
-                $selectedBatch = $finalKoef;
-            } else {
-                $batches = config('mpd_koefisien.batches', []);
-                $selectedBatch = null;
-                foreach ($batches as $batch) {
-                    if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
-                        $selectedBatch = $batch;
-                        break;
+            // Koefisien final
+            $finalKoef = config('mpd_koefisien.final', []);
+            $koefBatches = config('mpd_koefisien.batches', []);
+            $selectedBatch = !empty($finalKoef) ? $finalKoef : (end($koefBatches) ?: []);
+
+            // ---- 1. NASIONAL TOTAL & UNIQUE SUBSCRIBER ----
+            if ($kategoriFilter === 'COMBINED') {
+                // Fetch daily rows for REAL dan FORECAST
+                $realDailyRows = $buildBaseQuery(false)
+                    ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as total'))
+                    ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+                    ->get();
+                $forecastDailyRows = $buildBaseQuery(true)
+                    ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as total'))
+                    ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+                    ->get();
+
+                $realMap     = $indexByDateOpsel($realDailyRows);
+                $forecastMap = $indexByDateOpsel($forecastDailyRows);
+
+                // Merge per-opsel per-date
+                $allDates = array_unique(array_merge(array_keys($realMap), array_keys($forecastMap)));
+                $nasionalTotal  = 0;
+                $nasionalUnique = 0;
+
+                foreach ($allDates as $d) {
+                    $isForced = in_array($d, $forceForecastDates);
+                    $allOpsels = array_unique(array_merge(
+                        array_keys($realMap[$d] ?? []),
+                        array_keys($forecastMap[$d] ?? [])
+                    ));
+                    foreach ($allOpsels as $op) {
+                        if ($op === 'OTHER') continue;
+                        $rVol = $realMap[$d][$op] ?? 0;
+                        $fVol = $forecastMap[$d][$op] ?? 0;
+                        $vol  = ($rVol > 0 && !$isForced) ? $rVol : $fVol;
+                        if ($vol <= 0) continue;
+                        $koef = (float) ($selectedBatch[$op] ?? 1.0);
+                        $nasionalTotal  += $vol;
+                        $nasionalUnique += ($koef > 0 ? round($vol / $koef) : 0);
                     }
                 }
-                if (! $selectedBatch && ! empty($batches)) {
-                    $selectedBatch = end($batches);
-                }
-            }
 
-            $opselKoefMap = ['TSEL' => 'TSEL', 'IOH' => 'IOH', 'XLSMART' => 'XLSMART'];
-            // Hitung Unik Subscriber harian per-opsel agar konsisten dengan Dashboard & Harian Page
-            $dailyStats = $applyFilters(
-                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', '!=', 'ORANG')
-            )->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as t'))
-             ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
-             ->get();
-
-            $nasionalUnique = 0;
-            foreach ($dailyStats as $stat) {
-                $op   = $this->normalizeOpsel($stat->opsel);
-                $vol  = (float) $stat->t;
-                $koef = (float) ($selectedBatch[$op] ?? 1.0);
-                
-                $nasionalUnique += $koef > 0 ? round($vol / $koef) : 0;
-            }
-
-            $jaboTotal = $applyFilters(
-                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', '!=', 'ORANG')
+                // Jabodetabek total (origin only)
+                $realJaboRows = $buildBaseQuery(false)
                     ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
-            )->sum('total');
+                    ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as total'))
+                    ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+                    ->get();
+                $forecastJaboRows = $buildBaseQuery(true)
+                    ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                    ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as total'))
+                    ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+                    ->get();
+                $realJaboMap     = $indexByDateOpsel($realJaboRows);
+                $forecastJaboMap = $indexByDateOpsel($forecastJaboRows);
 
-            // --- Top 5 Provinsi Asal ---
-            $top5Asal = $applyFilters(
-                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', '!=', 'ORANG')
-            )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
-             ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
-             ->groupBy('ref_provinces.name')
-             ->orderByDesc('total')
-             ->limit(5)
-             ->get();
+                $allJaboDates = array_unique(array_merge(array_keys($realJaboMap), array_keys($forecastJaboMap)));
+                $jaboTotal = 0;
+                foreach ($allJaboDates as $d) {
+                    $isForced = in_array($d, $forceForecastDates);
+                    $ops = array_unique(array_merge(array_keys($realJaboMap[$d] ?? []), array_keys($forecastJaboMap[$d] ?? [])));
+                    foreach ($ops as $op) {
+                        if ($op === 'OTHER') continue;
+                        $rV = $realJaboMap[$d][$op] ?? 0;
+                        $fV = $forecastJaboMap[$d][$op] ?? 0;
+                        $jaboTotal += ($rV > 0 && !$isForced) ? $rV : $fV;
+                    }
+                }
 
-            // --- Top 5 Provinsi Tujuan ---
-            $top5Tujuan = $applyFilters(
-                \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                    ->where('kategori', '!=', 'ORANG')
-            )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
-             ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
-             ->groupBy('ref_provinces.name')
-             ->orderByDesc('total')
-             ->limit(5)
-             ->get();
+                // Top 5 Asal – menggunakan real lalu kompensasi forecast
+                $top5Asal = DB::table('spatial_movements')
+                    ->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
+                    ->whereBetween('spatial_movements.tanggal', [$startDate, $endDate])
+                    ->where('spatial_movements.kategori', '!=', 'ORANG')
+                    ->where(function ($q) use ($forceForecastDates) {
+                        $q->where(function ($rQ) use ($forceForecastDates) {
+                            $rQ->where('is_forecast', false)
+                               ->whereNotIn(DB::raw('DATE(spatial_movements.tanggal)'), $forceForecastDates);
+                        })->orWhere(function ($fQ) use ($forceForecastDates) {
+                            $fQ->where('is_forecast', true)
+                               ->whereIn(DB::raw('DATE(spatial_movements.tanggal)'), $forceForecastDates);
+                        });
+                    })
+                    ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
+                    ->groupBy('ref_provinces.name')
+                    ->orderByDesc('total')
+                    ->limit(5)
+                    ->get();
+
+                $top5Tujuan = DB::table('spatial_movements')
+                    ->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
+                    ->whereBetween('spatial_movements.tanggal', [$startDate, $endDate])
+                    ->where('spatial_movements.kategori', '!=', 'ORANG')
+                    ->where(function ($q) use ($forceForecastDates) {
+                        $q->where(function ($rQ) use ($forceForecastDates) {
+                            $rQ->where('is_forecast', false)
+                               ->whereNotIn(DB::raw('DATE(spatial_movements.tanggal)'), $forceForecastDates);
+                        })->orWhere(function ($fQ) use ($forceForecastDates) {
+                            $fQ->where('is_forecast', true)
+                               ->whereIn(DB::raw('DATE(spatial_movements.tanggal)'), $forceForecastDates);
+                        });
+                    })
+                    ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
+                    ->groupBy('ref_provinces.name')
+                    ->orderByDesc('total')
+                    ->limit(5)
+                    ->get();
+
+            } else {
+                // REAL atau FORECAST — query langsung, tidak perlu merge
+                $isForecastFlag = ($kategoriFilter === 'FORECAST');
+                $baseQ = $buildBaseQuery($isForecastFlag);
+
+                $nasionalTotal = (clone $baseQ)->sum('total');
+
+                $dailyStats = (clone $baseQ)
+                    ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as total'))
+                    ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
+                    ->get();
+
+                $nasionalUnique = 0;
+                foreach ($dailyStats as $stat) {
+                    $op   = $this->normalizeOpsel($stat->opsel);
+                    $vol  = (float) $stat->total;
+                    $koef = (float) ($selectedBatch[$op] ?? 1.0);
+                    $nasionalUnique += $koef > 0 ? round($vol / $koef) : 0;
+                }
+
+                $jaboTotal = (clone $baseQ)
+                    ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
+                    ->sum('total');
+
+                $top5Asal = (clone $baseQ)
+                    ->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
+                    ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
+                    ->groupBy('ref_provinces.name')
+                    ->orderByDesc('total')
+                    ->limit(5)
+                    ->get();
+
+                $top5Tujuan = (clone $baseQ)
+                    ->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
+                    ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
+                    ->groupBy('ref_provinces.name')
+                    ->orderByDesc('total')
+                    ->limit(5)
+                    ->get();
+            }
 
             // Formatted Dates
             Carbon::setLocale('id');
-            $formattedStart = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
-            $formattedEnd = Carbon::parse($endDate)->isoFormat('D MMMM YYYY');
+            $formattedStart      = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
+            $formattedEnd        = Carbon::parse($endDate)->isoFormat('D MMMM YYYY');
             $formattedEndWithDay = Carbon::now()->isoFormat('dddd, D MMMM YYYY');
 
-            $hariRaya = Carbon::parse('2026-03-21');
+            $hariRaya  = Carbon::parse('2026-03-21');
             $diffStart = (int) $hariRaya->diffInDays(Carbon::parse($startDate), false);
-            $diffEnd = (int) $hariRaya->diffInDays(Carbon::parse($endDate), false);
-            
-            $formatHDay = function($diff) {
+            $diffEnd   = (int) $hariRaya->diffInDays(Carbon::parse($endDate), false);
+
+            $formatHDay = function ($diff) {
                 if ($diff < 0) return 'H' . $diff;
                 if ($diff > 0) return 'H+' . $diff;
                 return 'Hari Raya';
             };
 
             return [
-                'start_date' => $startDate,
-                'end_date' => $endDate,
-                'period_string' => "tgl {$formattedStart} s.d. {$formattedEnd}",
-                'kategori' => $kategoriFilter,
-                'opsel' => $opselFilter,
-                'formatted_start' => $formattedStart,
-                'formatted_end' => $formattedEnd,
+                'start_date'        => $startDate,
+                'end_date'          => $endDate,
+                'period_string'     => "tgl {$formattedStart} s.d. {$formattedEnd}",
+                'kategori'          => $kategoriFilter,
+                'opsel'             => $opselFilter,
+                'formatted_start'   => $formattedStart,
+                'formatted_end'     => $formattedEnd,
                 'formatted_end_day' => $formattedEndWithDay,
-                'h_start' => $formatHDay($diffStart),
-                'h_end' => $formatHDay($diffEnd),
-                'nasional_total' => $nasionalTotal,
-                'nasional_unique' => $nasionalUnique,
-                'jabo_total' => $jaboTotal,
-                'top5_asal' => $top5Asal,
-                'top5_tujuan' => $top5Tujuan,
+                'h_start'           => $formatHDay($diffStart),
+                'h_end'             => $formatHDay($diffEnd),
+                'nasional_total'    => $nasionalTotal,
+                'nasional_unique'   => $nasionalUnique,
+                'jabo_total'        => $jaboTotal,
+                'top5_asal'         => $top5Asal,
+                'top5_tujuan'       => $top5Tujuan,
             ];
         });
 

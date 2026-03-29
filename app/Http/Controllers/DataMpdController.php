@@ -139,7 +139,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:intra-pergerakan:v3_force:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:intra-pergerakan:v4_orang_fix:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -181,40 +181,48 @@ class DataMpdController extends Controller
 
         try {
             $dbQuery = DB::table('spatial_movements as sm')
-                ->select(DB::raw('DATE(sm.tanggal) as date_val'), 'sm.opsel', 'sm.is_forecast', DB::raw('SUM(sm.total) as total_volume'))
+                ->select(DB::raw('DATE(sm.tanggal) as date_val'), 'sm.opsel', 'sm.is_forecast', 'sm.kategori', DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.kategori', '!=', 'ORANG')
                 ->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
-                ->groupBy(DB::raw('DATE(sm.tanggal)'), 'sm.opsel', 'sm.is_forecast');
+                ->groupBy(DB::raw('DATE(sm.tanggal)'), 'sm.opsel', 'sm.is_forecast', 'sm.kategori');
 
             $rows = $dbQuery->get();
             $temp = [];
             foreach ($rows as $row) {
-                $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$row->is_forecast ? 'F' : 'R'] = (float) $row->total_volume;
+                $op = $this->normalizeOpsel($row->opsel);
+                $date = $row->date_val;
+                $cat = strtoupper($row->kategori) === 'ORANG' ? 'orang' : 'pergerakan';
+                $isF = $row->is_forecast ? 'F' : 'R';
+                
+                $temp[$date][$op][$cat][$isF] = ($temp[$date][$op][$cat][$isF] ?? 0) + (float) $row->total_volume;
             }
 
-            $selBatch = $this->getKoefisienArray();
             $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
 
             foreach ($dateKeys as $date) {
                 foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-                    $r = $temp[$date][$op]['R'] ?? 0;
-                    $f = $temp[$date][$op]['F'] ?? 0;
+                    $rMov = $temp[$date][$op]['pergerakan']['R'] ?? 0;
+                    $fMov = $temp[$date][$op]['pergerakan']['F'] ?? 0;
+                    $rOrang = $temp[$date][$op]['orang']['R'] ?? 0;
+                    $fOrang = $temp[$date][$op]['orang']['F'] ?? 0;
 
                     if ($type === 'COMBINED') {
-                        $vol = ($r > 0 && !in_array($date, $forceForecastDates)) ? $r : $f;
+                        $volMov = ($rMov > 0 && !in_array($date, $forceForecastDates)) ? $rMov : $fMov;
+                        $volOrang = ($rMov > 0 && !in_array($date, $forceForecastDates)) ? $rOrang : $fOrang;
                     } elseif ($type === 'FORECAST') {
-                        $vol = $f;
+                        $volMov = $fMov;
+                        $volOrang = $fOrang;
                     } else {
-                        $vol = $r;
+                        $volMov = $rMov;
+                        $volOrang = $rOrang;
                     }
 
-                    if ($vol <= 0) continue;
+                    if ($volMov <= 0 && $volOrang <= 0) continue;
 
-                    $koef = (float) ($selBatch[$op] ?? 1.0);
-                    $result[$date][$op]['pergerakan'] = $vol;
-                    $result[$date][$op]['orang'] = round($vol / $koef);
+                    $result[$date][$op]['pergerakan'] = $volMov;
+                    // Fallback to pergerakan if orang is 0 for some reason, though normally it exists
+                    $result[$date][$op]['orang'] = $volOrang > 0 ? $volOrang : $volMov; 
                 }
             }
         } catch (\Throwable $e) {
@@ -534,7 +542,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:jabodetabek:inter-pergerakan:v3_force:{$type}:{$dString}";
+        $cacheKey = "mpd:jabodetabek:inter-pergerakan:v4_orang_fix:{$type}:{$dString}";
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -574,9 +582,8 @@ class DataMpdController extends Controller
 
         try {
             $dbQuery = DB::table('spatial_movements as sm')
-                ->select(DB::raw('DATE(sm.tanggal) as date_val'), 'sm.opsel', 'sm.is_forecast', DB::raw('SUM(sm.total) as total_volume'))
+                ->select(DB::raw('DATE(sm.tanggal) as date_val'), 'sm.opsel', 'sm.is_forecast', 'sm.kategori', DB::raw('SUM(sm.total) as total_volume'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.kategori', '!=', 'ORANG')
                 ->where(function ($q) use ($jabodetabekCodes) {
                     $q->whereIn('sm.kode_origin_kabupaten_kota', $jabodetabekCodes)
                         ->whereNotIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes)
@@ -585,35 +592,43 @@ class DataMpdController extends Controller
                                 ->whereIn('sm.kode_dest_kabupaten_kota', $jabodetabekCodes);
                         });
                 })
-                ->groupBy(DB::raw('DATE(sm.tanggal)'), 'sm.opsel', 'sm.is_forecast');
+                ->groupBy(DB::raw('DATE(sm.tanggal)'), 'sm.opsel', 'sm.is_forecast', 'sm.kategori');
 
             $rows = $dbQuery->get();
             $temp = [];
             foreach ($rows as $row) {
-                $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$row->is_forecast ? 'F' : 'R'] = (float) $row->total_volume;
+                $op   = $this->normalizeOpsel($row->opsel);
+                $date = $row->date_val;
+                $cat  = strtoupper($row->kategori) === 'ORANG' ? 'orang' : 'pergerakan';
+                $isF  = $row->is_forecast ? 'F' : 'R';
+
+                $temp[$date][$op][$cat][$isF] = ($temp[$date][$op][$cat][$isF] ?? 0) + (float) $row->total_volume;
             }
 
-            $selBatch = $this->getKoefisienArray();
             $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
 
             foreach ($dateKeys as $date) {
                 foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-                    $r = $temp[$date][$op]['R'] ?? 0;
-                    $f = $temp[$date][$op]['F'] ?? 0;
+                    $rMov   = $temp[$date][$op]['pergerakan']['R'] ?? 0;
+                    $fMov   = $temp[$date][$op]['pergerakan']['F'] ?? 0;
+                    $rOrang = $temp[$date][$op]['orang']['R'] ?? 0;
+                    $fOrang = $temp[$date][$op]['orang']['F'] ?? 0;
 
                     if ($type === 'COMBINED') {
-                        $vol = ($r > 0 && !in_array($date, $forceForecastDates)) ? $r : $f;
+                        $volMov   = ($rMov > 0 && !in_array($date, $forceForecastDates)) ? $rMov : $fMov;
+                        $volOrang = ($rMov > 0 && !in_array($date, $forceForecastDates)) ? $rOrang : $fOrang;
                     } elseif ($type === 'FORECAST') {
-                        $vol = $f;
+                        $volMov   = $fMov;
+                        $volOrang = $fOrang;
                     } else {
-                        $vol = $r;
+                        $volMov   = $rMov;
+                        $volOrang = $rOrang;
                     }
 
-                    if ($vol <= 0) continue;
+                    if ($volMov <= 0 && $volOrang <= 0) continue;
 
-                    $koef = (float) ($selBatch[$op] ?? 1.0);
-                    $result[$date][$op]['pergerakan'] = $vol;
-                    $result[$date][$op]['orang'] = round($vol / $koef);
+                    $result[$date][$op]['pergerakan'] = $volMov;
+                    $result[$date][$op]['orang']      = $volOrang > 0 ? $volOrang : $volMov;
                 }
             }
         } catch (\Throwable $e) {
