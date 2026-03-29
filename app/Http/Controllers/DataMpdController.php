@@ -1382,8 +1382,15 @@ class DataMpdController extends Controller
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
         $cacheKey = "mpd:nasional:pergerakan-harian:v14_smart_combined:{$type}:{$dString}";
+        // TEMP BYPASS CACHE
+        $data = $this->getPergerakanHarianData($startDate, $endDate, $type);
 
-        $data = $this->cached($cacheKey, 900, fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
+        $data = $this->getPergerakanHarianData($startDate, $endDate, $type);
+        
+        \Illuminate\Support\Facades\Log::info("DEBUG HARI INI", [
+            '28' => $data['daily']['2026-03-28']['XLSMART'] ?? null,
+            '29' => $data['daily']['2026-03-29']['XLSMART'] ?? null,
+        ]);
 
         return view('pages.nasional.pergerakan-harian', [
             'dates' => $dates,
