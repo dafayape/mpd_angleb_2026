@@ -1904,7 +1904,7 @@ class DataMpdController extends Controller
                 }
                 $accPplRawCombined += $k > 0 ? ($accPerg / $k) : 0;
             }
-            $accPplCombined = floor($accPplRawCombined);
+            $accPplCombined = round($accPplRawCombined);
 
             $cRow['accum_mov'] = $runningAccumCombined['total_mov'];
             $cRow['accum_ppl'] = $accPplCombined;
@@ -2424,7 +2424,7 @@ class DataMpdController extends Controller
             $operatorStats['ORANG']['IOH'] = round($opStatsOrangRaw['IOH']);
             $operatorStats['ORANG']['XLSMART'] = round($opStatsOrangRaw['XLSMART']);
             
-            $totalOrang = floor($totalOrangRaw);
+            $totalOrang = round($totalOrangRaw);
 
             // 4. Top 5 Provinsi Asal
             $provAsalBuilder = DB::table('spatial_movements as sm')

@@ -151,7 +151,7 @@ class ExecutiveSummaryService
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v4_by_date:{$dateKey}";
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v6_canonical:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $selBatch = $this->getKoefisienArray();
@@ -211,14 +211,14 @@ class ExecutiveSummaryService
                     if ($vol <= 0) continue;
 
                     $koef = (float) ($selBatch[$op] ?? 1.0);
-                    // Hitung TOTAL ORANG dengan presisi tinggi (float)
-                    $totalUnique     += ($vol / $koef);
+                    // Bulatkan per-opsel per-hari (metode kanonik = sama dengan tabel harian)
+                    $totalUnique     += $koef > 0 ? round($vol / $koef) : 0;
                     $totalPergerakan += $vol;
                 }
             }
 
-            // Pembulatan satu kali di Akhir untuk menghindari akumulasi (Hit 146.117.360)
-            $finalUnique = floor($totalUnique); 
+            // Tidak ada pembulatan tambahan - sudah akurat dari penjumlahan harian
+            $finalUnique = (int) $totalUnique;
             $koefisienAvgValue = $finalUnique > 0 ? round($totalPergerakan / $finalUnique, 2) : 0.0;
 
             return [
@@ -556,12 +556,12 @@ class ExecutiveSummaryService
                     if ($vol <= 0) continue;
 
                     $koef = (float) ($selBatch[$op] ?? 1.0);
-                    $totalUnique += ($vol / $koef);
+                    $totalUnique += $koef > 0 ? round($vol / $koef) : 0;
                     $totalPerg   += $vol;
                 }
             }
 
-            $finalUnique = floor($totalUnique);
+            $finalUnique = (int) $totalUnique;
             return $finalUnique > 0 ? round($totalPerg / $finalUnique, 2) : 0.0;
         });
     }
