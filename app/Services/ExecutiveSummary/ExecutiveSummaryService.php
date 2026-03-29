@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v8_final_justice:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v9_fast_jabo:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -457,50 +457,79 @@ class ExecutiveSummaryService
      */
     private function batchJaboSums(string $dataType, ?string $opsel, string $region): array
     {
-        $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
-            ->where('kategori', '!=', 'ORANG');
+        $dType = strtolower($dataType);
 
-        if ($dataType === 'combined') {
-            $q->where(function ($query) {
-                $query->where(function ($realQ) {
-                    $realQ->where('is_forecast', false)
-                          ->whereNotIn(DB::raw('DATE(tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
-                })->orWhere(function ($forecastQ) {
-                    $forecastQ->where('is_forecast', true)
-                              ->where(function ($cond) {
-                                  $cond->whereIn(DB::raw('DATE(tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
-                                       ->orWhereNotExists(function ($exists) {
-                                           $exists->select(DB::raw(1))
-                                                  ->from('spatial_movements as sm2')
-                                                  ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
-                                                  ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
-                                                  ->where('sm2.kategori', '!=', 'ORANG')
-                                                  ->where('sm2.is_forecast', false);
-                                       });
-                              });
-                });
-            });
+        // Fast Base Query tanpa subquery lambat
+        $buildQ = function($isForecastFlag) use ($opsel, $region) {
+            $q = SpatialMovement::whereBetween('tanggal', [$this->getStartDate(), $this->getEndDate()])
+                ->where('is_forecast', $isForecastFlag);
+            if ($opsel) {
+                $q->where('opsel', 'LIKE', '%' . $this->normalizeOpsel($opsel) . '%');
+            }
+            $this->applyJaboFilter($q, $region);
+            return $q;
+        };
+
+        if ($dType === 'combined') {
+            $qReal     = $buildQ(false);
+            $qForecast = $buildQ(true);
+
+            $rowsReal = $qReal->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'kategori', DB::raw('SUM(total) as t'))
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori')
+                ->get();
+            $rowsForecast = $qForecast->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'kategori', DB::raw('SUM(total) as t'))
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori')
+                ->get();
         } else {
-            $q->where('is_forecast', $dataType === 'forecast');
+            $isF = ($dType === 'forecast');
+            $q = $buildQ($isF);
+            $rowsReal = $q->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', 'kategori', DB::raw('SUM(total) as t'))
+                ->groupBy(DB::raw('DATE(tanggal)'), 'opsel', 'kategori')
+                ->get();
+            $rowsForecast = [];
         }
-        if ($opsel) {
-            $q->where('opsel', $opsel);
+
+        $temp = [];
+        foreach ($rowsReal as $row) {
+            $cat = strtoupper($row->kategori) === 'ORANG' ? 'orang' : 'pergerakan';
+            $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$cat]['R'] = (float) $row->t;
         }
-        $this->applyJaboFilter($q, $region);
+        foreach ($rowsForecast as $row) {
+            $cat = strtoupper($row->kategori) === 'ORANG' ? 'orang' : 'pergerakan';
+            $temp[$row->date_val][$this->normalizeOpsel($row->opsel)][$cat]['F'] = (float) $row->t;
+        }
 
-        $pergPerOpsel = $q->select('opsel', DB::raw('SUM(total) as t'))
-            ->groupBy('opsel')
-            ->pluck('t', 'opsel');
-
-        $selBatch = $this->getKoefisienArray();
-        $totPerg = 0;
-        $totOrang = 0;
+        $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
+        $totPerg   = 0;
+        $totOrang  = 0;
+        $opsels    = ['TSEL', 'IOH', 'XLSMART'];
         
-        foreach (['TSEL', 'IOH', 'XLSMART'] as $op) {
-            $p = (float) ($pergPerOpsel[$op] ?? 0);
-            $k = (float) ($selBatch[$op] ?? 1.0);
-            $totPerg += $p;
-            $totOrang += $k > 0 ? round($p / $k) : 0;
+        foreach ($temp as $d => $opData) {
+            foreach ($opsels as $op) {
+                if ($opsel && $this->normalizeOpsel($opsel) !== $op) continue;
+
+                $rMov   = $opData[$op]['pergerakan']['R'] ?? 0;
+                $fMov   = $opData[$op]['pergerakan']['F'] ?? 0;
+                $rOrang = $opData[$op]['orang']['R'] ?? 0;
+                $fOrang = $opData[$op]['orang']['F'] ?? 0;
+
+                if ($dType === 'combined') {
+                    $isForced = in_array($d, $forceForecastDates);
+                    $volMov   = ($rMov > 0 && !$isForced) ? $rMov : $fMov;
+                    $volOrang = ($rMov > 0 && !$isForced) ? $rOrang : $fOrang;
+                } elseif ($dType === 'forecast') {
+                    $volMov   = $fMov;
+                    $volOrang = $fOrang;
+                } else {
+                    $volMov   = $rMov;
+                    $volOrang = $rOrang;
+                }
+
+                if ($volMov <= 0 && $volOrang <= 0) continue;
+
+                $totPerg  += $volMov;
+                $totOrang += $volOrang > 0 ? $volOrang : $volMov; 
+            }
         }
 
         return [
