@@ -21,7 +21,7 @@ class DataMpdController extends Controller
 
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:jabodetabek:od-simpul:matrix:v3';
+        $cacheKey = 'mpd:jabodetabek:od-simpul:matrix:v4';
         $jabodetabekCodes = $this->getJabodetabekCodes();
         $matrix = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getOdSimpulData($startDate, $endDate, $jabodetabekCodes));
 
@@ -41,7 +41,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         // 2. Caching Key
-        $cacheKey = 'mpd:jabodetabek:mode-share:matrix:v2';
+        $cacheKey = 'mpd:jabodetabek:mode-share:matrix:v3';
 
         $jabodetabekCodes = $this->getJabodetabekCodes();
 
@@ -1090,7 +1090,7 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:nasional:mode-share:tables:v1';
+        $cacheKey = 'mpd:nasional:mode-share:tables:v2';
 
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getNasionalModeShareData($startDate, $endDate));
 
@@ -1528,7 +1528,7 @@ class DataMpdController extends Controller
         [$startDate, $endDate] = $this->getPeriodDates();
         $dates = $this->getDatesCollection($startDate, $endDate);
 
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v5_ultimate'; // VERSI ULTIMATE
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v6_ultimate_fresh'; // VERSI ULTIMATE
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
 
         return view('data-mpd.nasional.pergerakan', [
@@ -1858,7 +1858,7 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         // 2. Caching Key
-        $cacheKey = 'mpd:jabodetabek:pergerakan:tables:v3';
+        $cacheKey = 'mpd:jabodetabek:pergerakan:tables:v4';
         $jabodetabekCodes = $this->getJabodetabekCodes();
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate, $jabodetabekCodes));
 
