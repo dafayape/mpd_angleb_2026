@@ -32,7 +32,7 @@ class DailyReportController extends Controller
         $opselFilter = $request->input('opsel', 'ALL');
 
         // Cache data for report - Bumped to v10 for Method 360
-        $cacheKey = "dailyreport:text:v10_METHOD_360:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
+        $cacheKey = "dailyreport:text:v11_override_combined:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
         $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $opselFilter, $kategoriFilter) {
 
             $jabodetabekCodes = config('mpd.jabodetabek_codes');
@@ -102,6 +102,11 @@ class DailyReportController extends Controller
                     }
                 }
                 $nasionalUnique = (int) round($uniqueSumFloat);
+
+                // Override Alternatif 3 BKT: angka resmi posko angleb 2026
+                if ($kategoriFilter === 'COMBINED') {
+                    $nasionalUnique = 147551770;
+                }
 
                 // Jabodetabek
                 $realJaboRows = $buildBaseQuery(false)
@@ -332,6 +337,11 @@ class DailyReportController extends Controller
             $uniqueSumFloat += ($vol / $koef);
         }
         $nasionalUnique = (int) round($uniqueSumFloat);
+
+        // Override Alternatif 3 BKT: angka resmi posko angleb 2026
+        if ($kategori === 'COMBINED') {
+            $nasionalUnique = 147551770;
+        }
 
         Carbon::setLocale('id');
         $formattedStart = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
