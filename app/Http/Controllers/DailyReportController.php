@@ -15,10 +15,11 @@ use App\Traits\MpdHelpers;
 class DailyReportController extends Controller
 {
     use MpdHelpers;
+
     public function index(Request $request)
     {
-        $minDate = config('mpd.start_date');
-        $maxDate = config('mpd.end_date');
+        $minDate = config('mpd.start_date', '2026-03-13');
+        $maxDate = config('mpd.end_date', '2026-03-29');
 
         $startDate = $request->input('start_date', $minDate);
         $endDate = $request->input('end_date', $maxDate);
@@ -28,20 +29,15 @@ class DailyReportController extends Controller
         $endDate = max($minDate, min($maxDate, $endDate));
 
         $kategoriFilter = $request->input('kategori', 'COMBINED');
-        $isForecast = ($kategoriFilter === 'FORECAST');
         $opselFilter = $request->input('opsel', 'ALL');
 
-        // Cache data for report
-        $cacheKey = "dailyreport:text:v8_fast_merge:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
+        // Cache data for report - Bumped to v10 for Method 360
+        $cacheKey = "dailyreport:text:v10_METHOD_360:{$startDate}:{$endDate}:{$kategoriFilter}:{$opselFilter}";
         $data = Cache::remember($cacheKey, config('mpd.cache_ttl.data_page', 21600), function () use ($startDate, $endDate, $opselFilter, $kategoriFilter) {
 
             $jabodetabekCodes = config('mpd.jabodetabek_codes');
             $forceForecastDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
 
-            // ================================================================
-            // STRATEGI: Untuk COMBINED, fetch REAL + FORECAST sekaligus lalu
-            // merge di PHP (tanpa correlated subquery = 100x lebih cepat).
-            // ================================================================
             $buildBaseQuery = function (bool $isForecastFlag) use ($startDate, $endDate, $opselFilter) {
                 $q = DB::table('spatial_movements')
                     ->whereBetween('tanggal', [$startDate, $endDate])
@@ -53,7 +49,6 @@ class DailyReportController extends Controller
                 return $q;
             };
 
-            // Helper: reduce raw rows into [date][opsel] = vol
             $indexByDateOpsel = function ($rows) {
                 $map = [];
                 foreach ($rows as $r) {
@@ -63,24 +58,15 @@ class DailyReportController extends Controller
                 return $map;
             };
 
-            // Helper: reduce raw rows into [opsel] = vol
-            $indexByOpsel = function ($rows) {
-                $map = [];
-                foreach ($rows as $r) {
-                    $op = $this->normalizeOpsel($r->opsel);
-                    $map[$op] = ($map[$op] ?? 0) + (float) $r->total;
-                }
-                return $map;
-            };
-
-            // Koefisien final
+            // Koefisien
             $finalKoef = config('mpd_koefisien.final', []);
             $koefBatches = config('mpd_koefisien.batches', []);
             $selectedBatch = !empty($finalKoef) ? $finalKoef : (end($koefBatches) ?: []);
 
-            // ---- 1. NASIONAL TOTAL & UNIQUE SUBSCRIBER ----
+            $nasionalTotal  = 0;
+            $nasionalUnique = 0;
+
             if ($kategoriFilter === 'COMBINED') {
-                // Fetch daily rows for REAL dan FORECAST
                 $realDailyRows = $buildBaseQuery(false)
                     ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as total'))
                     ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
@@ -93,11 +79,9 @@ class DailyReportController extends Controller
                 $realMap     = $indexByDateOpsel($realDailyRows);
                 $forecastMap = $indexByDateOpsel($forecastDailyRows);
 
-                // Merge per-opsel per-date
                 $allDates = array_unique(array_merge(array_keys($realMap), array_keys($forecastMap)));
-                $nasionalTotal  = 0;
-                $nasionalUnique = 0;
-
+                
+                $uniqueSumFloat = 0;
                 foreach ($allDates as $d) {
                     $isForced = in_array($d, $forceForecastDates);
                     $allOpsels = array_unique(array_merge(
@@ -109,14 +93,17 @@ class DailyReportController extends Controller
                         $rVol = $realMap[$d][$op] ?? 0;
                         $fVol = $forecastMap[$d][$op] ?? 0;
                         $vol  = ($rVol > 0 && !$isForced) ? $rVol : $fVol;
-                        if ($vol <= 0) continue;
-                        $koef = (float) ($selectedBatch[$op] ?? 1.0);
-                        $nasionalTotal  += $vol;
-                        $nasionalUnique += ($koef > 0 ? round($vol / $koef) : 0);
+                        
+                        if ($vol > 0) {
+                            $koef = (float) ($selectedBatch[$op] ?? 1.0);
+                            $nasionalTotal += $vol;
+                            $uniqueSumFloat += ($vol / $koef);
+                        }
                     }
                 }
+                $nasionalUnique = (int) round($uniqueSumFloat);
 
-                // Jabodetabek total (origin only)
+                // Jabodetabek
                 $realJaboRows = $buildBaseQuery(false)
                     ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
                     ->select(DB::raw('DATE(tanggal) as date_val'), 'opsel', DB::raw('SUM(total) as total'))
@@ -143,7 +130,7 @@ class DailyReportController extends Controller
                     }
                 }
 
-                // Top 5 Asal – menggunakan real lalu kompensasi forecast
+                // Top 5 Provinces
                 $top5Asal = DB::table('spatial_movements')
                     ->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
                     ->whereBetween('spatial_movements.tanggal', [$startDate, $endDate])
@@ -158,10 +145,7 @@ class DailyReportController extends Controller
                         });
                     })
                     ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
-                    ->groupBy('ref_provinces.name')
-                    ->orderByDesc('total')
-                    ->limit(5)
-                    ->get();
+                    ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
 
                 $top5Tujuan = DB::table('spatial_movements')
                     ->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
@@ -177,13 +161,9 @@ class DailyReportController extends Controller
                         });
                     })
                     ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
-                    ->groupBy('ref_provinces.name')
-                    ->orderByDesc('total')
-                    ->limit(5)
-                    ->get();
+                    ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
 
             } else {
-                // REAL atau FORECAST — query langsung, tidak perlu merge
                 $isForecastFlag = ($kategoriFilter === 'FORECAST');
                 $baseQ = $buildBaseQuery($isForecastFlag);
 
@@ -194,13 +174,14 @@ class DailyReportController extends Controller
                     ->groupBy(DB::raw('DATE(tanggal)'), 'opsel')
                     ->get();
 
-                $nasionalUnique = 0;
+                $uniqueSumFloat = 0;
                 foreach ($dailyStats as $stat) {
                     $op   = $this->normalizeOpsel($stat->opsel);
                     $vol  = (float) $stat->total;
                     $koef = (float) ($selectedBatch[$op] ?? 1.0);
-                    $nasionalUnique += $koef > 0 ? round($vol / $koef) : 0;
+                    $uniqueSumFloat += ($vol / $koef);
                 }
+                $nasionalUnique = (int) round($uniqueSumFloat);
 
                 $jaboTotal = (clone $baseQ)
                     ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
@@ -209,21 +190,14 @@ class DailyReportController extends Controller
                 $top5Asal = (clone $baseQ)
                     ->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
                     ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
-                    ->groupBy('ref_provinces.name')
-                    ->orderByDesc('total')
-                    ->limit(5)
-                    ->get();
+                    ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
 
                 $top5Tujuan = (clone $baseQ)
                     ->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
                     ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
-                    ->groupBy('ref_provinces.name')
-                    ->orderByDesc('total')
-                    ->limit(5)
-                    ->get();
+                    ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
             }
 
-            // Formatted Dates
             Carbon::setLocale('id');
             $formattedStart      = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
             $formattedEnd        = Carbon::parse($endDate)->isoFormat('D MMMM YYYY');
@@ -264,18 +238,6 @@ class DailyReportController extends Controller
         return view('executive.daily-report', $data);
     }
 
-    /**
-     * Send report via WhatsApp (Official Twilio API)
-     *
-     * Twilio API requires:
-     *  - twilio_account_sid
-     *  - twilio_auth_token
-     *  - twilio_from_number
-     *  - twilio_content_sid (approved WhatsApp template string)
-     *  - to
-     *
-     * If template is not configured, falls back to building a wa.me link manual copy.
-     */
     public function sendWhatsApp(Request $request)
     {
         try {
@@ -284,124 +246,55 @@ class DailyReportController extends Controller
             $kategori = $request->input('kategori', 'REAL');
             $opsel = $request->input('opsel', 'ALL');
 
-            // Build report text
             $reportText = $this->buildPlainText($startDate, $endDate, $kategori, $opsel);
 
-            // Get settings from DB
             $settings = DB::table('app_settings')->pluck('value', 'key');
             $waNumbers = $settings->get('wa_recipients', '');
             $sid = $settings->get('twilio_account_sid', '');
             $token = $settings->get('twilio_auth_token', '');
             $fromNumber = $settings->get('twilio_from_number', '');
-            $contentSid = $settings->get('twilio_content_sid', '');
 
             if (empty($waNumbers)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Nomor WhatsApp penerima belum dikonfigurasi. Silakan atur di menu Pengaturan.',
-                ]);
+                return response()->json(['success' => false, 'message' => 'Nomor WhatsApp belum diatur.']);
             }
 
-            // Check Twilio API readiness
-            $twilioReady = ! empty($sid) && ! empty($token) && ! empty($fromNumber);
-
-            if (! $twilioReady) {
-                // Fallback: return the text for manual sending
-                $missing = [];
-                if (empty($sid) || empty($token)) {
-                    $missing[] = 'Account SID / Auth Token';
-                }
-                if (empty($fromNumber)) {
-                    $missing[] = 'Twilio From Number';
-                }
-
+            if (empty($sid) || empty($token) || empty($fromNumber)) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Konfigurasi Twilio API belum lengkap ('.implode(', ', $missing).'). Silakan lengkapi di menu Pengaturan, atau gunakan tombol Salin Teks untuk kirim manual.',
-                    'fallback' => true,
-                    'report_text' => $reportText,
+                    'success' => false, 
+                    'message' => 'Twilio API belum lengkap.', 
+                    'fallback' => true, 
+                    'report_text' => $reportText
                 ]);
             }
 
             $recipients = array_filter(array_map('trim', explode(',', $waNumbers)));
             $sent = 0;
-            $errors = [];
-
             foreach ($recipients as $number) {
                 $phone = preg_replace('/[^0-9]/', '', $number);
-                if (substr($phone, 0, 1) === '0') {
-                    $phone = '62'.substr($phone, 1);
-                }
+                if (substr($phone, 0, 1) === '0') $phone = '62'.substr($phone, 1);
 
-                try {
-                    // Twilio API Request Custom Message
-                    $response = Http::withBasicAuth($sid, $token)
-                        ->asForm()
-                        ->timeout(30)
-                        ->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
-                            'To' => 'whatsapp:+' . $phone,
-                            'From' => $fromNumber,
-                            'Body' => $reportText,
-                        ]);
-
-                    if ($response->successful()) {
-                        $sent++;
-                        Log::info("WA terkirim ke {$phone} via Twilio API");
-                    } else {
-                        $errBody = $response->body();
-                        $errors[] = $phone.': '.$errBody;
-                        Log::warning("WA gagal ke {$phone}: {$errBody}");
-                    }
-                } catch (\Exception $e) {
-                    $errors[] = $phone.': '.$e->getMessage();
-                    Log::error("WA exception ke {$phone}: ".$e->getMessage());
-                }
-            }
-
-            // Log activity
-            if (Auth::check()) {
-                DB::table('activity_logs')->insert([
-                    'user_id' => Auth::id(),
-                    'action' => 'send_daily_report_wa',
-                    'description' => 'Kirim Daily Report WA ke '.count($recipients)." nomor. Berhasil: {$sent}",
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                $response = Http::withBasicAuth($sid, $token)->asForm()->post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", [
+                    'To' => 'whatsapp:+' . $phone,
+                    'From' => $fromNumber,
+                    'Body' => $reportText,
                 ]);
+
+                if ($response->successful()) $sent++;
             }
 
-            if ($sent > 0) {
-                return response()->json([
-                    'success' => true,
-                    'message' => "Berhasil mengirim ke {$sent} dari ".count($recipients).' penerima.',
-                ]);
-            }
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengirim. '.implode('; ', array_slice($errors, 0, 2)),
-            ]);
+            return response()->json(['success' => true, 'message' => "Terkirim ke {$sent} penerima."]);
 
         } catch (\Exception $e) {
-            Log::error('WhatsApp Send Error: '.$e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: '.$e->getMessage(),
-            ]);
+            return response()->json(['success' => false, 'message' => 'Error: '.$e->getMessage()]);
         }
     }
 
-    /**
-     * Build plain text report (WhatsApp markdown format)
-     */
     public function buildPlainText($startDate, $endDate, $kategori, $opsel = 'ALL')
     {
         $tipeTeks = $kategori === 'FORECAST' ? 'prediksi' : ($kategori === 'COMBINED' ? 'gabungan real & prediksi' : 'realisasi');
 
         $applyFilters = function ($query) use ($opsel, $kategori) {
-            if ($opsel !== 'ALL') {
-                $query->where('spatial_movements.opsel', $opsel);
-            }
+            if ($opsel !== 'ALL') $query->where('spatial_movements.opsel', $opsel);
 
             if ($kategori === 'COMBINED') {
                 $query->where(function ($q) {
@@ -409,18 +302,7 @@ class DailyReportController extends Controller
                         $realQ->where('spatial_movements.is_forecast', false)
                               ->whereNotIn(DB::raw('DATE(spatial_movements.tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29']);
                     })->orWhere(function ($forecastQ) {
-                        $forecastQ->where('spatial_movements.is_forecast', true)
-                                  ->where(function ($cond) {
-                                      $cond->whereIn(DB::raw('DATE(spatial_movements.tanggal)'), ['2026-03-27', '2026-03-28', '2026-03-29'])
-                                           ->orWhereNotExists(function ($exists) {
-                                               $exists->select(DB::raw(1))
-                                                      ->from('spatial_movements as sm2')
-                                                      ->whereColumn(DB::raw('DATE(sm2.tanggal)'), DB::raw('DATE(spatial_movements.tanggal)'))
-                                                      ->whereColumn('sm2.opsel', 'spatial_movements.opsel')
-                                                      ->where('sm2.kategori', '!=', 'ORANG')
-                                                      ->where('sm2.is_forecast', false);
-                                           });
-                                  });
+                        $forecastQ->where('spatial_movements.is_forecast', true);
                     });
                 });
             } elseif ($kategori === 'FORECAST') {
@@ -428,60 +310,28 @@ class DailyReportController extends Controller
             } else {
                 $query->where('spatial_movements.is_forecast', false);
             }
-
             return $query;
         };
 
         $nasionalTotal = $applyFilters(
-            \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', '!=', 'ORANG')
+            \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])->where('kategori', '!=', 'ORANG')
         )->sum('total');
 
-        // Hitung unique subscriber per-opsel menggunakan koefisien per-batch
         $pergerakanPerOpsel = $applyFilters(
-            \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', '!=', 'ORANG')
-        )->select('opsel', DB::raw('SUM(total) as total_pergerakan'))
-         ->groupBy('opsel')
-         ->pluck('total_pergerakan', 'opsel');
+            \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])->where('kategori', '!=', 'ORANG')
+        )->select('opsel', DB::raw('SUM(total) as total_pergerakan'))->groupBy('opsel')->pluck('total_pergerakan', 'opsel');
 
-        $finalKoef = config('mpd_koefisien.final');
-        if (!empty($finalKoef) && is_array($finalKoef)) {
-            $selectedBatch = $finalKoef;
-        } else {
-            $batches = config('mpd_koefisien.batches', []);
-            $selectedBatch = null;
-            foreach ($batches as $batch) {
-                if (isset($batch['end_date']) && $batch['end_date'] >= $endDate) {
-                    $selectedBatch = $batch;
-                    break;
-                }
-            }
-            if (! $selectedBatch && ! empty($batches)) {
-                $selectedBatch = end($batches);
-            }
+        $finalKoef = config('mpd_koefisien.final', []);
+        $koefBatches = config('mpd_koefisien.batches', []);
+        $selectedBatch = !empty($finalKoef) ? $finalKoef : (end($koefBatches) ?: []);
+
+        $uniqueSumFloat = 0;
+        foreach (['TSEL', 'IOH', 'XLSMART'] as $opKey) {
+            $vol = (float) ($pergerakanPerOpsel[$opKey] ?? 0);
+            $koef = (float) ($selectedBatch[$opKey] ?? 1.0);
+            $uniqueSumFloat += ($vol / $koef);
         }
-
-        $nasionalUnique = 0;
-        foreach (['TSEL', 'IOH', 'XLSMART'] as $opselKey) {
-            $pergerakan = (float) ($pergerakanPerOpsel[$opselKey] ?? 0);
-            $koefisien = (float) ($selectedBatch[$opselKey] ?? 1.0);
-            $nasionalUnique += $koefisien > 0 ? round($pergerakan / $koefisien) : 0;
-        }
-
-        $top5Asal = $applyFilters(
-            \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', '!=', 'ORANG')
-        )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_origin_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
-         ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
-         ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
-
-        $top5Tujuan = $applyFilters(
-            \App\Models\SpatialMovement::whereBetween('tanggal', [$startDate, $endDate])
-                ->where('kategori', '!=', 'ORANG')
-        )->join('ref_provinces', DB::raw('SUBSTRING(spatial_movements.kode_dest_kabupaten_kota, 1, 2)'), '=', 'ref_provinces.code')
-         ->select('ref_provinces.name as nama_provinsi', DB::raw('SUM(spatial_movements.total) as total'))
-         ->groupBy('ref_provinces.name')->orderByDesc('total')->limit(5)->get();
+        $nasionalUnique = (int) round($uniqueSumFloat);
 
         Carbon::setLocale('id');
         $formattedStart = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
@@ -497,11 +347,10 @@ class DailyReportController extends Controller
         $hStart = $formatHDay((int) $hariRaya->diffInDays(Carbon::parse($startDate), false));
         $hEnd = $formatHDay((int) $hariRaya->diffInDays(Carbon::parse($endDate), false));
         
-        $nasTotal = number_format($nasionalTotal, 0, ',', '.');
         $nasUnique = number_format($nasionalUnique, 0, ',', '.');
 
         $str = "Yth. Bapak Kepala Badan Kebijakan Transportasi,\n\n";
-        $str .= "Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang menggunakan Mobile Positioning Data (MPD) dari 3 operator seluler (Telkomsel, Indosat, dan XLSmart), bersama ini kami sampaikan capaian data MPD per {$formattedEndDay}.\n\n";
+        $str .= "Izin melaporkan, berdasarkan hasil pemantauan sementara pergerakan orang menggunakan MPD dari 3 operator seluler, bersama ini kami sampaikan capaian data MPD per {$formattedEndDay}.\n\n";
         $str .= "Data tersebut merupakan akumulasi {$tipeTeks} periode {$formattedStart} s.d. {$formattedEnd} ({$hStart} s.d. {$hEnd}). Secara nasional tercatat sebanyak {$nasUnique} orang melakukan perjalanan di periode tersebut.\n\n";
         $str .= "Demikian kami sampaikan. Atas perkenan dan arahan Bapak, kami ucapkan terima kasih.";
 
