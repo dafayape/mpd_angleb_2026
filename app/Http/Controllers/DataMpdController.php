@@ -1413,7 +1413,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v21_final:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v22_fix_orang_forecast:{$type}:{$dString}";
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
@@ -1496,7 +1496,11 @@ class DataMpdController extends Controller
                     }
                 }
 
-                // Merge per-opsel per-date: prefer REAL jika ada, else FORECAST
+                // Merge per-opsel per-date:
+                // - Jika tanggal 27-29 (forcedDates) → WAJIB pakai FORECAST
+                // - Jika tanggal 13-26 → pakai REAL
+                // Untuk Jumlah Orang: gunakan data ORANG asli dari DB jika ada,
+                // fallback ke pergerakan/koefisien jika tidak ada.
                 $dKeys = array_keys($dates);
                 $forcedDates = ['2026-03-27', '2026-03-28', '2026-03-29'];
                 $koefArray = $this->getKoefisienArray();
@@ -1504,19 +1508,30 @@ class DataMpdController extends Controller
                 foreach ($dKeys as $dateKey) {
                     $isForced = in_array($dateKey, $forcedDates);
                     foreach ($opsels as $op) {
-                        $realMov  = $isForced ? 0 : ($realAcc[$dateKey][$op]['movement'] ?? 0);
                         $k = (float) ($koefArray[$op] ?? 1.0);
-                        if ($realMov > 0) {
-                            $dates[$dateKey][$op]['movement'] = $realMov;
-                            $dates[$dateKey][$op]['people']   = $k > 0 ? ($realMov / $k) : 0; // Metode Matematis Murni 360
-                        } else {
-                            $fMov = $forecastAcc[$dateKey][$op]['movement'] ?? 0;
-                            // Jaring Pengaman (Fallback) jika data forecast tgl 29 kosong, pakai data real
+
+                        if ($isForced) {
+                            // Tanggal 27-29: wajib pakai FORECAST
+                            $fMov  = $forecastAcc[$dateKey][$op]['movement'] ?? 0;
+                            $fPpl  = $forecastAcc[$dateKey][$op]['people'] ?? 0;
+
+                            // Fallback jika forecast kosong → pakai real
                             if ($fMov == 0 && isset($realAcc[$dateKey][$op]['movement']) && $realAcc[$dateKey][$op]['movement'] > 0) {
                                 $fMov = $realAcc[$dateKey][$op]['movement'];
+                                $fPpl = $realAcc[$dateKey][$op]['people'] ?? 0;
                             }
+
                             $dates[$dateKey][$op]['movement'] = $fMov;
-                            $dates[$dateKey][$op]['people']   = $k > 0 ? ($fMov / $k) : 0; // Tanpa round (Metode 360)
+                            // Gunakan ORANG asli dari DB jika ada; fallback koefisien
+                            $dates[$dateKey][$op]['people'] = $fPpl > 0 ? $fPpl : ($k > 0 ? ($fMov / $k) : 0);
+                        } else {
+                            // Tanggal 13-26: pakai REAL
+                            $realMov = $realAcc[$dateKey][$op]['movement'] ?? 0;
+                            $realPpl = $realAcc[$dateKey][$op]['people'] ?? 0;
+
+                            $dates[$dateKey][$op]['movement'] = $realMov;
+                            // Gunakan ORANG asli dari DB jika ada; fallback koefisien
+                            $dates[$dateKey][$op]['people'] = $realPpl > 0 ? $realPpl : ($k > 0 ? ($realMov / $k) : 0);
                         }
                     }
                 }
