@@ -1413,7 +1413,7 @@ class DataMpdController extends Controller
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
         $dString = $startDate->format('Ymd').'_'.$endDate->format('Ymd');
-        $cacheKey = "mpd:nasional:pergerakan-harian:v22_fix_orang_forecast:{$type}:{$dString}";
+        $cacheKey = "mpd:nasional:pergerakan-harian:v23_override_combined:{$type}:{$dString}";
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanHarianData($startDate, $endDate, $type));
 
         return view('pages.nasional.pergerakan-harian', [
@@ -1654,6 +1654,14 @@ class DataMpdController extends Controller
             }
         }
         $uniqueSubscriber = (int) round($uniqueSubscriberRaw);
+
+        // === COMBINED OVERRIDE: Sesuai Alternatif 3 BKT (147.551.770) ===
+        // Nilai kalkulasi raw (148.211.385) berasal dari data IOH yang sudah direvisi.
+        // Klien menetapkan angka resmi 147.551.770 sesuai laporan akhir posko angleb 2026.
+        if ($type === 'COMBINED') {
+            $uniqueSubscriber = 147551770;
+        }
+
         $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 2) : 0.0;
 
         $akumulasiData = [
