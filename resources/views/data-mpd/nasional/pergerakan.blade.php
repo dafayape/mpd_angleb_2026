@@ -41,7 +41,7 @@
 
 {{-- Helper Macro for Main Tables --}}
 @php
-    function renderMainTable($title, $data, $dates, $type) {
+    function renderMainTable($title, $data, $dates, $type, $uniqueSub = null) {
         $bgClass = $type === 'REAL' ? 'bg-success' : 'bg-warning text-dark';
         $textClass = $type === 'REAL' ? 'text-white' : 'text-dark';
         
@@ -120,6 +120,39 @@
             echo '</tr>';
         }
         echo '</tbody>';
+        
+        // TFOOT: Totals
+        $grandMov = 0;
+        $grandPplRaw = 0;
+        $grandOpselMov = array_fill_keys(['XLSMART', 'IOH', 'TSEL'], 0);
+        foreach($data as $d) {
+            $grandMov += $d['total_mov'] ?? 0;
+            $grandPplRaw += $d['total_ppl'] ?? 0;
+            foreach(['XLSMART', 'IOH', 'TSEL'] as $op) {
+                $grandOpselMov[$op] += $d['opsels'][$op]['vol'] ?? 0;
+            }
+        }
+        
+        // Use raw sum for 'SUM murni' consistency in this detailed table
+        $finalOrang = $grandPplRaw;
+        $totalRatio = $finalOrang > 0 ? $grandMov / $finalOrang : 0;
+
+        echo '<tfoot class="table-dark fw-bold text-end align-middle">';
+        echo '<tr>';
+        echo '<td class="text-center bg-dark">TOTAL</td>';
+        foreach(['XLSMART', 'IOH', 'TSEL'] as $op) {
+            echo '<td class="border-start">'.number_format($grandOpselMov[$op], 0, ',', '.').'</td>';
+            echo '<td class="text-center">100%</td>';
+            echo '<td class="text-center">-</td>';
+        }
+        echo '<td class="bg-secondary text-white border-start">'.number_format($grandMov, 0, ',', '.').'</td>';
+        echo '<td class="bg-secondary text-white">-</td>';
+        echo '<td class="bg-secondary text-white border-start">'.number_format($finalOrang, 0, ',', '.').'</td>';
+        echo '<td class="bg-secondary text-white">-</td>';
+        echo '<td class="bg-dark text-warning text-center">'.number_format($totalRatio, 2, ',', '.').'</td>';
+        echo '</tr>';
+        echo '</tfoot>';
+
         echo '</table></div></div></div></div></div>';
     }
 @endphp
@@ -145,17 +178,17 @@
 
 {{-- 1. Table REAL (tampil jika type = REAL) --}}
 @if(($activeType ?? 'REAL') === 'REAL')
-{{ renderMainTable('REAL PERGERAKAN & ORANG NASIONAL PER OPSEL', $real, $dates, 'REAL') }}
+{{ renderMainTable('REAL PERGERAKAN & ORANG NASIONAL PER OPSEL', $real, $dates, 'REAL', $unique_subscriber) }}
 @endif
 
 {{-- 2. Table FORECAST (tampil jika type = FORECAST) --}}
 @if(($activeType ?? 'REAL') === 'FORECAST')
-{{ renderMainTable('FORECAST PERGERAKAN & ORANG NASIONAL PER OPSEL', $forecast, $dates, 'FORECAST') }}
+{{ renderMainTable('FORECAST PERGERAKAN & ORANG NASIONAL PER OPSEL', $forecast, $dates, 'FORECAST', $unique_subscriber) }}
 @endif
 
 {{-- 3. Table COMBINED (tampil jika type = COMBINED) --}}
 @if(($activeType ?? 'REAL') === 'COMBINED')
-{{ renderMainTable('COMBINED PERGERAKAN & ORANG NASIONAL PER OPSEL (Real + Fallback Forecast)', $combined, $dates, 'FORECAST') }}
+{{ renderMainTable('COMBINED PERGERAKAN & ORANG NASIONAL PER OPSEL (Real + Fallback Forecast)', $combined, $dates, 'COMBINED', $unique_subscriber) }}
 @endif
 
 {{-- 3. Table Akumulasi --}}
@@ -207,6 +240,23 @@
                                 </tr>
                             @endforeach
                         </tbody>
+                        <tfoot class="table-light fw-bold text-end align-middle">
+                            @php
+                                $totMovAll = collect($accum)->sum(fn($i) => $i['mov']['vol'] ?? 0);
+                                $totPplAll = ($activeType === 'COMBINED') ? ($unique_subscriber ?? 0) : collect($accum)->sum(fn($i) => $i['ppl']['vol'] ?? 0);
+                            @endphp
+                            <tr>
+                                <td class="text-center bg-light">TOTAL</td>
+                                <td class="border-start">{{ number_format($totMovAll, 0, ',', '.') }}</td>
+                                <td class="text-center">100%</td>
+                                <td class="text-center">-</td>
+                                <td class="text-center">-</td>
+                                <td class="border-start">{{ number_format($totPplAll, 0, ',', '.') }}</td>
+                                <td class="text-center">100%</td>
+                                <td class="text-center">-</td>
+                                <td class="text-center">-</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
             </div>

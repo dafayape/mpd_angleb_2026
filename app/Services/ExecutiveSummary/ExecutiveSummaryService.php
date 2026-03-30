@@ -58,7 +58,7 @@ class ExecutiveSummaryService
     public function getFullSummary(?string $opsel, string $dataType = 'real'): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v20_omnipotence:{$dateKey}";
+        $key = "executive_summary:getFullSummary:{$dataType}:{$opsel}:all_v21_override_combined:{$dateKey}";
 
         try {
             return Cache::remember($key, $this->cacheTtl(), fn () => $this->buildFullSummary($opsel, $dataType));
@@ -151,7 +151,7 @@ class ExecutiveSummaryService
     public function getNasionalMetrics(string $dataType, ?string $opsel): array
     {
         $dateKey = $this->getStartDate().'_'.$this->getEndDate();
-        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v11_fix360:{$dateKey}";
+        $key = "executive_summary:getNasionalMetrics:{$dataType}:{$opsel}:nasional_v12_override_combined:{$dateKey}";
 
         return Cache::remember($key, $this->cacheTtl(), function () use ($dataType, $opsel) {
             $selBatch = $this->getKoefisienArray();
@@ -216,8 +216,9 @@ class ExecutiveSummaryService
                 }
             }
 
-            // final round hanyan di akhir (Method 360)
+            // final round hanya di akhir (Method 360)
             $finalUnique = (int) round($totalUnique);
+
             $koefisienAvgValue = $finalUnique > 0 ? round($totalPergerakan / $finalUnique, 2) : 0.0;
 
             return [

@@ -559,7 +559,7 @@
                                         <th class="pb-3 pt-3 border-dark fw-bold text-dark"
                                             style="background-color: #ffffff; font-size: 1rem;">
                                             {{-- Untuk COMBINED: tampilkan unique_subscriber agar sinkron dengan narasi --}}
-                                            {{ fmtNum($activeType === 'COMBINED' ? $data['akumulasi']['unique_subscriber'] : $data['akumulasi']['total_people']) }}</th>
+                                            {{ fmtNum($totPplAll) }}</th>
                                         <th class="pb-3 pt-3 border-dark fw-bold text-dark"
                                             style="background-color: #ffffff; font-size: 1rem;">100%</th>
                                     </tr>

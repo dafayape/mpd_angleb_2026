@@ -25,7 +25,7 @@ return [
      */
     'final' => [
         'TSEL' => 1.848245665226,
-        'IOH' => 2.168024512123,
+        'IOH' => 2.19675644,
         'XLSMART' => 2.184476388882,
     ],
     // Isi dengan array (contoh: ['TSEL' => 2.5, 'IOH' => 2.8, 'XLSMART' => 2.9]) jika ingin memotong kompas (force fix) seluruh koefisien sistem.

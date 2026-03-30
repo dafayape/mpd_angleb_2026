@@ -1641,7 +1641,6 @@ class DataMpdController extends Controller
         $peakDays = array_slice(array_keys($sortedDaily), 0, 2);
 
         // === UNIQUE SUBSCRIBER (Kalkulasi Matematis Desimal Kumulatif 360) ===
-        // Selaras dengan nilai tabel yang murni desimal, tidak boleh di-round sebelum selesai (146.117.360)
         $koefArray = $this->getKoefisienArray();
         $uniqueSubscriberRaw = 0;
         foreach ($dates as $dateKey => $row) {
@@ -1654,14 +1653,6 @@ class DataMpdController extends Controller
             }
         }
         $uniqueSubscriber = (int) round($uniqueSubscriberRaw);
-
-        // === COMBINED OVERRIDE: Sesuai Alternatif 3 BKT (147.551.770) ===
-        // Nilai kalkulasi raw (148.211.385) berasal dari data IOH yang sudah direvisi.
-        // Klien menetapkan angka resmi 147.551.770 sesuai laporan akhir posko angleb 2026.
-        if ($type === 'COMBINED') {
-            $uniqueSubscriber = 147551770;
-        }
-
         $koefisien = $uniqueSubscriber > 0 ? round($totalAkumulasiMov / $uniqueSubscriber, 2) : 0.0;
 
         $akumulasiData = [
@@ -1686,8 +1677,12 @@ class DataMpdController extends Controller
         $dates = $this->getDatesCollection($startDate, $endDate);
 
         $type = strtoupper($request->get('type', 'REAL')); // Default to REAL
-        $cacheKey = 'mpd:nasional:pergerakan:tables:v17_fix_orang_kategori';
+        $cacheKey = 'mpd:nasional:pergerakan:tables:v18_fix_unique_sync';
         $data = $this->cached($cacheKey, $this->dataCacheTtl(), fn () => $this->getPergerakanDataTables($startDate, $endDate));
+
+        // Get Unique Subscriber for sync (Optional but used if activeType is COMBINED)
+        $harianData = $this->getPergerakanHarianData($startDate, $endDate, $type);
+        $uniqueSubscriber = $harianData['akumulasi']['unique_subscriber'] ?? 0;
 
         return view('data-mpd.nasional.pergerakan', [
             'title' => 'Pergerakan Nasional',
@@ -1698,6 +1693,7 @@ class DataMpdController extends Controller
             'combined' => $data['combined'], // DATA COMBINED: Real + Fallback Forecast
             'accum' => $data['accum'],
             'activeType' => $type,
+            'unique_subscriber' => $uniqueSubscriber,
         ]);
     }
 

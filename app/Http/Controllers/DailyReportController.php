@@ -103,11 +103,6 @@ class DailyReportController extends Controller
                 }
                 $nasionalUnique = (int) round($uniqueSumFloat);
 
-                // Override Alternatif 3 BKT: angka resmi posko angleb 2026
-                if ($kategoriFilter === 'COMBINED') {
-                    $nasionalUnique = 147551770;
-                }
-
                 // Jabodetabek
                 $realJaboRows = $buildBaseQuery(false)
                     ->whereIn('kode_origin_kabupaten_kota', $jabodetabekCodes)
@@ -337,11 +332,6 @@ class DailyReportController extends Controller
             $uniqueSumFloat += ($vol / $koef);
         }
         $nasionalUnique = (int) round($uniqueSumFloat);
-
-        // Override Alternatif 3 BKT: angka resmi posko angleb 2026
-        if ($kategori === 'COMBINED') {
-            $nasionalUnique = 147551770;
-        }
 
         Carbon::setLocale('id');
         $formattedStart = Carbon::parse($startDate)->isoFormat('D MMMM YYYY');
