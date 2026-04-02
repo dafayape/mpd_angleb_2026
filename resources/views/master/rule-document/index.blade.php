@@ -107,7 +107,7 @@
                                                     <i class="bx bx-download text-primary"></i>
                                                 </a>
                                                 @if (Auth::user()->role === 'admin')
-                                                    <button type="button" class="btn border btn-light btn-sm btn-delete" data-id="{{ $doc->id }}" data-url="{{ route('master.rule-document.destroy', $doc->id) }}" title="Hapus Dokumen">
+                                                    <button type="button" class="btn border btn-light btn-sm" onclick="hapusDokumen('{{ route('master.rule-document.destroy', $doc->id) }}')" title="Hapus Dokumen">
                                                         <i class="bx bx-trash text-danger"></i>
                                                     </button>
                                                 @endif
@@ -239,74 +239,66 @@
                 });
             }
 
-            // Delete Logic - Using Vanilla JS with fetch to perfectly handle Delete HTTP method and headers
-            document.querySelectorAll('.btn-delete').forEach(function(btn) {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    // Gunakan currentTarget untuk memastikan kita mengambil data dari button, bukan icon child-nya
-                    const targetBtn = e.currentTarget;
-                    const url = targetBtn.getAttribute('data-url');
+            // Delete Logic - Global function called securely via inline onclick
+            window.hapusDokumen = function(url) {
+                Swal.fire({
+                    title: 'Hapus Dokumen?',
+                    text: "File yang dihapus tidak dapat dipulihkan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bx bx-trash me-1"></i> Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Memproses',
+                            text: 'Sedang menghapus dokumen...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
 
-                    Swal.fire({
-                        title: 'Hapus Dokumen?',
-                        text: "File yang dihapus tidak dapat dipulihkan!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#dc3545',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: '<i class="bx bx-trash me-1"></i> Ya, hapus!',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            Swal.fire({
-                                title: 'Memproses',
-                                text: 'Sedang menghapus dokumen...',
-                                allowOutsideClick: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                }
-                            });
-
-                            fetch(url, {
-                                method: 'DELETE',
-                                headers: {
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                    'Accept': 'application/json',
-                                    'Content-Type': 'application/json'
-                                }
-                            })
-                            .then(response => {
-                                if (!response.ok) {
-                                    return response.json().then(err => { throw err; }).catch(() => {
-                                        throw new Error('Server merespon dengan status ' + response.status);
-                                    });
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                if (data.success) {
-                                    Swal.fire({
-                                        icon: 'success',
-                                        title: 'Berhasil',
-                                        text: data.message || 'Dokumen teknis berhasil dihapus.',
-                                        timer: 1500,
-                                        showConfirmButton: false
-                                    }).then(() => {
-                                        location.reload();
-                                    });
-                                } else {
-                                    Swal.fire('Gagal!', data.message || 'Gagal menghapus dokumen', 'error');
-                                }
-                            })
-                            .catch(error => {
-                                let errorMsg = error.message || 'Terjadi kesalahan sistem saat penghapusan.';
-                                Swal.fire('Error!', errorMsg, 'error');
-                            });
-                        }
-                    });
+                        fetch(url, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json'
+                            }
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => { throw err; }).catch(() => {
+                                    throw new Error('Server merespon dengan status HTTP ' + response.status);
+                                });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: data.message || 'Dokumen teknis berhasil dihapus.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire('Gagal!', data.message || 'Gagal menghapus dokumen', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            let errorMsg = error.message || 'Terjadi kesalahan sistem saat penghapusan.';
+                            Swal.fire('Error!', errorMsg, 'error');
+                        });
+                    }
                 });
-            });
+            };
 
             // Upload Logic
             const uploadForm = document.getElementById('uploadForm');
