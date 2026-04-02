@@ -14,15 +14,16 @@ class RuleDocumentController extends Controller
     {
         $query = RuleDocument::with('uploader');
 
-        if ($request->has('search') && $request->search != '') {
-            $query->where('original_name', 'ilike', '%'.$request->search.'%');
+        // Gunakan filled() untuk memastikan nilainya tidak null/kosong
+        if ($request->filled('search')) {
+            $query->where('original_name', 'ilike', '%' . $request->search . '%');
         }
 
-        if ($request->has('start_date') && $request->start_date != '') {
+        if ($request->filled('start_date')) {
             $query->whereDate('created_at', '>=', $request->start_date);
         }
 
-        if ($request->has('end_date') && $request->end_date != '') {
+        if ($request->filled('end_date')) {
             $query->whereDate('created_at', '<=', $request->end_date);
         }
 
@@ -34,7 +35,7 @@ class RuleDocumentController extends Controller
     public function store(Request $request)
     {
         if (Auth::user()->role !== 'admin') {
-            if ($request->ajax()) {
+            if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Hanya admin yang dapat mengunggah dokumen.',
@@ -48,59 +49,79 @@ class RuleDocumentController extends Controller
             'document' => 'required|file|max:102400', // 100MB max
         ]);
 
-        $file = $request->file('document');
-        $originalName = $file->getClientOriginalName();
-        $fileName = Str::uuid().'.'.$file->getClientOriginalExtension();
-        $filePath = $file->storeAs('rule-documents', $fileName, 'local');
+        try {
+            $file = $request->file('document');
+            $originalName = $file->getClientOriginalName();
+            $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $filePath = $file->storeAs('rule-documents', $fileName, 'local');
 
-        RuleDocument::create([
-            'file_name' => $fileName,
-            'original_name' => $originalName,
-            'file_path' => $filePath,
-            'file_size' => $file->getSize(),
-            'uploaded_by' => Auth::id(),
-        ]);
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Dokumen berhasil diunggah.',
+            RuleDocument::create([
+                'file_name' => $fileName,
+                'original_name' => $originalName,
+                'file_path' => $filePath,
+                'file_size' => $file->getSize(),
+                'uploaded_by' => Auth::id(),
             ]);
-        }
 
-        return redirect()->back()->with('success', 'Dokumen berhasil diunggah.');
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Dokumen berhasil diunggah.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Dokumen berhasil diunggah.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Upload Rule Document Error: ' . $e->getMessage());
+            
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan sistem saat menyimpan file: ' . $e->getMessage(),
+                ], 500);
+            }
+            return redirect()->back()->with('error', 'Gagal menyimpan file ke sistem.');
+        }
     }
 
     public function download($id)
     {
-        $document = RuleDocument::findOrFail($id);
-        $path = Storage::disk('local')->path($document->file_path);
+        try {
+            $document = RuleDocument::findOrFail($id);
+            $path = Storage::disk('local')->path($document->file_path);
 
-        if (! file_exists($path)) {
-            return redirect()->back()->with('error', 'File tidak ditemukan di server.');
+            if (! file_exists($path)) {
+                return redirect()->back()->with('error', 'File tidak ditemukan di direktori server.');
+            }
+
+            return response()->download($path, $document->original_name);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->back()->with('error', 'Daftar dokumen tidak ditemukan pada database.');
         }
-
-        return response()->download($path, $document->original_name);
     }
 
     public function preview($id)
     {
-        $document = RuleDocument::findOrFail($id);
-        $path = Storage::disk('local')->path($document->file_path);
+        try {
+            $document = RuleDocument::findOrFail($id);
+            $path = Storage::disk('local')->path($document->file_path);
 
-        if (! file_exists($path)) {
-            return redirect()->back()->with('error', 'File tidak ditemukan di server.');
+            if (! file_exists($path)) {
+                return redirect()->back()->with('error', 'File tidak ditemukan di direktori server.');
+            }
+
+            return response()->file($path, [
+                'Content-Disposition' => 'inline; filename="' . $document->original_name . '"',
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->back()->with('error', 'Daftar dokumen tidak ditemukan pada database.');
         }
-
-        return response()->file($path, [
-            'Content-Disposition' => 'inline; filename="'.$document->original_name.'"',
-        ]);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         if (Auth::user()->role !== 'admin') {
-            if (request()->ajax()) {
+            if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Hanya admin yang dapat menghapus dokumen.',
@@ -110,21 +131,43 @@ class RuleDocumentController extends Controller
             return redirect()->back()->with('error', 'Hanya admin yang dapat menghapus dokumen.');
         }
 
-        $document = RuleDocument::findOrFail($id);
+        try {
+            $document = RuleDocument::findOrFail($id);
 
-        if (Storage::disk('local')->exists($document->file_path)) {
-            Storage::disk('local')->delete($document->file_path);
+            // Selalu set file penghapusan walaupun file fisiknya tidak ketemu
+            if (Storage::disk('local')->exists($document->file_path)) {
+                Storage::disk('local')->delete($document->file_path);
+            }
+
+            $document->delete();
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Dokumen berhasil dihapus dari sistem.',
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal: Dokumen tidak ditemukan di sistem.',
+                ], 404);
+            }
+            return redirect()->back()->with('error', 'Gagal: Dokumen tidak ditemukan.');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Delete Rule Document Error: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan sistem internal: ' . $e->getMessage(),
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Gagal menghapus dokumen.');
         }
-
-        $document->delete();
-
-        if (request()->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Dokumen berhasil dihapus.',
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
     }
 }
