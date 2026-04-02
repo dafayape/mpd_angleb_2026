@@ -239,58 +239,58 @@
                 });
             }
 
-            // Delete Logic
-            document.querySelectorAll('.btn-delete').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const url = this.getAttribute('data-url');
+            // Delete Logic - Using jQuery event delegation to handle clicks safely (even on inner icons)
+            $(document).on('click', '.btn-delete', function(e) {
+                e.preventDefault();
+                const url = $(this).data('url');
 
-                    Swal.fire({
-                        title: 'Hapus Dokumen?',
-                        text: "File yang dihapus tidak dapat dipulihkan!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#dc3545',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: '<i class="bx bx-trash me-1"></i> Ya, hapus!',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            Swal.fire({
-                                title: 'Memproses',
-                                text: 'Sedang menghapus dokumen...',
-                                allowOutsideClick: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                }
-                            });
+                Swal.fire({
+                    title: 'Hapus Dokumen?',
+                    text: "File yang dihapus tidak dapat dipulihkan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bx bx-trash me-1"></i> Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Memproses',
+                            text: 'Sedang menghapus dokumen...',
+                            allowOutsideClick: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            }
+                        });
 
-                            $.ajax({
-                                url: url,
-                                type: 'DELETE',
-                                data: {
-                                    _token: '{{ csrf_token() }}'
-                                },
-                                success: function(response) {
-                                    if (response.success) {
-                                        Swal.fire({
-                                            icon: 'success',
-                                            title: 'Berhasil',
-                                            text: 'Dokumen teknis berhasil dihapus.',
-                                            timer: 1500,
-                                            showConfirmButton: false
-                                        }).then(() => {
-                                            location.reload();
-                                        });
-                                    } else {
-                                        Swal.fire('Gagal!', response.message || 'Gagal menghapus dokumen', 'error');
-                                    }
-                                },
-                                error: function() {
-                                    Swal.fire('Error!', 'Terjadi kesalahan sistem saat penghapusan.', 'error');
+                        $.ajax({
+                            url: url,
+                            type: 'POST',
+                            data: {
+                                _method: 'DELETE',
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Berhasil',
+                                        text: 'Dokumen teknis berhasil dihapus.',
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    }).then(() => {
+                                        location.reload();
+                                    });
+                                } else {
+                                    Swal.fire('Gagal!', response.message || 'Gagal menghapus dokumen', 'error');
                                 }
-                            });
-                        }
-                    });
+                            },
+                            error: function() {
+                                Swal.fire('Error!', 'Terjadi kesalahan sistem saat penghapusan (Server Error/Blocked).', 'error');
+                            }
+                        });
+                    }
                 });
             });
 
