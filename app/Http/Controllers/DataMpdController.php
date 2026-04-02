@@ -2888,17 +2888,20 @@ class DataMpdController extends Controller
         $aiContent = Cache::get($cacheKey);
 
         if (! $aiContent) {
-            $totalPergerakan = DB::table('spatial_movements')
+            $dailyBuilder = DB::table('spatial_movements')
                 ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('kategori', 'PERGERAKAN')
-                ->sum('total');
+                ->where('kategori', 'PERGERAKAN');
+            $this->applyTypeFilter($dailyBuilder, 'COMBINED', 'PERGERAKAN');
+            $totalPergerakan = $dailyBuilder->sum('total');
 
-            $topTujuan = DB::table('spatial_movements as sm')
+            $topTujuanBuilder = DB::table('spatial_movements as sm')
                 ->join('ref_cities as c', 'sm.kode_dest_kabupaten_kota', '=', 'c.code')
                 ->join('ref_provinces as p', 'c.province_code', '=', 'p.code')
-                ->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
                 ->whereBetween('sm.tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                ->where('sm.kategori', 'PERGERAKAN')
+                ->where('sm.kategori', 'PERGERAKAN');
+            $this->applyTypeFilter($topTujuanBuilder, 'COMBINED', 'PERGERAKAN', null, 'sm');
+            
+            $topTujuan = $topTujuanBuilder->select('p.name', DB::raw('SUM(sm.total) as prov_total'))
                 ->groupBy('p.name')
                 ->orderByDesc('prov_total')
                 ->take(3)

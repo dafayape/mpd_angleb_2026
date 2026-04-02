@@ -39,6 +39,7 @@
 
         .ai-content p {
             margin-bottom: 1.25rem;
+            text-align: justify;
         }
 
         .ai-content h1,
@@ -58,10 +59,42 @@
 
         .ai-content li {
             margin-bottom: 0.5rem;
+            text-align: justify;
         }
 
         .ai-content strong {
             color: #0f172a;
+        }
+        
+        .ai-content blockquote {
+            border-left: 4px solid #0d6efd;
+            background-color: #f8f9fa;
+            padding: 1.25rem 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+            color: #475569;
+            font-style: italic;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .ai-content blockquote strong {
+            color: #0d6efd;
+        }
+        
+        .ai-content table {
+            width: 100%;
+            margin-bottom: 1.5rem;
+            border-collapse: collapse;
+        }
+        
+        .ai-content th, .ai-content td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+        }
+        
+        .ai-content th {
+            background-color: #f8f9fa;
+            font-weight: 600;
         }
     </style>
 @endpush

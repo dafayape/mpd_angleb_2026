@@ -662,7 +662,7 @@ class ExecutiveSummaryService
 
             return "{$maxOpselName} mendominasi perekaman mobilitas dengan menyumbang sekitar {$maxPct}% dari total pergerakan.";
         }
-        $val = number_format($data['pergerakan'] ?? 0, 0, ',', '.');
+        $val = number_format($metrics['pergerakan'] ?? 0, 0, ',', '.');
         if ($type === 'intra') {
             return "Jumlah pergerakan Masyarakat Intra Jabodetabek pada periode ini adalah {$val} pergerakan.";
         }
