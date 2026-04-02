@@ -239,66 +239,46 @@
                 });
             }
 
-            // Delete Logic - Global function called securely via inline onclick
-            window.hapusDokumen = function(url) {
-                Swal.fire({
-                    title: 'Hapus Dokumen?',
-                    text: "File yang dihapus tidak dapat dipulihkan!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bx bx-trash me-1"></i> Ya, hapus!',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        Swal.fire({
-                            title: 'Memproses',
-                            text: 'Sedang menghapus dokumen...',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
-                        fetch(url, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json',
-                                'Content-Type': 'application/json'
-                            }
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                return response.json().then(err => { throw err; }).catch(() => {
-                                    throw new Error('Server merespon dengan status HTTP ' + response.status);
-                                });
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            if (data.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Berhasil',
-                                    text: data.message || 'Dokumen teknis berhasil dihapus.',
-                                    timer: 1500,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire('Gagal!', data.message || 'Gagal menghapus dokumen', 'error');
-                            }
-                        })
-                        .catch(error => {
-                            let errorMsg = error.message || 'Terjadi kesalahan sistem saat penghapusan.';
-                            Swal.fire('Error!', errorMsg, 'error');
+        // Global Function for Deleting Document, defined immediately!
+        function hapusDokumen(url) {
+            if (confirm("Hapus Dokumen?\n\nFile yang dihapus tidak dapat dipulihkan. Lanjutkan?")) {
+                
+                // Optional: Mencegah multiple clicks
+                document.body.style.cursor = 'wait';
+                
+                fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw err; }).catch(() => {
+                            throw new Error('Server merespon dengan status HTTP ' + response.status);
                         });
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    document.body.style.cursor = 'default';
+                    if (data.success) {
+                        alert(data.message || 'Dokumen teknis berhasil dihapus.');
+                        location.reload();
+                    } else {
+                        alert('Gagal! ' + (data.message || 'Gagal menghapus dokumen.'));
+                    }
+                })
+                .catch(error => {
+                    document.body.style.cursor = 'default';
+                    alert('Error! ' + (error.message || 'Terjadi kesalahan sistem saat penghapusan.'));
                 });
-            };
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
 
             // Upload Logic
             const uploadForm = document.getElementById('uploadForm');
