@@ -107,9 +107,13 @@
                                                     <i class="bx bx-download text-primary"></i>
                                                 </a>
                                                 @if (Auth::user()->role === 'admin')
-                                                    <button type="button" class="btn border btn-light btn-sm" onclick="hapusDokumen('{{ route('master.rule-document.destroy', $doc->id) }}')" title="Hapus Dokumen">
-                                                        <i class="bx bx-trash text-danger"></i>
-                                                    </button>
+                                                    <form action="{{ route('master.rule-document.destroy', $doc->id) }}" method="POST" class="m-0 p-0" onsubmit="return confirm('Hapus Dokumen Teknis ini?\n\nAksi ini tidak dapat dibatalkan.');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn border btn-light btn-sm" title="Hapus Dokumen">
+                                                            <i class="bx bx-trash text-danger"></i>
+                                                        </button>
+                                                    </form>
                                                 @endif
                                             </div>
                                         </td>
@@ -239,44 +243,7 @@
                 });
             }
 
-        // Global Function for Deleting Document, defined immediately!
-        function hapusDokumen(url) {
-            if (confirm("Hapus Dokumen?\n\nFile yang dihapus tidak dapat dipulihkan. Lanjutkan?")) {
-                
-                // Optional: Mencegah multiple clicks
-                document.body.style.cursor = 'wait';
-                
-                fetch(url, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(err => { throw err; }).catch(() => {
-                            throw new Error('Server merespon dengan status HTTP ' + response.status);
-                        });
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    document.body.style.cursor = 'default';
-                    if (data.success) {
-                        alert(data.message || 'Dokumen teknis berhasil dihapus.');
-                        location.reload();
-                    } else {
-                        alert('Gagal! ' + (data.message || 'Gagal menghapus dokumen.'));
-                    }
-                })
-                .catch(error => {
-                    document.body.style.cursor = 'default';
-                    alert('Error! ' + (error.message || 'Terjadi kesalahan sistem saat penghapusan.'));
-                });
-            }
-        }
+
 
         document.addEventListener('DOMContentLoaded', function() {
 
