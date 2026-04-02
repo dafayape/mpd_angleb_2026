@@ -514,13 +514,13 @@
             </div>
             <div class="d-flex gap-2">
                 <button class="dl-action-btn" onclick="collapseAll()" title="Collapse semua entri">
-                    <i class="bx bx-collapse-vertical"></i>
+                    <i class="bx bx-minus"></i>
                 </button>
                 <button class="dl-action-btn" onclick="scrollToTop()" title="Scroll ke batas atas">
                     <i class="bx bx-up-arrow-alt"></i>
                 </button>
                 <a href="{{ route('devlog', ['file' => $selectedFile]) }}" class="dl-action-btn" title="Refresh Log">
-                    <i class="bx bx-refresh"></i>
+                    <i class="bx bx-sync"></i>
                 </a>
             </div>
         </div>
