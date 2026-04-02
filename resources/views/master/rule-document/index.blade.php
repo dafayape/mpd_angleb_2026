@@ -239,58 +239,72 @@
                 });
             }
 
-            // Delete Logic - Using jQuery event delegation to handle clicks safely (even on inner icons)
-            $(document).on('click', '.btn-delete', function(e) {
-                e.preventDefault();
-                const url = $(this).data('url');
+            // Delete Logic - Using Vanilla JS with fetch to perfectly handle Delete HTTP method and headers
+            document.querySelectorAll('.btn-delete').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Gunakan currentTarget untuk memastikan kita mengambil data dari button, bukan icon child-nya
+                    const targetBtn = e.currentTarget;
+                    const url = targetBtn.getAttribute('data-url');
 
-                Swal.fire({
-                    title: 'Hapus Dokumen?',
-                    text: "File yang dihapus tidak dapat dipulihkan!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: '<i class="bx bx-trash me-1"></i> Ya, hapus!',
-                    cancelButtonText: 'Batal'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        Swal.fire({
-                            title: 'Memproses',
-                            text: 'Sedang menghapus dokumen...',
-                            allowOutsideClick: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
+                    Swal.fire({
+                        title: 'Hapus Dokumen?',
+                        text: "File yang dihapus tidak dapat dipulihkan!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="bx bx-trash me-1"></i> Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            Swal.fire({
+                                title: 'Memproses',
+                                text: 'Sedang menghapus dokumen...',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
 
-                        $.ajax({
-                            url: url,
-                            type: 'POST',
-                            data: {
-                                _method: 'DELETE',
-                                _token: '{{ csrf_token() }}'
-                            },
-                            success: function(response) {
-                                if (response.success) {
+                            fetch(url, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    return response.json().then(err => { throw err; }).catch(() => {
+                                        throw new Error('Server merespon dengan status ' + response.status);
+                                    });
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                if (data.success) {
                                     Swal.fire({
                                         icon: 'success',
                                         title: 'Berhasil',
-                                        text: 'Dokumen teknis berhasil dihapus.',
+                                        text: data.message || 'Dokumen teknis berhasil dihapus.',
                                         timer: 1500,
                                         showConfirmButton: false
                                     }).then(() => {
                                         location.reload();
                                     });
                                 } else {
-                                    Swal.fire('Gagal!', response.message || 'Gagal menghapus dokumen', 'error');
+                                    Swal.fire('Gagal!', data.message || 'Gagal menghapus dokumen', 'error');
                                 }
-                            },
-                            error: function() {
-                                Swal.fire('Error!', 'Terjadi kesalahan sistem saat penghapusan (Server Error/Blocked).', 'error');
-                            }
-                        });
-                    }
+                            })
+                            .catch(error => {
+                                let errorMsg = error.message || 'Terjadi kesalahan sistem saat penghapusan.';
+                                Swal.fire('Error!', errorMsg, 'error');
+                            });
+                        }
+                    });
                 });
             });
 
