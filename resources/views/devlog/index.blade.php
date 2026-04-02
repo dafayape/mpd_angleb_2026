@@ -4,6 +4,28 @@
 
 @push('css')
     <style>
+        /* ─── Variables & Defaults ─── */
+        :root {
+            --dl-bg-page: #f8fafc;
+            --dl-color-text: #334155;
+            --dl-color-heading: #0f172a;
+            --dl-color-muted: #94a3b8;
+            --dl-border: #e2e8f0;
+            --dl-border-light: #f1f5f9;
+            --dl-bg-card: #ffffff;
+            
+            --dl-primary: #3b82f6;
+            --dl-primary-bg: #eff6ff;
+            --dl-success: #059669;
+            --dl-success-bg: #ecfdf5;
+            --dl-warning: #d97706;
+            --dl-warning-bg: #fffbeb;
+            --dl-danger: #dc2626;
+            --dl-danger-bg: #fef2f2;
+            --dl-debug: #475569;
+            --dl-debug-bg: #f8fafc;
+        }
+
         /* ─── Stat Cards ─── */
         .dl-stats {
             display: grid;
@@ -12,32 +34,28 @@
         }
 
         @media (max-width: 991px) {
-            .dl-stats {
-                grid-template-columns: repeat(3, 1fr);
-            }
+            .dl-stats { grid-template-columns: repeat(3, 1fr); }
         }
 
         @media (max-width: 575px) {
-            .dl-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .dl-stats { grid-template-columns: repeat(2, 1fr); }
         }
 
         .dl-stat {
-            background: #fff;
+            background: var(--dl-bg-card);
             border-radius: 14px;
             padding: 20px;
             display: flex;
             align-items: center;
             gap: 16px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #f1f5f9;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--dl-border-light);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .dl-stat:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
         }
 
         .dl-stat-icon {
@@ -51,82 +69,75 @@
             flex-shrink: 0;
         }
 
-        .dl-stat-icon.t-total {
-            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
-            color: #059669;
-        }
-
-        .dl-stat-icon.t-error {
-            background: linear-gradient(135deg, #fef2f2, #fecaca);
-            color: #dc2626;
-        }
-
-        .dl-stat-icon.t-warn {
-            background: linear-gradient(135deg, #fffbeb, #fde68a);
-            color: #d97706;
-        }
-
-        .dl-stat-icon.t-info {
-            background: linear-gradient(135deg, #eff6ff, #bfdbfe);
-            color: #2563eb;
-        }
-
-        .dl-stat-icon.t-debug {
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-            color: #475569;
-        }
+        .dl-stat-icon.t-total { background: linear-gradient(135deg, var(--dl-success-bg), #d1fae5); color: var(--dl-success); }
+        .dl-stat-icon.t-error { background: linear-gradient(135deg, var(--dl-danger-bg), #fecaca); color: var(--dl-danger); }
+        .dl-stat-icon.t-warn  { background: linear-gradient(135deg, var(--dl-warning-bg), #fde68a); color: var(--dl-warning); }
+        .dl-stat-icon.t-info  { background: linear-gradient(135deg, var(--dl-primary-bg), #bfdbfe); color: var(--dl-primary); }
+        .dl-stat-icon.t-debug { background: linear-gradient(135deg, var(--dl-debug-bg), var(--dl-border)); color: var(--dl-debug); }
 
         .dl-stat-num {
             font-size: 1.6rem;
             font-weight: 800;
-            color: #0f172a;
+            color: var(--dl-color-heading);
             line-height: 1;
         }
 
         .dl-stat-lbl {
             font-size: 0.72rem;
-            color: #94a3b8;
-            font-weight: 600;
+            color: var(--dl-color-muted);
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            margin-top: 2px;
+            margin-top: 4px;
         }
 
         /* ─── Toolbar ─── */
         .dl-toolbar {
-            background: #fff;
+            background: var(--dl-bg-card);
             border-radius: 14px;
             padding: 14px 20px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #f1f5f9;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--dl-border-light);
         }
 
         .dl-file-select {
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: var(--dl-bg-page);
+            border: 1px solid var(--dl-border);
             border-radius: 8px;
             padding: 8px 12px;
+            color: var(--dl-color-heading);
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+        
+        .dl-file-select:focus {
+            border-color: var(--dl-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+            outline: none;
         }
 
         .dl-search {
-            border: 1px solid #e2e8f0;
+            border: 1px solid var(--dl-border);
             border-radius: 8px;
             padding: 8px 12px;
+            font-size: 0.9rem;
         }
 
         .dl-search:focus {
-            border-color: #3b82f6;
+            border-color: var(--dl-primary);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
         }
 
         .dl-level-pills {
             display: inline-flex;
             gap: 4px;
-            background: #f1f5f9;
+            background: var(--dl-border-light);
             padding: 4px;
             border-radius: 10px;
+            flex-wrap: wrap; /* Support for smaller screens */
         }
 
         .dl-pill {
@@ -145,98 +156,85 @@
             white-space: nowrap;
         }
 
-        .dl-pill:hover {
-            background: rgba(255, 255, 255, 0.6);
-        }
-
+        .dl-pill:hover { background: rgba(255, 255, 255, 0.6); }
         .dl-pill.active {
-            background: #fff;
+            background: var(--dl-bg-card);
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-            color: #0f172a;
+            color: var(--dl-color-heading);
         }
 
-        .dl-pill.active[data-level="ERROR"] {
-            color: #dc2626;
-        }
+        .dl-pill.active[data-level="ERROR"] { color: var(--dl-danger); }
+        .dl-pill.active[data-level="WARNING"] { color: var(--dl-warning); }
+        .dl-pill.active[data-level="INFO"] { color: var(--dl-primary); }
+        .dl-pill.active[data-level="DEBUG"] { color: var(--dl-debug); }
 
-        .dl-pill.active[data-level="WARNING"] {
-            color: #d97706;
-        }
-
-        .dl-pill.active[data-level="INFO"] {
-            color: #2563eb;
-        }
-
-        .dl-pill.active[data-level="DEBUG"] {
-            color: #475569;
-        }
-
-        .dl-pill i {
-            font-size: 14px;
-        }
+        .dl-pill i { font-size: 14px; }
 
         /* ─── Log Panel ─── */
         .dl-panel {
-            background: #fff;
+            background: var(--dl-bg-card);
             border-radius: 14px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-            border: 1px solid #f1f5f9;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--dl-border-light);
             overflow: hidden;
         }
 
         .dl-panel-head {
             padding: 14px 20px;
-            border-bottom: 2px solid #f1f5f9;
+            border-bottom: 2px solid var(--dl-border-light);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .dl-panel-title {
             font-weight: 700;
-            font-size: 0.95rem;
-            color: #0f172a;
+            font-size: 1rem;
+            color: var(--dl-color-heading);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .dl-panel-title .file-tag {
-            font-family: 'Courier New', monospace;
-            font-size: 0.78rem;
-            background: #f1f5f9;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            background: var(--dl-border-light);
             color: #64748b;
-            padding: 2px 10px;
+            padding: 3px 12px;
             border-radius: 6px;
-        }
-
-        .dl-panel-title .count-tag {
-            font-size: 0.72rem;
-            background: #eff6ff;
-            color: #2563eb;
-            padding: 2px 10px;
-            border-radius: 20px;
             font-weight: 600;
         }
 
+        .dl-panel-title .count-tag {
+            font-size: 0.75rem;
+            background: var(--dl-primary-bg);
+            color: var(--dl-primary);
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+        }
+
         .dl-action-btn {
-            width: 34px;
-            height: 34px;
+            width: 36px;
+            height: 36px;
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            background: #fff;
+            border: 1px solid var(--dl-border);
+            background: var(--dl-bg-card);
             display: inline-flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
             color: #64748b;
-            font-size: 16px;
+            font-size: 18px;
         }
 
         .dl-action-btn:hover {
-            background: #f8fafc;
-            color: #0f172a;
+            background: var(--dl-bg-page);
+            color: var(--dl-color-heading);
             border-color: #cbd5e1;
         }
 
@@ -248,14 +246,8 @@
             scrollbar-color: #cbd5e1 transparent;
         }
 
-        .dl-scroll::-webkit-scrollbar {
-            width: 5px;
-        }
-
-        .dl-scroll::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
+        .dl-scroll::-webkit-scrollbar { width: 6px; }
+        .dl-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
         .dl-entry {
             display: flex;
@@ -265,17 +257,12 @@
             position: relative;
         }
 
-        .dl-entry:hover {
-            background: #fafbff;
-        }
-
-        .dl-entry.expanded {
-            background: #f5f7ff;
-        }
+        .dl-entry:hover { background: #fafbff; }
+        .dl-entry.expanded { background: #f5f7ff; }
 
         /* Timeline rail */
         .dl-rail {
-            width: 48px;
+            width: 50px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
@@ -287,17 +274,15 @@
         .dl-rail::after {
             content: '';
             position: absolute;
-            top: 34px;
+            top: 36px;
             bottom: 0;
             left: 50%;
             width: 2px;
-            background: #e2e8f0;
+            background: var(--dl-border);
             transform: translateX(-50%);
         }
 
-        .dl-entry:last-child .dl-rail::after {
-            display: none;
-        }
+        .dl-entry:last-child .dl-rail::after { display: none; }
 
         .dl-dot {
             width: 14px;
@@ -307,140 +292,118 @@
             flex-shrink: 0;
             border: 3px solid #fff;
             box-shadow: 0 0 0 2px currentColor;
+            background: currentColor;
         }
 
-        .dl-dot.c-error {
-            color: #ef4444;
-            background: #ef4444;
-        }
-
-        .dl-dot.c-warning {
-            color: #f59e0b;
-            background: #f59e0b;
-        }
-
-        .dl-dot.c-info {
-            color: #3b82f6;
-            background: #3b82f6;
-        }
-
-        .dl-dot.c-debug {
-            color: #94a3b8;
-            background: #94a3b8;
-        }
+        .dl-dot.c-error   { color: #ef4444; }
+        .dl-dot.c-warning { color: #f59e0b; }
+        .dl-dot.c-info    { color: #3b82f6; }
+        .dl-dot.c-debug   { color: #94a3b8; }
 
         .dl-body {
             flex: 1;
-            padding: 14px 18px 14px 4px;
+            padding: 14px 20px 14px 4px;
             min-width: 0;
         }
 
         .dl-meta {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
+            gap: 10px;
+            margin-bottom: 8px;
             flex-wrap: wrap;
         }
 
         .dl-time {
-            font-family: 'Courier New', monospace;
-            font-size: 0.76rem;
-            color: #94a3b8;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.8rem;
+            color: var(--dl-color-muted);
+            font-weight: 600;
         }
 
         .dl-badge {
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            font-size: 0.68rem;
-            font-weight: 700;
-            padding: 2px 10px;
-            border-radius: 5px;
+            gap: 5px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 6px;
             text-transform: uppercase;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.5px;
         }
 
-        .dl-badge i {
-            font-size: 11px;
-        }
+        .dl-badge i { font-size: 13px; }
 
-        .dl-badge.b-error {
-            background: #fef2f2;
-            color: #dc2626;
-        }
-
-        .dl-badge.b-warning {
-            background: #fffbeb;
-            color: #d97706;
-        }
-
-        .dl-badge.b-info {
-            background: #eff6ff;
-            color: #2563eb;
-        }
-
-        .dl-badge.b-debug {
-            background: #f1f5f9;
-            color: #64748b;
-        }
+        .dl-badge.b-error   { background: var(--dl-danger-bg);  color: var(--dl-danger); }
+        .dl-badge.b-warning { background: var(--dl-warning-bg); color: var(--dl-warning); }
+        .dl-badge.b-info    { background: var(--dl-primary-bg); color: var(--dl-primary); }
+        .dl-badge.b-debug   { background: var(--dl-border-light); color: var(--dl-debug); }
 
         .dl-ch {
             font-size: 0.72rem;
-            color: #94a3b8;
-            background: #f8fafc;
-            padding: 1px 8px;
-            border-radius: 4px;
-            border: 1px solid #f1f5f9;
+            font-weight: 600;
+            color: #64748b;
+            background: var(--dl-bg-page);
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--dl-border-light);
         }
 
         .dl-msg {
-            font-family: 'Courier New', monospace;
-            font-size: 0.82rem;
-            color: #334155;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            color: var(--dl-color-text);
             line-height: 1.6;
             white-space: pre-wrap;
             word-break: break-word;
-            max-height: 42px;
+            max-height: 44px; /* Roughly 2 lines */
             overflow: hidden;
-            transition: max-height 0.35s ease;
+            transition: max-height 0.4s ease;
+            position: relative;
         }
 
         .dl-entry.expanded .dl-msg {
-            max-height: 800px;
+            max-height: 3000px;
         }
 
         .dl-hint {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             color: #cbd5e1;
-            margin-top: 3px;
+            margin-top: 6px;
             font-style: italic;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .dl-entry.expanded .dl-hint {
-            display: none;
-        }
+        .dl-entry.expanded .dl-hint { display: none; }
 
         /* ─── Empty State ─── */
         .dl-empty {
             text-align: center;
-            padding: 5rem 2rem;
+            padding: 6rem 2rem;
+            background: #fafafb;
+            border-radius: 12px;
+            margin: 20px;
         }
 
         .dl-empty-icon {
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            background: linear-gradient(135deg, var(--dl-success-bg), #d1fae5);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 6px 16px rgba(5, 150, 105, 0.1);
         }
 
         .dl-empty-icon i {
-            font-size: 36px;
-            color: #22c55e;
+            font-size: 40px;
+            color: var(--dl-success);
         }
     </style>
 @endpush
@@ -454,17 +417,20 @@
     @endcomponent
 
     @php
+        // Group Critical/Emergency into Error count for simplicity
         $errorCount = collect($lines)
             ->whereIn('level', ['ERROR', 'CRITICAL', 'EMERGENCY'])
             ->count();
         $warningCount = collect($lines)->where('level', 'WARNING')->count();
         $infoCount = collect($lines)->where('level', 'INFO')->count();
-        $debugCount = collect($lines)->where('level', 'DEBUG')->count();
+        $debugCount = collect($lines)
+            ->whereNotIn('level', ['ERROR', 'CRITICAL', 'EMERGENCY', 'WARNING', 'INFO'])
+            ->count();
         $totalCount = count($lines);
     @endphp
 
     {{-- Stat Cards --}}
-    <div class="dl-stats mb-3 mt-2">
+    <div class="dl-stats mb-3 mt-2" data-aos="fade-up" data-aos-duration="400">
         <div class="dl-stat">
             <div class="dl-stat-icon t-total"><i class="bx bx-list-ul"></i></div>
             <div>
@@ -503,14 +469,14 @@
     </div>
 
     {{-- Toolbar --}}
-    <div class="dl-toolbar mb-3">
+    <div class="dl-toolbar mb-3" data-aos="fade-up" data-aos-duration="500">
         <div class="row g-3 align-items-center">
             <div class="col-lg-3 col-md-6">
                 <form method="GET" action="{{ route('devlog') }}">
-                    <select name="file" class="form-select dl-file-select" onchange="this.form.submit()">
+                    <select name="file" class="form-select dl-file-select" onchange="this.form.submit()" aria-label="Pilih File Log">
                         @foreach ($logFiles as $file)
                             <option value="{{ $file }}" {{ $selectedFile === $file ? 'selected' : '' }}>
-                                {{ $file }}
+                                <i class="bx bx-file"></i> {{ $file }}
                             </option>
                         @endforeach
                     </select>
@@ -518,12 +484,11 @@
             </div>
             <div class="col-lg-4 col-md-6">
                 <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"
-                        style="border-radius:8px 0 0 8px;border-color:#e2e8f0">
-                        <i class="bx bx-search text-muted"></i>
+                    <span class="input-group-text bg-white border-end-0 shadow-none" style="border-radius: 8px 0 0 8px; border-color: #e2e8f0; color: #94a3b8;">
+                        <i class="bx bx-search"></i>
                     </span>
-                    <input type="text" id="searchLog" class="form-control dl-search border-start-0"
-                        placeholder="Cari pesan, channel, waktu..." style="border-radius:0 8px 8px 0;border-color:#e2e8f0">
+                    <input type="text" id="searchLog" class="form-control dl-search border-start-0 shadow-none"
+                        placeholder="Cari pesan, channel, waktu..." style="border-radius: 0 8px 8px 0; border-color: #e2e8f0;">
                 </div>
             </div>
             <div class="col-lg-5 col-md-12 text-lg-end">
@@ -539,22 +504,22 @@
     </div>
 
     {{-- Log Panel --}}
-    <div class="dl-panel">
+    <div class="dl-panel" data-aos="fade-up" data-aos-duration="600">
         <div class="dl-panel-head">
             <div class="dl-panel-title">
-                <i class="bx bx-terminal text-primary" style="font-size:18px"></i>
+                <i class="bx bx-terminal text-primary" style="font-size: 20px;"></i>
                 Log Viewer
-                <span class="file-tag">{{ $selectedFile ?? '-' }}</span>
-                <span class="count-tag" id="visibleCount">{{ $totalCount }} entries</span>
+                <span class="file-tag"><i class="bx bx-file-blank"></i> {{ $selectedFile ?? '-' }}</span>
+                <span class="count-tag"><i class="bx bx-list-check"></i> <span id="visibleCount">{{ number_format($totalCount) }}</span> entries</span>
             </div>
             <div class="d-flex gap-2">
-                <button class="dl-action-btn" onclick="collapseAll()" title="Collapse semua">
+                <button class="dl-action-btn" onclick="collapseAll()" title="Collapse semua entri">
                     <i class="bx bx-collapse-vertical"></i>
                 </button>
-                <button class="dl-action-btn" onclick="scrollToTop()" title="Scroll ke atas">
+                <button class="dl-action-btn" onclick="scrollToTop()" title="Scroll ke batas atas">
                     <i class="bx bx-up-arrow-alt"></i>
                 </button>
-                <a href="{{ route('devlog', ['file' => $selectedFile]) }}" class="dl-action-btn" title="Refresh">
+                <a href="{{ route('devlog', ['file' => $selectedFile]) }}" class="dl-action-btn" title="Refresh Log">
                     <i class="bx bx-refresh"></i>
                 </a>
             </div>
@@ -564,50 +529,62 @@
             @if ($totalCount === 0)
                 <div class="dl-empty">
                     <div class="dl-empty-icon">
-                        <i class="bx bx-check-circle"></i>
+                        <i class="bx bx-check-double"></i>
                     </div>
-                    <h5 class="fw-bold text-dark mb-2">Tidak Ada Log</h5>
-                    <p class="text-muted mb-0">File log kosong atau belum ada entri. Sistem berjalan normal.</p>
+                    <h4 class="fw-bold text-dark mb-2">Semua Sistem Berjalan Normal</h4>
+                    <p class="text-muted mb-0 fs-6">File log ini belum memiliki catatan error atau event terbaru.</p>
                 </div>
             @else
                 @foreach ($lines as $idx => $entry)
                     @php
-                        $dotCls = match ($entry['level']) {
-                            'ERROR', 'CRITICAL', 'EMERGENCY' => 'c-error',
+                        // Group level for filtering logic (e.g. CRITICAL counts as ERROR)
+                        $levelGroup = match ($entry['level']) {
+                            'ERROR', 'CRITICAL', 'EMERGENCY' => 'ERROR',
+                            'WARNING' => 'WARNING',
+                            'INFO' => 'INFO',
+                            default => 'DEBUG',
+                        };
+
+                        $dotCls = match ($levelGroup) {
+                            'ERROR'   => 'c-error',
                             'WARNING' => 'c-warning',
-                            'INFO' => 'c-info',
-                            default => 'c-debug',
+                            'INFO'    => 'c-info',
+                            default   => 'c-debug',
                         };
-                        $badgeCls = match ($entry['level']) {
-                            'ERROR', 'CRITICAL', 'EMERGENCY' => 'b-error',
+                        
+                        $badgeCls = match ($levelGroup) {
+                            'ERROR'   => 'b-error',
                             'WARNING' => 'b-warning',
-                            'INFO' => 'b-info',
-                            default => 'b-debug',
+                            'INFO'    => 'b-info',
+                            default   => 'b-debug',
                         };
-                        $iconCls = match ($entry['level']) {
-                            'ERROR', 'CRITICAL', 'EMERGENCY' => 'bx bx-x-circle',
+
+                        $iconCls = match ($levelGroup) {
+                            'ERROR'   => 'bx bx-x-circle',
                             'WARNING' => 'bx bx-error-alt',
-                            'INFO' => 'bx bx-info-circle',
-                            'DEBUG' => 'bx bx-bug-alt',
-                            default => 'bx bx-dots-horizontal-rounded',
+                            'INFO'    => 'bx bx-info-circle',
+                            default   => 'bx bx-bug-alt',
                         };
-                        $isLong = strlen($entry['message']) > 150;
+
+                        // Decide if the message string needs a "read more" hint
+                        $isLong = strlen($entry['message']) > 160 || substr_count($entry['message'], "\n") >= 2;
                     @endphp
-                    <div class="dl-entry" data-level="{{ $entry['level'] }}" onclick="this.classList.toggle('expanded')">
+                    
+                    <div class="dl-entry" data-level="{{ $levelGroup }}" onclick="this.classList.toggle('expanded')">
                         <div class="dl-rail">
                             <div class="dl-dot {{ $dotCls }}"></div>
                         </div>
                         <div class="dl-body">
                             <div class="dl-meta">
-                                <span class="dl-time">{{ $entry['timestamp'] }}</span>
+                                <span class="dl-time"><i class="bx bx-time-five"></i> {{ $entry['timestamp'] }}</span>
                                 <span class="dl-badge {{ $badgeCls }}">
                                     <i class="{{ $iconCls }}"></i> {{ $entry['level'] }}
                                 </span>
-                                <span class="dl-ch">{{ $entry['channel'] }}</span>
+                                <span class="dl-ch"><i class="bx bx-server"></i> {{ $entry['channel'] }}</span>
                             </div>
                             <div class="dl-msg">{{ $entry['message'] }}</div>
                             @if ($isLong)
-                                <div class="dl-hint">klik untuk expand</div>
+                                <div class="dl-hint"><i class="bx bx-chevron-down"></i> Klik untuk melihat detail lengkap</div>
                             @endif
                         </div>
                     </div>
@@ -619,48 +596,69 @@
 
 @push('scripts')
     <script>
-        // Level pills
-        document.querySelectorAll('.dl-pill').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.dl-pill').forEach(function(b) {
-                    b.classList.remove('active');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Level pills
+            const pills = document.querySelectorAll('.dl-pill');
+            pills.forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault(); // Prevent accidental form submission if wrapped
+                    pills.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilters();
                 });
-                this.classList.add('active');
-                applyFilters();
             });
-        });
 
-        // Search
-        document.getElementById('searchLog').addEventListener('input', function() {
-            applyFilters();
+            // Fast local search input listener
+            const searchInput = document.getElementById('searchLog');
+            if(searchInput) {
+                searchInput.addEventListener('input', applyFilters);
+            }
         });
 
         function applyFilters() {
-            var level = document.querySelector('.dl-pill.active').dataset.level;
-            var query = document.getElementById('searchLog').value.toLowerCase();
-            var visible = 0;
+            const activePill = document.querySelector('.dl-pill.active');
+            const level = activePill ? activePill.dataset.level : 'all';
+            const query = document.getElementById('searchLog').value.toLowerCase().trim();
+            
+            let visible = 0;
+            const entries = document.querySelectorAll('.dl-entry');
 
-            document.querySelectorAll('.dl-entry').forEach(function(el) {
-                var matchLevel = (level === 'all' || el.dataset.level === level);
-                var matchSearch = !query || el.textContent.toLowerCase().indexOf(query) !== -1;
-                el.style.display = (matchLevel && matchSearch) ? '' : 'none';
-                if (matchLevel && matchSearch) visible++;
+            entries.forEach(function(el) {
+                const matchLevel = (level === 'all' || el.dataset.level === level);
+                const elText = el.textContent || el.innerText;
+                const matchSearch = (!query || elText.toLowerCase().includes(query));
+                
+                if (matchLevel && matchSearch) {
+                    el.style.display = 'flex'; // Restore original flex display
+                    visible++;
+                } else {
+                    el.style.display = 'none';
+                }
             });
 
-            document.getElementById('visibleCount').textContent = visible + ' entries';
+            const visibleCountEl = document.getElementById('visibleCount');
+            if (visibleCountEl) {
+                // Formatting the number cleanly
+                visibleCountEl.textContent = new Intl.NumberFormat('id-ID').format(visible);
+            }
         }
 
-        function collapseAll() {
+        // Collapse open entries
+        window.collapseAll = function() {
             document.querySelectorAll('.dl-entry.expanded').forEach(function(el) {
                 el.classList.remove('expanded');
             });
-        }
+        };
 
-        function scrollToTop() {
-            document.getElementById('logScroll').scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
-        }
+        // Smooth scroll to the top of log panel
+        window.scrollToTop = function() {
+            const scrollContainer = document.getElementById('logScroll');
+            if (scrollContainer) {
+                scrollContainer.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
+        };
     </script>
 @endpush
